@@ -101,7 +101,6 @@
     <div id="eventPage" hidden>
     <header class="site-header">
       <div class="wedding-sparkles" aria-hidden="true"></div>
-      <button class="host-tools-button" id="hostToolsButton" type="button" aria-haspopup="dialog" hidden>Host tools</button>
       <div class="header-art">
         <img id="eventHeaderImage" alt="" decoding="async" fetchpriority="high" hidden />
         <time id="eventDate" class="event-date"></time>
@@ -196,7 +195,12 @@
       </address>
     </footer>
 
-    <nav id="eventDock" class="event-dock" aria-label="Switch active event" hidden></nav>
+    <nav id="eventDock" class="event-dock" aria-label="Event navigation" hidden>
+      <div id="eventSwitchButtons" class="event-switch-buttons"></div>
+      <button class="host-tools-button" id="hostToolsButton" type="button" aria-haspopup="dialog" aria-label="Host tools" title="Host tools" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.1 7.1 0 0 0-1.62-.94L14.4 2.81a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.72 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.08.63-.08.94s.03.64.08.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.38.31.59.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.21.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.02-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z"/></svg>
+      </button>
+    </nav>
 
     <dialog id="rsvpDialog">
       <form method="dialog" id="rsvpForm" class="modal-card">
@@ -275,7 +279,6 @@
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2 id="adminHeading">Edit the menu</h2>
-        <p id="adminDescription">Change the gathering date, requested amounts, dish names, or add something new.</p>
         <label class="admin-date"><span>Gathering date</span><input id="adminEventDate" type="date" required /></label>
         <div id="adminRegistryFields" class="admin-registry" hidden>
           <label><span>Wedding registry link</span><input id="adminRegistryUrl" type="url" placeholder="https://www.example.com/our-registry" /></label>
@@ -316,14 +319,13 @@
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2>What would you like to edit?</h2>
-        <p>Choose the live gathering, then manage its menu or your shared family accounts.</p>
         <div id="syncStatus" class="sync-status" role="status" aria-live="polite"></div>
         <div class="host-tool-actions">
-          <button id="manageEventsButton" type="button"><strong>Manage gatherings</strong><span>Choose which gatherings are active for invited guests</span></button>
-          <button id="editItemsButton" type="button"><strong>Edit menu items</strong><span>Add, change, or remove dishes</span></button>
-          <button id="clearClaimButton" type="button"><strong>Clear a claim</strong><span>Remove a dish quantity from a family</span></button>
-          <button id="editAccountsButton" type="button"><strong>Manage accounts</strong><span>Choose which families can sign in</span></button>
-          <button id="invitationTemplatesButton" type="button"><strong>Invitation templates</strong><span>Upload artwork and visually place invitation fields</span></button>
+          <button id="manageEventsButton" type="button"><strong>Manage gatherings</strong></button>
+          <button id="editItemsButton" type="button"><strong>Edit menu items</strong></button>
+          <button id="clearClaimButton" type="button"><strong>Clear a claim</strong></button>
+          <button id="editAccountsButton" type="button"><strong>Manage accounts</strong></button>
+          <button id="invitationTemplatesButton" type="button"><strong>Invitation templates</strong></button>
         </div>
       </form>
     </dialog>
@@ -332,7 +334,6 @@
       <form method="dialog" id="clearClaimForm" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2>Clear a claim</h2>
-        <p>Select the dish, family, and quantity you want to remove.</p>
         <label><span>Item</span><select id="clearClaimItem" required></select></label>
         <label><span>Family</span><select id="clearClaimFamily" required></select></label>
         <label><span>Quantity</span><select id="clearClaimQuantity" required></select></label>
@@ -345,7 +346,6 @@
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2>Manage gatherings</h2>
-        <p>Activate any gatherings guests may enter. Each family will only see active gatherings they are invited to.</p>
         <div id="eventChoices" class="event-choices"></div>
         <button class="primary-button" value="default">Done</button>
       </form>
@@ -355,20 +355,6 @@
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2>Manage accounts</h2>
-        <p id="accountsDescription">Account details are shared by every gathering. Sign-in access applies to the gathering you are viewing.</p>
-        <section class="account-invitation-settings" aria-labelledby="invitationAdminHeading">
-          <h3 id="invitationAdminHeading">Invitation</h3>
-          <p>Only these gathering-level values are editable. The artwork and layout remain locked.</p>
-          <div class="invitation-fields">
-            <label><span>Event date</span><input id="invitationEventDate" type="date" required /></label>
-            <label><span>RSVP by</span><input id="invitationRsvpDate" type="date" required /></label>
-            <label><span>Address line 1</span><input id="invitationAddress1" maxlength="60" required /></label>
-            <label><span>Address line 2</span><input id="invitationAddress2" maxlength="60" required /></label>
-            <label><span>Invitation template</span><select id="invitationTemplateAssignment"></select></label>
-          </div>
-          <p id="invitationOverflowWarning" class="form-error" role="alert"></p>
-          <div class="invitation-actions"><button id="downloadAllInvitations" type="button">Download All Invitations</button></div>
-        </section>
         <div id="adminAccounts" class="admin-accounts"></div>
         <div class="account-add">
           <input id="adminNewAccount" placeholder="e.g. John,Jane Doe/John,Jane Smith" maxlength="120" aria-label="New account name" />
@@ -387,10 +373,21 @@
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2>Invitation templates</h2>
-        <p>Background artwork is runtime data stored outside this website repository. PNG, JPEG, and WebP are supported.</p>
         <div id="invitationTemplateList" class="template-list"></div>
         <div class="template-create"><input id="newTemplateName" maxlength="80" placeholder="Template name" aria-label="Template name"><label class="template-dropzone" id="newTemplateDropzone"><input id="newTemplateBackground" type="file" accept="image/png,image/jpeg,image/webp"><span><strong>Drop artwork here</strong> or choose a file</span><small>PNG, JPEG, or WebP</small></label><button id="createTemplateButton" type="button">Create template</button></div>
         <p id="templateManagerError" class="form-error" role="alert"></p>
+        <section class="account-invitation-settings" aria-labelledby="invitationAdminHeading">
+          <h3 id="invitationAdminHeading">Invitation</h3>
+          <div class="invitation-fields">
+            <label><span>Event date</span><input id="invitationEventDate" type="date" required /></label>
+            <label><span>RSVP by</span><input id="invitationRsvpDate" type="date" required /></label>
+            <label><span>Address line 1</span><input id="invitationAddress1" maxlength="60" required /></label>
+            <label><span>Address line 2</span><input id="invitationAddress2" maxlength="60" required /></label>
+            <label><span>Invitation template</span><select id="invitationTemplateAssignment"></select></label>
+          </div>
+          <p id="invitationOverflowWarning" class="form-error" role="alert"></p>
+          <div class="invitation-actions"><button id="downloadAllInvitations" type="button">Download All Invitations</button></div>
+        </section>
         <button class="primary-button" value="default">Done</button>
       </form>
     </dialog>
