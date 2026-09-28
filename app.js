@@ -520,8 +520,7 @@ function downloadQrPng(account) {
 }
 
 function invitationAccounts() {
-  return appState.accounts.filter(account => accountCanSignIn(account, viewedEventId) && account.qrToken)
-    .sort((left, right) => left.name.localeCompare(right.name, 'en-US', { sensitivity: 'base' }));
+  return window.Invitation.eligibleAccounts(appState.accounts, viewedEventId);
 }
 function invitationQrUrl(account) {
   return account?.qrToken ? accountQrUrl(account) : `${window.location.origin}${window.location.pathname}#/signin/sample-preview`;
@@ -555,6 +554,13 @@ async function downloadInvitation(account) {
   await renderInvitation(canvas, account);
   const blob = await canvasBlob(canvas);
   if (blob) downloadBlob(blob, window.Invitation.filenameFor(account.name, EVENT_DETAILS[viewedEventId].name));
+}
+async function invitationFile(account) {
+  const canvas = document.createElement('canvas');
+  await renderInvitation(canvas, account);
+  const blob = await canvasBlob(canvas);
+  if (!blob) throw new Error(`Could not create the invitation for ${account.name}.`);
+  return new File([blob], window.Invitation.filenameFor(account.name, EVENT_DETAILS[viewedEventId].name), { type: 'image/png' });
 }
 function showToast(message) { const toast = document.querySelector('#toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2600); }
 function menuItemSummary(item) {
@@ -1135,6 +1141,29 @@ document.querySelector('#downloadAllInvitations').addEventListener('click', asyn
   if (!state.invitationTemplateId) { showToast('Assign an invitation template first.'); return; }
   for (const account of invitationAccounts()) { await downloadInvitation(account); await new Promise(resolve => setTimeout(resolve, 150)); }
 });
+document.querySelector('#emailAllInvitations').addEventListener('click', async event => {
+  if (!state.invitationTemplateId) { showToast('Assign an invitation template first.'); return; }
+  const accounts = invitationAccounts();
+  if (!accounts.length) { showToast('There are no invited families with QR access.'); return; }
+  const button = event.currentTarget;
+  button.disabled = true;
+  button.textContent = 'Preparing Invitations…';
+  try {
+    const files = [];
+    for (const account of accounts) files.push(await invitationFile(account));
+    const share = { files, title: `${EVENT_DETAILS[viewedEventId].name} invitations`, text: 'Invitations are attached.' };
+    if (!navigator.share || (navigator.canShare && !navigator.canShare({ files }))) throw new Error('This browser cannot attach files to a new email. Try this button in Safari, Chrome, or Edge on a device with an email app installed.');
+    await navigator.share(share);
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      console.error(error);
+      showToast(error.message || 'Could not open an email with the invitations attached.');
+    }
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Email All Invitations';
+  }
+});
 
 let templateDraft = null;
 let selectedTemplateFieldId = '';
@@ -1454,6 +1483,7 @@ document.querySelector('#syncAnyListButton').addEventListener('click', async eve
       throw error;
     }
     await loadSharedState();
+    if (document.querySelector('#accountsDialog').open) openAccountsAdmin();
     const added = outcome.added ? `${outcome.added} new account${outcome.added === 1 ? '' : 's'} added` : 'no new accounts found';
     const skipped = outcome.skipped ? `, ${outcome.skipped} entr${outcome.skipped === 1 ? 'y' : 'ies'} skipped` : '';
     const qrResult = outcome.qrAccessCreated

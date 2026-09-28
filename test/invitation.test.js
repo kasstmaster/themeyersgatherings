@@ -68,6 +68,16 @@ test('multiple accounts receive distinct existing QR payloads and no printed nam
   assert.equal(Invitation.filenameFor('Ben Hall IV / Sherri Hall', 'Christmas'), 'Ben-Hall-IV-Sherri-Hall-Christmas-Invitation.png');
 });
 
+test('bulk invitations include only invited accounts with QR access', () => {
+  const accounts = [
+    { name: 'Event Guest', qrToken: 'event', selectedEvents: { wedding: true } },
+    { name: 'Always Guest', qrToken: 'always', alwaysInvite: true, selectedEvents: { wedding: false } },
+    { name: 'Not Invited', qrToken: 'no', selectedEvents: { wedding: false } },
+    { name: 'No QR Yet', selectedEvents: { wedding: true } }
+  ];
+  assert.deepEqual(Invitation.eligibleAccounts(accounts, 'wedding').map(account => account.name), ['Always Guest', 'Event Guest']);
+});
+
 test('renderer uses uploaded original dimensions', async () => {
   const originalImage = globalThis.Image;
   let loadedSource = '';
@@ -78,6 +88,20 @@ test('renderer uses uploaded original dimensions', async () => {
   await Invitation.render(canvas, Invitation.invitationModel(template, {}, 'qr'), { getModuleCount: () => 1, isDark: () => false });
   assert.equal(canvas.width, 720); assert.equal(canvas.height, 1008); assert.equal(operations[0][4], 720); assert.equal(operations[0][5], 1008);
   assert.match(loadedSource, /[?&]v=/, 'background URL is versioned to avoid a stale failed browser request');
+  globalThis.Image = originalImage;
+});
+
+test('invitation QR renderer does not paint a background', async () => {
+  const originalImage = globalThis.Image;
+  globalThis.Image = class { set src(value) { this._src = value; queueMicrotask(() => this.onload()); } };
+  const fills = [];
+  const context = { drawImage() {}, save() {}, beginPath() {}, rect() {}, clip() {}, fillText() {}, restore() {}, fillRect: (...args) => fills.push([context.fillStyle, ...args]), measureText: () => ({ width: 1 }) };
+  const canvas = { width: 0, height: 0, getContext: () => context };
+  const template = Invitation.createTemplate('Test', background);
+  template.fields.push(Invitation.newField('accountQr', 10, 10));
+  await Invitation.render(canvas, Invitation.invitationModel(template, {}, 'qr'), { getModuleCount: () => 1, isDark: () => true });
+  assert.equal(fills.length, 1);
+  assert.equal(fills[0][0], '#000');
   globalThis.Image = originalImage;
 });
 
