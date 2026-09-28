@@ -1245,9 +1245,14 @@ function previewValue(field) {
   if (field.type === 'qr') return '';
   return window.Invitation.fieldValue(field, state) || field.label;
 }
+function templateEditorQrSvg() {
+  const selectedToken = document.querySelector('#templatePreviewAccount').value;
+  const account = appState.accounts.find(item => item.qrToken === selectedToken) || null;
+  return qrSvg(makeQrCode(invitationQrUrl(account)));
+}
 function renderEditorFields() {
   const layer = document.querySelector('#templateFieldLayer');
-  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${field.id === selectedTemplateFieldId ? 'selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? '<span>Sample account QR</span><span class="sample-qr">▦</span>' : escapeHtml(previewValue(field))}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
+  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${field.id === selectedTemplateFieldId ? 'selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? templateEditorQrSvg() : escapeHtml(previewValue(field))}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
   layer.querySelectorAll('.editor-field').forEach(element => {
     element.addEventListener('pointerdown', event => beginFieldPointer(event, element));
     element.addEventListener('click', event => { event.stopPropagation(); selectedTemplateFieldId = element.dataset.fieldId; renderEditorFields(); renderFieldInspector(); });
@@ -1375,6 +1380,7 @@ configureDropzone(document.querySelector('#replaceTemplateDropzone'), document.q
 document.querySelector('#saveTemplateButton').addEventListener('click', () => {
   templateDraft.name = document.querySelector('#templateEditorName').value.trim() || templateDraft.name; templateDraft.updatedAt = new Date().toISOString(); const index = appState.invitationTemplates.findIndex(template => template.id === templateDraft.id); appState.invitationTemplates[index] = structuredClone(templateDraft); document.querySelector('#templateEditorHeading').textContent = templateDraft.name; saveState(); showToast('Invitation template saved.');
 });
+document.querySelector('#templatePreviewAccount').addEventListener('change', renderEditorFields);
 document.querySelector('#previewEditedTemplateButton').addEventListener('click', async () => {
   const selectedToken = document.querySelector('#templatePreviewAccount').value;
   const account = appState.accounts.find(item => item.qrToken === selectedToken) || null, canvas = document.querySelector('#invitationCanvas');
