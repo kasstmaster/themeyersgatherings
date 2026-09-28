@@ -734,7 +734,6 @@ function render() {
   monetaryGiftButton.textContent = state.monetaryGiftUrl ? 'Give a monetary gift' : (hostAuthenticated ? 'Add monetary gift link in host tools' : 'Monetary gifts coming soon');
   const editItemsButton = document.querySelector('#editItemsButton');
   editItemsButton.querySelector('strong').textContent = isWedding ? 'Edit wedding details' : 'Edit menu items';
-  editItemsButton.querySelector('span').textContent = isWedding ? 'Update the date or gift links' : 'Add, change, or remove dishes';
   document.querySelector('#clearClaimButton').hidden = isWedding;
   let previewBanner = document.querySelector('#previewBanner');
   if (!previewBanner) {
@@ -776,11 +775,13 @@ function render() {
 
 function renderEventDock() {
   const dock = document.querySelector('#eventDock');
+  const switchButtons = document.querySelector('#eventSwitchButtons');
   const ids = availableEventIds();
   dock.hidden = !guestName || ids.length === 0;
-  dock.innerHTML = ids.map(id => {
-    const label = `Switch to ${EVENT_DETAILS[id].name}`;
-    return `<button type="button" data-switch-event="${id}" title="${escapeHtml(label)}" ${id === viewedEventId ? 'aria-current="page"' : ''}><span>${escapeHtml(label)}</span></button>`;
+  switchButtons.innerHTML = ids.map(id => {
+    const name = EVENT_DETAILS[id].name;
+    const accessibleLabel = `${name}${id === viewedEventId ? ', current event' : ''}`;
+    return `<button type="button" data-switch-event="${id}" aria-label="${escapeHtml(accessibleLabel)}" ${id === viewedEventId ? 'aria-current="page"' : ''}><span>${escapeHtml(name)}</span></button>`;
   }).join('');
 }
 function renderDish(item) {
@@ -960,7 +961,6 @@ function openAdmin() {
   const isWedding = EVENT_DETAILS[viewedEventId].registryOnly === true;
   document.querySelector('#adminEventDate').value = state.eventDate;
   document.querySelector('#adminHeading').textContent = isWedding ? 'Edit wedding details' : 'Edit the menu';
-  document.querySelector('#adminDescription').textContent = isWedding ? 'Change the wedding date, registry link, or monetary gift link while previewing the invitation.' : 'Change the event date, sort the dishes, update requested amounts, or add something new.';
   document.querySelector('#adminRegistryFields').hidden = !isWedding;
   document.querySelector('#adminAttireFields').hidden = !isWedding;
   document.querySelector('#adminRegistryUrl').value = state.registryUrl || '';
@@ -1027,16 +1027,17 @@ function renderQuantityUnits() {
     });
   });
 }
-function openAccountsAdmin() {
-  document.querySelector('#adminAccountError').textContent = '';
-  document.querySelector('#accountsDescription').textContent = `Account names and Always Invite are shared by every event. Can sign in applies only to ${EVENT_DETAILS[viewedEventId].name}.`;
-  document.querySelector('#invitationAdminHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation`;
+function renderInvitationSettings() {
+  document.querySelector('#invitationAdminHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation values`;
   document.querySelector('#invitationEventDate').value = state.eventDate;
   const invitationFallback = defaultInvitationSettings(state.eventDate);
   document.querySelector('#invitationRsvpDate').value = state.rsvpDate || invitationFallback.rsvpDate;
   document.querySelector('#invitationAddress1').value = state.addressLine1 || invitationFallback.addressLine1;
   document.querySelector('#invitationAddress2').value = state.addressLine2 || invitationFallback.addressLine2;
   document.querySelector('#invitationTemplateAssignment').innerHTML = '<option value="">No template assigned</option>' + appState.invitationTemplates.map(template => `<option value="${escapeAttribute(template.id)}" ${template.id === state.invitationTemplateId ? 'selected' : ''}>${escapeHtml(template.name)}</option>`).join('');
+}
+function openAccountsAdmin() {
+  document.querySelector('#adminAccountError').textContent = '';
   const sortedAccounts = appState.accounts.map((account, index) => ({ account, index })).sort((left, right) =>
     firstAccountLastName(left.account.name).localeCompare(firstAccountLastName(right.account.name), 'en-US', { sensitivity: 'base' })
     || left.account.name.localeCompare(right.account.name, 'en-US', { sensitivity: 'base' }));
@@ -1119,7 +1120,7 @@ document.querySelector('#hostToolsButton').addEventListener('click', () => {
 [['invitationEventDate', 'eventDate'], ['invitationRsvpDate', 'rsvpDate'], ['invitationAddress1', 'addressLine1'], ['invitationAddress2', 'addressLine2']].forEach(([id, key]) => {
   document.querySelector(`#${id}`).addEventListener('change', event => {
     const value = event.target.value.trim(); if (!value) return;
-    state[key] = value; saveState(); openAccountsAdmin(); showToast('Invitation setting updated.');
+    state[key] = value; saveState(); renderInvitationSettings(); showToast('Invitation setting updated.');
   });
 });
 document.querySelector('#invitationTemplateAssignment').addEventListener('change', event => {
@@ -1166,6 +1167,7 @@ async function uploadTemplateBackground(templateId, file) {
   return { ...metadata, url: templateAssetUrl(templateId), updatedAt: new Date().toISOString() };
 }
 function renderTemplateManager() {
+  renderInvitationSettings();
   const list = document.querySelector('#invitationTemplateList');
   list.innerHTML = appState.invitationTemplates.length ? appState.invitationTemplates.map(template => `<article><div><strong>${escapeHtml(template.name)}</strong><span>${template.background.width} × ${template.background.height}px</span></div><div><button type="button" data-template-edit="${escapeAttribute(template.id)}">Edit</button><button type="button" data-template-duplicate="${escapeAttribute(template.id)}">Duplicate</button><button type="button" data-template-delete="${escapeAttribute(template.id)}">Delete</button></div></article>`).join('') : '<p>No invitation templates yet.</p>';
   list.querySelectorAll('[data-template-edit]').forEach(button => button.addEventListener('click', () => openTemplateEditor(button.dataset.templateEdit)));
