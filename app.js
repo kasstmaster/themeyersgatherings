@@ -682,11 +682,20 @@ function showSignedInDestination() {
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 }
 function enterEvent(eventId) {
-  if (!availableEventIds().includes(eventId)) return;
+  const nextState = appState.events[eventId];
+  if (!nextState || !EVENT_DETAILS[eventId]) {
+    showToast('That gathering is no longer available. Please choose another gathering.');
+    renderEventSelection();
+    return;
+  }
   viewedEventId = eventId;
-  state = appState.events[eventId];
-  render();
+  state = nextState;
+  // Close the chooser before doing the more involved event render. The
+  // chooser only contains gatherings already authorized for this account;
+  // re-checking the asynchronously refreshed account list here could reject
+  // the exact option the guest just selected and leave this page stuck open.
   showSignedInDestination();
+  render();
 }
 function ensureAccount(callback) {
   if (guestName) return callback();
