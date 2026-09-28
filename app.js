@@ -49,7 +49,7 @@ const GUEST_ACCOUNTS = [];
 const EVENT_DETAILS = {
   thanksgiving: { name: 'Thanksgiving', theme: 'thanksgiving', header: 'https://i.postimg.cc/JnFX8pPS/Website-Header-Thanksgiving.png' },
   christmas: { name: 'Christmas', theme: 'christmas', header: 'https://i.postimg.cc/rmMy7x1t/Website-Header-Christmas.png' },
-  wedding: { name: 'Wedding', theme: 'wedding', header: 'https://i.ibb.co/KjtXKDRn/Wedding-Header-Website-No-Border.png', registryOnly: true }
+  wedding: { name: 'Wedding', theme: 'wedding', header: 'https://i.ibb.co/KjtXKDRn/Wedding-Header-Website-No-Border.png', registryOnly: true, hasMenu: false }
 };
 
 function christmasItems() {
@@ -674,15 +674,19 @@ function renderAttireVideoCollection(sectionSelector, containerSelector) {
   document.querySelector(sectionSelector).hidden = videos.length === 0;
   document.querySelector(containerSelector).innerHTML = videos.map((url, index) => `<iframe src="${escapeAttribute(url)}" title="Formal attire tip ${index + 1}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`).join('');
 }
-function showSignedInDestination(forceAttire = false) {
+function showSignedInDestination() {
   document.querySelector('#signInPage').hidden = true;
   document.querySelector('#eventSelectionPage').hidden = true;
-  const showAttire = viewedEventId === 'wedding' && (!hostAuthenticated || forceAttire);
-  document.querySelector('#attirePage').hidden = !showAttire;
-  document.querySelector('#eventPage').hidden = showAttire;
-  if (!showAttire) return;
-  renderAttireVideoCollection('#attireVideosSection', '#attireVideos');
-  document.querySelector('#attireHeading').focus?.();
+  document.querySelector('#attirePage').hidden = true;
+  document.querySelector('#eventPage').hidden = false;
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+}
+function enterEvent(eventId) {
+  if (!availableEventIds().includes(eventId)) return;
+  viewedEventId = eventId;
+  state = appState.events[eventId];
+  render();
+  showSignedInDestination();
 }
 function ensureAccount(callback) {
   if (guestName) return callback();
@@ -722,7 +726,9 @@ function render() {
     : '<em>Choose something delicious to bring. If bringing something isn\'t practical, simply come and enjoy the evening with us.</em>';
   document.querySelector('#remainingSummary').hidden = isWedding;
   document.querySelector('.summary-strip').classList.toggle('wedding-summary', isWedding);
-  document.querySelector('.menu-section').hidden = isWedding;
+  // Menus belong to every gathering except the Wedding, which intentionally
+  // has registry details instead of claimable dishes.
+  document.querySelector('.menu-section').hidden = event.hasMenu === false;
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');
   registrySection.hidden = !isWedding;
@@ -876,19 +882,12 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
 document.querySelector('#eventSelectionChoices').addEventListener('click', event => {
   const button = event.target.closest('[data-enter-event]');
   if (!button) return;
-  viewedEventId = button.dataset.enterEvent;
-  state = appState.events[viewedEventId];
-  render();
-  showSignedInDestination(viewedEventId === 'wedding');
+  enterEvent(button.dataset.enterEvent);
 });
 document.querySelector('#eventDock').addEventListener('click', event => {
   const button = event.target.closest('[data-switch-event]');
   if (!button || button.dataset.switchEvent === viewedEventId) return;
-  viewedEventId = button.dataset.switchEvent;
-  state = appState.events[viewedEventId];
-  render();
-  showSignedInDestination(viewedEventId === 'wedding');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  enterEvent(button.dataset.switchEvent);
 });
 document.querySelector('#hostPasswordToggle').addEventListener('click', () => {
   setHostPasswordMode(document.querySelector('#hostPassword').disabled);
@@ -1389,7 +1388,7 @@ function openEventsAdmin() {
     guestName = HOST_DISPLAY_NAME;
     document.querySelector('#eventsDialog').close();
     render();
-    showSignedInDestination(viewedEventId === 'wedding');
+    showSignedInDestination();
     showToast(`Previewing ${EVENT_DETAILS[viewedEventId].name}.`);
   }));
   document.querySelectorAll('[data-toggle-event]').forEach(button => button.addEventListener('click', () => {
