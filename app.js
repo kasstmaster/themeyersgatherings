@@ -49,7 +49,7 @@ const GUEST_ACCOUNTS = [];
 const EVENT_DETAILS = {
   thanksgiving: { name: 'Thanksgiving', theme: 'thanksgiving', header: 'https://i.postimg.cc/JnFX8pPS/Website-Header-Thanksgiving.png' },
   christmas: { name: 'Christmas', theme: 'christmas', header: 'https://i.postimg.cc/rmMy7x1t/Website-Header-Christmas.png' },
-  wedding: { name: 'Wedding', theme: 'wedding', header: 'https://i.ibb.co/KjtXKDRn/Wedding-Header-Website-No-Border.png', registryOnly: true }
+  wedding: { name: 'Wedding', theme: 'wedding', header: 'https://i.ibb.co/KjtXKDRn/Wedding-Header-Website-No-Border.png', registryOnly: true, hasMenu: false }
 };
 
 function christmasItems() {
@@ -520,8 +520,7 @@ function downloadQrPng(account) {
 }
 
 function invitationAccounts() {
-  return appState.accounts.filter(account => accountCanSignIn(account, viewedEventId) && account.qrToken)
-    .sort((left, right) => left.name.localeCompare(right.name, 'en-US', { sensitivity: 'base' }));
+  return window.Invitation.eligibleAccounts(appState.accounts, viewedEventId);
 }
 function invitationQrUrl(account) {
   return account?.qrToken ? accountQrUrl(account) : `${window.location.origin}${window.location.pathname}#/signin/sample-preview`;
@@ -555,6 +554,13 @@ async function downloadInvitation(account) {
   await renderInvitation(canvas, account);
   const blob = await canvasBlob(canvas);
   if (blob) downloadBlob(blob, window.Invitation.filenameFor(account.name, EVENT_DETAILS[viewedEventId].name));
+}
+async function invitationFile(account) {
+  const canvas = document.createElement('canvas');
+  await renderInvitation(canvas, account);
+  const blob = await canvasBlob(canvas);
+  if (!blob) throw new Error(`Could not create the invitation for ${account.name}.`);
+  return new File([blob], window.Invitation.filenameFor(account.name, EVENT_DETAILS[viewedEventId].name), { type: 'image/png' });
 }
 function showToast(message) { const toast = document.querySelector('#toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2600); }
 function menuItemSummary(item) {
@@ -668,15 +674,28 @@ function renderAttireVideoCollection(sectionSelector, containerSelector) {
   document.querySelector(sectionSelector).hidden = videos.length === 0;
   document.querySelector(containerSelector).innerHTML = videos.map((url, index) => `<iframe src="${escapeAttribute(url)}" title="Formal attire tip ${index + 1}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`).join('');
 }
-function showSignedInDestination(forceAttire = false) {
+function showSignedInDestination() {
   document.querySelector('#signInPage').hidden = true;
   document.querySelector('#eventSelectionPage').hidden = true;
-  const showAttire = viewedEventId === 'wedding' && (!hostAuthenticated || forceAttire);
-  document.querySelector('#attirePage').hidden = !showAttire;
-  document.querySelector('#eventPage').hidden = showAttire;
-  if (!showAttire) return;
-  renderAttireVideoCollection('#attireVideosSection', '#attireVideos');
-  document.querySelector('#attireHeading').focus?.();
+  document.querySelector('#attirePage').hidden = true;
+  document.querySelector('#eventPage').hidden = false;
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+}
+function enterEvent(eventId) {
+  const nextState = appState.events[eventId];
+  if (!nextState || !EVENT_DETAILS[eventId]) {
+    showToast('That gathering is no longer available. Please choose another gathering.');
+    renderEventSelection();
+    return;
+  }
+  viewedEventId = eventId;
+  state = nextState;
+  // Close the chooser before doing the more involved event render. The
+  // chooser only contains gatherings already authorized for this account;
+  // re-checking the asynchronously refreshed account list here could reject
+  // the exact option the guest just selected and leave this page stuck open.
+  showSignedInDestination();
+  render();
 }
 function ensureAccount(callback) {
   if (guestName) return callback();
@@ -716,7 +735,9 @@ function render() {
     : '<em>Choose something delicious to bring. If bringing something isn\'t practical, simply come and enjoy the evening with us.</em>';
   document.querySelector('#remainingSummary').hidden = isWedding;
   document.querySelector('.summary-strip').classList.toggle('wedding-summary', isWedding);
-  document.querySelector('.menu-section').hidden = isWedding;
+  // Menus belong to every gathering except the Wedding, which intentionally
+  // has registry details instead of claimable dishes.
+  document.querySelector('.menu-section').hidden = event.hasMenu === false;
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');
   registrySection.hidden = !isWedding;
@@ -869,19 +890,12 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
 document.querySelector('#eventSelectionChoices').addEventListener('click', event => {
   const button = event.target.closest('[data-enter-event]');
   if (!button) return;
-  viewedEventId = button.dataset.enterEvent;
-  state = appState.events[viewedEventId];
-  render();
-  showSignedInDestination(viewedEventId === 'wedding');
+  enterEvent(button.dataset.enterEvent);
 });
 document.querySelector('#eventDock').addEventListener('click', event => {
   const button = event.target.closest('[data-switch-event]');
   if (!button || button.dataset.switchEvent === viewedEventId) return;
-  viewedEventId = button.dataset.switchEvent;
-  state = appState.events[viewedEventId];
-  render();
-  showSignedInDestination(viewedEventId === 'wedding');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  enterEvent(button.dataset.switchEvent);
 });
 document.querySelector('#hostPasswordToggle').addEventListener('click', () => {
   setHostPasswordMode(document.querySelector('#hostPassword').disabled);
@@ -1134,6 +1148,29 @@ document.querySelector('#downloadAllInvitations').addEventListener('click', asyn
   if (!state.invitationTemplateId) { showToast('Assign an invitation template first.'); return; }
   for (const account of invitationAccounts()) { await downloadInvitation(account); await new Promise(resolve => setTimeout(resolve, 150)); }
 });
+document.querySelector('#emailAllInvitations').addEventListener('click', async event => {
+  if (!state.invitationTemplateId) { showToast('Assign an invitation template first.'); return; }
+  const accounts = invitationAccounts();
+  if (!accounts.length) { showToast('There are no invited families with QR access.'); return; }
+  const button = event.currentTarget;
+  button.disabled = true;
+  button.textContent = 'Preparing Invitations…';
+  try {
+    const files = [];
+    for (const account of accounts) files.push(await invitationFile(account));
+    const share = { files, title: `${EVENT_DETAILS[viewedEventId].name} invitations`, text: 'Invitations are attached.' };
+    if (!navigator.share || (navigator.canShare && !navigator.canShare({ files }))) throw new Error('This browser cannot attach files to a new email. Try this button in Safari, Chrome, or Edge on a device with an email app installed.');
+    await navigator.share(share);
+  } catch (error) {
+    if (error.name !== 'AbortError') {
+      console.error(error);
+      showToast(error.message || 'Could not open an email with the invitations attached.');
+    }
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Email All Invitations';
+  }
+});
 
 let templateDraft = null;
 let selectedTemplateFieldId = '';
@@ -1359,7 +1396,7 @@ function openEventsAdmin() {
     guestName = HOST_DISPLAY_NAME;
     document.querySelector('#eventsDialog').close();
     render();
-    showSignedInDestination(viewedEventId === 'wedding');
+    showSignedInDestination();
     showToast(`Previewing ${EVENT_DETAILS[viewedEventId].name}.`);
   }));
   document.querySelectorAll('[data-toggle-event]').forEach(button => button.addEventListener('click', () => {
@@ -1453,6 +1490,7 @@ document.querySelector('#syncAnyListButton').addEventListener('click', async eve
       throw error;
     }
     await loadSharedState();
+    if (document.querySelector('#accountsDialog').open) openAccountsAdmin();
     const added = outcome.added ? `${outcome.added} new account${outcome.added === 1 ? '' : 's'} added` : 'no new accounts found';
     const skipped = outcome.skipped ? `, ${outcome.skipped} entr${outcome.skipped === 1 ? 'y' : 'ies'} skipped` : '';
     const qrResult = outcome.qrAccessCreated

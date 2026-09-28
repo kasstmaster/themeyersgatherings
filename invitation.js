@@ -95,6 +95,10 @@
     const safe = `${accountName}-${eventName}-Invitation`.normalize('NFKD').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
     return `${safe || 'Invitation'}.png`;
   }
+  function eligibleAccounts(accounts, eventId) {
+    return accounts.filter(account => account?.qrToken && (account.alwaysInvite === true || account.selectedEvents?.[eventId] === true))
+      .sort((left, right) => left.name.localeCompare(right.name, 'en-US', { sensitivity: 'base' }));
+  }
   function versionedImageUrl(src, version) {
     if (!version) return src;
     return `${src}${src.includes('?') ? '&' : '?'}v=${encodeURIComponent(version)}`;
@@ -114,7 +118,7 @@
   function drawQr(ctx, qr, field) {
     const size = Math.min(field.width, field.height), count = qr.getModuleCount(), quiet = Math.max(4, field.quietZone || 4), modules = count + quiet * 2;
     const moduleSize = Math.floor(size / modules), drawn = moduleSize * modules, left = Math.round(field.x + (size - drawn) / 2), top = Math.round(field.y + (size - drawn) / 2);
-    ctx.fillStyle = '#fff'; ctx.fillRect(left, top, drawn, drawn); ctx.fillStyle = '#000';
+    ctx.fillStyle = '#000';
     for (let row = 0; row < count; row += 1) for (let col = 0; col < count; col += 1) if (qr.isDark(row, col)) ctx.fillRect(left + (col + quiet) * moduleSize, top + (row + quiet) * moduleSize, moduleSize, moduleSize);
   }
   async function render(canvas, model, qr) {
@@ -132,6 +136,6 @@
       return ctx.measureText(value).width + Math.max(0, value.length - 1) * (field.letterSpacing || 0) + (value.split(' ').length - 1) * (field.wordSpacing || 0) > field.width;
     }).map(field => field.label);
   }
-  root.Invitation = { FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, render, overflowWarnings };
+  root.Invitation = { FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowWarnings };
   if (typeof module !== 'undefined') module.exports = root.Invitation;
 })(typeof globalThis !== 'undefined' ? globalThis : window);
