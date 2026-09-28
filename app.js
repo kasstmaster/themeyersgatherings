@@ -755,7 +755,6 @@ function render() {
   monetaryGiftButton.textContent = state.monetaryGiftUrl ? 'Give a monetary gift' : (hostAuthenticated ? 'Add monetary gift link in host tools' : 'Monetary gifts coming soon');
   const editItemsButton = document.querySelector('#editItemsButton');
   editItemsButton.querySelector('strong').textContent = isWedding ? 'Edit wedding details' : 'Edit menu items';
-  editItemsButton.querySelector('span').textContent = isWedding ? 'Update the date or gift links' : 'Add, change, or remove dishes';
   document.querySelector('#clearClaimButton').hidden = isWedding;
   let previewBanner = document.querySelector('#previewBanner');
   if (!previewBanner) {
