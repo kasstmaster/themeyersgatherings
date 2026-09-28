@@ -18,3 +18,11 @@ test('statically registered event targets exist in the page', async () => {
 
   assert.deepEqual(missingIds, [], `Event listeners reference missing page elements: ${missingIds.join(', ')}`);
 });
+
+test('template editor renders and refreshes a real QR preview', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+
+  assert.match(javascript, /function templateEditorQrSvg\(\)[\s\S]*qrSvg\(makeQrCode\(invitationQrUrl\(account\)\)\)/);
+  assert.match(javascript, /#templatePreviewAccount'\)\.addEventListener\('change', renderEditorFields\)/);
+  assert.doesNotMatch(javascript, /Sample account QR|sample-qr/);
+});
