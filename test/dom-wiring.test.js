@@ -26,3 +26,13 @@ test('template editor renders and refreshes a real QR preview', async () => {
   assert.match(javascript, /#templatePreviewAccount'\)\.addEventListener\('change', renderEditorFields\)/);
   assert.doesNotMatch(javascript, /Sample account QR|sample-qr/);
 });
+
+test('account invitation preview opens immediately and reports its loading state', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const previewFunction = javascript.match(/async function openInvitationPreview[\s\S]*?\n}\nasync function downloadInvitation/)?.[0] || '';
+
+  assert.match(previewFunction, /status\.textContent = 'Loading invitation preview…'/);
+  assert.ok(previewFunction.indexOf('dialog.showModal()') < previewFunction.indexOf('await renderInvitation'), 'the preview should open before its background finishes loading');
+  assert.match(previewFunction, /Assign an invitation template[\s\S]*before previewing it/);
+  assert.match(previewFunction, /Unable to preview the invitation/);
+});
