@@ -91,7 +91,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', attireVideos: [] }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', attireVideos: [], weddingPartyMembers: [] }
     }
   };
 }
@@ -116,6 +116,8 @@ let appState = loadState();
 let viewedEventId = appState.activeEventId;
 let state = appState.events[viewedEventId];
 let guestName = '';
+let signedInPersonName = '';
+let selectedWeddingTab = 'registry';
 let pendingAccountAction = null;
 let pendingClaimItemId = null;
 let hostAuthenticated = false;
@@ -212,6 +214,9 @@ function normalizeState(saved) {
         : '';
       loaded.events.wedding.attireVideos = Array.isArray(loaded.events.wedding.attireVideos)
         ? loaded.events.wedding.attireVideos.filter(url => typeof url === 'string')
+        : [];
+      loaded.events.wedding.weddingPartyMembers = Array.isArray(loaded.events.wedding.weddingPartyMembers)
+        ? loaded.events.wedding.weddingPartyMembers.filter(name => typeof name === 'string')
         : [];
       return loaded;
     }
@@ -781,8 +786,18 @@ function render() {
   document.querySelector('.menu-section').hidden = event.hasMenu === false;
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');
-  registrySection.hidden = !isWedding;
-  document.querySelector('#registryAttireSection').hidden = !isWedding;
+  const isWeddingPartyMember = isWedding && !hostAuthenticated && state.weddingPartyMembers?.some(name => normalizeAccountName(name) === normalizeAccountName(signedInPersonName));
+  const showingWeddingPartyPage = isWeddingPartyMember && selectedWeddingTab === 'party';
+  const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
+  weddingPartyTabs.hidden = !isWeddingPartyMember;
+  weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
+    const isSelected = button.dataset.weddingTab === selectedWeddingTab;
+    button.setAttribute('aria-selected', String(isSelected));
+    button.tabIndex = isSelected ? 0 : -1;
+  });
+  document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
+  registrySection.hidden = !isWedding || showingWeddingPartyPage;
+  document.querySelector('#registryAttireSection').hidden = !isWedding || showingWeddingPartyPage;
   if (isWedding) renderAttireVideoCollection('#registryAttireVideosSection', '#registryAttireVideos');
   const registryButton = document.querySelector('#registryButton');
   registryButton.href = state.registryUrl || '#';
@@ -904,6 +919,7 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
     hostAuthenticated = true;
     hostCredential = password;
     guestName = HOST_DISPLAY_NAME;
+    signedInPersonName = '';
     updateHostToolsButton();
     const action = pendingAccountAction;
     pendingAccountAction = null;
@@ -924,6 +940,8 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
   if (!account) { document.querySelector('#accountPasswordError').textContent = 'That name and suffix are not recognized.'; return; }
   if (!activeEventIds().some(id => accountCanSignIn(account, id))) { document.querySelector('#accountPasswordError').textContent = 'No active events'; return; }
   guestName = account.name;
+  signedInPersonName = accountName;
+  selectedWeddingTab = 'registry';
   document.querySelector('#accountPasswordError').textContent = '';
   showEventSelection();
   const action = pendingAccountAction; pendingAccountAction = null; action?.();
@@ -937,6 +955,19 @@ document.querySelector('#eventDock').addEventListener('click', event => {
   const button = event.target.closest('[data-switch-event]');
   if (!button || button.dataset.switchEvent === viewedEventId) return;
   enterEvent(button.dataset.switchEvent);
+});
+document.querySelector('#weddingPartyTabs').addEventListener('click', event => {
+  const button = event.target.closest('[data-wedding-tab]');
+  if (!button) return;
+  selectedWeddingTab = button.dataset.weddingTab;
+  render();
+});
+document.querySelector('#weddingPartyTabs').addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  event.preventDefault();
+  selectedWeddingTab = selectedWeddingTab === 'registry' ? 'party' : 'registry';
+  render();
+  document.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
 });
 document.querySelector('#hostPasswordToggle').addEventListener('click', () => {
   setHostPasswordMode(document.querySelector('#hostPassword').disabled);
@@ -1130,6 +1161,18 @@ function openAccountsAdmin() {
       saveState(); openAccountsAdmin(); showToast('Account removed.');
     });
   });
+  const partyAdmin = document.querySelector('#weddingPartyAdmin');
+  partyAdmin.hidden = viewedEventId !== 'wedding';
+  if (viewedEventId === 'wedding') {
+    state.weddingPartyMembers ??= [];
+    document.querySelector('#adminWeddingPartyMembers').innerHTML = state.weddingPartyMembers.length
+      ? state.weddingPartyMembers.map((name, index) => `<div class="wedding-party-member"><span>${escapeHtml(name)}</span><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(name)} from wedding party">×</button></div>`).join('')
+      : '<p class="guest-empty">No wedding party members yet.</p>';
+    document.querySelectorAll('[data-remove-wedding-party]').forEach(button => button.addEventListener('click', () => {
+      state.weddingPartyMembers.splice(Number(button.dataset.removeWeddingParty), 1);
+      saveState(); openAccountsAdmin(); showToast('Wedding party member removed.');
+    }));
+  }
   const dialog = document.querySelector('#accountsDialog'); if (!dialog.open) dialog.showModal();
 }
 function openQrCode(account) {
@@ -1586,6 +1629,20 @@ document.querySelector('#adminAddAccountButton').addEventListener('click', () =>
   if (!name) { document.querySelector('#adminAccountError').textContent = 'Enter a last name.'; return; }
   if (appState.accounts.some(account => normalizeAccountName(account.name) === normalizeAccountName(name))) { document.querySelector('#adminAccountError').textContent = 'That account already exists.'; return; }
   appState.accounts.push({ name, selected: false, selectedEvents: { [viewedEventId]: false }, alwaysInvite: false }); input.value = ''; saveState(); openAccountsAdmin(); showToast(`${householdDisplayName(name)} account added. Enable it to allow sign-in.`);
+});
+document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', () => {
+  const firstInput = document.querySelector('#adminWeddingPartyFirstName');
+  const lastInput = document.querySelector('#adminWeddingPartyLastName');
+  const error = document.querySelector('#adminWeddingPartyError');
+  const name = `${firstInput.value.trim()} ${lastInput.value.trim()}`.trim();
+  if (!firstInput.value.trim() || !lastInput.value.trim()) { error.textContent = 'Enter a first and last name.'; return; }
+  const account = appState.accounts.find(item => accountNameMatches(name, item.name));
+  if (!account || !accountCanSignIn(account, 'wedding')) { error.textContent = 'That person must belong to an account invited to the wedding.'; return; }
+  state.weddingPartyMembers ??= [];
+  if (state.weddingPartyMembers.some(member => normalizeAccountName(member) === normalizeAccountName(name))) { error.textContent = 'That person is already in the wedding party.'; return; }
+  state.weddingPartyMembers.push(name);
+  firstInput.value = ''; lastInput.value = ''; error.textContent = '';
+  saveState(); openAccountsAdmin(); showToast(`${name} added to the wedding party.`);
 });
 document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value) return; state.eventDate = event.target.value; state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
 document.querySelector('#adminRegistryUrl').addEventListener('change', event => {

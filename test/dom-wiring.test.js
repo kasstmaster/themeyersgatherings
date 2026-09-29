@@ -52,3 +52,24 @@ test('template manager only renders templates for the previewed gathering', asyn
   assert.match(javascript, /function renderTemplateManager\(\)[\s\S]*const gatheringTemplates = invitationTemplatesForEvent\(\)[\s\S]*gatheringTemplates\.map/);
   assert.match(javascript, /function renderInvitationSettings\(\)[\s\S]*invitationTemplatesForEvent\(\)\.map/);
 });
+
+test('wedding party access is tied to the individual sign-in name', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /id="weddingPartyTabs"[\s\S]*Registry &amp; Attire[\s\S]*Wedding Party/);
+  assert.match(javascript, /signedInPersonName = accountName/);
+  assert.match(javascript, /state\.weddingPartyMembers\?\.some\(name => normalizeAccountName\(name\) === normalizeAccountName\(signedInPersonName\)\)/);
+  assert.match(javascript, /weddingPartyTabs\.hidden = !isWeddingPartyMember/);
+});
+
+test('wedding party manager only accepts people from wedding-invited accounts', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
+
+  assert.match(addHandler, /accountNameMatches\(name, item\.name\)/);
+  assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
+  assert.match(addHandler, /state\.weddingPartyMembers\.push\(name\)/);
+});
