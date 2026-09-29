@@ -33,6 +33,14 @@ test('account invitation preview opens immediately and reports its loading state
 
   assert.match(previewFunction, /status\.textContent = 'Loading invitation preview…'/);
   assert.ok(previewFunction.indexOf('dialog.showModal()') < previewFunction.indexOf('await renderInvitation'), 'the preview should open before its background finishes loading');
-  assert.match(previewFunction, /Assign an invitation template[\s\S]*before previewing it/);
+  assert.match(previewFunction, /appState\.invitationTemplates\.length === 1[\s\S]*state\.invitationTemplateId = assignedTemplate\.id/);
+  assert.match(previewFunction, /saved invitation templates, but none is assigned/);
   assert.match(previewFunction, /Unable to preview the invitation/);
+});
+
+test('creating the first template assigns it to the viewed gathering', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const createHandler = javascript.match(/#createTemplateButton'[\s\S]*?\n}\);/)?.[0] || '';
+
+  assert.match(createHandler, /appState\.invitationTemplates\.push\(template\)[\s\S]*state\.invitationTemplateId = template\.id[\s\S]*saveState\(\)/);
 });
