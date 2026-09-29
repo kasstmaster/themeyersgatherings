@@ -103,6 +103,9 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .wedding-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
 .registry-section{margin:0 auto 70px;padding:50px 30px;text-align:center;color:var(--ink);background:linear-gradient(135deg,#fffaf1,#f7e7ce);border:1px solid rgba(214,183,122,.65);border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.16)}
 .registry-section[hidden]{display:none}
+.wedding-party-tabs{display:flex;max-width:720px;margin:0 auto 26px;border-bottom:1px solid var(--gold)}
+.wedding-party-tabs[hidden]{display:none}.wedding-party-tabs button{flex:1;border:0;border-bottom:4px solid transparent;background:transparent;color:var(--navy);padding:15px 12px;font-weight:700;cursor:pointer}.wedding-party-tabs button[aria-selected="true"]{border-bottom-color:var(--orange);color:var(--orange)}
+.wedding-party-section{min-height:240px;margin:0 auto 70px;padding:50px 30px;text-align:center;background:linear-gradient(135deg,#fffaf1,#f7e7ce);border:1px solid rgba(214,183,122,.65);border-radius:8px}.wedding-party-section[hidden]{display:none}.wedding-party-section h2{margin:0;color:var(--orange);font-family:"Times New Roman",Times,serif;font-size:clamp(2.2rem,5vw,3.5rem)}
 .registry-section h2{font-family:"Times New Roman",Times,serif;color:var(--orange);font-size:clamp(2.2rem,5vw,3.5rem);margin:0 0 10px}
 .registry-section p:not(.section-kicker){color:var(--muted);margin:0 0 26px}
 .registry-gift-note{max-width:780px;margin:34px auto 32px;padding:30px;text-align:left;background:#fdf8f0;border:1px solid var(--border);border-radius:6px}
@@ -118,10 +121,12 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .admin-registry[hidden]{display:none}
 .admin-registry label{margin-bottom:0}
 .admin-registry input{width:100%}
+.wedding-party-admin{margin:24px 0;padding:20px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}.wedding-party-admin[hidden]{display:none}.wedding-party-admin>p{color:var(--muted);font-size:.85rem}.wedding-party-member-list{display:grid;gap:7px;margin:14px 0}.wedding-party-member{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#fffaf1;border:1px solid var(--border);border-radius:4px}.wedding-party-member button{border:0;background:#f3ddd5;color:#982f17;border-radius:4px;font-size:1.2rem}.wedding-party-add{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}.wedding-party-add input{min-width:0}.wedding-party-add button{border:0;border-radius:4px;background:var(--orange);color:#fff;font-weight:700;padding:10px 16px}
 .preview-banner{position:relative;z-index:30;background:#f7e7ce;color:#651522;text-align:center;padding:10px 20px;font-size:.82rem;font-weight:700;letter-spacing:.04em;border-bottom:2px solid #8b1e2d}
 .preview-banner[hidden]{display:none}
 @media(max-width:520px){.event-choice{align-items:start}.event-choice-actions{flex-direction:column}.event-choice-actions button{width:78px;padding:8px 5px;font-size:.7rem}}
 @media(max-width:700px){.registry-section{padding:38px 16px}.registry-gift-note{padding:24px 18px}.admin-registry{grid-template-columns:1fr}}
+@media(max-width:600px){.wedding-party-add{grid-template-columns:1fr}.wedding-party-add button{min-height:44px}}
 @media(max-width:520px){.theme-thanksgiving .event-date,.theme-christmas .event-date,.theme-wedding .event-date{margin-top:16px}}
 
 /* Highlight claimed household names using each event theme accent. */

@@ -128,6 +128,15 @@
         <div id="remainingSummary" class="summary-stat"><strong id="remainingCount">0</strong><span>Dishes needed</span></div>
       </section>
 
+      <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
+        <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="true">Registry &amp; Attire</button>
+        <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
+      </nav>
+
+      <section id="weddingPartySection" class="wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
+        <h2 id="weddingPartyHeading">Wedding Party</h2>
+      </section>
+
       <section id="registrySection" class="registry-section" aria-labelledby="registryHeading" hidden>
         <p class="section-kicker">Your presence is the greatest gift</p>
         <h2 id="registryHeading">Wedding Registry</h2>
@@ -361,6 +370,17 @@
           <button id="adminAddAccountButton" type="button">Add account</button>
         </div>
         <p class="form-error" id="adminAccountError" role="alert"></p>
+        <section id="weddingPartyAdmin" class="wedding-party-admin" aria-labelledby="weddingPartyAdminHeading" hidden>
+          <h3 id="weddingPartyAdminHeading">Wedding party members</h3>
+          <p>Add an invited person by the same first and last name they use to sign in.</p>
+          <div id="adminWeddingPartyMembers" class="wedding-party-member-list"></div>
+          <div class="wedding-party-add">
+            <input id="adminWeddingPartyFirstName" placeholder="First name" maxlength="60" aria-label="Wedding party member first name" />
+            <input id="adminWeddingPartyLastName" placeholder="Last name" maxlength="60" aria-label="Wedding party member last name" />
+            <button id="adminAddWeddingPartyMember" type="button">Add member</button>
+          </div>
+          <p class="form-error" id="adminWeddingPartyError" role="alert"></p>
+        </section>
         <section class="anylist-sync" aria-label="AnyList account sync">
           <br><button id="syncAnyListButton" type="button">Sync AnyList Address Book</button>
           <p id="anyListSyncResult" class="anylist-sync-result" role="status" aria-live="polite"></p>
