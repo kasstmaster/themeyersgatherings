@@ -1,12 +1,12 @@
 # Visual invitation templates
 
-Invitation artwork is runtime data. Hosts create a named template in **Host tools → Invitation templates**, upload a PNG, JPEG, or WebP, and place dynamic fields on the image. No invitation artwork belongs in this source repository.
+Invitation artwork is runtime data. Hosts preview a gathering, create a named template in **Host tools → Invitation templates**, upload a PNG, JPEG, or WebP, and place dynamic fields on the image. Each template belongs only to the gathering being previewed when it is uploaded, and the template manager only shows that gathering's templates. No invitation artwork belongs in this source repository.
 
 ## Persistence
 
 Template records live in the normal shared application state. Background bytes live in the Cloudflare R2 bucket bound to the state Worker as `INVITATION_BACKGROUNDS`. The Worker accepts host-authenticated uploads, replacements, and deletes at `/invitation-backgrounds/<template-id>`. Public reads allow the browser canvas to render the background. A deployment must configure the shared-state URL and R2 binding before an upload can succeed.
 
-A template record contains its ID, name, background URL/media type/original dimensions, field configurations, and timestamps. Each event stores only `invitationTemplateId` plus its event date, RSVP date, and address values.
+A template record contains its ID, owning event ID, name, background URL/media type/original dimensions, field configurations, and timestamps. Each event stores its selected `invitationTemplateId` plus its event date, RSVP date, and address values.
 
 ## Coordinates and rendering
 

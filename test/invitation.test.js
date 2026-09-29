@@ -47,8 +47,8 @@ test('background replacement reports changed dimensions without changing fields'
   assert.equal(changed.dimensionsChanged, true); assert.deepEqual(changed.template.fields, template.fields);
 });
 
-test('event template assignment is separate from reusable template layout', () => {
-  const template = Invitation.createTemplate('Reusable', background), event = { invitationTemplateId: template.id, eventDate: '2026-11-21' };
+test('event template assignment is separate from template layout', () => {
+  const template = Invitation.createTemplate('Gathering template', background), event = { invitationTemplateId: template.id, eventDate: '2026-11-21' };
   assert.equal(event.invitationTemplateId, template.id); assert.equal('eventDate' in template, false);
 });
 
