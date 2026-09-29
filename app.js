@@ -533,19 +533,36 @@ async function renderInvitation(canvas, account) {
   return model;
 }
 async function openInvitationPreview(account = invitationAccounts()[0] || null) {
-  if (!state.invitationTemplateId) { showToast('Assign an invitation template to this gathering first.'); return; }
+  const dialog = document.querySelector('#invitationPreviewDialog');
+  const status = document.querySelector('#invitationPreviewStatus');
+  const canvasWrap = document.querySelector('#invitationCanvasWrap');
+  const downloadButton = document.querySelector('#downloadInvitationPng');
+  invitationPreviewAccount = account;
+  document.querySelector('#invitationPreviewHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation`;
+  document.querySelector('#invitationPreviewAccount').textContent = account ? `Previewing the QR for ${account.name}. The account name is not printed.` : 'Previewing an explicit sample QR. No account name is printed.';
+  status.classList.remove('form-error');
+  status.textContent = 'Loading invitation preview…';
+  canvasWrap.hidden = true;
+  downloadButton.disabled = true;
+  if (!dialog.open) dialog.showModal();
+  if (!state.invitationTemplateId) {
+    invitationPreviewAccount = null;
+    status.classList.add('form-error');
+    status.textContent = 'Assign an invitation template to this gathering in Invitation templates before previewing it.';
+    return;
+  }
   try {
-    invitationPreviewAccount = account;
-    document.querySelector('#invitationPreviewHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation`;
-    document.querySelector('#invitationPreviewAccount').textContent = account ? `Previewing the QR for ${account.name}. The account name is not printed.` : 'Previewing an explicit sample QR. No account name is printed.';
     const canvas = document.querySelector('#invitationCanvas');
     const model = await renderInvitation(canvas, account);
     const warnings = window.Invitation.overflowWarnings(canvas, model);
     document.querySelector('#invitationOverflowWarning').textContent = warnings.length ? `These values exceed their locked safe width: ${warnings.join(', ')}. Shorten them before downloading.` : '';
-    document.querySelector('#invitationPreviewDialog').showModal();
+    status.textContent = '';
+    canvasWrap.hidden = false;
+    downloadButton.disabled = !account?.qrToken;
   } catch (caught) {
     invitationPreviewAccount = null;
-    document.querySelector('#adminAccountError').textContent = `Unable to preview the invitation. ${caught.message}`;
+    status.classList.add('form-error');
+    status.textContent = `Unable to preview the invitation. ${caught.message}`;
   }
 }
 async function downloadInvitation(account) {
