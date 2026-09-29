@@ -372,7 +372,7 @@
     <dialog id="invitationTemplatesDialog" class="wide-dialog template-manager-dialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
-        <p class="section-kicker">Host dashboard</p><h2>Invitation templates</h2>
+        <p class="section-kicker">Host dashboard</p><h2 id="invitationTemplatesHeading">Invitation templates</h2>
         <div id="invitationTemplateList" class="template-list"></div>
         <div class="template-create"><input id="newTemplateName" maxlength="80" placeholder="Template name" aria-label="Template name"><label class="template-dropzone" id="newTemplateDropzone"><input id="newTemplateBackground" type="file" accept="image/png,image/jpeg,image/webp"><span><strong>Drop artwork here</strong> or choose a file</span><small>PNG, JPEG, or WebP</small></label><button id="createTemplateButton" type="button">Create template</button></div>
         <p id="templateManagerError" class="form-error" role="alert"></p>
@@ -411,7 +411,9 @@
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Invitation preview</p><h2 id="invitationPreviewHeading"></h2>
         <p id="invitationPreviewAccount" class="invitation-note"></p>
-        <div class="invitation-canvas-wrap"><canvas id="invitationCanvas" width="720" height="1008" aria-label="Invitation preview"></canvas></div>
+        <p id="invitationPreviewStatus" class="invitation-preview-status" role="status" aria-live="polite"></p>
+        <div class="invitation-actions"><button id="configureInvitationTemplate" type="button" hidden>Choose invitation template</button></div>
+        <div id="invitationCanvasWrap" class="invitation-canvas-wrap"><canvas id="invitationCanvas" width="720" height="1008" aria-label="Invitation preview"></canvas></div>
         <div class="invitation-actions"><button id="downloadInvitationPng" type="button">Download Invitation</button></div>
         <button class="primary-button" value="default">Done</button>
       </form>

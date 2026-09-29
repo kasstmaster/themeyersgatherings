@@ -198,6 +198,14 @@ function normalizeState(saved) {
           : structuredClone(DEFAULT_QUANTITY_UNITS);
         if (!eventState.quantityUnits.length) eventState.quantityUnits = structuredClone(DEFAULT_QUANTITY_UNITS);
       });
+      // Invitation templates used to be global. Preserve existing artwork by
+      // attaching legacy records to the gathering that selected them (or the
+      // active gathering when they were never selected).
+      loaded.invitationTemplates = loaded.invitationTemplates.map(template => {
+        if (loaded.events[template.eventId]) return template;
+        const assignedEventId = Object.keys(loaded.events).find(eventId => loaded.events[eventId].invitationTemplateId === template.id);
+        return { ...template, eventId: assignedEventId || loaded.activeEventId };
+      });
       loaded.events.wedding.registryUrl = loaded.events.wedding.registryUrl || DEFAULT_REGISTRY_URL;
       loaded.events.wedding.monetaryGiftUrl = typeof loaded.events.wedding.monetaryGiftUrl === 'string'
         ? loaded.events.wedding.monetaryGiftUrl
@@ -522,30 +530,63 @@ function downloadQrPng(account) {
 function invitationAccounts() {
   return window.Invitation.eligibleAccounts(appState.accounts, viewedEventId);
 }
+function invitationTemplatesForEvent(eventId = viewedEventId) {
+  return appState.invitationTemplates.filter(template => template.eventId === eventId);
+}
 function invitationQrUrl(account) {
   return account?.qrToken ? accountQrUrl(account) : `${window.location.origin}${window.location.pathname}#/signin/sample-preview`;
 }
 function canvasBlob(canvas) { return new Promise(resolve => canvas.toBlob(resolve, 'image/png')); }
 async function renderInvitation(canvas, account) {
-  const template = appState.invitationTemplates.find(item => item.id === state.invitationTemplateId);
+  const template = invitationTemplatesForEvent().find(item => item.id === state.invitationTemplateId);
   const model = window.Invitation.invitationModel(template, state, invitationQrUrl(account));
   await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl));
   return model;
 }
 async function openInvitationPreview(account = invitationAccounts()[0] || null) {
-  if (!state.invitationTemplateId) { showToast('Assign an invitation template to this gathering first.'); return; }
+  const dialog = document.querySelector('#invitationPreviewDialog');
+  const status = document.querySelector('#invitationPreviewStatus');
+  const canvasWrap = document.querySelector('#invitationCanvasWrap');
+  const downloadButton = document.querySelector('#downloadInvitationPng');
+  invitationPreviewAccount = account;
+  document.querySelector('#invitationPreviewHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation`;
+  document.querySelector('#invitationPreviewAccount').textContent = account ? `Previewing the QR for ${account.name}. The account name is not printed.` : 'Previewing an explicit sample QR. No account name is printed.';
+  status.classList.remove('form-error');
+  status.textContent = 'Loading invitation preview…';
+  canvasWrap.hidden = true;
+  downloadButton.disabled = true;
+  document.querySelector('#configureInvitationTemplate').hidden = true;
+  if (!dialog.open) dialog.showModal();
+  const gatheringTemplates = invitationTemplatesForEvent();
+  let assignedTemplate = gatheringTemplates.find(template => template.id === state.invitationTemplateId);
+  if (!assignedTemplate && gatheringTemplates.length === 1) {
+    assignedTemplate = gatheringTemplates[0];
+    state.invitationTemplateId = assignedTemplate.id;
+    saveState();
+  }
+  if (!assignedTemplate) {
+    invitationPreviewAccount = null;
+    status.classList.add('form-error');
+    status.textContent = gatheringTemplates.length
+      ? `You have ${gatheringTemplates.length} saved invitation templates for ${EVENT_DETAILS[viewedEventId].name}, but none is selected. Choose which template to use.`
+      : `Create an invitation template for ${EVENT_DETAILS[viewedEventId].name} before previewing it.`;
+    const configureButton = document.querySelector('#configureInvitationTemplate');
+    configureButton.textContent = gatheringTemplates.length ? 'Choose invitation template' : 'Create invitation template';
+    configureButton.hidden = false;
+    return;
+  }
   try {
-    invitationPreviewAccount = account;
-    document.querySelector('#invitationPreviewHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation`;
-    document.querySelector('#invitationPreviewAccount').textContent = account ? `Previewing the QR for ${account.name}. The account name is not printed.` : 'Previewing an explicit sample QR. No account name is printed.';
     const canvas = document.querySelector('#invitationCanvas');
     const model = await renderInvitation(canvas, account);
     const warnings = window.Invitation.overflowWarnings(canvas, model);
     document.querySelector('#invitationOverflowWarning').textContent = warnings.length ? `These values exceed their locked safe width: ${warnings.join(', ')}. Shorten them before downloading.` : '';
-    document.querySelector('#invitationPreviewDialog').showModal();
+    status.textContent = '';
+    canvasWrap.hidden = false;
+    downloadButton.disabled = !account?.qrToken;
   } catch (caught) {
     invitationPreviewAccount = null;
-    document.querySelector('#adminAccountError').textContent = `Unable to preview the invitation. ${caught.message}`;
+    status.classList.add('form-error');
+    status.textContent = `Unable to preview the invitation. ${caught.message}`;
   }
 }
 async function downloadInvitation(account) {
@@ -1048,7 +1089,7 @@ function renderInvitationSettings() {
   document.querySelector('#invitationRsvpDate').value = state.rsvpDate || invitationFallback.rsvpDate;
   document.querySelector('#invitationAddress1').value = state.addressLine1 || invitationFallback.addressLine1;
   document.querySelector('#invitationAddress2').value = state.addressLine2 || invitationFallback.addressLine2;
-  document.querySelector('#invitationTemplateAssignment').innerHTML = '<option value="">No template assigned</option>' + appState.invitationTemplates.map(template => `<option value="${escapeAttribute(template.id)}" ${template.id === state.invitationTemplateId ? 'selected' : ''}>${escapeHtml(template.name)}</option>`).join('');
+  document.querySelector('#invitationTemplateAssignment').innerHTML = '<option value="">No template assigned</option>' + invitationTemplatesForEvent().map(template => `<option value="${escapeAttribute(template.id)}" ${template.id === state.invitationTemplateId ? 'selected' : ''}>${escapeHtml(template.name)}</option>`).join('');
 }
 function openAccountsAdmin() {
   document.querySelector('#adminAccountError').textContent = '';
@@ -1144,6 +1185,12 @@ document.querySelector('#downloadInvitationPng').addEventListener('click', async
   if (invitationPreviewAccount) await downloadInvitation(invitationPreviewAccount);
   else showToast('Choose an invited account to download its invitation.');
 });
+document.querySelector('#configureInvitationTemplate').addEventListener('click', () => {
+  document.querySelector('#invitationPreviewDialog').close();
+  document.querySelector('#accountsDialog').close();
+  renderTemplateManager();
+  document.querySelector('#invitationTemplatesDialog').showModal();
+});
 document.querySelector('#downloadAllInvitations').addEventListener('click', async () => {
   if (!state.invitationTemplateId) { showToast('Assign an invitation template first.'); return; }
   for (const account of invitationAccounts()) { await downloadInvitation(account); await new Promise(resolve => setTimeout(resolve, 150)); }
@@ -1204,13 +1251,15 @@ async function uploadTemplateBackground(templateId, file) {
   return { ...metadata, url: templateAssetUrl(templateId), updatedAt: new Date().toISOString() };
 }
 function renderTemplateManager() {
+  document.querySelector('#invitationTemplatesHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation templates`;
   renderInvitationSettings();
   const list = document.querySelector('#invitationTemplateList');
-  list.innerHTML = appState.invitationTemplates.length ? appState.invitationTemplates.map(template => `<article><div><strong>${escapeHtml(template.name)}</strong><span>${template.background.width} × ${template.background.height}px</span></div><div><button type="button" data-template-edit="${escapeAttribute(template.id)}">Edit</button><button type="button" data-template-duplicate="${escapeAttribute(template.id)}">Duplicate</button><button type="button" data-template-delete="${escapeAttribute(template.id)}">Delete</button></div></article>`).join('') : '<p>No invitation templates yet.</p>';
+  const gatheringTemplates = invitationTemplatesForEvent();
+  list.innerHTML = gatheringTemplates.length ? gatheringTemplates.map(template => `<article><div><strong>${escapeHtml(template.name)}</strong><span>${template.background.width} × ${template.background.height}px</span></div><div><button type="button" data-template-edit="${escapeAttribute(template.id)}">Edit</button><button type="button" data-template-duplicate="${escapeAttribute(template.id)}">Duplicate</button><button type="button" data-template-delete="${escapeAttribute(template.id)}">Delete</button></div></article>`).join('') : `<p>No invitation templates for ${escapeHtml(EVENT_DETAILS[viewedEventId].name)} yet.</p>`;
   list.querySelectorAll('[data-template-edit]').forEach(button => button.addEventListener('click', () => openTemplateEditor(button.dataset.templateEdit)));
   list.querySelectorAll('[data-template-duplicate]').forEach(button => button.addEventListener('click', () => {
-    const source = appState.invitationTemplates.find(template => template.id === button.dataset.templateDuplicate);
-    appState.invitationTemplates.push(window.Invitation.duplicateTemplate(source)); saveState(); renderTemplateManager();
+    const source = gatheringTemplates.find(template => template.id === button.dataset.templateDuplicate);
+    appState.invitationTemplates.push({ ...window.Invitation.duplicateTemplate(source), eventId: viewedEventId }); saveState(); renderTemplateManager();
   }));
   list.querySelectorAll('[data-template-delete]').forEach(button => button.addEventListener('click', async () => {
     const id = button.dataset.templateDelete;
@@ -1231,8 +1280,11 @@ document.querySelector('#createTemplateButton').addEventListener('click', async 
   try {
     if (!name) throw new Error('Enter a template name.'); if (!file) throw new Error('Choose a background image.');
     const template = window.Invitation.createTemplate(name, { width: 1, height: 1, contentType: file.type, url: '' });
+    template.eventId = viewedEventId;
     template.background = await uploadTemplateBackground(template.id, file);
-    appState.invitationTemplates.push(template); saveState(); renderTemplateManager();
+    appState.invitationTemplates.push(template);
+    if (!invitationTemplatesForEvent().some(item => item.id === state.invitationTemplateId)) state.invitationTemplateId = template.id;
+    saveState(); renderTemplateManager();
     document.querySelector('#newTemplateName').value = ''; document.querySelector('#newTemplateBackground').value = ''; newTemplateBackgroundFile = null; updateDropzone(document.querySelector('#newTemplateDropzone'), null);
     openTemplateEditor(template.id, file);
   } catch (caught) { error.textContent = caught.message; }
@@ -1334,7 +1386,7 @@ async function loadTemplateBackgroundPreview(background, localFile = null) {
   }
 }
 function openTemplateEditor(id, localFile = null) {
-  const template = appState.invitationTemplates.find(item => item.id === id); if (!template) return;
+  const template = invitationTemplatesForEvent().find(item => item.id === id); if (!template) return;
   templateDraft = structuredClone(template); selectedTemplateFieldId = ''; pendingTemplateFieldKey = '';
   document.querySelector('#replaceTemplateBackground').value = ''; updateDropzone(document.querySelector('#replaceTemplateDropzone'), null);
   document.querySelector('#templateEditorHeading').textContent = templateDraft.name;
@@ -1385,7 +1437,7 @@ document.querySelector('#previewEditedTemplateButton').addEventListener('click',
   const selectedToken = document.querySelector('#templatePreviewAccount').value;
   const account = appState.accounts.find(item => item.qrToken === selectedToken) || null, canvas = document.querySelector('#invitationCanvas');
   invitationPreviewAccount = account; const model = window.Invitation.invitationModel(templateDraft, state, invitationQrUrl(account));
-  await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl)); document.querySelector('#invitationPreviewHeading').textContent = templateDraft.name; document.querySelector('#invitationPreviewAccount').textContent = account ? `Previewing ${account.name}'s existing account QR. The name is not printed.` : 'Previewing a sample QR.'; document.querySelector('#invitationPreviewDialog').showModal();
+  await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl)); document.querySelector('#invitationPreviewHeading').textContent = templateDraft.name; document.querySelector('#invitationPreviewAccount').textContent = account ? `Previewing ${account.name}'s existing account QR. The name is not printed.` : 'Previewing a sample QR.'; document.querySelector('#invitationPreviewStatus').textContent = ''; document.querySelector('#invitationPreviewStatus').classList.remove('form-error'); document.querySelector('#invitationCanvasWrap').hidden = false; document.querySelector('#configureInvitationTemplate').hidden = true; document.querySelector('#downloadInvitationPng').disabled = !account?.qrToken; document.querySelector('#invitationPreviewDialog').showModal();
 });
 function openEventsAdmin() {
   document.querySelector('#eventChoices').innerHTML = Object.entries(EVENT_DETAILS).map(([id, event]) => {
