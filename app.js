@@ -361,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -484,6 +484,9 @@ function normalizeState(saved) {
       loaded.events.wedding.registryUrl = loaded.events.wedding.registryUrl || DEFAULT_REGISTRY_URL;
       loaded.events.wedding.monetaryGiftUrl = typeof loaded.events.wedding.monetaryGiftUrl === 'string'
         ? loaded.events.wedding.monetaryGiftUrl
+        : '';
+      loaded.events.wedding.brideGroomContent = typeof loaded.events.wedding.brideGroomContent === 'string'
+        ? loaded.events.wedding.brideGroomContent
         : '';
       loaded.events.wedding.attireVideos = Array.isArray(loaded.events.wedding.attireVideos)
         ? loaded.events.wedding.attireVideos.filter(url => typeof url === 'string')
@@ -1135,7 +1138,8 @@ function render() {
   document.querySelectorAll('#registryAttireSection .guest-attire-requirements').forEach(requirements => {
     requirements.hidden = isWeddingPartyMember;
   });
-  if (!isWeddingPartyMember && selectedWeddingTab === 'party') selectedWeddingTab = 'attire';
+  if ((!isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostAuthenticated && selectedWeddingTab === 'couple')) selectedWeddingTab = 'attire';
+  const showingBrideGroomPage = isWedding && hostAuthenticated && selectedWeddingTab === 'couple';
   const showingWeddingPartyPage = isWeddingPartyMember && selectedWeddingTab === 'party';
   const showingAttirePage = isWedding && selectedWeddingTab === 'attire';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
@@ -1143,10 +1147,18 @@ function render() {
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     button.hidden = button.dataset.weddingTab === 'party' && !isWeddingPartyMember;
+    if (button.dataset.weddingTab === 'couple' && !hostAuthenticated) button.hidden = true;
     const isSelected = button.dataset.weddingTab === selectedWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
     button.tabIndex = isSelected ? 0 : -1;
   });
+  document.querySelector('#brideGroomSection').hidden = !showingBrideGroomPage;
+  if (showingBrideGroomPage) {
+    const brideGroomContent = document.querySelector('#brideGroomContent');
+    if (document.activeElement !== brideGroomContent) brideGroomContent.value = state.brideGroomContent || '';
+    document.querySelector('#brideGroomPreview').innerHTML = formatEditableText(brideGroomContent.value)
+      || '<p class="guest-empty">Your formatted preview will appear here.</p>';
+  }
   document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
   const weddingPartyMembers = state.weddingPartyMembers || [];
   if (hostAuthenticated) {
@@ -1353,6 +1365,16 @@ document.querySelector('#weddingPartyTabs').addEventListener('keydown', event =>
   selectedWeddingTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.weddingTab;
   render();
   document.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
+});
+document.querySelector('#brideGroomContent').addEventListener('input', event => {
+  document.querySelector('#brideGroomPreview').innerHTML = formatEditableText(event.target.value)
+    || '<p class="guest-empty">Your formatted preview will appear here.</p>';
+});
+document.querySelector('#brideGroomContent').addEventListener('change', event => {
+  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  state.brideGroomContent = event.target.value;
+  saveState();
+  showToast('Bride & Groom page updated.');
 });
 document.querySelector('#hostWeddingPartyView').addEventListener('change', event => {
   if (!hostAuthenticated) return;
