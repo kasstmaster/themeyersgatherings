@@ -124,6 +124,20 @@ test('selected wedding detail tabs use white text inside a visible tab', async (
   assert.match(styles, /\.matron-info-tabs button\[aria-selected="true"\]\{[^}]*border:1px solid var\(--gold\)[^}]*background:var\(--orange\)[^}]*color:#fff/);
 });
 
+test('The Perfect Experience is an editable Matron of Honor tab', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /Responsibilities<\/button>\s*<button[^>]*data-matron-tab="experience"[^>]*>The Perfect Experience<\/button>/);
+  assert.match(html, /id="perfectExperiencePanel"[^>]*aria-label="The Perfect Experience"/);
+  assert.match(html, /id="adminPerfectExperienceContent"/);
+  assert.match(javascript, /perfectExperienceContent: ''/);
+  assert.match(javascript, /formatEditableText\(state\.perfectExperienceContent\)/);
+  assert.match(javascript, /state\.perfectExperienceContent = event\.target\.value/);
+});
+
 test('host can preview the wedding as a general guest without selecting an account', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
@@ -245,7 +259,7 @@ test('bachelorette party brief replaces the Matron of Honor duties panel', async
   assert.doesNotMatch(html, /id="bacheloretteInfoDialog"/);
   assert.match(html, /relaxed girls' getaway[\s\S]*The Most Important Rule[\s\S]*cozy two-night girls' getaway/);
   assert.match(javascript, /isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember\?\.title === 'Matron of Honor'/);
-  assert.match(javascript, /weddingPartyDetails'\)\.hidden = isViewingMatron && selectedMatronTab === 'bachelorette'/);
+  assert.match(javascript, /weddingPartyDetails'\)\.hidden = isViewingMatron && selectedMatronTab !== 'duties'/);
   assert.match(styles, /\.wedding-party-details\[hidden\]\{display:none\}/);
   assert.match(javascript, /navigator\.clipboard\.writeText\(text\)/);
   assert.match(javascript, /mailto:\?subject=/);
