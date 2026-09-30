@@ -1476,7 +1476,11 @@ function openAdmin() {
   document.querySelector('#adminAttireFields').hidden = !isWedding;
   document.querySelector('#adminRegistryUrl').value = state.registryUrl || '';
   document.querySelector('#adminMonetaryGiftUrl').value = state.monetaryGiftUrl || '';
-  if (isWedding) renderAdminAttireVideos();
+  if (isWedding) {
+    renderWeddingPartyDescriptionAdmin();
+    renderWeddingPartyAttireAdmin();
+    renderAdminAttireVideos();
+  }
   document.querySelector('#menuAdminFields').hidden = isWedding;
   document.querySelector('#adminNewUnit').innerHTML = unitOptions();
   renderQuantityUnits();
@@ -1499,6 +1503,15 @@ function renderAdminAttireVideos() {
   document.querySelector('#adminAttireVideos').innerHTML = videos.length
     ? videos.map((url, index) => `<div class="admin-video-row"><a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Video ${index + 1}</a><button type="button" data-remove-attire-video="${index}" aria-label="Remove video ${index + 1}">Remove</button></div>`).join('')
     : '<p class="guest-empty">No attire videos have been added.</p>';
+}
+function renderWeddingPartyDescriptionAdmin() {
+  state.weddingPartyDescriptions ??= structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS);
+  document.querySelector('#adminWeddingPartyDescriptions').innerHTML = WEDDING_PARTY_TITLES.map(title => `<label class="wedding-party-description-editor"><span>${escapeHtml(title.value)}</span><textarea data-wedding-party-description="${escapeAttribute(title.value)}" aria-label="Description for ${escapeAttribute(title.value)}" placeholder="Description and instructions for this title">${escapeHtml(state.weddingPartyDescriptions[title.value] || '')}</textarea></label>`).join('');
+  document.querySelectorAll('[data-wedding-party-description]').forEach(input => input.addEventListener('change', event => {
+    const title = event.target.dataset.weddingPartyDescription;
+    state.weddingPartyDescriptions[title] = event.target.value.trim();
+    saveState(); showToast(`${title} description updated for everyone with this title.`);
+  }));
 }
 function moveAdminItem(itemId, direction) {
   const itemIndex = state.items.findIndex(item => item.id === itemId);
@@ -1607,14 +1620,6 @@ function openAccountsAdmin() {
         saveState(); showToast(`${member.name}'s title updated.`);
       });
     });
-    state.weddingPartyDescriptions ??= structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS);
-    document.querySelector('#adminWeddingPartyDescriptions').innerHTML = WEDDING_PARTY_TITLES.map(title => `<label class="wedding-party-description-editor"><span>${escapeHtml(title.value)}</span><textarea data-wedding-party-description="${escapeAttribute(title.value)}" aria-label="Description for ${escapeAttribute(title.value)}" placeholder="Description and instructions for this title">${escapeHtml(state.weddingPartyDescriptions[title.value] || '')}</textarea></label>`).join('');
-    document.querySelectorAll('[data-wedding-party-description]').forEach(input => input.addEventListener('change', event => {
-      const title = event.target.dataset.weddingPartyDescription;
-      state.weddingPartyDescriptions[title] = event.target.value.trim();
-      saveState(); showToast(`${title} description updated for everyone with this title.`);
-    }));
-    renderWeddingPartyAttireAdmin();
     const titleSelect = document.querySelector('#adminWeddingPartyTitle');
     const usedTitles = new Set(state.weddingPartyMembers.map(member => member.title));
     titleSelect.innerHTML = '<option value="">Select title</option>' + WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${!title.multiple && usedTitles.has(title.value) ? 'disabled' : ''}>${escapeHtml(title.value)}${!title.multiple && usedTitles.has(title.value) ? ' (assigned)' : ''}</option>`).join('');
