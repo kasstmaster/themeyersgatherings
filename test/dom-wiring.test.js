@@ -72,6 +72,17 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding'\)/);
 });
 
+test('wedding attire appears before the registry and inactive page tabs are white', async () => {
+  const [html, styles] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  ]);
+
+  assert.ok(html.indexOf('id="registryAttireSection"') < html.indexOf('id="registrySection"'));
+  assert.match(styles, /\.wedding-party-tabs button\{[^}]*color:#fff/);
+  assert.match(styles, /\.wedding-party-tabs button\[aria-selected="true"\]\{[^}]*color:var\(--orange\)/);
+});
+
 test('host can preview the wedding as a general guest without selecting an account', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
@@ -94,6 +105,14 @@ test('private attire galleries are rendered only for wedding party viewers', asy
   assert.match(javascript, /renderWeddingPartyAttireImages\(isWeddingPartyMember && !showingWeddingPartyPage\)/);
   assert.match(javascript, /const entries = canView && Array\.isArray\(images\[section\]\) \? images\[section\] : \[\]/);
   assert.match(html, /id="adminWeddingPartyAttireCaption"[\s\S]*id="adminWeddingPartyAttireFile"/);
+});
+
+test('wedding party attire images show the complete upload with rounded edges', async () => {
+  const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(styles, /\.wedding-party-attire-gallery img\{[^}]*width:100%;height:auto;[^}]*border-radius:5px/);
+  assert.match(styles, /\.wedding-party-attire-image-list img\{[^}]*object-fit:contain;[^}]*border-radius:4px/);
+  assert.doesNotMatch(styles, /\.wedding-party-attire-gallery img\{[^}]*object-fit:cover/);
 });
 
 test('wedding party viewers keep shopping links but do not see guest attire requirements', async () => {
