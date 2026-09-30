@@ -95,6 +95,20 @@ test('private attire image picker supports clicking and drag and drop', async ()
   assert.match(javascript, /uploadWeddingPartyAttireImage\(crypto\.randomUUID\(\), weddingPartyAttireFile\)/);
 });
 
+test('private attire notes and image captions are unlimited and editable', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /id="adminWeddingPartyLadiesAttireNote"[\s\S]*id="adminWeddingPartyGentlemenAttireNote"/);
+  assert.doesNotMatch(html.match(/id="adminWeddingPartyCaption"[^>]*|id="adminWeddingPartyAttireCaption"[^>]*/)?.[0] || '', /maxlength/);
+  assert.match(javascript, /weddingPartyAttireNotes: \{ ladies: '', gentlemen: '' \}/);
+  assert.match(javascript, /class="wedding-party-attire-note"/);
+  assert.match(javascript, /data-party-attire-caption=/);
+  assert.match(javascript, /image\.caption = input\.value\.trim\(\)/);
+});
+
 test('wedding party manager only accepts people from wedding-invited accounts', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
