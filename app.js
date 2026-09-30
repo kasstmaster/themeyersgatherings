@@ -377,6 +377,11 @@ function activeEventIds(source = appState) {
 
 function availableEventIds(accountName = guestName) {
   const ids = activeEventIds();
+  if (isViewingAsGuest()) {
+    if (hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW) return ids.filter(id => id === viewedEventId);
+    const previewAccount = findAccount(hostWeddingPartyViewName);
+    return previewAccount ? ids.filter(id => accountCanSignIn(previewAccount, id)) : ids.filter(id => id === viewedEventId);
+  }
   if (hostAuthenticated || accountName === HOST_DISPLAY_NAME) return ids;
   const account = findAccount(accountName);
   return account ? ids.filter(id => accountCanSignIn(account, id)) : [];
@@ -604,14 +609,16 @@ function renderSyncStatus() {
   const status = document.querySelector('#syncStatus');
   if (!status) return;
   if (!SHARED_STATE_URL) {
+    status.hidden = false;
     status.className = 'sync-status local-only';
     status.innerHTML = '<strong>Saved on this device only</strong>Menu items appear everywhere because the defaults are published with the site. Accounts, claims, and RSVPs will not reach other devices until the shared-state Worker URL is configured.';
     return;
   }
+  status.hidden = !sharedSaveError;
   status.className = `sync-status${sharedSaveError ? ' error' : ''}`;
   status.innerHTML = sharedSaveError
     ? '<strong>Cross-device sync needs attention</strong>The latest change is safe on this device and will be retried after the connection is restored.'
-    : `<strong>Cross-device saving is on</strong>${sharedSavePending || sharedSaveInProgress ? 'Saving the complete account, claim, RSVP, event, and menu state…' : 'Accounts, claims, RSVPs, events, and menus use the same shared save.'}`;
+    : '';
 }
 function queueSharedStateSave() {
   if (!SHARED_STATE_URL) return;
@@ -1005,7 +1012,13 @@ function updateHeaderImage(event) {
   headerImage.addEventListener('error', () => { headerImage.hidden = true; }, { once: true });
   headerImage.src = nextSource;
 }
-function updateHostToolsPanel() { document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated; }
+function isViewingAsGuest() { return hostAuthenticated && Boolean(hostWeddingPartyViewName); }
+function isHostView() { return hostAuthenticated && !isViewingAsGuest(); }
+function updateHostToolsPanel() {
+  const viewingAsGuest = isViewingAsGuest();
+  document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated || viewingAsGuest;
+  document.querySelector('#cancelViewAsButton').hidden = !viewingAsGuest;
+}
 function setHostPasswordMode(enabled) {
   const guestFields = document.querySelector('#guestSignInFields');
   const hostFields = document.querySelector('#hostSignInFields');
@@ -1113,12 +1126,19 @@ function renderWeddingPartyAttireImages(canView) {
 function render() {
   const event = EVENT_DETAILS[viewedEventId];
   const isWedding = event.registryOnly === true;
-  const isPreview = hostAuthenticated && !activeEventIds().includes(viewedEventId);
+  const hostView = isHostView();
+  const viewingAsGuest = isViewingAsGuest();
+  const isPreview = hostView && !activeEventIds().includes(viewedEventId);
   const signedInAccount = document.querySelector('#signedInAccount');
-  signedInAccount.hidden = !guestName;
-  document.querySelector('#signedInAccountName').textContent = guestName === HOST_DISPLAY_NAME
-    ? HOST_DISPLAY_NAME
-    : invitedAccountDisplayName(guestName);
+  const previewAccount = viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW
+    ? findAccount(hostWeddingPartyViewName)
+    : null;
+  signedInAccount.hidden = viewingAsGuest ? !previewAccount : !guestName;
+  document.querySelector('#signedInAccountName').textContent = previewAccount
+    ? invitedAccountDisplayName(previewAccount.name)
+    : guestName === HOST_DISPLAY_NAME
+      ? HOST_DISPLAY_NAME
+      : invitedAccountDisplayName(guestName);
   document.body.className = `theme-${event.theme}`;
   document.title = `The Meyers ${event.name}`;
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
@@ -1143,13 +1163,13 @@ function render() {
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');
   const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => normalizeAccountName(member.name) === normalizeAccountName(signedInPersonName));
-  const isWeddingPartyMember = isWedding && ((hostAuthenticated && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW) || Boolean(signedInWeddingPartyMember));
+  const isWeddingPartyMember = isWedding && ((viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW) || (!hostAuthenticated && Boolean(signedInWeddingPartyMember)));
   document.querySelectorAll('#registryAttireSection .guest-attire-requirements').forEach(requirements => {
     requirements.hidden = isWeddingPartyMember;
   });
   if (isWeddingPartyMember && selectedWeddingTab === 'attire') selectedWeddingTab = 'party';
-  if ((!isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostAuthenticated && selectedWeddingTab === 'couple')) selectedWeddingTab = 'attire';
-  const showingBrideGroomPage = isWedding && hostAuthenticated && selectedWeddingTab === 'couple';
+  if ((!isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostView && selectedWeddingTab === 'couple')) selectedWeddingTab = 'attire';
+  const showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple';
   const showingWeddingPartyPage = isWeddingPartyMember && selectedWeddingTab === 'party';
   const showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire';
   const showingAttirePage = isWedding && ((!isWeddingPartyMember && selectedWeddingTab === 'attire') || showingPartyAttirePage);
@@ -1159,7 +1179,7 @@ function render() {
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     button.hidden = (button.dataset.weddingTab === 'party' && !isWeddingPartyMember)
       || (button.dataset.weddingTab === 'attire' && isWeddingPartyMember);
-    if (button.dataset.weddingTab === 'couple' && !hostAuthenticated) button.hidden = true;
+    if (button.dataset.weddingTab === 'couple' && !hostView) button.hidden = true;
     const isSelected = button.dataset.weddingTab === selectedWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
     button.tabIndex = isSelected ? 0 : -1;
@@ -1171,10 +1191,7 @@ function render() {
   }
   document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
   const weddingPartyMembers = state.weddingPartyMembers || [];
-  if (hostAuthenticated) {
-    if (hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW && !weddingPartyMembers.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = weddingPartyMembers[0]?.name || '';
-  }
-  const viewedWeddingPartyMember = hostAuthenticated
+  const viewedWeddingPartyMember = viewingAsGuest
     ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
     : signedInWeddingPartyMember;
   const visibleWeddingPartyMembers = [viewedWeddingPartyMember].filter(Boolean);
@@ -1195,9 +1212,7 @@ function render() {
       || '<p class="guest-empty">No Perfect Experience details have been added yet.</p>';
   }
   document.querySelector('#bacheloretteInfoPanel').hidden = !isViewingMatron || selectedMatronTab !== 'bachelorette';
-  document.querySelector('#weddingPartyIntro').textContent = hostAuthenticated && viewedWeddingPartyMember
-    ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
-    : isViewingMatron && selectedMatronTab === 'bachelorette'
+  document.querySelector('#weddingPartyIntro').textContent = isViewingMatron && selectedMatronTab === 'bachelorette'
       ? 'Your bachelorette party preferences and planning information are below.'
       : showingWeddingPartyPage && selectedMatronTab === 'experience'
         ? 'Everything you need to help create the perfect experience is below.'
@@ -1222,12 +1237,12 @@ function render() {
   registryButton.href = state.registryUrl || '#';
   registryButton.classList.toggle('disabled', !state.registryUrl);
   registryButton.setAttribute('aria-disabled', String(!state.registryUrl));
-  registryButton.textContent = state.registryUrl ? 'View our registry' : (hostAuthenticated ? 'Add registry link in host tools' : 'Registry coming soon');
+  registryButton.textContent = state.registryUrl ? 'View our registry' : (hostView ? 'Add registry link in host tools' : 'Registry coming soon');
   const monetaryGiftButton = document.querySelector('#monetaryGiftButton');
   monetaryGiftButton.href = state.monetaryGiftUrl || '#';
   monetaryGiftButton.classList.toggle('disabled', !state.monetaryGiftUrl);
   monetaryGiftButton.setAttribute('aria-disabled', String(!state.monetaryGiftUrl));
-  monetaryGiftButton.textContent = state.monetaryGiftUrl ? 'Give a monetary gift' : (hostAuthenticated ? 'Add monetary gift link in host tools' : 'Monetary gifts coming soon');
+  monetaryGiftButton.textContent = state.monetaryGiftUrl ? 'Give a monetary gift' : (hostView ? 'Add monetary gift link in host tools' : 'Monetary gifts coming soon');
   let previewBanner = document.querySelector('#previewBanner');
   if (!previewBanner) {
     previewBanner = document.createElement('div');
@@ -1257,13 +1272,13 @@ function render() {
   document.querySelector('#invitedCount').textContent = invitedAccounts.length;
   document.querySelector('#remainingCount').textContent = needed;
   const guestListButton = document.querySelector('#guestListButton');
-  guestListButton.disabled = !hostAuthenticated;
-  guestListButton.title = hostAuthenticated ? 'View guest names and RSVP details' : 'Guest details are private to the host';
-  guestListButton.setAttribute('aria-label', hostAuthenticated ? `${guests} guests attending; view private guest list` : `${guests} guests attending; details visible only to the host`);
+  guestListButton.disabled = !hostView;
+  guestListButton.title = hostView ? 'View guest names and RSVP details' : 'Guest details are private to the host';
+  guestListButton.setAttribute('aria-label', hostView ? `${guests} guests attending; view private guest list` : `${guests} guests attending; details visible only to the host`);
   const invitedListButton = document.querySelector('#invitedListButton');
-  invitedListButton.disabled = !hostAuthenticated;
-  invitedListButton.title = hostAuthenticated ? 'View invited families' : 'Invited family details are private to the host';
-  invitedListButton.setAttribute('aria-label', hostAuthenticated ? `${invitedAccounts.length} families invited; view private invitation list` : `${invitedAccounts.length} families invited; details visible only to the host`);
+  invitedListButton.disabled = !hostView;
+  invitedListButton.title = hostView ? 'View invited families' : 'Invited family details are private to the host';
+  invitedListButton.setAttribute('aria-label', hostView ? `${invitedAccounts.length} families invited; view private invitation list` : `${invitedAccounts.length} families invited; details visible only to the host`);
 }
 
 function renderEventDock() {
@@ -1280,7 +1295,7 @@ function renderEventDock() {
 function renderDish(item) {
   const mine = guestName && item.claims.includes(guestName);
   const remaining = Math.max(0, item.needed - item.claims.length);
-  const claimants = hostAuthenticated
+  const claimants = isHostView()
     ? `<span class="dish-claimants">${[...new Set(item.claims)].map(name => escapeHtml(contributionDisplayName(name))).join(', ')}</span>`
     : '';
   const status = item.optional ? 'Optional' : (remaining ? `${remaining} of ${formatQuantity(item.needed, item)} still needed` : '');
@@ -2037,13 +2052,10 @@ function openEventsAdmin() {
     return `<div class="event-choice"><div><strong>${event.name}</strong><span>${formatted}${active ? ' · Active' : ' · Hidden'}</span></div><div class="event-choice-actions"><button class="preview-event" type="button" data-preview-event="${id}" ${previewing ? 'disabled' : ''}>${previewing ? 'Previewing' : 'Preview'}</button><button type="button" data-toggle-event="${id}" class="${active ? 'deactivate-event' : ''}" ${lastActive ? 'disabled title="At least one event must remain active"' : ''}>${active ? 'Deactivate' : 'Activate'}</button></div></div>`;
   }).join('');
   document.querySelectorAll('[data-preview-event]').forEach(button => button.addEventListener('click', () => {
-    viewedEventId = button.dataset.previewEvent;
-    state = appState.events[viewedEventId];
-    guestName = HOST_DISPLAY_NAME;
+    const eventId = button.dataset.previewEvent;
     document.querySelector('#eventsDialog').close();
-    render();
-    showSignedInDestination();
-    showToast(`Previewing ${EVENT_DETAILS[viewedEventId].name}.`);
+    enterEvent(eventId);
+    showToast(`Previewing ${EVENT_DETAILS[eventId].name}.`);
   }));
   document.querySelectorAll('[data-toggle-event]').forEach(button => button.addEventListener('click', () => {
     appState.events[viewedEventId] = state;
@@ -2104,6 +2116,13 @@ document.querySelector('#openWeddingPartyPreview').addEventListener('click', () 
   document.querySelector('#weddingPartyPreviewDialog').close();
   selectedWeddingTab = hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW ? 'attire' : 'party';
   enterEvent('wedding', { preserveWeddingView: true });
+});
+document.querySelector('#cancelViewAsButton').addEventListener('click', () => {
+  hostWeddingPartyViewName = '';
+  selectedWeddingTab = 'couple';
+  selectedMatronTab = 'experience';
+  render();
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 });
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 function anyListSyncErrorMessage(status, errorCode) {

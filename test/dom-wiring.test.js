@@ -19,6 +19,18 @@ test('statically registered event targets exist in the page', async () => {
   assert.deepEqual(missingIds, [], `Event listeners reference missing page elements: ${missingIds.join(', ')}`);
 });
 
+test('sync status stays hidden unless shared saving needs attention', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /id="syncStatus"[^>]*hidden/);
+  assert.match(javascript, /status\.hidden = false;[\s\S]*status\.className = 'sync-status local-only'/);
+  assert.match(javascript, /status\.hidden = !sharedSaveError/);
+  assert.doesNotMatch(javascript, /Cross-device saving is on/);
+});
+
 test('template editor renders and refreshes a real QR preview', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
@@ -62,7 +74,7 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(html, /id="weddingPartyTabs"[\s\S]*>Wedding Party<[\s\S]*>Attire<[\s\S]*>Registry</);
   assert.match(javascript, /signedInPersonName = accountName/);
   assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => normalizeAccountName\(member\.name\) === normalizeAccountName\(signedInPersonName\)\)/);
-  assert.match(javascript, /hostAuthenticated && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
+  assert.match(javascript, /viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWedding/);
   assert.match(javascript, /visibleWeddingPartyMembers = \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
@@ -98,8 +110,8 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.ok(weddingEditor.indexOf('Bride &amp; Groom page') < weddingEditor.indexOf('Title descriptions'));
   const editor = html.match(/<textarea id="adminBrideGroomContent"[^>]*>/)?.[0] || '';
   assert.doesNotMatch(editor, /maxlength/);
-  assert.match(javascript, /button\.dataset\.weddingTab === 'couple' && !hostAuthenticated/);
-  assert.match(javascript, /showingBrideGroomPage = isWedding && hostAuthenticated && selectedWeddingTab === 'couple'/);
+  assert.match(javascript, /button\.dataset\.weddingTab === 'couple' && !hostView/);
+  assert.match(javascript, /showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple'/);
   assert.match(javascript, /brideGroomContent'\)\.innerHTML = formatEditableText\(state\.brideGroomContent\)/);
   assert.match(javascript, /#adminBrideGroomContent'\)\.addEventListener\('change'/);
   assert.match(javascript, /state\.brideGroomContent = event\.target\.value/);
@@ -170,6 +182,21 @@ test('host can preview the wedding as a general guest without selecting an accou
   assert.match(javascript, />General guest<\/option>/);
   assert.match(javascript, /hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
   assert.match(javascript, /hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW \? 'attire' : 'party'/);
+});
+
+test('View As removes host-only UI and provides a persistent return to Host View', async () => {
+  const [html, javascript, styles] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /id="cancelViewAsButton"[^>]*hidden>Cancel view<\/button>/);
+  assert.match(javascript, /function isHostView\(\) \{ return hostAuthenticated && !isViewingAsGuest\(\); \}/);
+  assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated \|\| viewingAsGuest/);
+  assert.match(javascript, /cancelViewAsButton'\)\.hidden = !viewingAsGuest/);
+  assert.match(javascript, /#cancelViewAsButton'[\s\S]*hostWeddingPartyViewName = '';[\s\S]*selectedWeddingTab = 'couple'/);
+  assert.match(styles, /\.cancel-view-as\{[^}]*position:fixed;[^}]*top:16px;right:16px;[^}]*z-index:30/);
 });
 
 test('private attire galleries are rendered only for wedding party viewers', async () => {
@@ -294,6 +321,16 @@ test('wedding defaults match each signed-in audience', async () => {
   assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*hostAuthenticated \? 'couple' : partyMember \? 'party' : 'attire'/);
   assert.match(javascript, /selectedMatronTab = 'experience'/);
   assert.match(javascript, /enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
+});
+
+test('choosing Wedding from Gatherings restores the host Bride & Groom tab', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const eventPreviewHandler = javascript.match(/querySelectorAll\('\[data-preview-event\]'\)[\s\S]*?\n  \}\)\);/)?.[0] || '';
+
+  assert.match(eventPreviewHandler, /const eventId = button\.dataset\.previewEvent/);
+  assert.match(eventPreviewHandler, /enterEvent\(eventId\)/);
+  assert.doesNotMatch(eventPreviewHandler, /viewedEventId = button\.dataset\.previewEvent[\s\S]*render\(\)/);
+  assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*selectedWeddingTab = hostAuthenticated \? 'couple'/);
 });
 
 test('host tools are persistent buttons directly below the signed-in household', async () => {
