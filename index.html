@@ -387,7 +387,6 @@
         <section id="weddingPartyAdmin" class="wedding-party-admin" aria-labelledby="weddingPartyAdminHeading" hidden>
           <h3 id="weddingPartyAdminHeading">Wedding party members</h3>
           <p>Add an invited person by the same first and last name they use to sign in.</p>
-          <p>Descriptions support Markdown-style formatting: start a line with <code>-</code> for a bullet, use <code>**bold**</code>, <code>*italics*</code>, or <code>`code`</code>.</p>
           <div id="adminWeddingPartyMembers" class="wedding-party-member-list"></div>
           <div class="wedding-party-add">
             <input id="adminWeddingPartyFirstName" placeholder="First name" maxlength="60" aria-label="Wedding party member first name" />
@@ -395,10 +394,12 @@
             <select id="adminWeddingPartyTitle" aria-label="Wedding party title">
               <option value="">Select title</option>
             </select>
-            <textarea id="adminWeddingPartyDescription" placeholder="Description (supports bullets, **bold**, and *italics*)" aria-label="Wedding party title description"></textarea>
             <button id="adminAddWeddingPartyMember" type="button">Add member</button>
           </div>
           <p class="form-error" id="adminWeddingPartyError" role="alert"></p>
+          <h3>Title descriptions</h3>
+          <p>Edit a title once to update its description for every person assigned that title. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, and <code>`code`</code>.</p>
+          <div id="adminWeddingPartyDescriptions" class="wedding-party-description-editors"></div>
         </section>
         <section class="anylist-sync" aria-label="AnyList account sync">
           <br><button id="syncAnyListButton" type="button">Sync AnyList Address Book</button>

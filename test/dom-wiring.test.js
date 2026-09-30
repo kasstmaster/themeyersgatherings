@@ -66,7 +66,8 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWeddingPartyMember/);
   assert.match(javascript, /visibleWeddingPartyMembers = \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
-  assert.match(javascript, /formatWeddingPartyDescription\(member\.description\)/);
+  assert.match(javascript, /state\.weddingPartyDescriptions\?\.\[member\.title\]/);
+  assert.match(javascript, /formatWeddingPartyDescription\(description\)/);
   assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Preview wedding party view/);
   assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding'\)/);
 });
@@ -77,19 +78,15 @@ test('wedding party manager only accepts people from wedding-invited accounts', 
 
   assert.match(addHandler, /accountNameMatches\(name, item\.name\)/);
   assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
-  assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ name, title: selectedTitle\.value, description:/);
+  assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ name, title: selectedTitle\.value \}\)/);
 });
 
-test('wedding party descriptions do not impose a character limit', async () => {
-  const [html, javascript] = await Promise.all([
-    readFile(new URL('../index.html', import.meta.url), 'utf8'),
-    readFile(new URL('../app.js', import.meta.url), 'utf8')
-  ]);
-  const newMemberDescription = html.match(/<textarea id="adminWeddingPartyDescription"[^>]*>/)?.[0] || '';
-  const existingMemberDescription = javascript.match(/<textarea class="wedding-party-description-input"[^>]*>/)?.[0] || '';
+test('wedding party descriptions are shared and editable by title', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
-  assert.ok(newMemberDescription, 'the new wedding party member description field should exist');
-  assert.ok(existingMemberDescription, 'the existing wedding party member description field should exist');
-  assert.doesNotMatch(newMemberDescription, /\bmaxlength=/i);
-  assert.doesNotMatch(existingMemberDescription, /\bmaxlength=/i);
+  assert.match(javascript, /const DEFAULT_WEDDING_PARTY_DESCRIPTIONS = \{[\s\S]*'Matron of Honor'[\s\S]*Officiant/);
+  assert.match(javascript, /id="adminWeddingPartyDescriptions"|#adminWeddingPartyDescriptions/);
+  assert.match(javascript, /data-wedding-party-description=/);
+  assert.match(javascript, /state\.weddingPartyDescriptions\[title\] = event\.target\.value\.trim\(\)/);
+  assert.doesNotMatch(javascript.match(/data-wedding-party-description=[\s\S]*?<\/label>/)?.[0] || '', /\bmaxlength=/i);
 });
