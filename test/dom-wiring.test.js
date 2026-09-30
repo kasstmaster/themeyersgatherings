@@ -83,6 +83,17 @@ test('private attire galleries are rendered only for wedding party viewers', asy
   assert.match(html, /id="adminWeddingPartyAttireCaption"[\s\S]*id="adminWeddingPartyAttireFile"/);
 });
 
+test('wedding party viewers keep shopping links but do not see guest attire requirements', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.equal((html.match(/class="guest-attire-requirements"/g) || []).length, 2);
+  assert.match(html, /guest-attire-requirements[\s\S]*Shop Pre-Loved[\s\S]*Shop Affordable New/);
+  assert.match(javascript, /querySelectorAll\('#registryAttireSection \.guest-attire-requirements'\)[\s\S]*requirements\.hidden = isWeddingPartyMember/);
+});
+
 test('private attire image picker supports clicking and drag and drop', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
@@ -107,6 +118,17 @@ test('private attire notes and image captions are unlimited and editable', async
   assert.match(javascript, /class="wedding-party-attire-note"/);
   assert.match(javascript, /data-party-attire-caption=/);
   assert.match(javascript, /image\.caption = input\.value\.trim\(\)/);
+  assert.match(javascript, /<figcaption>\$\{formatEditableText\(image\.caption\)\}<\/figcaption>/);
+  assert.match(javascript, /class="wedding-party-attire-note">\$\{formatEditableText\(note\)\}/);
+});
+
+test('all editable wedding party copy supports safe Markdown formatting', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+
+  assert.match(javascript, /function formatWeddingPartyDescription\(value\)/);
+  assert.match(javascript, /replace\(\/\\\*\\\*\(\.\+\?\)\\\*\\\*\/g, '<strong>\$1<\/strong>'\)/);
+  assert.match(javascript, /output\.push\(`<li>\$\{formatInline/);
+  assert.match(javascript, /function formatEditableText\(value\) \{ return formatWeddingPartyDescription\(value\); \}/);
 });
 
 test('wedding party manager only accepts people from wedding-invited accounts', async () => {
