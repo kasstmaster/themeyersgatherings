@@ -10,16 +10,275 @@ const DEFAULT_CHRISTMAS_DATE = '2026-12-25';
 const DEFAULT_WEDDING_DATE = '2027-08-10';
 const DEFAULT_REGISTRY_URL = 'https://www.amazon.com/wedding/share/kassandraandsteven';
 const WEDDING_PARTY_TITLES = [
-  { value: 'Maid/Matron of Honor', multiple: false },
+  { value: 'Matron of Honor', multiple: false },
   { value: 'Best Man', multiple: false },
   { value: 'Bridesmaid', multiple: true },
-  { value: 'Groomsmen', multiple: true },
+  { value: 'Groomsman', multiple: true },
   { value: 'Ring Bearer', multiple: true },
   { value: 'Flower Girl', multiple: true },
-  { value: 'Usher', multiple: true },
-  { value: 'Junior Attendant', multiple: true },
+  { value: 'Ushers', multiple: true },
   { value: 'Officiant', multiple: false }
 ];
+const DEFAULT_WEDDING_PARTY_DESCRIPTIONS = {
+  'Matron of Honor': `**Planning & bride support**
+- Be the bride’s main bridal-party contact.
+- Help with DIY wedding projects.
+- Keep track of important bridal-party deadlines.
+**Bridal party**
+- Communicate important information to bridesmaids.
+- Make sure bridesmaids know deadlines for dresses, alterations, shoes, rehearsal, arrival times, etc.
+- Answer routine bridal-party questions so nothing goes through the bride.
+- Help coordinate bridesmaid dresses/accessories.
+- Make sure everyone knows the wedding-day schedule.
+- Help resolve minor bridal-party problems without involving the bride unnecessarily.
+**Bridal shower**
+- Help choose the date and location.
+- Help with invitations and RSVPs.
+- Coordinate food, décor and games if applicable.
+- Help set up and clean up.
+- Keep track of gifts and who gave them while the bride opens presents.
+- Help transport gifts afterward.
+**Bachelorette party**
+- Take the lead on planning or coordinate with the bridesmaids.
+- Discuss the bride's preferred type of celebration and budget.
+- Coordinate everyone's availability.
+- Make reservations/bookings (if applicable).
+- Communicate costs and itinerary.
+- Organize decorations, games, food, transportation, etc.
+- Make sure the plans actually reflect what the bride wants.
+- Keep an eye on the bride and group during the event.
+**Wedding week & rehearsal**
+- Attend the ceremony rehearsal.
+- Attend the rehearsal dinner.
+- Help make sure bridesmaids know exactly where to be and when.
+- Confirm everyone has their dresses, shoes and accessories.
+- Help with any final DIY/setup tasks you've specifically agreed upon.
+- Help prepare or organize the bride's wedding-day necessities.
+- Know the basic wedding-day timeline.
+- Know who the important vendors/contacts are in case something needs to be communicated.
+- Prepare speech/toast.
+**Getting ready**
+- Help keep the getting-ready room organized.
+- Make sure the bride eats and drinks.
+- Help field nonessential questions.
+- Make sure the bride has everything she needs before leaving.
+- Carry an emergency kit.
+- Help keep the bridal party moving according to schedule.
+- Make sure bouquets and personal items aren't forgotten.
+- Help keep unnecessary problems away from the bride.
+**Ceremony**
+- Arrange/fluff the bride's train and veil once she reaches the altar.
+- Hold the bride's bouquet during portions of the ceremony when necessary.
+- Straighten the dress/train when needed.
+- Sign the marriage license as a witness if requested and permitted under local requirements.
+- Help bustle or manage the dress immediately afterward if needed.
+**Photos & cocktail hour**
+- Help gather bridesmaids/family members for photographs.
+- Make sure the bride's dress, veil and bouquet look right.
+- Carry or temporarily hold the bride's belongings.
+- Help the bride transition from ceremony to portraits/reception.
+**Reception**
+- Give the Maid of Honor toast if the couple wants one.
+- Help bustle the bride's gown.
+- Help with bathroom trips if the dress makes them difficult.
+- Keep an eye on the bride's bouquet, phone and personal belongings.
+- Encourage the bridal party to participate when appropriate.
+- Help keep the bride informed about important upcoming moments without making her manage the timeline herself.
+**End of the night**
+- Help collect the bride's personal belongings.
+- Make sure her phone, purse, shoes, accessories, etc. don't get left behind.
+- Help ensure cards and gifts go to the designated secure person/location rather than personally assuming responsibility for them.
+- Make sure the couple has whatever they need before leaving.
+**After the wedding**
+- Return rented attire/items if previously arranged.
+- Help transport wedding items if needed.
+- Help with dress preservation arrangements if the bride asks.`,
+  'Best Man': `**Before the wedding**
+- Be the groom’s main wedding-party contact.
+- Communicate important information to the groomsmen.
+- Make sure groomsmen know deadlines for suits, fittings, shoes, rehearsal, arrival times, etc.
+- Answer routine groomsmen questions so nothing has to go through the groom.
+- Help coordinate suits/tuxedos and accessories.
+- Help resolve minor groomsmen issues without involving the groom unnecessarily.
+- Help plan and coordinate the bachelor party.
+- Communicate bachelor-party costs, plans and itinerary.
+- Keep track of important groomsmen deadlines.
+**Wedding week & rehearsal**
+- Attend the ceremony rehearsal.
+- Attend the rehearsal dinner.
+- Make sure groomsmen know exactly where to be and when.
+- Confirm everyone has their suit/tuxedo, shoes and accessories.
+- Know the basic wedding-day timeline.
+- Prepare speech/toast.
+- Help keep the groom on schedule.
+**Getting ready**
+- Help keep the groomsmen organized.
+- Make sure the groom has everything he needs.
+- Make sure boutonnieres and personal items aren't forgotten.
+- Help field nonessential questions.
+- Help keep unnecessary problems away from the groom.
+- Make sure the groomsmen are dressed and ready on time.
+**Ceremony**
+- Help organize the groomsmen before the processional.
+- Hold the bride's ring if the couple chooses.
+- Sign the marriage license as a witness if requested and permitted.
+- Help the groom with anything needed immediately following the ceremony.
+**Photos & reception**
+- Help gather groomsmen for photographs.
+- Give the Best Man toast if the couple wants one.
+- Encourage the groomsmen to participate appropriately.
+- Help keep the groom informed about important upcoming moments without making him manage the timeline himself.
+**End of the night**
+- Help collect the groom's personal belongings.
+- Make sure his phone, wallet, jacket, etc. don't get left behind.
+- Make sure the couple has whatever they need before leaving.`,
+  Bridesmaid: `**Before the wedding**
+- Order/purchase the selected bridesmaid dress by the deadline.
+- Complete alterations by the requested deadline.
+- Purchase/prepare required shoes and accessories.
+- Respond promptly to wedding-party communications and RSVPs.
+- Attend bridal-party events when reasonably able.
+- Help with agreed-upon DIY wedding projects.
+- Assist the Maid of Honor with the bridal shower and bachelorette party as needed.
+- Pay agreed-upon personal expenses associated with participation.
+**Wedding week & rehearsal**
+- Attend the ceremony rehearsal.
+- Attend the rehearsal dinner.
+- Know where to be and when.
+- Bring all required wedding-day attire and accessories.
+- Follow the wedding-day timeline provided by the couple/Maid of Honor.
+**Getting ready**
+- Arrive at the designated time.
+- Be dressed and ready by the required time.
+- Keep the getting-ready area reasonably organized.
+- Help with small tasks as needed.
+- Make sure personal belongings don't interfere with photographs/getting-ready areas.
+- Be available for bridal-party photographs.
+**Ceremony**
+- Participate in the processional and recessional.
+- Stand in the assigned position during the ceremony.
+- Follow instructions given during the rehearsal.
+**Reception**
+- Participate in wedding-party introductions if applicable.
+- Be present for scheduled photographs and wedding traditions.
+- Help create an enjoyable atmosphere by participating in dancing and festivities.
+- Keep track of personal belongings.`,
+  Groomsman: `**Before the wedding**
+- Order/rent/purchase the selected suit or tuxedo by the deadline.
+- Attend fittings when necessary.
+- Purchase/prepare required shoes and accessories.
+- Respond promptly to wedding-party communications.
+- Attend wedding-party events when reasonably able.
+- Participate in the bachelor party if attending.
+- Pay agreed-upon personal expenses associated with participation.
+**Wedding week & rehearsal**
+- Attend the ceremony rehearsal.
+- Attend the rehearsal dinner.
+- Know where to be and when.
+- Bring all required wedding-day attire and accessories.
+- Follow the wedding-day timeline provided by the couple/Best Man.
+**Getting ready**
+- Arrive at the designated time.
+- Be completely dressed and ready by the required time.
+- Help keep the getting-ready area organized.
+- Make sure personal belongings don't interfere with photographs.
+- Be available for wedding-party photographs.
+**Ceremony**
+- Participate in the processional/recessional as assigned.
+- Stand in the assigned position during the ceremony.
+- Follow instructions given during rehearsal.
+- Assist with seating or other ceremony duties if specifically assigned.
+**Reception**
+- Participate in wedding-party introductions if applicable.
+- Be present for scheduled photographs and traditions.
+- Participate in dancing and festivities.
+- Keep track of personal belongings.`,
+  'Ring Bearer': `**Before the wedding**
+- Attend the ceremony rehearsal with parent/guardian.
+- Practice walking down the aisle.
+- Have wedding attire ready before the wedding day.
+**Wedding day**
+- Arrive dressed and ready at the designated time.
+- Participate in photographs as requested.
+- Walk down the aisle at the designated time.
+- Carry the ring box, pillow or other designated item.`,
+  'Flower Girl': `**Before the wedding**
+- Attend the ceremony rehearsal with parent/guardian.
+- Practice walking down the aisle.
+- Have wedding attire and accessories ready.
+**Wedding day**
+- Arrive dressed and ready at the designated time.
+- Participate in photographs as requested.
+- Walk down the aisle at the designated time.
+- Carry a basket, flowers or other designated item.
+- Scatter petals if permitted by the church/venue and included in the ceremony plan.
+- Sit with a parent/guardian after the processional if appropriate for her age.`,
+  Ushers: `**Before the ceremony**
+- Attend the ceremony rehearsal.
+- Know the church layout and seating plan.
+- Know which rows are reserved for immediate family and special guests.
+- Know where restrooms and important areas are located.
+- Arrive earlier than regular guests.
+- Be fully dressed and stationed before guests begin arriving.
+- Have programs ready for distribution if applicable.
+**Guest arrival**
+- Welcome guests.
+- Distribute ceremony programs.
+- Help guests find appropriate seating.
+- Escort guests to their seats when appropriate.
+- Assist elderly guests or anyone needing extra help.
+- Keep reserved rows available for the appropriate family members.
+- Direct guests to accessible seating when needed.
+- Answer basic questions about the ceremony and reception.
+- Direct late-arriving guests according to the ceremony plan.
+**Ceremony**
+- Close/open church doors if assigned.
+- Help prevent interruptions during the processional.
+- Seat late arrivals at an appropriate time.
+- Assist with any church-specific duties assigned during rehearsal.
+**After the ceremony**
+- Help direct guests toward the exit/reception.
+- Help dismiss rows if you're doing a formal dismissal.
+- Assist guests who need help leaving the church.
+- Help ensure personal items/programs aren't left throughout the sanctuary if requested.`,
+  Officiant: `**Before the wedding**
+- Meet with the couple to discuss the ceremony.
+- Discuss the couple's preferences for the religious elements of the ceremony.
+- Help determine the ceremony order.
+- Discuss Scripture readings, prayers, vows and other faith-based elements.
+- Review and approve the final ceremony structure.
+- Prepare the message/homily.
+- Coordinate with anyone participating in Scripture readings, prayers or other ceremony elements.
+- Coordinate ceremony details with musicians/worship team as necessary.
+- Confirm any church-specific ceremony requirements.
+- Attend and lead the ceremony rehearsal.
+- Explain the ceremony order to the wedding party during rehearsal.
+- Make sure the couple understands when to speak, move, exchange rings, etc.
+**Marriage license**
+- Confirm the marriage license is available before the ceremony.
+- Complete the officiant portion of the marriage license.
+- Make sure required witnesses sign it.
+- Ensure the completed license is returned/filed according to the applicable requirements.
+**Wedding day**
+- Participate in Father of the Bride photographs.
+- Be available for any private father/daughter moment you want before the ceremony.
+- Escort the bride down the aisle, if that's your plan.
+- Transition from Father of the Bride to officiant once at the altar.
+- Conduct the ceremony.
+- Deliver the welcome/opening remarks.
+- Lead prayers and Scripture portions as planned.
+- Deliver the wedding message/homily.
+- Lead the couple through their vows.
+- Conduct the ring exchange.
+- Pronounce the couple married.
+- Present/introduce the newly married couple.
+- Complete marriage-license responsibilities following the ceremony.
+**Reception**
+- Participate in family photographs.
+- Give a blessing/prayer before dinner if desired.
+- Give a Father of the Bride toast/speech if desired.
+- Participate in the father-daughter dance.`
+};
 const CHRISTMAS_MENU_VERSION = 2;
 const ACCOUNT_RESET_VERSION = 1;
 const SIGNUP_RESET_VERSION = 1;
@@ -102,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', attireVideos: [], weddingPartyMembers: [] }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS) }
     }
   };
 }
@@ -229,10 +488,25 @@ function normalizeState(saved) {
         : [];
       loaded.events.wedding.weddingPartyMembers = Array.isArray(loaded.events.wedding.weddingPartyMembers)
         ? loaded.events.wedding.weddingPartyMembers.map(member => typeof member === 'string'
-          ? { name: member, title: '', description: '' }
-          : { name: String(member?.name || ''), title: String(member?.title || ''), description: String(member?.description || '') })
+          ? { name: member, title: '' }
+          : { name: String(member?.name || ''), title: ({ 'Maid/Matron of Honor': 'Matron of Honor', Groomsmen: 'Groomsman', Usher: 'Ushers' })[member?.title] || String(member?.title || ''), description: String(member?.description || '') })
           .filter(member => member.name)
         : [];
+      const savedDescriptions = loaded.events.wedding.weddingPartyDescriptions;
+      loaded.events.wedding.weddingPartyDescriptions = {
+        ...structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS),
+        ...(savedDescriptions && typeof savedDescriptions === 'object' ? savedDescriptions : {})
+      };
+      // Older state stored a duplicate description on every member. Preserve
+      // customized text by promoting the first description found for a title.
+      const promotedTitles = new Set();
+      loaded.events.wedding.weddingPartyMembers.forEach(member => {
+        if (member.description && !promotedTitles.has(member.title) && !(savedDescriptions && Object.hasOwn(savedDescriptions, member.title))) {
+          loaded.events.wedding.weddingPartyDescriptions[member.title] = member.description;
+          promotedTitles.add(member.title);
+        }
+        delete member.description;
+      });
       return loaded;
     }
     // Upgrade the original single-Thanksgiving data. Keep its sign-ups so an
@@ -853,7 +1127,10 @@ function render() {
     ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
     : 'Your role, details, and wedding-day information are below.';
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
-    ? visibleWeddingPartyMembers.map(member => `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${member.description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(member.description)}</div>` : ''}</article>`).join('')
+    ? visibleWeddingPartyMembers.map(member => {
+      const description = state.weddingPartyDescriptions?.[member.title] || '';
+      return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : ''}</article>`;
+    }).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !isWedding || showingWeddingPartyPage;
   document.querySelector('#registryAttireSection').hidden = !isWedding || showingWeddingPartyPage;
@@ -1230,7 +1507,7 @@ function openAccountsAdmin() {
   if (viewedEventId === 'wedding') {
     state.weddingPartyMembers ??= [];
     document.querySelector('#adminWeddingPartyMembers').innerHTML = state.weddingPartyMembers.length
-      ? state.weddingPartyMembers.map((member, index) => `<div class="wedding-party-member" data-wedding-party-index="${index}"><strong>${escapeHtml(member.name)}</strong><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><textarea class="wedding-party-description-input" aria-label="Description for ${escapeAttribute(member.name)}" placeholder="Description and instructions for this role">${escapeHtml(member.description)}</textarea><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div>`).join('')
+      ? state.weddingPartyMembers.map((member, index) => `<div class="wedding-party-member" data-wedding-party-index="${index}"><strong>${escapeHtml(member.name)}</strong><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div>`).join('')
       : '<p class="guest-empty">No wedding party members yet.</p>';
     document.querySelectorAll('[data-wedding-party-index]').forEach(row => {
       const member = state.weddingPartyMembers[Number(row.dataset.weddingPartyIndex)];
@@ -1245,11 +1522,14 @@ function openAccountsAdmin() {
         document.querySelector('#adminWeddingPartyError').textContent = '';
         saveState(); showToast(`${member.name}'s title updated.`);
       });
-      row.querySelector('.wedding-party-description-input').addEventListener('change', event => {
-        member.description = event.target.value.trim();
-        saveState(); showToast(`${member.name}'s description updated.`);
-      });
     });
+    state.weddingPartyDescriptions ??= structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS);
+    document.querySelector('#adminWeddingPartyDescriptions').innerHTML = WEDDING_PARTY_TITLES.map(title => `<label class="wedding-party-description-editor"><span>${escapeHtml(title.value)}</span><textarea data-wedding-party-description="${escapeAttribute(title.value)}" aria-label="Description for ${escapeAttribute(title.value)}" placeholder="Description and instructions for this title">${escapeHtml(state.weddingPartyDescriptions[title.value] || '')}</textarea></label>`).join('');
+    document.querySelectorAll('[data-wedding-party-description]').forEach(input => input.addEventListener('change', event => {
+      const title = event.target.dataset.weddingPartyDescription;
+      state.weddingPartyDescriptions[title] = event.target.value.trim();
+      saveState(); showToast(`${title} description updated for everyone with this title.`);
+    }));
     const titleSelect = document.querySelector('#adminWeddingPartyTitle');
     const usedTitles = new Set(state.weddingPartyMembers.map(member => member.title));
     titleSelect.innerHTML = '<option value="">Select title</option>' + WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${!title.multiple && usedTitles.has(title.value) ? 'disabled' : ''}>${escapeHtml(title.value)}${!title.multiple && usedTitles.has(title.value) ? ' (assigned)' : ''}</option>`).join('');
@@ -1738,12 +2018,10 @@ document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', 
   const firstInput = document.querySelector('#adminWeddingPartyFirstName');
   const lastInput = document.querySelector('#adminWeddingPartyLastName');
   const titleInput = document.querySelector('#adminWeddingPartyTitle');
-  const descriptionInput = document.querySelector('#adminWeddingPartyDescription');
   const error = document.querySelector('#adminWeddingPartyError');
   const name = `${firstInput.value.trim()} ${lastInput.value.trim()}`.trim();
   if (!firstInput.value.trim() || !lastInput.value.trim()) { error.textContent = 'Enter a first and last name.'; return; }
   if (!titleInput.value) { error.textContent = 'Select a wedding party title.'; return; }
-  if (!descriptionInput.value.trim()) { error.textContent = 'Enter a description for this title.'; return; }
   const account = appState.accounts.find(item => accountNameMatches(name, item.name));
   if (!account || !accountCanSignIn(account, 'wedding')) { error.textContent = 'That person must belong to an account invited to the wedding.'; return; }
   state.weddingPartyMembers ??= [];
@@ -1751,8 +2029,8 @@ document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', 
   const selectedTitle = WEDDING_PARTY_TITLES.find(title => title.value === titleInput.value);
   if (!selectedTitle) { error.textContent = 'Select a valid wedding party title.'; return; }
   if (!selectedTitle.multiple && state.weddingPartyMembers.some(member => member.title === selectedTitle.value)) { error.textContent = `${selectedTitle.value} has already been assigned.`; return; }
-  state.weddingPartyMembers.push({ name, title: selectedTitle.value, description: descriptionInput.value.trim() });
-  firstInput.value = ''; lastInput.value = ''; titleInput.value = ''; descriptionInput.value = ''; error.textContent = '';
+  state.weddingPartyMembers.push({ name, title: selectedTitle.value });
+  firstInput.value = ''; lastInput.value = ''; titleInput.value = ''; error.textContent = '';
   saveState(); openAccountsAdmin(); showToast(`${name} added to the wedding party.`);
 });
 document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value) return; state.eventDate = event.target.value; state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
