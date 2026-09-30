@@ -129,6 +129,7 @@ let state = appState.events[viewedEventId];
 let guestName = '';
 let signedInPersonName = '';
 let selectedWeddingTab = 'registry';
+let hostWeddingPartyViewName = '';
 let pendingAccountAction = null;
 let pendingClaimItemId = null;
 let hostAuthenticated = false;
@@ -811,7 +812,23 @@ function render() {
     button.tabIndex = isSelected ? 0 : -1;
   });
   document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
-  const visibleWeddingPartyMembers = state.weddingPartyMembers || [];
+  const weddingPartyMembers = state.weddingPartyMembers || [];
+  const hostViewLabel = document.querySelector('#hostWeddingPartyViewLabel');
+  const hostViewSelect = document.querySelector('#hostWeddingPartyView');
+  hostViewLabel.hidden = !hostAuthenticated;
+  if (hostAuthenticated) {
+    if (!weddingPartyMembers.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = weddingPartyMembers[0]?.name || '';
+    hostViewSelect.innerHTML = weddingPartyMembers.length
+      ? weddingPartyMembers.map(member => `<option value="${escapeAttribute(member.name)}" ${member.name === hostWeddingPartyViewName ? 'selected' : ''}>${escapeHtml(member.name)} — ${escapeHtml(member.title || 'Wedding Party')}</option>`).join('')
+      : '<option value="">No wedding party members</option>';
+  }
+  const viewedWeddingPartyMember = hostAuthenticated
+    ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
+    : signedInWeddingPartyMember;
+  const visibleWeddingPartyMembers = [viewedWeddingPartyMember].filter(Boolean);
+  document.querySelector('#weddingPartyIntro').textContent = hostAuthenticated && viewedWeddingPartyMember
+    ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
+    : 'Your role, details, and wedding-day information are below.';
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
     ? visibleWeddingPartyMembers.map(member => `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${member.description ? `<p class="wedding-party-description">${escapeHtml(member.description)}</p>` : ''}</article>`).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
@@ -987,6 +1004,11 @@ document.querySelector('#weddingPartyTabs').addEventListener('keydown', event =>
   selectedWeddingTab = selectedWeddingTab === 'registry' ? 'party' : 'registry';
   render();
   document.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
+});
+document.querySelector('#hostWeddingPartyView').addEventListener('change', event => {
+  if (!hostAuthenticated) return;
+  hostWeddingPartyViewName = event.target.value;
+  render();
 });
 document.querySelector('#hostPasswordToggle').addEventListener('click', () => {
   setHostPasswordMode(document.querySelector('#hostPassword').disabled);
