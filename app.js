@@ -1171,15 +1171,17 @@ function render() {
   const visibleWeddingPartyMembers = [viewedWeddingPartyMember].filter(Boolean);
   const isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember?.title === 'Matron of Honor';
   const matronInfoTabs = document.querySelector('#matronInfoTabs');
-  matronInfoTabs.hidden = !isViewingMatron;
+  if (!isViewingMatron && selectedMatronTab === 'bachelorette') selectedMatronTab = 'duties';
+  matronInfoTabs.hidden = !showingWeddingPartyPage;
   matronInfoTabs.querySelectorAll('[data-matron-tab]').forEach(button => {
+    button.hidden = button.dataset.matronTab === 'bachelorette' && !isViewingMatron;
     const isSelected = button.dataset.matronTab === selectedMatronTab;
     button.setAttribute('aria-selected', String(isSelected));
     button.tabIndex = isSelected ? 0 : -1;
   });
-  document.querySelector('#weddingPartyDetails').hidden = isViewingMatron && selectedMatronTab !== 'duties';
-  document.querySelector('#perfectExperiencePanel').hidden = !isViewingMatron || selectedMatronTab !== 'experience';
-  if (isViewingMatron && selectedMatronTab === 'experience') {
+  document.querySelector('#weddingPartyDetails').hidden = showingWeddingPartyPage && selectedMatronTab !== 'duties';
+  document.querySelector('#perfectExperiencePanel').hidden = !showingWeddingPartyPage || selectedMatronTab !== 'experience';
+  if (showingWeddingPartyPage && selectedMatronTab === 'experience') {
     document.querySelector('#perfectExperienceContent').innerHTML = formatEditableText(state.perfectExperienceContent)
       || '<p class="guest-empty">No Perfect Experience details have been added yet.</p>';
   }
@@ -1188,7 +1190,7 @@ function render() {
     ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
     : isViewingMatron && selectedMatronTab === 'bachelorette'
       ? 'Your bachelorette party preferences and planning information are below.'
-      : isViewingMatron && selectedMatronTab === 'experience'
+      : showingWeddingPartyPage && selectedMatronTab === 'experience'
         ? 'Everything you need to help create the perfect experience is below.'
         : 'Your role, details, and wedding-day information are below.';
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
@@ -1418,7 +1420,7 @@ document.querySelector('#matronInfoTabs').addEventListener('click', event => {
 document.querySelector('#matronInfoTabs').addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
   event.preventDefault();
-  const tabs = [...document.querySelectorAll('#matronInfoTabs [data-matron-tab]')];
+  const tabs = [...document.querySelectorAll('#matronInfoTabs [data-matron-tab]:not([hidden])')];
   const currentIndex = tabs.findIndex(button => button.dataset.matronTab === selectedMatronTab);
   const direction = event.key === 'ArrowRight' ? 1 : -1;
   selectedMatronTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.matronTab;
