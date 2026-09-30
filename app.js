@@ -388,6 +388,7 @@ let state = appState.events[viewedEventId];
 let guestName = '';
 let signedInPersonName = '';
 let selectedWeddingTab = 'registry';
+let selectedMatronTab = 'duties';
 let hostWeddingPartyViewName = '';
 let pendingAccountAction = null;
 let pendingClaimItemId = null;
@@ -1123,9 +1124,21 @@ function render() {
     ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
     : signedInWeddingPartyMember;
   const visibleWeddingPartyMembers = [viewedWeddingPartyMember].filter(Boolean);
+  const isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember?.title === 'Matron of Honor';
+  const matronInfoTabs = document.querySelector('#matronInfoTabs');
+  matronInfoTabs.hidden = !isViewingMatron;
+  matronInfoTabs.querySelectorAll('[data-matron-tab]').forEach(button => {
+    const isSelected = button.dataset.matronTab === selectedMatronTab;
+    button.setAttribute('aria-selected', String(isSelected));
+    button.tabIndex = isSelected ? 0 : -1;
+  });
+  document.querySelector('#weddingPartyDetails').hidden = isViewingMatron && selectedMatronTab === 'bachelorette';
+  document.querySelector('#bacheloretteInfoPanel').hidden = !isViewingMatron || selectedMatronTab !== 'bachelorette';
   document.querySelector('#weddingPartyIntro').textContent = hostAuthenticated && viewedWeddingPartyMember
     ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
-    : 'Your role, details, and wedding-day information are below.';
+    : isViewingMatron && selectedMatronTab === 'bachelorette'
+      ? 'Your bachelorette party preferences and planning information are below.'
+      : 'Your role, details, and wedding-day information are below.';
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
     ? visibleWeddingPartyMembers.map(member => {
       const description = state.weddingPartyDescriptions?.[member.title] || '';
@@ -1325,6 +1338,48 @@ document.querySelector('#customItemForm').addEventListener('submit', event => {
   document.querySelector('#customItemDialog').close(); saveState(); showToast(`${name} was added to ${category}!`);
 });
 document.querySelector('#copyMenuButton').addEventListener('click', copyMenu);
+function bacheloretteInfoText() {
+  return `BACHELORETTE PARTY INFO\n\n${document.querySelector('#bacheloretteInfoContent').innerText}`;
+}
+document.querySelector('#matronInfoTabs').addEventListener('click', event => {
+  const button = event.target.closest('[data-matron-tab]');
+  if (!button) return;
+  selectedMatronTab = button.dataset.matronTab;
+  render();
+});
+document.querySelector('#matronInfoTabs').addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  event.preventDefault();
+  selectedMatronTab = selectedMatronTab === 'duties' ? 'bachelorette' : 'duties';
+  render();
+  document.querySelector(`[data-matron-tab="${selectedMatronTab}"]`).focus();
+});
+document.querySelector('#copyBacheloretteInfo').addEventListener('click', async () => {
+  const text = bacheloretteInfoText();
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.append(textArea);
+    textArea.select();
+    const copied = document.execCommand('copy');
+    textArea.remove();
+    if (!copied) { showToast('The information could not be copied. Please try again.'); return; }
+  }
+  showToast('Bachelorette party info copied!');
+});
+document.querySelector('#emailBacheloretteInfo').addEventListener('click', () => {
+  window.location.href = `mailto:?subject=${encodeURIComponent('Bachelorette Party Info')}&body=${encodeURIComponent(bacheloretteInfoText())}`;
+});
+document.querySelector('#printBacheloretteInfo').addEventListener('click', () => {
+  document.body.classList.add('bachelorette-printing');
+  window.print();
+});
+window.addEventListener('afterprint', () => document.body.classList.remove('bachelorette-printing'));
 document.querySelector('#menuGrid').addEventListener('click', event => {
   const claimButton = event.target.closest('[data-claim]');
   if (claimButton) {
