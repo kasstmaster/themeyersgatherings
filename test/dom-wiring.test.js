@@ -91,16 +91,18 @@ test('wedding party descriptions are shared and editable by title', async () => 
   assert.doesNotMatch(javascript.match(/data-wedding-party-description=[\s\S]*?<\/label>/)?.[0] || '', /\bmaxlength=/i);
 });
 
-test('bachelorette party brief is available only to the Matron of Honor with sharing actions', async () => {
+test('bachelorette party brief replaces the Matron of Honor duties panel', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /id="bacheloretteInfoButton"[\s\S]*Bachelorette Party Info/);
-  assert.match(html, /id="bacheloretteInfoDialog"[\s\S]*id="copyBacheloretteInfo"[\s\S]*id="emailBacheloretteInfo"[\s\S]*id="printBacheloretteInfo"/);
+  assert.match(html, /id="matronInfoTabs"[\s\S]*data-matron-tab="duties"[\s\S]*data-matron-tab="bachelorette"/);
+  assert.match(html, /id="weddingPartyDetails"[\s\S]*id="bacheloretteInfoPanel"[\s\S]*id="copyBacheloretteInfo"[\s\S]*id="emailBacheloretteInfo"[\s\S]*id="printBacheloretteInfo"/);
+  assert.doesNotMatch(html, /id="bacheloretteInfoDialog"/);
   assert.match(html, /relaxed girls' getaway[\s\S]*The Most Important Rule[\s\S]*cozy two-night girls' getaway/);
-  assert.match(javascript, /bacheloretteInfoButton'\)\.hidden = !showingWeddingPartyPage \|\| viewedWeddingPartyMember\?\.title !== 'Matron of Honor'/);
+  assert.match(javascript, /isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember\?\.title === 'Matron of Honor'/);
+  assert.match(javascript, /weddingPartyDetails'\)\.hidden = isViewingMatron && selectedMatronTab === 'bachelorette'/);
   assert.match(javascript, /navigator\.clipboard\.writeText\(text\)/);
   assert.match(javascript, /mailto:\?subject=/);
   assert.match(javascript, /window\.print\(\)/);

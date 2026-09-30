@@ -388,6 +388,7 @@ let state = appState.events[viewedEventId];
 let guestName = '';
 let signedInPersonName = '';
 let selectedWeddingTab = 'registry';
+let selectedMatronTab = 'duties';
 let hostWeddingPartyViewName = '';
 let pendingAccountAction = null;
 let pendingClaimItemId = null;
@@ -1123,10 +1124,21 @@ function render() {
     ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
     : signedInWeddingPartyMember;
   const visibleWeddingPartyMembers = [viewedWeddingPartyMember].filter(Boolean);
-  document.querySelector('#bacheloretteInfoButton').hidden = !showingWeddingPartyPage || viewedWeddingPartyMember?.title !== 'Matron of Honor';
+  const isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember?.title === 'Matron of Honor';
+  const matronInfoTabs = document.querySelector('#matronInfoTabs');
+  matronInfoTabs.hidden = !isViewingMatron;
+  matronInfoTabs.querySelectorAll('[data-matron-tab]').forEach(button => {
+    const isSelected = button.dataset.matronTab === selectedMatronTab;
+    button.setAttribute('aria-selected', String(isSelected));
+    button.tabIndex = isSelected ? 0 : -1;
+  });
+  document.querySelector('#weddingPartyDetails').hidden = isViewingMatron && selectedMatronTab === 'bachelorette';
+  document.querySelector('#bacheloretteInfoPanel').hidden = !isViewingMatron || selectedMatronTab !== 'bachelorette';
   document.querySelector('#weddingPartyIntro').textContent = hostAuthenticated && viewedWeddingPartyMember
     ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
-    : 'Your role, details, and wedding-day information are below.';
+    : isViewingMatron && selectedMatronTab === 'bachelorette'
+      ? 'Your bachelorette party preferences and planning information are below.'
+      : 'Your role, details, and wedding-day information are below.';
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
     ? visibleWeddingPartyMembers.map(member => {
       const description = state.weddingPartyDescriptions?.[member.title] || '';
@@ -1329,8 +1341,19 @@ document.querySelector('#copyMenuButton').addEventListener('click', copyMenu);
 function bacheloretteInfoText() {
   return `BACHELORETTE PARTY INFO\n\n${document.querySelector('#bacheloretteInfoContent').innerText}`;
 }
-document.querySelector('#bacheloretteInfoButton').addEventListener('click', () => document.querySelector('#bacheloretteInfoDialog').showModal());
-document.querySelector('#closeBacheloretteInfo').addEventListener('click', () => document.querySelector('#bacheloretteInfoDialog').close());
+document.querySelector('#matronInfoTabs').addEventListener('click', event => {
+  const button = event.target.closest('[data-matron-tab]');
+  if (!button) return;
+  selectedMatronTab = button.dataset.matronTab;
+  render();
+});
+document.querySelector('#matronInfoTabs').addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  event.preventDefault();
+  selectedMatronTab = selectedMatronTab === 'duties' ? 'bachelorette' : 'duties';
+  render();
+  document.querySelector(`[data-matron-tab="${selectedMatronTab}"]`).focus();
+});
 document.querySelector('#copyBacheloretteInfo').addEventListener('click', async () => {
   const text = bacheloretteInfoText();
   try {
