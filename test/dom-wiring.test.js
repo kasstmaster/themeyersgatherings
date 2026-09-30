@@ -61,8 +61,14 @@ test('wedding party access is tied to the individual sign-in name', async () => 
 
   assert.match(html, /id="weddingPartyTabs"[\s\S]*Registry &amp; Attire[\s\S]*Wedding Party/);
   assert.match(javascript, /signedInPersonName = accountName/);
-  assert.match(javascript, /state\.weddingPartyMembers\?\.some\(name => normalizeAccountName\(name\) === normalizeAccountName\(signedInPersonName\)\)/);
+  assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => normalizeAccountName\(member\.name\) === normalizeAccountName\(signedInPersonName\)\)/);
+  assert.match(javascript, /hostAuthenticated \|\| Boolean\(signedInWeddingPartyMember\)/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWeddingPartyMember/);
+  assert.match(javascript, /visibleWeddingPartyMembers = \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
+  assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
+  assert.match(javascript, /formatWeddingPartyDescription\(member\.description\)/);
+  assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Preview wedding party view/);
+  assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding'\)/);
 });
 
 test('wedding party manager only accepts people from wedding-invited accounts', async () => {
@@ -71,5 +77,5 @@ test('wedding party manager only accepts people from wedding-invited accounts', 
 
   assert.match(addHandler, /accountNameMatches\(name, item\.name\)/);
   assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
-  assert.match(addHandler, /state\.weddingPartyMembers\.push\(name\)/);
+  assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ name, title: selectedTitle\.value, description:/);
 });
