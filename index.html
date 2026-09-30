@@ -135,6 +135,8 @@
 
       <section id="weddingPartySection" class="wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
         <h2 id="weddingPartyHeading">Wedding Party</h2>
+        <p id="weddingPartyIntro" class="wedding-party-intro">Your role, details, and wedding-day information are below.</p>
+        <div id="weddingPartyDetails" class="wedding-party-details"></div>
       </section>
 
       <section id="registrySection" class="registry-section" aria-labelledby="registryHeading" hidden>
@@ -327,15 +329,27 @@
     <dialog id="hostToolsDialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
-        <p class="section-kicker">Host dashboard</p><h2>What would you like to edit?</h2>
+        <p class="section-kicker">Host dashboard</p><h2>What would you like to do?</h2>
         <div id="syncStatus" class="sync-status" role="status" aria-live="polite"></div>
         <div class="host-tool-actions">
           <button id="manageEventsButton" type="button"><strong>Manage gatherings</strong></button>
           <button id="editItemsButton" type="button"><strong>Edit menu items</strong></button>
           <button id="clearClaimButton" type="button"><strong>Clear a claim</strong></button>
           <button id="editAccountsButton" type="button"><strong>Manage accounts</strong></button>
+          <button id="previewWeddingPartyButton" type="button"><strong>Preview wedding party view</strong><span>See the Wedding Party tab as a selected member</span></button>
           <button id="invitationTemplatesButton" type="button"><strong>Invitation templates</strong></button>
         </div>
+      </form>
+    </dialog>
+
+    <dialog id="weddingPartyPreviewDialog">
+      <form method="dialog" class="modal-card">
+        <button class="modal-close" value="cancel" aria-label="Close">×</button>
+        <p class="section-kicker">Host dashboard</p><h2>Preview wedding party view</h2>
+        <p>Choose a member to see exactly what appears in their Wedding Party tab.</p>
+        <label><span>Wedding party member</span><select id="hostWeddingPartyView" aria-label="Preview wedding party member view"></select></label>
+        <p id="hostWeddingPartyViewError" class="form-error" role="alert"></p>
+        <button id="openWeddingPartyPreview" class="primary-button" type="button">Open member view</button>
       </form>
     </dialog>
 
@@ -377,6 +391,10 @@
           <div class="wedding-party-add">
             <input id="adminWeddingPartyFirstName" placeholder="First name" maxlength="60" aria-label="Wedding party member first name" />
             <input id="adminWeddingPartyLastName" placeholder="Last name" maxlength="60" aria-label="Wedding party member last name" />
+            <select id="adminWeddingPartyTitle" aria-label="Wedding party title">
+              <option value="">Select title</option>
+            </select>
+            <textarea id="adminWeddingPartyDescription" placeholder="Description and instructions for this role" maxlength="1000" aria-label="Wedding party title description"></textarea>
             <button id="adminAddWeddingPartyMember" type="button">Add member</button>
           </div>
           <p class="form-error" id="adminWeddingPartyError" role="alert"></p>
