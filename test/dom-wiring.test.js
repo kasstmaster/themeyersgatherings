@@ -65,7 +65,8 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /hostAuthenticated \|\| Boolean\(signedInWeddingPartyMember\)/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWeddingPartyMember/);
   assert.match(javascript, /visibleWeddingPartyMembers = \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
-  assert.match(javascript, /hostWeddingPartyViewName = event\.target\.value/);
+  assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Preview wedding party view/);
+  assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding'\)/);
 });
 
 test('wedding party manager only accepts people from wedding-invited accounts', async () => {

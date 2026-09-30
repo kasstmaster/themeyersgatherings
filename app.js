@@ -813,14 +813,8 @@ function render() {
   });
   document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
   const weddingPartyMembers = state.weddingPartyMembers || [];
-  const hostViewLabel = document.querySelector('#hostWeddingPartyViewLabel');
-  const hostViewSelect = document.querySelector('#hostWeddingPartyView');
-  hostViewLabel.hidden = !hostAuthenticated;
   if (hostAuthenticated) {
     if (!weddingPartyMembers.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = weddingPartyMembers[0]?.name || '';
-    hostViewSelect.innerHTML = weddingPartyMembers.length
-      ? weddingPartyMembers.map(member => `<option value="${escapeAttribute(member.name)}" ${member.name === hostWeddingPartyViewName ? 'selected' : ''}>${escapeHtml(member.name)} — ${escapeHtml(member.title || 'Wedding Party')}</option>`).join('')
-      : '<option value="">No wedding party members</option>';
   }
   const viewedWeddingPartyMember = hostAuthenticated
     ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
@@ -1605,6 +1599,25 @@ document.querySelector('#manageEventsButton').addEventListener('click', () => { 
 document.querySelector('#editItemsButton').addEventListener('click', () => { document.querySelector('#hostToolsDialog').close(); openAdmin(); });
 document.querySelector('#clearClaimButton').addEventListener('click', () => { document.querySelector('#hostToolsDialog').close(); openClearClaimDialog(); });
 document.querySelector('#editAccountsButton').addEventListener('click', () => { document.querySelector('#hostToolsDialog').close(); openAccountsAdmin(); });
+document.querySelector('#previewWeddingPartyButton').addEventListener('click', () => {
+  const members = appState.events.wedding.weddingPartyMembers || [];
+  const select = document.querySelector('#hostWeddingPartyView');
+  if (!members.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = members[0]?.name || '';
+  select.innerHTML = members.length
+    ? members.map(member => `<option value="${escapeAttribute(member.name)}" ${member.name === hostWeddingPartyViewName ? 'selected' : ''}>${escapeHtml(member.name)} — ${escapeHtml(member.title || 'Wedding Party')}</option>`).join('')
+    : '<option value="">No wedding party members</option>';
+  document.querySelector('#hostWeddingPartyViewError').textContent = members.length ? '' : 'Add a wedding party member before opening a preview.';
+  document.querySelector('#openWeddingPartyPreview').disabled = members.length === 0;
+  document.querySelector('#hostToolsDialog').close();
+  document.querySelector('#weddingPartyPreviewDialog').showModal();
+});
+document.querySelector('#openWeddingPartyPreview').addEventListener('click', () => {
+  hostWeddingPartyViewName = document.querySelector('#hostWeddingPartyView').value;
+  if (!hostWeddingPartyViewName) return;
+  document.querySelector('#weddingPartyPreviewDialog').close();
+  selectedWeddingTab = 'party';
+  enterEvent('wedding');
+});
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 function anyListSyncErrorMessage(status, errorCode) {
   if (status === 401 || errorCode === 'host_authentication_failed') return 'Unable to sync: the Worker host password secret does not match the website host password.';
