@@ -97,6 +97,23 @@ test('wedding attire and registry have separate guest-visible tabs with attire s
   assert.match(styles, /\.wedding-party-tabs button\[aria-selected="true"\]\{[^}]*border:1px solid var\(--gold\)[^}]*background:var\(--orange\)[^}]*color:#fff/);
 });
 
+test('What to Expect is a guest-only editable page immediately after Attire', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  const pageTabs = html.match(/<nav id="weddingPartyTabs"[\s\S]*?<\/nav>/)?.[0] || '';
+  assert.match(pageTabs, /data-wedding-tab="attire"[\s\S]*data-wedding-tab="expect"[^>]*>What to Expect<\/button>[\s\S]*data-wedding-tab="registry"/);
+  assert.match(html, /id="whatToExpectSection"[^>]*hidden/);
+  const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
+  assert.ok(weddingEditor.indexOf('The Perfect Experience page') < weddingEditor.indexOf('What to Expect page'));
+  assert.match(javascript, /whatToExpectContent: ''/);
+  assert.match(javascript, /button\.dataset\.weddingTab === 'expect' && isWeddingPartyMember/);
+  assert.match(javascript, /formatEditableText\(state\.whatToExpectContent\)/);
+  assert.match(javascript, /state\.whatToExpectContent = event\.target\.value/);
+});
+
 test('Bride & Groom is a host-only Markdown page edited from wedding details', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),

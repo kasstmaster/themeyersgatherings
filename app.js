@@ -361,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -495,6 +495,9 @@ function normalizeState(saved) {
         : '';
       loaded.events.wedding.perfectExperienceContent = typeof loaded.events.wedding.perfectExperienceContent === 'string'
         ? loaded.events.wedding.perfectExperienceContent
+        : '';
+      loaded.events.wedding.whatToExpectContent = typeof loaded.events.wedding.whatToExpectContent === 'string'
+        ? loaded.events.wedding.whatToExpectContent
         : '';
       loaded.events.wedding.attireVideos = Array.isArray(loaded.events.wedding.attireVideos)
         ? loaded.events.wedding.attireVideos.filter(url => typeof url === 'string')
@@ -1168,17 +1171,20 @@ function render() {
     requirements.hidden = isWeddingPartyMember;
   });
   if (isWeddingPartyMember && selectedWeddingTab === 'attire') selectedWeddingTab = 'party';
+  if (isWeddingPartyMember && selectedWeddingTab === 'expect') selectedWeddingTab = 'party';
   if ((!isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostView && selectedWeddingTab === 'couple')) selectedWeddingTab = 'attire';
   const showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple';
   const showingWeddingPartyPage = isWeddingPartyMember && selectedWeddingTab === 'party';
   const showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire';
   const showingAttirePage = isWedding && ((!isWeddingPartyMember && selectedWeddingTab === 'attire') || showingPartyAttirePage);
+  const showingWhatToExpectPage = isWedding && !isWeddingPartyMember && selectedWeddingTab === 'expect';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     button.hidden = (button.dataset.weddingTab === 'party' && !isWeddingPartyMember)
-      || (button.dataset.weddingTab === 'attire' && isWeddingPartyMember);
+      || (button.dataset.weddingTab === 'attire' && isWeddingPartyMember)
+      || (button.dataset.weddingTab === 'expect' && isWeddingPartyMember);
     if (button.dataset.weddingTab === 'couple' && !hostView) button.hidden = true;
     const isSelected = button.dataset.weddingTab === selectedWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
@@ -1188,6 +1194,11 @@ function render() {
   if (showingBrideGroomPage) {
     document.querySelector('#brideGroomContent').innerHTML = formatEditableText(state.brideGroomContent)
       || '<p class="guest-empty">No Bride & Groom details have been added yet.</p>';
+  }
+  document.querySelector('#whatToExpectSection').hidden = !showingWhatToExpectPage;
+  if (showingWhatToExpectPage) {
+    document.querySelector('#whatToExpectContent').innerHTML = formatEditableText(state.whatToExpectContent)
+      || '<p class="guest-empty">No What to Expect details have been added yet.</p>';
   }
   document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
   const weddingPartyMembers = state.weddingPartyMembers || [];
@@ -1420,6 +1431,12 @@ document.querySelector('#adminPerfectExperienceContent').addEventListener('chang
   saveState();
   showToast('The Perfect Experience page updated.');
 });
+document.querySelector('#adminWhatToExpectContent').addEventListener('change', event => {
+  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  state.whatToExpectContent = event.target.value;
+  saveState();
+  showToast('What to Expect page updated.');
+});
 document.querySelector('#hostWeddingPartyView').addEventListener('change', event => {
   if (!hostAuthenticated) return;
   hostWeddingPartyViewName = event.target.value;
@@ -1555,6 +1572,7 @@ function openAdmin() {
   if (isWedding) {
     document.querySelector('#adminBrideGroomContent').value = state.brideGroomContent || '';
     document.querySelector('#adminPerfectExperienceContent').value = state.perfectExperienceContent || '';
+    document.querySelector('#adminWhatToExpectContent').value = state.whatToExpectContent || '';
     renderWeddingPartyDescriptionAdmin();
     renderWeddingPartyAttireAdmin();
     renderAdminAttireVideos();

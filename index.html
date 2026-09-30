@@ -144,6 +144,7 @@
         <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="false" hidden>Bride &amp; Groom</button>
         <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
         <button type="button" role="tab" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="true">Attire</button>
+        <button type="button" role="tab" data-wedding-tab="expect" aria-controls="whatToExpectSection" aria-selected="false">What to Expect</button>
         <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
       </nav>
 
@@ -234,6 +235,12 @@
         <section id="registryAttireVideosSection" class="attire-videos" aria-labelledby="registryAttireVideosHeading" hidden>
           <p class="section-kicker">A little inspiration</p><h3 id="registryAttireVideosHeading">Formal Attire Tips</h3><div id="registryAttireVideos" class="attire-video-grid"></div>
         </section>
+      </section>
+
+      <section id="whatToExpectSection" class="what-to-expect-section" aria-labelledby="whatToExpectHeading" hidden>
+        <p class="section-kicker">Plan for the celebration</p>
+        <h2 id="whatToExpectHeading">What to Expect</h2>
+        <div id="whatToExpectContent" class="what-to-expect-content"></div>
       </section>
 
       <section id="registrySection" class="registry-section" aria-labelledby="registryHeading" hidden>
@@ -367,6 +374,11 @@
             <h3 id="perfectExperienceAdminHeading">The Perfect Experience page</h3>
             <p>Edit the page shown to every wedding party member beside Responsibilities. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, and <code>`code`</code>.</p>
             <label><span>Page content</span><textarea id="adminPerfectExperienceContent" placeholder="Add the perfect experience details here…"></textarea></label>
+          </section>
+          <section class="what-to-expect-admin" aria-labelledby="whatToExpectAdminHeading">
+            <h3 id="whatToExpectAdminHeading">What to Expect page</h3>
+            <p>Edit the page shown only to general wedding guests. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, and <code>`code`</code>.</p>
+            <label><span>Page content</span><textarea id="adminWhatToExpectContent" placeholder="Add what guests can expect here…"></textarea></label>
           </section>
           <section class="wedding-party-descriptions-admin" aria-labelledby="weddingPartyDescriptionsAdminHeading">
             <h3 id="weddingPartyDescriptionsAdminHeading">Title descriptions</h3>
