@@ -1028,6 +1028,11 @@ document.querySelector('#weddingPartyTabs').addEventListener('keydown', event =>
   render();
   document.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
 });
+document.querySelector('#hostWeddingPartyView').addEventListener('change', event => {
+  if (!hostAuthenticated) return;
+  hostWeddingPartyViewName = event.target.value;
+  render();
+});
 document.querySelector('#hostPasswordToggle').addEventListener('click', () => {
   setHostPasswordMode(document.querySelector('#hostPassword').disabled);
 });
