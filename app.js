@@ -9,6 +9,17 @@ const DEFAULT_EVENT_DATE = '2026-11-28';
 const DEFAULT_CHRISTMAS_DATE = '2026-12-25';
 const DEFAULT_WEDDING_DATE = '2027-08-10';
 const DEFAULT_REGISTRY_URL = 'https://www.amazon.com/wedding/share/kassandraandsteven';
+const WEDDING_PARTY_TITLES = [
+  { value: 'Maid/Matron of Honor', multiple: false },
+  { value: 'Best Man', multiple: false },
+  { value: 'Bridesmaid', multiple: true },
+  { value: 'Groomsmen', multiple: true },
+  { value: 'Ring Bearer', multiple: true },
+  { value: 'Flower Girl', multiple: true },
+  { value: 'Usher', multiple: true },
+  { value: 'Junior Attendant', multiple: true },
+  { value: 'Officiant', multiple: false }
+];
 const CHRISTMAS_MENU_VERSION = 2;
 const ACCOUNT_RESET_VERSION = 1;
 const SIGNUP_RESET_VERSION = 1;
@@ -118,6 +129,7 @@ let state = appState.events[viewedEventId];
 let guestName = '';
 let signedInPersonName = '';
 let selectedWeddingTab = 'registry';
+let hostWeddingPartyViewName = '';
 let pendingAccountAction = null;
 let pendingClaimItemId = null;
 let hostAuthenticated = false;
@@ -216,7 +228,10 @@ function normalizeState(saved) {
         ? loaded.events.wedding.attireVideos.filter(url => typeof url === 'string')
         : [];
       loaded.events.wedding.weddingPartyMembers = Array.isArray(loaded.events.wedding.weddingPartyMembers)
-        ? loaded.events.wedding.weddingPartyMembers.filter(name => typeof name === 'string')
+        ? loaded.events.wedding.weddingPartyMembers.map(member => typeof member === 'string'
+          ? { name: member, title: '', description: '' }
+          : { name: String(member?.name || ''), title: String(member?.title || ''), description: String(member?.description || '') })
+          .filter(member => member.name)
         : [];
       return loaded;
     }
@@ -786,7 +801,8 @@ function render() {
   document.querySelector('.menu-section').hidden = event.hasMenu === false;
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');
-  const isWeddingPartyMember = isWedding && !hostAuthenticated && state.weddingPartyMembers?.some(name => normalizeAccountName(name) === normalizeAccountName(signedInPersonName));
+  const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => normalizeAccountName(member.name) === normalizeAccountName(signedInPersonName));
+  const isWeddingPartyMember = isWedding && (hostAuthenticated || Boolean(signedInWeddingPartyMember));
   const showingWeddingPartyPage = isWeddingPartyMember && selectedWeddingTab === 'party';
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWeddingPartyMember;
@@ -796,6 +812,26 @@ function render() {
     button.tabIndex = isSelected ? 0 : -1;
   });
   document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
+  const weddingPartyMembers = state.weddingPartyMembers || [];
+  const hostViewLabel = document.querySelector('#hostWeddingPartyViewLabel');
+  const hostViewSelect = document.querySelector('#hostWeddingPartyView');
+  hostViewLabel.hidden = !hostAuthenticated;
+  if (hostAuthenticated) {
+    if (!weddingPartyMembers.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = weddingPartyMembers[0]?.name || '';
+    hostViewSelect.innerHTML = weddingPartyMembers.length
+      ? weddingPartyMembers.map(member => `<option value="${escapeAttribute(member.name)}" ${member.name === hostWeddingPartyViewName ? 'selected' : ''}>${escapeHtml(member.name)} — ${escapeHtml(member.title || 'Wedding Party')}</option>`).join('')
+      : '<option value="">No wedding party members</option>';
+  }
+  const viewedWeddingPartyMember = hostAuthenticated
+    ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
+    : signedInWeddingPartyMember;
+  const visibleWeddingPartyMembers = [viewedWeddingPartyMember].filter(Boolean);
+  document.querySelector('#weddingPartyIntro').textContent = hostAuthenticated && viewedWeddingPartyMember
+    ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
+    : 'Your role, details, and wedding-day information are below.';
+  document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
+    ? visibleWeddingPartyMembers.map(member => `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${member.description ? `<p class="wedding-party-description">${escapeHtml(member.description)}</p>` : ''}</article>`).join('')
+    : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !isWedding || showingWeddingPartyPage;
   document.querySelector('#registryAttireSection').hidden = !isWedding || showingWeddingPartyPage;
   if (isWedding) renderAttireVideoCollection('#registryAttireVideosSection', '#registryAttireVideos');
@@ -968,6 +1004,11 @@ document.querySelector('#weddingPartyTabs').addEventListener('keydown', event =>
   selectedWeddingTab = selectedWeddingTab === 'registry' ? 'party' : 'registry';
   render();
   document.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
+});
+document.querySelector('#hostWeddingPartyView').addEventListener('change', event => {
+  if (!hostAuthenticated) return;
+  hostWeddingPartyViewName = event.target.value;
+  render();
 });
 document.querySelector('#hostPasswordToggle').addEventListener('click', () => {
   setHostPasswordMode(document.querySelector('#hostPassword').disabled);
@@ -1166,8 +1207,29 @@ function openAccountsAdmin() {
   if (viewedEventId === 'wedding') {
     state.weddingPartyMembers ??= [];
     document.querySelector('#adminWeddingPartyMembers').innerHTML = state.weddingPartyMembers.length
-      ? state.weddingPartyMembers.map((name, index) => `<div class="wedding-party-member"><span>${escapeHtml(name)}</span><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(name)} from wedding party">×</button></div>`).join('')
+      ? state.weddingPartyMembers.map((member, index) => `<div class="wedding-party-member" data-wedding-party-index="${index}"><strong>${escapeHtml(member.name)}</strong><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><textarea class="wedding-party-description-input" maxlength="1000" aria-label="Description for ${escapeAttribute(member.name)}" placeholder="Description and instructions for this role">${escapeHtml(member.description)}</textarea><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div>`).join('')
       : '<p class="guest-empty">No wedding party members yet.</p>';
+    document.querySelectorAll('[data-wedding-party-index]').forEach(row => {
+      const member = state.weddingPartyMembers[Number(row.dataset.weddingPartyIndex)];
+      row.querySelector('.wedding-party-title').addEventListener('change', event => {
+        const selectedTitle = WEDDING_PARTY_TITLES.find(title => title.value === event.target.value);
+        if (!selectedTitle || (!selectedTitle.multiple && state.weddingPartyMembers.some(other => other !== member && other.title === selectedTitle.value))) {
+          document.querySelector('#adminWeddingPartyError').textContent = selectedTitle ? `${selectedTitle.value} has already been assigned.` : 'Select a valid wedding party title.';
+          event.target.value = member.title;
+          return;
+        }
+        member.title = selectedTitle.value;
+        document.querySelector('#adminWeddingPartyError').textContent = '';
+        saveState(); showToast(`${member.name}'s title updated.`);
+      });
+      row.querySelector('.wedding-party-description-input').addEventListener('change', event => {
+        member.description = event.target.value.trim();
+        saveState(); showToast(`${member.name}'s description updated.`);
+      });
+    });
+    const titleSelect = document.querySelector('#adminWeddingPartyTitle');
+    const usedTitles = new Set(state.weddingPartyMembers.map(member => member.title));
+    titleSelect.innerHTML = '<option value="">Select title</option>' + WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${!title.multiple && usedTitles.has(title.value) ? 'disabled' : ''}>${escapeHtml(title.value)}${!title.multiple && usedTitles.has(title.value) ? ' (assigned)' : ''}</option>`).join('');
     document.querySelectorAll('[data-remove-wedding-party]').forEach(button => button.addEventListener('click', () => {
       state.weddingPartyMembers.splice(Number(button.dataset.removeWeddingParty), 1);
       saveState(); openAccountsAdmin(); showToast('Wedding party member removed.');
@@ -1633,15 +1695,22 @@ document.querySelector('#adminAddAccountButton').addEventListener('click', () =>
 document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', () => {
   const firstInput = document.querySelector('#adminWeddingPartyFirstName');
   const lastInput = document.querySelector('#adminWeddingPartyLastName');
+  const titleInput = document.querySelector('#adminWeddingPartyTitle');
+  const descriptionInput = document.querySelector('#adminWeddingPartyDescription');
   const error = document.querySelector('#adminWeddingPartyError');
   const name = `${firstInput.value.trim()} ${lastInput.value.trim()}`.trim();
   if (!firstInput.value.trim() || !lastInput.value.trim()) { error.textContent = 'Enter a first and last name.'; return; }
+  if (!titleInput.value) { error.textContent = 'Select a wedding party title.'; return; }
+  if (!descriptionInput.value.trim()) { error.textContent = 'Enter a description for this title.'; return; }
   const account = appState.accounts.find(item => accountNameMatches(name, item.name));
   if (!account || !accountCanSignIn(account, 'wedding')) { error.textContent = 'That person must belong to an account invited to the wedding.'; return; }
   state.weddingPartyMembers ??= [];
-  if (state.weddingPartyMembers.some(member => normalizeAccountName(member) === normalizeAccountName(name))) { error.textContent = 'That person is already in the wedding party.'; return; }
-  state.weddingPartyMembers.push(name);
-  firstInput.value = ''; lastInput.value = ''; error.textContent = '';
+  if (state.weddingPartyMembers.some(member => normalizeAccountName(member.name) === normalizeAccountName(name))) { error.textContent = 'That person is already in the wedding party.'; return; }
+  const selectedTitle = WEDDING_PARTY_TITLES.find(title => title.value === titleInput.value);
+  if (!selectedTitle) { error.textContent = 'Select a valid wedding party title.'; return; }
+  if (!selectedTitle.multiple && state.weddingPartyMembers.some(member => member.title === selectedTitle.value)) { error.textContent = `${selectedTitle.value} has already been assigned.`; return; }
+  state.weddingPartyMembers.push({ name, title: selectedTitle.value, description: descriptionInput.value.trim() });
+  firstInput.value = ''; lastInput.value = ''; titleInput.value = ''; descriptionInput.value = ''; error.textContent = '';
   saveState(); openAccountsAdmin(); showToast(`${name} added to the wedding party.`);
 });
 document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value) return; state.eventDate = event.target.value; state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
