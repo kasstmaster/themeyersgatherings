@@ -388,7 +388,7 @@ let state = appState.events[viewedEventId];
 let guestName = '';
 let signedInPersonName = '';
 let selectedWeddingTab = 'attire';
-let selectedMatronTab = 'duties';
+let selectedMatronTab = 'experience';
 let hostWeddingPartyViewName = '';
 const GENERAL_GUEST_PREVIEW = '__general_guest__';
 let pendingAccountAction = null;
@@ -1174,7 +1174,7 @@ function render() {
   const visibleWeddingPartyMembers = [viewedWeddingPartyMember].filter(Boolean);
   const isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember?.title === 'Matron of Honor';
   const matronInfoTabs = document.querySelector('#matronInfoTabs');
-  if (!isViewingMatron && selectedMatronTab === 'bachelorette') selectedMatronTab = 'duties';
+  if (!isViewingMatron && selectedMatronTab === 'bachelorette') selectedMatronTab = 'experience';
   matronInfoTabs.hidden = !showingWeddingPartyPage;
   matronInfoTabs.querySelectorAll('[data-matron-tab]').forEach(button => {
     button.hidden = button.dataset.matronTab === 'bachelorette' && !isViewingMatron;
@@ -1203,7 +1203,13 @@ function render() {
     }).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !showingRegistryPage;
-  document.querySelector('#registryAttireSection').hidden = !showingAttirePage;
+  const registryAttireSection = document.querySelector('#registryAttireSection');
+  const attireDestination = showingPartyAttirePage
+    ? document.querySelector('#weddingPartyAttirePanel')
+    : document.querySelector('#guestAttireAnchor');
+  if (registryAttireSection.parentElement !== attireDestination) attireDestination.append(registryAttireSection);
+  registryAttireSection.classList.toggle('wedding-party-attire-section', showingPartyAttirePage);
+  registryAttireSection.hidden = !showingAttirePage;
   renderWeddingPartyAttireImages(showingPartyAttirePage);
   if (isWedding) renderAttireVideoCollection('#registryAttireVideosSection', '#registryAttireVideos');
   const registryButton = document.querySelector('#registryButton');
