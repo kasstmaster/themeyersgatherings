@@ -1005,7 +1005,7 @@ function updateHeaderImage(event) {
   headerImage.addEventListener('error', () => { headerImage.hidden = true; }, { once: true });
   headerImage.src = nextSource;
 }
-function updateHostToolsButton() { document.querySelector('#hostToolsButton').hidden = !hostAuthenticated; }
+function updateHostToolsPanel() { document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated; }
 function setHostPasswordMode(enabled) {
   const guestFields = document.querySelector('#guestSignInFields');
   const hostFields = document.querySelector('#hostSignInFields');
@@ -1065,7 +1065,7 @@ function showSignedInDestination() {
   document.querySelector('#eventPage').hidden = false;
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 }
-function enterEvent(eventId) {
+function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   const nextState = appState.events[eventId];
   if (!nextState || !EVENT_DETAILS[eventId]) {
     showToast('That gathering is no longer available. Please choose another gathering.');
@@ -1074,6 +1074,12 @@ function enterEvent(eventId) {
   }
   viewedEventId = eventId;
   state = nextState;
+  if (eventId === 'wedding' && !preserveWeddingView) {
+    const partyMember = state.weddingPartyMembers?.some(member => normalizeAccountName(member.name) === normalizeAccountName(signedInPersonName));
+    selectedWeddingTab = hostAuthenticated ? 'couple' : partyMember ? 'party' : 'attire';
+    selectedMatronTab = 'experience';
+    if (hostAuthenticated) hostWeddingPartyViewName = '';
+  }
   // Close the chooser before doing the more involved event render. The
   // chooser only contains gatherings already authorized for this account;
   // re-checking the asynchronously refreshed account list here could reject
@@ -1117,7 +1123,7 @@ function render() {
   document.title = `The Meyers ${event.name}`;
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
   renderSyncStatus();
-  updateHostToolsButton();
+  updateHostToolsPanel();
   renderEventDock();
   updateHeaderImage(event);
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
@@ -1222,9 +1228,6 @@ function render() {
   monetaryGiftButton.classList.toggle('disabled', !state.monetaryGiftUrl);
   monetaryGiftButton.setAttribute('aria-disabled', String(!state.monetaryGiftUrl));
   monetaryGiftButton.textContent = state.monetaryGiftUrl ? 'Give a monetary gift' : (hostAuthenticated ? 'Add monetary gift link in host tools' : 'Monetary gifts coming soon');
-  const editItemsButton = document.querySelector('#editItemsButton');
-  editItemsButton.querySelector('strong').textContent = isWedding ? 'Edit wedding details' : 'Edit menu items';
-  document.querySelector('#clearClaimButton').hidden = isWedding;
   let previewBanner = document.querySelector('#previewBanner');
   if (!previewBanner) {
     previewBanner = document.createElement('div');
@@ -1333,7 +1336,12 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
     hostCredential = password;
     guestName = HOST_DISPLAY_NAME;
     signedInPersonName = '';
-    updateHostToolsButton();
+    if (viewedEventId === 'wedding') {
+      selectedWeddingTab = 'couple';
+      selectedMatronTab = 'experience';
+      hostWeddingPartyViewName = '';
+    }
+    updateHostToolsPanel();
     const action = pendingAccountAction;
     pendingAccountAction = null;
     showSignedInDestination();
@@ -1730,10 +1738,6 @@ function renameAccount(index, input) {
   document.querySelector('#adminAccountError').textContent = '';
   saveState(); showToast('Account updated.');
 }
-document.querySelector('#hostToolsButton').addEventListener('click', () => {
-  pendingAccountAction = null;
-  if (hostAuthenticated) document.querySelector('#hostToolsDialog').showModal();
-});
 [['invitationEventDate', 'eventDate'], ['invitationRsvpDate', 'rsvpDate'], ['invitationAddress1', 'addressLine1'], ['invitationAddress2', 'addressLine2']].forEach(([id, key]) => {
   document.querySelector(`#${id}`).addEventListener('change', event => {
     const value = event.target.value.trim(); if (!value) return;
@@ -1847,7 +1851,7 @@ function renderTemplateManager() {
     saveState(); renderTemplateManager();
   }));
 }
-function openTemplateManager() { document.querySelector('#hostToolsDialog').close(); renderTemplateManager(); document.querySelector('#invitationTemplatesDialog').showModal(); }
+function openTemplateManager() { renderTemplateManager(); document.querySelector('#invitationTemplatesDialog').showModal(); }
 document.querySelector('#invitationTemplatesButton').addEventListener('click', openTemplateManager);
 document.querySelector('#createTemplateButton').addEventListener('click', async () => {
   const error = document.querySelector('#templateManagerError'), name = document.querySelector('#newTemplateName').value.trim(), file = newTemplateBackgroundFile;
@@ -2080,10 +2084,10 @@ function openClearClaimDialog() {
   updateClearClaimFamilies();
   document.querySelector('#clearClaimDialog').showModal();
 }
-document.querySelector('#manageEventsButton').addEventListener('click', () => { document.querySelector('#hostToolsDialog').close(); openEventsAdmin(); });
-document.querySelector('#editItemsButton').addEventListener('click', () => { document.querySelector('#hostToolsDialog').close(); openAdmin(); });
-document.querySelector('#clearClaimButton').addEventListener('click', () => { document.querySelector('#hostToolsDialog').close(); openClearClaimDialog(); });
-document.querySelector('#editAccountsButton').addEventListener('click', () => { document.querySelector('#hostToolsDialog').close(); openAccountsAdmin(); });
+document.querySelector('#manageEventsButton').addEventListener('click', openEventsAdmin);
+document.querySelector('#editItemsButton').addEventListener('click', openAdmin);
+document.querySelector('#clearClaimButton').addEventListener('click', openClearClaimDialog);
+document.querySelector('#editAccountsButton').addEventListener('click', openAccountsAdmin);
 document.querySelector('#previewWeddingPartyButton').addEventListener('click', () => {
   const members = appState.events.wedding.weddingPartyMembers || [];
   const select = document.querySelector('#hostWeddingPartyView');
@@ -2092,7 +2096,6 @@ document.querySelector('#previewWeddingPartyButton').addEventListener('click', (
     + members.map(member => `<option value="${escapeAttribute(member.name)}" ${member.name === hostWeddingPartyViewName ? 'selected' : ''}>${escapeHtml(member.name)} — ${escapeHtml(member.title || 'Wedding Party')}</option>`).join('');
   document.querySelector('#hostWeddingPartyViewError').textContent = '';
   document.querySelector('#openWeddingPartyPreview').disabled = false;
-  document.querySelector('#hostToolsDialog').close();
   document.querySelector('#weddingPartyPreviewDialog').showModal();
 });
 document.querySelector('#openWeddingPartyPreview').addEventListener('click', () => {
@@ -2100,7 +2103,7 @@ document.querySelector('#openWeddingPartyPreview').addEventListener('click', () 
   if (!hostWeddingPartyViewName) return;
   document.querySelector('#weddingPartyPreviewDialog').close();
   selectedWeddingTab = hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW ? 'attire' : 'party';
-  enterEvent('wedding');
+  enterEvent('wedding', { preserveWeddingView: true });
 });
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 function anyListSyncErrorMessage(status, errorCode) {

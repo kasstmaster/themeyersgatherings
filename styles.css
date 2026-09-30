@@ -204,3 +204,12 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 /* Keep wedding-party attire inside the same card as its private navigation. */
 #weddingPartyAttirePanel:empty{display:none}
 .wedding-party-section .wedding-party-attire-section{margin:0;padding:24px 0 0;background:transparent;border:0;border-radius:0;box-shadow:none}
+
+/* Persistent host controls sit directly below the signed-in household banner. */
+.host-tools-panel{padding:12px 20px 14px;background:var(--navy-2);border-bottom:1px solid rgba(255,255,255,.16)}
+.host-tools-panel[hidden]{display:none}
+.host-tools-panel .sync-status{max-width:1160px;margin:0 auto 10px}
+.host-tools-panel .host-tool-actions{display:flex;max-width:1160px;margin:auto;justify-content:center;gap:8px;flex-wrap:wrap}
+.host-tools-panel .host-tool-actions button{display:block;min-width:120px;padding:10px 14px;border:1px solid rgba(255,255,255,.3);border-radius:5px;background:rgba(255,255,255,.08);color:#fff;text-align:center;font-weight:700}
+.host-tools-panel .host-tool-actions button:hover{border-color:var(--gold);background:var(--orange)}
+@media(max-width:650px){.host-tools-panel .host-tool-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.host-tools-panel .host-tool-actions button{min-width:0}}

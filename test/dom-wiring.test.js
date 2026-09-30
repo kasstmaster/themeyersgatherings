@@ -69,7 +69,7 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /state\.weddingPartyDescriptions\?\.\[member\.title\]/);
   assert.match(javascript, /formatWeddingPartyDescription\(description\)/);
   assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Preview Party\/Guest view/);
-  assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding'\)/);
+  assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
 });
 
 test('wedding attire and registry have separate guest-visible tabs with attire selected by default', async () => {
@@ -285,4 +285,26 @@ test('bachelorette party brief replaces the Matron of Honor duties panel', async
   assert.match(javascript, /navigator\.clipboard\.writeText\(text\)/);
   assert.match(javascript, /mailto:\?subject=/);
   assert.match(javascript, /window\.print\(\)/);
+});
+
+
+test('wedding defaults match each signed-in audience', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+
+  assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*hostAuthenticated \? 'couple' : partyMember \? 'party' : 'attire'/);
+  assert.match(javascript, /selectedMatronTab = 'experience'/);
+  assert.match(javascript, /enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
+});
+
+test('host tools are persistent buttons directly below the signed-in household', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+  const accountIndex = html.indexOf('id="signedInAccount"');
+  const toolsIndex = html.indexOf('id="hostToolsPanel"');
+  const mainIndex = html.indexOf('<main>');
+  assert.ok(accountIndex < toolsIndex && toolsIndex < mainIndex);
+  assert.match(html, /id="hostToolsPanel"[\s\S]*>Gatherings<\/button>[\s\S]*>Wedding Details<\/button>[\s\S]*>Clear a Claim<\/button>[\s\S]*>Accounts<\/button>[\s\S]*>View As<\/button>[\s\S]*>Templates<\/button>/);
+  assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
 });
