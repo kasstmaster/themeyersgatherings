@@ -285,12 +285,18 @@ test('private attire notes and image captions are unlimited and editable', async
 });
 
 test('all editable wedding party copy supports safe Markdown formatting', async () => {
-  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
 
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)/);
   assert.match(javascript, /replace\(\/\\\*\\\*\(\.\+\?\)\\\*\\\*\/g, '<strong>\$1<\/strong>'\)/);
   assert.match(javascript, /output\.push\(`<li>\$\{formatInline/);
   assert.match(javascript, /function formatEditableText\(value\) \{ return formatWeddingPartyDescription\(value\); \}/);
+  assert.match(javascript, /output\.push\('<hr>'\)/, 'a standalone --- should render a divider');
+  assert.match(javascript, /href="geo:0,0\?q=\$\{encodeURIComponent\(address\)\}"/, 'angle-bracketed addresses should use the device maps handler');
+  assert.match(html, /Put <code>---<\/code> on its own line for a divider/);
 });
 
 test('wedding party manager only accepts people from wedding-invited accounts', async () => {
