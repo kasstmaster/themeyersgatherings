@@ -444,7 +444,7 @@
             <div class="wedding-party-attire-add">
               <select id="adminWeddingPartyAttireSection" aria-label="Attire section"><option value="ladies">For the Ladies</option><option value="gentlemen">For the Gentlemen</option></select>
               <input id="adminWeddingPartyAttireCaption" type="text" maxlength="240" placeholder="Caption (optional)" aria-label="Image caption" />
-              <label class="template-dropzone compact"><input id="adminWeddingPartyAttireFile" type="file" accept="image/png,image/jpeg,image/webp" /><span><strong>Choose an image</strong></span><small>PNG, JPEG, or WebP · 15 MB maximum</small></label>
+              <label class="template-dropzone compact" id="adminWeddingPartyAttireDropzone" data-empty-label="Drop an image here"><input id="adminWeddingPartyAttireFile" type="file" accept="image/png,image/jpeg,image/webp" /><span><strong>Drop an image here</strong> or choose a file</span><small>PNG, JPEG, or WebP · 15 MB maximum</small></label>
               <button id="adminAddWeddingPartyAttireImage" type="button">Upload image</button>
             </div>
             <p id="adminWeddingPartyAttireError" class="form-error" role="alert"></p>

@@ -83,6 +83,18 @@ test('private attire galleries are rendered only for wedding party viewers', asy
   assert.match(html, /id="adminWeddingPartyAttireCaption"[\s\S]*id="adminWeddingPartyAttireFile"/);
 });
 
+test('private attire image picker supports clicking and drag and drop', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /id="adminWeddingPartyAttireDropzone"[\s\S]*Drop an image here/);
+  assert.match(javascript, /configureDropzone\(weddingPartyAttireDropzone, weddingPartyAttireFileInput/);
+  assert.match(javascript, /if \(!weddingPartyAttireFile\)[\s\S]*fileInput\.click\(\)/);
+  assert.match(javascript, /uploadWeddingPartyAttireImage\(crypto\.randomUUID\(\), weddingPartyAttireFile\)/);
+});
+
 test('wedding party manager only accepts people from wedding-invited accounts', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
