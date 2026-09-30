@@ -387,6 +387,7 @@
         <section id="weddingPartyAdmin" class="wedding-party-admin" aria-labelledby="weddingPartyAdminHeading" hidden>
           <h3 id="weddingPartyAdminHeading">Wedding party members</h3>
           <p>Add an invited person by the same first and last name they use to sign in.</p>
+          <p>Descriptions support Markdown-style formatting: start a line with <code>-</code> for a bullet, use <code>**bold**</code>, <code>*italics*</code>, or <code>`code`</code>.</p>
           <div id="adminWeddingPartyMembers" class="wedding-party-member-list"></div>
           <div class="wedding-party-add">
             <input id="adminWeddingPartyFirstName" placeholder="First name" maxlength="60" aria-label="Wedding party member first name" />
@@ -394,7 +395,7 @@
             <select id="adminWeddingPartyTitle" aria-label="Wedding party title">
               <option value="">Select title</option>
             </select>
-            <textarea id="adminWeddingPartyDescription" placeholder="Description and instructions for this role" maxlength="1000" aria-label="Wedding party title description"></textarea>
+            <textarea id="adminWeddingPartyDescription" placeholder="Description (supports bullets, **bold**, and *italics*)" maxlength="1000" aria-label="Wedding party title description"></textarea>
             <button id="adminAddWeddingPartyMember" type="button">Add member</button>
           </div>
           <p class="form-error" id="adminWeddingPartyError" role="alert"></p>

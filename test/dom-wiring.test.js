@@ -65,6 +65,8 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /hostAuthenticated \|\| Boolean\(signedInWeddingPartyMember\)/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWeddingPartyMember/);
   assert.match(javascript, /visibleWeddingPartyMembers = \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
+  assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
+  assert.match(javascript, /formatWeddingPartyDescription\(member\.description\)/);
   assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Preview wedding party view/);
   assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding'\)/);
 });

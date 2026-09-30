@@ -10,7 +10,7 @@ const DEFAULT_CHRISTMAS_DATE = '2026-12-25';
 const DEFAULT_WEDDING_DATE = '2027-08-10';
 const DEFAULT_REGISTRY_URL = 'https://www.amazon.com/wedding/share/kassandraandsteven';
 const WEDDING_PARTY_TITLES = [
-  { value: 'Matron of Honor', multiple: false },
+  { value: 'Maid/Matron of Honor', multiple: false },
   { value: 'Best Man', multiple: false },
   { value: 'Bridesmaid', multiple: true },
   { value: 'Groomsmen', multiple: true },
@@ -396,6 +396,35 @@ async function loadSharedState() {
 }
 function escapeHtml(value) { const el = document.createElement('div'); el.textContent = value; return el.innerHTML; }
 function escapeAttribute(value) { return escapeHtml(value).replaceAll('"', '&quot;').replaceAll("'", '&#39;'); }
+function formatWeddingPartyDescription(value) {
+  const formatInline = line => escapeHtml(line)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/\*([^*]+?)\*/g, '<em>$1</em>')
+    .replace(/_([^_]+?)_/g, '<em>$1</em>');
+  const output = [];
+  let openList = '';
+  const closeList = () => {
+    if (!openList) return;
+    output.push(`</${openList}>`);
+    openList = '';
+  };
+  String(value || '').split(/\r?\n/).forEach(line => {
+    const bullet = line.match(/^\s*[-+]\s+(.+)$/);
+    const numbered = line.match(/^\s*\d+[.)]\s+(.+)$/);
+    const listType = bullet ? 'ul' : numbered ? 'ol' : '';
+    if (listType) {
+      if (openList !== listType) { closeList(); openList = listType; output.push(`<${listType}>`); }
+      output.push(`<li>${formatInline((bullet || numbered)[1])}</li>`);
+      return;
+    }
+    closeList();
+    if (line.trim()) output.push(`<p>${formatInline(line)}</p>`);
+  });
+  closeList();
+  return output.join('');
+}
 function amountOptions(item = {}) {
   return `<option value="optional" ${item.optional ? 'selected' : ''}>Optional</option>${Array.from({ length: 50 }, (_, index) => {
     const amount = index + 1;
@@ -824,7 +853,7 @@ function render() {
     ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
     : 'Your role, details, and wedding-day information are below.';
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
-    ? visibleWeddingPartyMembers.map(member => `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${member.description ? `<p class="wedding-party-description">${escapeHtml(member.description)}</p>` : ''}</article>`).join('')
+    ? visibleWeddingPartyMembers.map(member => `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${member.description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(member.description)}</div>` : ''}</article>`).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !isWedding || showingWeddingPartyPage;
   document.querySelector('#registryAttireSection').hidden = !isWedding || showingWeddingPartyPage;
