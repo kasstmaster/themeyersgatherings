@@ -85,6 +85,23 @@ test('wedding attire and registry have separate guest-visible tabs with attire s
   assert.match(styles, /\.wedding-party-tabs button\[aria-selected="true"\]\{[^}]*border:1px solid var\(--gold\)[^}]*background:var\(--orange\)[^}]*color:#fff/);
 });
 
+test('Bride & Groom is an unlimited Markdown page visible only to the host', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.ok(html.indexOf('data-wedding-tab="couple"') < html.indexOf('data-wedding-tab="attire"'));
+  assert.match(html, /data-wedding-tab="couple"[^>]*hidden>Bride &amp; Groom/);
+  assert.match(html, /id="brideGroomHeading">Bride &amp; Groom/);
+  const editor = html.match(/<textarea id="brideGroomContent"[^>]*>/)?.[0] || '';
+  assert.doesNotMatch(editor, /maxlength/);
+  assert.match(javascript, /button\.dataset\.weddingTab === 'couple' && !hostAuthenticated/);
+  assert.match(javascript, /showingBrideGroomPage = isWedding && hostAuthenticated && selectedWeddingTab === 'couple'/);
+  assert.match(javascript, /brideGroomPreview'\)\.innerHTML = formatEditableText/);
+  assert.match(javascript, /state\.brideGroomContent = event\.target\.value/);
+});
+
 test('wedding party tabs use guest-facing labels and only restrict Your Role', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),

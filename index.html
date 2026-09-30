@@ -129,10 +129,22 @@
       </section>
 
       <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
+        <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="false" hidden>Bride &amp; Groom</button>
         <button type="button" role="tab" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="true">Attire</button>
         <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
         <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Your Role</button>
       </nav>
+
+      <section id="brideGroomSection" class="bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
+        <p class="section-kicker">A private space for the couple</p>
+        <h2 id="brideGroomHeading">Bride &amp; Groom</h2>
+        <label class="bride-groom-editor">
+          <span>Page content</span>
+          <textarea id="brideGroomContent" placeholder="Add your notes here…" aria-describedby="brideGroomFormatting"></textarea>
+        </label>
+        <p id="brideGroomFormatting" class="bride-groom-formatting">Formatting supports <code>**bold**</code>, <code>*italics*</code>, <code>- bullets</code>, numbered lists, and <code>`code`</code>. Your changes save when you leave the editor.</p>
+        <div id="brideGroomPreview" class="bride-groom-preview" aria-live="polite"></div>
+      </section>
 
       <section id="weddingPartySection" class="wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
         <p class="section-kicker">The people by our side</p>
