@@ -135,6 +135,8 @@
 
       <section id="weddingPartySection" class="wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
         <h2 id="weddingPartyHeading">Wedding Party</h2>
+        <p class="wedding-party-intro">Wedding party roles, details, and wedding-day information are below.</p>
+        <div id="weddingPartyDetails" class="wedding-party-details"></div>
       </section>
 
       <section id="registrySection" class="registry-section" aria-labelledby="registryHeading" hidden>
@@ -377,6 +379,10 @@
           <div class="wedding-party-add">
             <input id="adminWeddingPartyFirstName" placeholder="First name" maxlength="60" aria-label="Wedding party member first name" />
             <input id="adminWeddingPartyLastName" placeholder="Last name" maxlength="60" aria-label="Wedding party member last name" />
+            <select id="adminWeddingPartyTitle" aria-label="Wedding party title">
+              <option value="">Select title</option>
+            </select>
+            <textarea id="adminWeddingPartyDescription" placeholder="Description and instructions for this role" maxlength="1000" aria-label="Wedding party title description"></textarea>
             <button id="adminAddWeddingPartyMember" type="button">Add member</button>
           </div>
           <p class="form-error" id="adminWeddingPartyError" role="alert"></p>

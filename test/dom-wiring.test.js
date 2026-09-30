@@ -61,7 +61,8 @@ test('wedding party access is tied to the individual sign-in name', async () => 
 
   assert.match(html, /id="weddingPartyTabs"[\s\S]*Registry &amp; Attire[\s\S]*Wedding Party/);
   assert.match(javascript, /signedInPersonName = accountName/);
-  assert.match(javascript, /state\.weddingPartyMembers\?\.some\(name => normalizeAccountName\(name\) === normalizeAccountName\(signedInPersonName\)\)/);
+  assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => normalizeAccountName\(member\.name\) === normalizeAccountName\(signedInPersonName\)\)/);
+  assert.match(javascript, /hostAuthenticated \|\| Boolean\(signedInWeddingPartyMember\)/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWeddingPartyMember/);
 });
 
@@ -71,5 +72,5 @@ test('wedding party manager only accepts people from wedding-invited accounts', 
 
   assert.match(addHandler, /accountNameMatches\(name, item\.name\)/);
   assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
-  assert.match(addHandler, /state\.weddingPartyMembers\.push\(name\)/);
+  assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ name, title: selectedTitle\.value, description:/);
 });
