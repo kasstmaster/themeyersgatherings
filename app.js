@@ -361,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -487,6 +487,9 @@ function normalizeState(saved) {
         : '';
       loaded.events.wedding.brideGroomContent = typeof loaded.events.wedding.brideGroomContent === 'string'
         ? loaded.events.wedding.brideGroomContent
+        : '';
+      loaded.events.wedding.perfectExperienceContent = typeof loaded.events.wedding.perfectExperienceContent === 'string'
+        ? loaded.events.wedding.perfectExperienceContent
         : '';
       loaded.events.wedding.attireVideos = Array.isArray(loaded.events.wedding.attireVideos)
         ? loaded.events.wedding.attireVideos.filter(url => typeof url === 'string')
@@ -1168,19 +1171,28 @@ function render() {
   const visibleWeddingPartyMembers = [viewedWeddingPartyMember].filter(Boolean);
   const isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember?.title === 'Matron of Honor';
   const matronInfoTabs = document.querySelector('#matronInfoTabs');
-  matronInfoTabs.hidden = !isViewingMatron;
+  if (!isViewingMatron && selectedMatronTab === 'bachelorette') selectedMatronTab = 'duties';
+  matronInfoTabs.hidden = !showingWeddingPartyPage;
   matronInfoTabs.querySelectorAll('[data-matron-tab]').forEach(button => {
+    button.hidden = button.dataset.matronTab === 'bachelorette' && !isViewingMatron;
     const isSelected = button.dataset.matronTab === selectedMatronTab;
     button.setAttribute('aria-selected', String(isSelected));
     button.tabIndex = isSelected ? 0 : -1;
   });
-  document.querySelector('#weddingPartyDetails').hidden = isViewingMatron && selectedMatronTab === 'bachelorette';
+  document.querySelector('#weddingPartyDetails').hidden = showingWeddingPartyPage && selectedMatronTab !== 'duties';
+  document.querySelector('#perfectExperiencePanel').hidden = !showingWeddingPartyPage || selectedMatronTab !== 'experience';
+  if (showingWeddingPartyPage && selectedMatronTab === 'experience') {
+    document.querySelector('#perfectExperienceContent').innerHTML = formatEditableText(state.perfectExperienceContent)
+      || '<p class="guest-empty">No Perfect Experience details have been added yet.</p>';
+  }
   document.querySelector('#bacheloretteInfoPanel').hidden = !isViewingMatron || selectedMatronTab !== 'bachelorette';
   document.querySelector('#weddingPartyIntro').textContent = hostAuthenticated && viewedWeddingPartyMember
     ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
     : isViewingMatron && selectedMatronTab === 'bachelorette'
       ? 'Your bachelorette party preferences and planning information are below.'
-      : 'Your role, details, and wedding-day information are below.';
+      : showingWeddingPartyPage && selectedMatronTab === 'experience'
+        ? 'Everything you need to help create the perfect experience is below.'
+        : 'Your role, details, and wedding-day information are below.';
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
     ? visibleWeddingPartyMembers.map(member => {
       const description = state.weddingPartyDescriptions?.[member.title] || '';
@@ -1370,6 +1382,12 @@ document.querySelector('#adminBrideGroomContent').addEventListener('change', eve
   saveState();
   showToast('Bride & Groom page updated.');
 });
+document.querySelector('#adminPerfectExperienceContent').addEventListener('change', event => {
+  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  state.perfectExperienceContent = event.target.value;
+  saveState();
+  showToast('The Perfect Experience page updated.');
+});
 document.querySelector('#hostWeddingPartyView').addEventListener('change', event => {
   if (!hostAuthenticated) return;
   hostWeddingPartyViewName = event.target.value;
@@ -1402,7 +1420,10 @@ document.querySelector('#matronInfoTabs').addEventListener('click', event => {
 document.querySelector('#matronInfoTabs').addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
   event.preventDefault();
-  selectedMatronTab = selectedMatronTab === 'duties' ? 'bachelorette' : 'duties';
+  const tabs = [...document.querySelectorAll('#matronInfoTabs [data-matron-tab]:not([hidden])')];
+  const currentIndex = tabs.findIndex(button => button.dataset.matronTab === selectedMatronTab);
+  const direction = event.key === 'ArrowRight' ? 1 : -1;
+  selectedMatronTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.matronTab;
   render();
   document.querySelector(`[data-matron-tab="${selectedMatronTab}"]`).focus();
 });
@@ -1501,6 +1522,7 @@ function openAdmin() {
   document.querySelector('#adminMonetaryGiftUrl').value = state.monetaryGiftUrl || '';
   if (isWedding) {
     document.querySelector('#adminBrideGroomContent').value = state.brideGroomContent || '';
+    document.querySelector('#adminPerfectExperienceContent').value = state.perfectExperienceContent || '';
     renderWeddingPartyDescriptionAdmin();
     renderWeddingPartyAttireAdmin();
     renderAdminAttireVideos();
