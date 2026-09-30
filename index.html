@@ -111,6 +111,17 @@
       <span>Signed in to household</span>
       <strong id="signedInAccountName"></strong>
     </div>
+    <nav id="hostToolsPanel" class="host-tools-panel" aria-label="Host tools" hidden>
+      <div id="syncStatus" class="sync-status" role="status" aria-live="polite"></div>
+      <div class="host-tool-actions">
+        <button id="manageEventsButton" type="button">Gatherings</button>
+        <button id="editItemsButton" type="button">Wedding Details</button>
+        <button id="clearClaimButton" type="button">Clear a Claim</button>
+        <button id="editAccountsButton" type="button">Accounts</button>
+        <button id="previewWeddingPartyButton" type="button">View As</button>
+        <button id="invitationTemplatesButton" type="button">Templates</button>
+      </div>
+    </nav>
 
     <main>
       <section class="welcome" aria-labelledby="welcome-title">
@@ -130,8 +141,8 @@
 
       <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
         <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="false" hidden>Bride &amp; Groom</button>
+        <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
         <button type="button" role="tab" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="true">Attire</button>
-        <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Your Role</button>
         <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
       </nav>
 
@@ -146,9 +157,9 @@
         <h2 id="weddingPartyHeading">Wedding Party</h2>
         <p id="weddingPartyIntro" class="wedding-party-intro">Your role, details, and wedding-day information are below.</p>
         <nav id="matronInfoTabs" class="matron-info-tabs" aria-label="Wedding party information" role="tablist" hidden>
-          <button type="button" role="tab" data-matron-tab="duties" aria-controls="weddingPartyDetails" aria-selected="true">Responsibilities</button>
+          <button type="button" role="tab" data-matron-tab="experience" aria-controls="perfectExperiencePanel" aria-selected="true">The Perfect Experience</button>
+          <button type="button" role="tab" data-matron-tab="duties" aria-controls="weddingPartyDetails" aria-selected="false">Responsibilities</button>
           <button type="button" role="tab" data-matron-tab="attire" aria-controls="registryAttireSection" aria-selected="false">Attire</button>
-          <button type="button" role="tab" data-matron-tab="experience" aria-controls="perfectExperiencePanel" aria-selected="false">The Perfect Experience</button>
           <button type="button" role="tab" data-matron-tab="bachelorette" aria-controls="bacheloretteInfoPanel" aria-selected="false">Bachelorette Party Info</button>
         </nav>
         <div id="weddingPartyDetails" class="wedding-party-details"></div>
@@ -186,8 +197,10 @@
           <h3>The Most Important Rule</h3><p>Don't over-plan it.</p><p>Give us a beautiful, comfortable place with a hot tub, food, drinks, games and privacy and <strong>let us enjoy being together</strong>.</p><p>The goal isn't to manufacture a huge “bachelorette experience.”</p><p>I want a cozy two-night girls' getaway with the women I love before I get married.</p>
         </div>
         </section>
+        <div id="weddingPartyAttirePanel"></div>
       </section>
 
+      <div id="guestAttireAnchor"></div>
       <section id="registryAttireSection" class="registry-attire-section" aria-labelledby="registryAttireHeading" hidden>
         <section id="registryAffordableAttire" class="affordable-attire">
           <p class="section-kicker">Dress for the occasion</p>
@@ -259,10 +272,6 @@
 
     <nav id="eventDock" class="event-dock" aria-label="Event navigation" hidden>
       <div id="eventSwitchButtons" class="event-switch-buttons"></div>
-      <button class="host-tools-button" id="hostToolsButton" type="button" aria-haspopup="dialog" aria-label="Host tools" title="Host tools" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.1 7.1 0 0 0-1.62-.94L14.4 2.81a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.72 8.87a.48.48 0 0 0 .12.61l2.03 1.58c-.05.3-.08.63-.08.94s.03.64.08.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.38.31.59.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.21.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.02-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z"/></svg>
-        <span>Host</span>
-      </button>
     </nav>
 
     <dialog id="rsvpDialog">
@@ -406,22 +415,6 @@
         </section>
         </div>
         <button class="primary-button" value="default">Done editing</button>
-      </form>
-    </dialog>
-
-    <dialog id="hostToolsDialog">
-      <form method="dialog" class="modal-card">
-        <button class="modal-close" value="cancel" aria-label="Close">×</button>
-        <p class="section-kicker">Host dashboard</p><h2>What would you like to do?</h2>
-        <div id="syncStatus" class="sync-status" role="status" aria-live="polite"></div>
-        <div class="host-tool-actions">
-          <button id="manageEventsButton" type="button"><strong>Manage gatherings</strong></button>
-          <button id="editItemsButton" type="button"><strong>Edit menu items</strong></button>
-          <button id="clearClaimButton" type="button"><strong>Clear a claim</strong></button>
-          <button id="editAccountsButton" type="button"><strong>Manage accounts</strong></button>
-          <button id="previewWeddingPartyButton" type="button"><strong>Preview Party/Guest view</strong><span>See the wedding as a general guest or selected party member</span></button>
-          <button id="invitationTemplatesButton" type="button"><strong>Invitation templates</strong></button>
-        </div>
       </form>
     </dialog>
 
