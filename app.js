@@ -1123,6 +1123,7 @@ function render() {
     ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
     : signedInWeddingPartyMember;
   const visibleWeddingPartyMembers = [viewedWeddingPartyMember].filter(Boolean);
+  document.querySelector('#bacheloretteInfoButton').hidden = !showingWeddingPartyPage || viewedWeddingPartyMember?.title !== 'Matron of Honor';
   document.querySelector('#weddingPartyIntro').textContent = hostAuthenticated && viewedWeddingPartyMember
     ? `Previewing exactly what ${viewedWeddingPartyMember.name} sees.`
     : 'Your role, details, and wedding-day information are below.';
@@ -1325,6 +1326,37 @@ document.querySelector('#customItemForm').addEventListener('submit', event => {
   document.querySelector('#customItemDialog').close(); saveState(); showToast(`${name} was added to ${category}!`);
 });
 document.querySelector('#copyMenuButton').addEventListener('click', copyMenu);
+function bacheloretteInfoText() {
+  return `BACHELORETTE PARTY INFO\n\n${document.querySelector('#bacheloretteInfoContent').innerText}`;
+}
+document.querySelector('#bacheloretteInfoButton').addEventListener('click', () => document.querySelector('#bacheloretteInfoDialog').showModal());
+document.querySelector('#closeBacheloretteInfo').addEventListener('click', () => document.querySelector('#bacheloretteInfoDialog').close());
+document.querySelector('#copyBacheloretteInfo').addEventListener('click', async () => {
+  const text = bacheloretteInfoText();
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.append(textArea);
+    textArea.select();
+    const copied = document.execCommand('copy');
+    textArea.remove();
+    if (!copied) { showToast('The information could not be copied. Please try again.'); return; }
+  }
+  showToast('Bachelorette party info copied!');
+});
+document.querySelector('#emailBacheloretteInfo').addEventListener('click', () => {
+  window.location.href = `mailto:?subject=${encodeURIComponent('Bachelorette Party Info')}&body=${encodeURIComponent(bacheloretteInfoText())}`;
+});
+document.querySelector('#printBacheloretteInfo').addEventListener('click', () => {
+  document.body.classList.add('bachelorette-printing');
+  window.print();
+});
+window.addEventListener('afterprint', () => document.body.classList.remove('bachelorette-printing'));
 document.querySelector('#menuGrid').addEventListener('click', event => {
   const claimButton = event.target.closest('[data-claim]');
   if (claimButton) {
