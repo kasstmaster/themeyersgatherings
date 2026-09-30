@@ -2052,13 +2052,10 @@ function openEventsAdmin() {
     return `<div class="event-choice"><div><strong>${event.name}</strong><span>${formatted}${active ? ' · Active' : ' · Hidden'}</span></div><div class="event-choice-actions"><button class="preview-event" type="button" data-preview-event="${id}" ${previewing ? 'disabled' : ''}>${previewing ? 'Previewing' : 'Preview'}</button><button type="button" data-toggle-event="${id}" class="${active ? 'deactivate-event' : ''}" ${lastActive ? 'disabled title="At least one event must remain active"' : ''}>${active ? 'Deactivate' : 'Activate'}</button></div></div>`;
   }).join('');
   document.querySelectorAll('[data-preview-event]').forEach(button => button.addEventListener('click', () => {
-    viewedEventId = button.dataset.previewEvent;
-    state = appState.events[viewedEventId];
-    guestName = HOST_DISPLAY_NAME;
+    const eventId = button.dataset.previewEvent;
     document.querySelector('#eventsDialog').close();
-    render();
-    showSignedInDestination();
-    showToast(`Previewing ${EVENT_DETAILS[viewedEventId].name}.`);
+    enterEvent(eventId);
+    showToast(`Previewing ${EVENT_DETAILS[eventId].name}.`);
   }));
   document.querySelectorAll('[data-toggle-event]').forEach(button => button.addEventListener('click', () => {
     appState.events[viewedEventId] = state;

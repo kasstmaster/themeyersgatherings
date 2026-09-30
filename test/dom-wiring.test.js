@@ -323,6 +323,16 @@ test('wedding defaults match each signed-in audience', async () => {
   assert.match(javascript, /enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
 });
 
+test('choosing Wedding from Gatherings restores the host Bride & Groom tab', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const eventPreviewHandler = javascript.match(/querySelectorAll\('\[data-preview-event\]'\)[\s\S]*?\n  \}\)\);/)?.[0] || '';
+
+  assert.match(eventPreviewHandler, /const eventId = button\.dataset\.previewEvent/);
+  assert.match(eventPreviewHandler, /enterEvent\(eventId\)/);
+  assert.doesNotMatch(eventPreviewHandler, /viewedEventId = button\.dataset\.previewEvent[\s\S]*render\(\)/);
+  assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*selectedWeddingTab = hostAuthenticated \? 'couple'/);
+});
+
 test('host tools are persistent buttons directly below the signed-in household', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
