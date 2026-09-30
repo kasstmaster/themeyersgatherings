@@ -333,6 +333,27 @@
           <label><span>Monetary gift link</span><input id="adminMonetaryGiftUrl" type="url" placeholder="https://www.example.com/our-gift-fund" /></label>
         </div>
         <div id="adminAttireFields" class="admin-attire" hidden>
+          <section class="wedding-party-descriptions-admin" aria-labelledby="weddingPartyDescriptionsAdminHeading">
+            <h3 id="weddingPartyDescriptionsAdminHeading">Title descriptions</h3>
+            <p>Edit a title once to update its description for every person assigned that title. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, and <code>`code`</code>.</p>
+            <div id="adminWeddingPartyDescriptions" class="wedding-party-description-editors"></div>
+          </section>
+          <section class="wedding-party-attire-admin" aria-labelledby="weddingPartyAttireAdminHeading">
+            <h3 id="weddingPartyAttireAdminHeading">Private attire images</h3>
+            <p>Add inspiration at the bottom of the ladies’ or gentlemen’s attire section. These images, captions, and notes are shown only to signed-in Wedding Party members. Editable text supports Markdown such as <strong>**bold**</strong>, <strong>*italics*</strong>, and <strong>- bullets</strong>.</p>
+            <div class="wedding-party-attire-notes">
+              <label><span>Note for the Ladies</span><textarea id="adminWeddingPartyLadiesAttireNote" placeholder="Optional note shown below all ladies’ images"></textarea></label>
+              <label><span>Note for the Gentlemen</span><textarea id="adminWeddingPartyGentlemenAttireNote" placeholder="Optional note shown below all gentlemen’s images"></textarea></label>
+            </div>
+            <div id="adminWeddingPartyAttireImages" class="wedding-party-attire-image-list"></div>
+            <div class="wedding-party-attire-add">
+              <select id="adminWeddingPartyAttireSection" aria-label="Attire section"><option value="ladies">For the Ladies</option><option value="gentlemen">For the Gentlemen</option></select>
+              <textarea id="adminWeddingPartyAttireCaption" placeholder="Caption (optional)" aria-label="Image caption"></textarea>
+              <label class="template-dropzone compact" id="adminWeddingPartyAttireDropzone" data-empty-label="Drop an image here"><input id="adminWeddingPartyAttireFile" type="file" accept="image/png,image/jpeg,image/webp" /><span><strong>Drop an image here</strong> or choose a file</span><small>PNG, JPEG, or WebP · 15 MB maximum</small></label>
+              <button id="adminAddWeddingPartyAttireImage" type="button">Upload image</button>
+            </div>
+            <p id="adminWeddingPartyAttireError" class="form-error" role="alert"></p>
+          </section>
           <h3>Formal attire tip videos</h3>
           <p>Add YouTube or Vimeo links to display on the Wedding Attire page.</p>
           <div id="adminAttireVideos"></div>
@@ -434,25 +455,6 @@
             <button id="adminAddWeddingPartyMember" type="button">Add member</button>
           </div>
           <p class="form-error" id="adminWeddingPartyError" role="alert"></p>
-          <h3>Title descriptions</h3>
-          <p>Edit a title once to update its description for every person assigned that title. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, and <code>`code`</code>.</p>
-          <div id="adminWeddingPartyDescriptions" class="wedding-party-description-editors"></div>
-          <section class="wedding-party-attire-admin" aria-labelledby="weddingPartyAttireAdminHeading">
-            <h3 id="weddingPartyAttireAdminHeading">Private attire images</h3>
-            <p>Add inspiration at the bottom of the ladies’ or gentlemen’s attire section. These images, captions, and notes are shown only to signed-in Wedding Party members. Editable text supports Markdown such as <strong>**bold**</strong>, <strong>*italics*</strong>, and <strong>- bullets</strong>.</p>
-            <div class="wedding-party-attire-notes">
-              <label><span>Note for the Ladies</span><textarea id="adminWeddingPartyLadiesAttireNote" placeholder="Optional note shown below all ladies’ images"></textarea></label>
-              <label><span>Note for the Gentlemen</span><textarea id="adminWeddingPartyGentlemenAttireNote" placeholder="Optional note shown below all gentlemen’s images"></textarea></label>
-            </div>
-            <div id="adminWeddingPartyAttireImages" class="wedding-party-attire-image-list"></div>
-            <div class="wedding-party-attire-add">
-              <select id="adminWeddingPartyAttireSection" aria-label="Attire section"><option value="ladies">For the Ladies</option><option value="gentlemen">For the Gentlemen</option></select>
-              <textarea id="adminWeddingPartyAttireCaption" placeholder="Caption (optional)" aria-label="Image caption"></textarea>
-              <label class="template-dropzone compact" id="adminWeddingPartyAttireDropzone" data-empty-label="Drop an image here"><input id="adminWeddingPartyAttireFile" type="file" accept="image/png,image/jpeg,image/webp" /><span><strong>Drop an image here</strong> or choose a file</span><small>PNG, JPEG, or WebP · 15 MB maximum</small></label>
-              <button id="adminAddWeddingPartyAttireImage" type="button">Upload image</button>
-            </div>
-            <p id="adminWeddingPartyAttireError" class="form-error" role="alert"></p>
-          </section>
         </section>
         <section class="anylist-sync" aria-label="AnyList account sync">
           <br><button id="syncAnyListButton" type="button">Sync AnyList Address Book</button>

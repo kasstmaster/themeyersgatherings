@@ -107,6 +107,16 @@ test('private attire galleries are rendered only for wedding party viewers', asy
   assert.match(html, /id="adminWeddingPartyAttireCaption"[\s\S]*id="adminWeddingPartyAttireFile"/);
 });
 
+test('wedding detail editor places party copy and private attire before tip videos', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
+
+  assert.ok(weddingEditor.indexOf('Title descriptions') < weddingEditor.indexOf('Private attire images'));
+  assert.ok(weddingEditor.indexOf('Private attire images') < weddingEditor.indexOf('Formal attire tip videos'));
+  assert.equal((html.match(/id="adminWeddingPartyDescriptions"/g) || []).length, 1);
+  assert.equal((html.match(/id="adminWeddingPartyAttireImages"/g) || []).length, 1);
+});
+
 test('wedding party attire images show the complete upload with rounded edges', async () => {
   const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
