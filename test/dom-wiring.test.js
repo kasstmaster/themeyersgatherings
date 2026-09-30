@@ -59,11 +59,11 @@ test('wedding party access is tied to the individual sign-in name', async () => 
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /id="weddingPartyTabs"[\s\S]*Registry &amp; Attire[\s\S]*Wedding Party/);
+  assert.match(html, /id="weddingPartyTabs"[\s\S]*>Attire<[\s\S]*>Registry<[\s\S]*>Your Role</);
   assert.match(javascript, /signedInPersonName = accountName/);
   assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => normalizeAccountName\(member\.name\) === normalizeAccountName\(signedInPersonName\)\)/);
   assert.match(javascript, /hostAuthenticated && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
-  assert.match(javascript, /weddingPartyTabs\.hidden = !isWeddingPartyMember/);
+  assert.match(javascript, /weddingPartyTabs\.hidden = !isWedding/);
   assert.match(javascript, /visibleWeddingPartyMembers = \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
   assert.match(javascript, /state\.weddingPartyDescriptions\?\.\[member\.title\]/);
@@ -72,15 +72,30 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding'\)/);
 });
 
-test('wedding attire appears before the registry and inactive page tabs are white', async () => {
+test('wedding attire and registry have separate guest-visible tabs with attire selected by default', async () => {
   const [html, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
   assert.ok(html.indexOf('id="registryAttireSection"') < html.indexOf('id="registrySection"'));
+  assert.match(html, /data-wedding-tab="attire"[^>]*aria-selected="true">Attire/);
+  assert.match(html, /data-wedding-tab="registry"[^>]*aria-selected="false">Registry/);
   assert.match(styles, /\.wedding-party-tabs button\{[^}]*color:#fff/);
   assert.match(styles, /\.wedding-party-tabs button\[aria-selected="true"\]\{[^}]*color:var\(--orange\)/);
+});
+
+test('wedding party tabs use guest-facing labels and only restrict Your Role', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, />Your Role<\/button>/);
+  assert.match(html, />Responsibilities<\/button>/);
+  assert.match(javascript, /button\.hidden = button\.dataset\.weddingTab === 'party' && !isWeddingPartyMember/);
+  assert.match(javascript, /registrySection\.hidden = !showingRegistryPage/);
+  assert.match(javascript, /querySelector\('#registryAttireSection'\)\.hidden = !showingAttirePage/);
 });
 
 test('host can preview the wedding as a general guest without selecting an account', async () => {
@@ -93,7 +108,7 @@ test('host can preview the wedding as a general guest without selecting an accou
   assert.match(javascript, /const GENERAL_GUEST_PREVIEW = '__general_guest__'/);
   assert.match(javascript, />General guest<\/option>/);
   assert.match(javascript, /hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
-  assert.match(javascript, /hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW \? 'registry' : 'party'/);
+  assert.match(javascript, /hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW \? 'attire' : 'party'/);
 });
 
 test('private attire galleries are rendered only for wedding party viewers', async () => {
@@ -102,7 +117,7 @@ test('private attire galleries are rendered only for wedding party viewers', asy
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
   assert.match(html, /id="weddingPartyLadiesAttire"[\s\S]*id="weddingPartyGentlemenAttire"/);
-  assert.match(javascript, /renderWeddingPartyAttireImages\(isWeddingPartyMember && !showingWeddingPartyPage\)/);
+  assert.match(javascript, /renderWeddingPartyAttireImages\(isWeddingPartyMember && showingAttirePage\)/);
   assert.match(javascript, /const entries = canView && Array\.isArray\(images\[section\]\) \? images\[section\] : \[\]/);
   assert.match(html, /id="adminWeddingPartyAttireCaption"[\s\S]*id="adminWeddingPartyAttireFile"/);
 });
