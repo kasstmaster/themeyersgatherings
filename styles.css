@@ -212,4 +212,5 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .host-tools-panel .host-tool-actions{display:flex;max-width:1160px;margin:auto;justify-content:center;gap:8px;flex-wrap:wrap}
 .host-tools-panel .host-tool-actions button{display:block;min-width:120px;padding:10px 14px;border:1px solid rgba(255,255,255,.3);border-radius:5px;background:rgba(255,255,255,.08);color:#fff;text-align:center;font-weight:700}
 .host-tools-panel .host-tool-actions button:hover{border-color:var(--gold);background:var(--orange)}
+.cancel-view-as{position:fixed;top:16px;right:16px;z-index:30;border:1px solid rgba(255,255,255,.65);border-radius:999px;background:var(--navy);color:#fff;padding:10px 16px;box-shadow:0 6px 20px rgba(0,0,0,.28);font-weight:700}.cancel-view-as:hover{background:var(--orange)}.cancel-view-as[hidden]{display:none}
 @media(max-width:650px){.host-tools-panel .host-tool-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.host-tools-panel .host-tool-actions button{min-width:0}}
