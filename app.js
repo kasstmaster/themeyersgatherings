@@ -1154,10 +1154,8 @@ function render() {
   });
   document.querySelector('#brideGroomSection').hidden = !showingBrideGroomPage;
   if (showingBrideGroomPage) {
-    const brideGroomContent = document.querySelector('#brideGroomContent');
-    if (document.activeElement !== brideGroomContent) brideGroomContent.value = state.brideGroomContent || '';
-    document.querySelector('#brideGroomPreview').innerHTML = formatEditableText(brideGroomContent.value)
-      || '<p class="guest-empty">Your formatted preview will appear here.</p>';
+    document.querySelector('#brideGroomContent').innerHTML = formatEditableText(state.brideGroomContent)
+      || '<p class="guest-empty">No Bride & Groom details have been added yet.</p>';
   }
   document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
   const weddingPartyMembers = state.weddingPartyMembers || [];
@@ -1366,11 +1364,7 @@ document.querySelector('#weddingPartyTabs').addEventListener('keydown', event =>
   render();
   document.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
 });
-document.querySelector('#brideGroomContent').addEventListener('input', event => {
-  document.querySelector('#brideGroomPreview').innerHTML = formatEditableText(event.target.value)
-    || '<p class="guest-empty">Your formatted preview will appear here.</p>';
-});
-document.querySelector('#brideGroomContent').addEventListener('change', event => {
+document.querySelector('#adminBrideGroomContent').addEventListener('change', event => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
   state.brideGroomContent = event.target.value;
   saveState();
@@ -1506,6 +1500,7 @@ function openAdmin() {
   document.querySelector('#adminRegistryUrl').value = state.registryUrl || '';
   document.querySelector('#adminMonetaryGiftUrl').value = state.monetaryGiftUrl || '';
   if (isWedding) {
+    document.querySelector('#adminBrideGroomContent').value = state.brideGroomContent || '';
     renderWeddingPartyDescriptionAdmin();
     renderWeddingPartyAttireAdmin();
     renderAdminAttireVideos();

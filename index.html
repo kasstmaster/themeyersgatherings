@@ -138,12 +138,7 @@
       <section id="brideGroomSection" class="bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
         <p class="section-kicker">A private space for the couple</p>
         <h2 id="brideGroomHeading">Bride &amp; Groom</h2>
-        <label class="bride-groom-editor">
-          <span>Page content</span>
-          <textarea id="brideGroomContent" placeholder="Add your notes here…" aria-describedby="brideGroomFormatting"></textarea>
-        </label>
-        <p id="brideGroomFormatting" class="bride-groom-formatting">Formatting supports <code>**bold**</code>, <code>*italics*</code>, <code>- bullets</code>, numbered lists, and <code>`code`</code>. Your changes save when you leave the editor.</p>
-        <div id="brideGroomPreview" class="bride-groom-preview" aria-live="polite"></div>
+        <div id="brideGroomContent" class="bride-groom-content"></div>
       </section>
 
       <section id="weddingPartySection" class="wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
@@ -348,6 +343,11 @@
           <label><span>Monetary gift link</span><input id="adminMonetaryGiftUrl" type="url" placeholder="https://www.example.com/our-gift-fund" /></label>
         </div>
         <div id="adminAttireFields" class="admin-attire" hidden>
+          <section class="bride-groom-admin" aria-labelledby="brideGroomAdminHeading">
+            <h3 id="brideGroomAdminHeading">Bride &amp; Groom page</h3>
+            <p>Edit the private page shown only to the host. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, and <code>`code`</code>.</p>
+            <label><span>Page content</span><textarea id="adminBrideGroomContent" placeholder="Add your notes here…"></textarea></label>
+          </section>
           <section class="wedding-party-descriptions-admin" aria-labelledby="weddingPartyDescriptionsAdminHeading">
             <h3 id="weddingPartyDescriptionsAdminHeading">Title descriptions</h3>
             <p>Edit a title once to update its description for every person assigned that title. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, and <code>`code`</code>.</p>
