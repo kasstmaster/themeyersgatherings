@@ -373,7 +373,7 @@
           <button id="editItemsButton" type="button"><strong>Edit menu items</strong></button>
           <button id="clearClaimButton" type="button"><strong>Clear a claim</strong></button>
           <button id="editAccountsButton" type="button"><strong>Manage accounts</strong></button>
-          <button id="previewWeddingPartyButton" type="button"><strong>Preview wedding party view</strong><span>See the Wedding Party tab as a selected member</span></button>
+          <button id="previewWeddingPartyButton" type="button"><strong>Preview Party/Guest view</strong><span>See the wedding as a general guest or selected party member</span></button>
           <button id="invitationTemplatesButton" type="button"><strong>Invitation templates</strong></button>
         </div>
       </form>
@@ -382,11 +382,11 @@
     <dialog id="weddingPartyPreviewDialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
-        <p class="section-kicker">Host dashboard</p><h2>Preview wedding party view</h2>
-        <p>Choose a member to see exactly what appears in their Wedding Party tab.</p>
-        <label><span>Wedding party member</span><select id="hostWeddingPartyView" aria-label="Preview wedding party member view"></select></label>
+        <p class="section-kicker">Host dashboard</p><h2>Preview Party/Guest view</h2>
+        <p>See the wedding as a general guest, or choose a party member to preview their Wedding Party tab.</p>
+        <label><span>View as</span><select id="hostWeddingPartyView" aria-label="Preview party or guest view"></select></label>
         <p id="hostWeddingPartyViewError" class="form-error" role="alert"></p>
-        <button id="openWeddingPartyPreview" class="primary-button" type="button">Open member view</button>
+        <button id="openWeddingPartyPreview" class="primary-button" type="button">Open preview</button>
       </form>
     </dialog>
 
