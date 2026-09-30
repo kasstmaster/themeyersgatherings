@@ -1920,7 +1920,8 @@ async function replaceTemplateBackground(file) {
 }
 function updateDropzone(dropzone, file) {
   dropzone.classList.toggle('has-file', Boolean(file));
-  dropzone.querySelector('span').innerHTML = file ? `<strong>${escapeHtml(file.name)}</strong>` : '<strong>Drop artwork here</strong> or choose a file';
+  const emptyLabel = dropzone.dataset.emptyLabel || 'Drop artwork here';
+  dropzone.querySelector('span').innerHTML = file ? `<strong>${escapeHtml(file.name)}</strong>` : `<strong>${escapeHtml(emptyLabel)}</strong> or choose a file`;
 }
 function configureDropzone(dropzone, input, onFile) {
   input.addEventListener('change', () => onFile(input.files[0] || null));
@@ -1930,6 +1931,14 @@ function configureDropzone(dropzone, input, onFile) {
 }
 configureDropzone(document.querySelector('#newTemplateDropzone'), document.querySelector('#newTemplateBackground'), file => { newTemplateBackgroundFile = file; updateDropzone(document.querySelector('#newTemplateDropzone'), file); });
 configureDropzone(document.querySelector('#replaceTemplateDropzone'), document.querySelector('#replaceTemplateBackground'), file => { updateDropzone(document.querySelector('#replaceTemplateDropzone'), file); replaceTemplateBackground(file); });
+let weddingPartyAttireFile = null;
+const weddingPartyAttireDropzone = document.querySelector('#adminWeddingPartyAttireDropzone');
+const weddingPartyAttireFileInput = document.querySelector('#adminWeddingPartyAttireFile');
+configureDropzone(weddingPartyAttireDropzone, weddingPartyAttireFileInput, file => {
+  weddingPartyAttireFile = file;
+  updateDropzone(weddingPartyAttireDropzone, file);
+  if (file) document.querySelector('#adminWeddingPartyAttireError').textContent = '';
+});
 document.querySelector('#saveTemplateButton').addEventListener('click', () => {
   templateDraft.name = document.querySelector('#templateEditorName').value.trim() || templateDraft.name; templateDraft.updatedAt = new Date().toISOString(); const index = appState.invitationTemplates.findIndex(template => template.id === templateDraft.id); appState.invitationTemplates[index] = structuredClone(templateDraft); document.querySelector('#templateEditorHeading').textContent = templateDraft.name; saveState(); showToast('Invitation template saved.');
 });
@@ -2132,13 +2141,17 @@ document.querySelector('#adminAddWeddingPartyAttireImage').addEventListener('cli
   const captionInput = document.querySelector('#adminWeddingPartyAttireCaption');
   const section = document.querySelector('#adminWeddingPartyAttireSection').value;
   const error = document.querySelector('#adminWeddingPartyAttireError');
-  if (!fileInput.files[0]) { error.textContent = 'Choose an image to upload.'; return; }
+  if (!weddingPartyAttireFile) {
+    error.textContent = 'Choose an image to upload.';
+    fileInput.click();
+    return;
+  }
   button.disabled = true; button.textContent = 'Uploading…'; error.textContent = '';
   try {
-    const uploaded = await uploadWeddingPartyAttireImage(crypto.randomUUID(), fileInput.files[0]);
+    const uploaded = await uploadWeddingPartyAttireImage(crypto.randomUUID(), weddingPartyAttireFile);
     state.weddingPartyAttireImages ??= { ladies: [], gentlemen: [] };
     state.weddingPartyAttireImages[section].push({ ...uploaded, caption: captionInput.value.trim() });
-    fileInput.value = ''; captionInput.value = '';
+    fileInput.value = ''; captionInput.value = ''; weddingPartyAttireFile = null; updateDropzone(weddingPartyAttireDropzone, null);
     saveState(); renderWeddingPartyAttireAdmin(); showToast('Private wedding party attire image added.');
   } catch (uploadError) { console.error(uploadError); error.textContent = uploadError.message || 'Could not upload the image.'; }
   finally { button.disabled = false; button.textContent = 'Upload image'; }
