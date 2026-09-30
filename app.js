@@ -390,6 +390,7 @@ let signedInPersonName = '';
 let selectedWeddingTab = 'registry';
 let selectedMatronTab = 'duties';
 let hostWeddingPartyViewName = '';
+const GENERAL_GUEST_PREVIEW = '__general_guest__';
 let pendingAccountAction = null;
 let pendingClaimItemId = null;
 let hostAuthenticated = false;
@@ -1130,7 +1131,7 @@ function render() {
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');
   const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => normalizeAccountName(member.name) === normalizeAccountName(signedInPersonName));
-  const isWeddingPartyMember = isWedding && (hostAuthenticated || Boolean(signedInWeddingPartyMember));
+  const isWeddingPartyMember = isWedding && ((hostAuthenticated && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW) || Boolean(signedInWeddingPartyMember));
   document.querySelectorAll('#registryAttireSection .guest-attire-requirements').forEach(requirements => {
     requirements.hidden = isWeddingPartyMember;
   });
@@ -1145,7 +1146,7 @@ function render() {
   document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
   const weddingPartyMembers = state.weddingPartyMembers || [];
   if (hostAuthenticated) {
-    if (!weddingPartyMembers.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = weddingPartyMembers[0]?.name || '';
+    if (hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW && !weddingPartyMembers.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = weddingPartyMembers[0]?.name || '';
   }
   const viewedWeddingPartyMember = hostAuthenticated
     ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
@@ -2026,12 +2027,11 @@ document.querySelector('#editAccountsButton').addEventListener('click', () => { 
 document.querySelector('#previewWeddingPartyButton').addEventListener('click', () => {
   const members = appState.events.wedding.weddingPartyMembers || [];
   const select = document.querySelector('#hostWeddingPartyView');
-  if (!members.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = members[0]?.name || '';
-  select.innerHTML = members.length
-    ? members.map(member => `<option value="${escapeAttribute(member.name)}" ${member.name === hostWeddingPartyViewName ? 'selected' : ''}>${escapeHtml(member.name)} — ${escapeHtml(member.title || 'Wedding Party')}</option>`).join('')
-    : '<option value="">No wedding party members</option>';
-  document.querySelector('#hostWeddingPartyViewError').textContent = members.length ? '' : 'Add a wedding party member before opening a preview.';
-  document.querySelector('#openWeddingPartyPreview').disabled = members.length === 0;
+  if (hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW && !members.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = GENERAL_GUEST_PREVIEW;
+  select.innerHTML = `<option value="${GENERAL_GUEST_PREVIEW}" ${hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW ? 'selected' : ''}>General guest</option>`
+    + members.map(member => `<option value="${escapeAttribute(member.name)}" ${member.name === hostWeddingPartyViewName ? 'selected' : ''}>${escapeHtml(member.name)} — ${escapeHtml(member.title || 'Wedding Party')}</option>`).join('');
+  document.querySelector('#hostWeddingPartyViewError').textContent = '';
+  document.querySelector('#openWeddingPartyPreview').disabled = false;
   document.querySelector('#hostToolsDialog').close();
   document.querySelector('#weddingPartyPreviewDialog').showModal();
 });
@@ -2039,7 +2039,7 @@ document.querySelector('#openWeddingPartyPreview').addEventListener('click', () 
   hostWeddingPartyViewName = document.querySelector('#hostWeddingPartyView').value;
   if (!hostWeddingPartyViewName) return;
   document.querySelector('#weddingPartyPreviewDialog').close();
-  selectedWeddingTab = 'party';
+  selectedWeddingTab = hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW ? 'registry' : 'party';
   enterEvent('wedding');
 });
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));

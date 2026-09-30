@@ -62,14 +62,27 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(html, /id="weddingPartyTabs"[\s\S]*Registry &amp; Attire[\s\S]*Wedding Party/);
   assert.match(javascript, /signedInPersonName = accountName/);
   assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => normalizeAccountName\(member\.name\) === normalizeAccountName\(signedInPersonName\)\)/);
-  assert.match(javascript, /hostAuthenticated \|\| Boolean\(signedInWeddingPartyMember\)/);
+  assert.match(javascript, /hostAuthenticated && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWeddingPartyMember/);
   assert.match(javascript, /visibleWeddingPartyMembers = \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
   assert.match(javascript, /state\.weddingPartyDescriptions\?\.\[member\.title\]/);
   assert.match(javascript, /formatWeddingPartyDescription\(description\)/);
-  assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Preview wedding party view/);
+  assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Preview Party\/Guest view/);
   assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding'\)/);
+});
+
+test('host can preview the wedding as a general guest without selecting an account', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /<h2>Preview Party\/Guest view<\/h2>/);
+  assert.match(javascript, /const GENERAL_GUEST_PREVIEW = '__general_guest__'/);
+  assert.match(javascript, />General guest<\/option>/);
+  assert.match(javascript, /hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
+  assert.match(javascript, /hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW \? 'registry' : 'party'/);
 });
 
 test('private attire galleries are rendered only for wedding party viewers', async () => {
