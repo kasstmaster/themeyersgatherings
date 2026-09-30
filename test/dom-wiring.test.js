@@ -82,7 +82,7 @@ test('wedding attire and registry have separate guest-visible tabs with attire s
   assert.match(html, /data-wedding-tab="attire"[^>]*aria-selected="true">Attire/);
   assert.match(html, /data-wedding-tab="registry"[^>]*aria-selected="false">Registry/);
   assert.match(styles, /\.wedding-party-tabs button\{[^}]*color:#fff/);
-  assert.match(styles, /\.wedding-party-tabs button\[aria-selected="true"\]\{[^}]*color:var\(--orange\)/);
+  assert.match(styles, /\.wedding-party-tabs button\[aria-selected="true"\]\{[^}]*border:1px solid var\(--gold\)[^}]*background:var\(--orange\)[^}]*color:#fff/);
 });
 
 test('wedding party tabs use guest-facing labels and only restrict Your Role', async () => {
@@ -96,6 +96,12 @@ test('wedding party tabs use guest-facing labels and only restrict Your Role', a
   assert.match(javascript, /button\.hidden = button\.dataset\.weddingTab === 'party' && !isWeddingPartyMember/);
   assert.match(javascript, /registrySection\.hidden = !showingRegistryPage/);
   assert.match(javascript, /querySelector\('#registryAttireSection'\)\.hidden = !showingAttirePage/);
+});
+
+test('selected wedding detail tabs use white text inside a visible tab', async () => {
+  const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(styles, /\.matron-info-tabs button\[aria-selected="true"\]\{[^}]*border:1px solid var\(--gold\)[^}]*background:var\(--orange\)[^}]*color:#fff/);
 });
 
 test('host can preview the wedding as a general guest without selecting an account', async () => {
