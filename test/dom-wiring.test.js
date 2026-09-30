@@ -92,9 +92,10 @@ test('wedding party descriptions are shared and editable by title', async () => 
 });
 
 test('bachelorette party brief replaces the Matron of Honor duties panel', async () => {
-  const [html, javascript] = await Promise.all([
+  const [html, javascript, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
-    readFile(new URL('../app.js', import.meta.url), 'utf8')
+    readFile(new URL('../app.js', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
   assert.match(html, /id="matronInfoTabs"[\s\S]*data-matron-tab="duties"[\s\S]*data-matron-tab="bachelorette"/);
@@ -103,6 +104,7 @@ test('bachelorette party brief replaces the Matron of Honor duties panel', async
   assert.match(html, /relaxed girls' getaway[\s\S]*The Most Important Rule[\s\S]*cozy two-night girls' getaway/);
   assert.match(javascript, /isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember\?\.title === 'Matron of Honor'/);
   assert.match(javascript, /weddingPartyDetails'\)\.hidden = isViewingMatron && selectedMatronTab === 'bachelorette'/);
+  assert.match(styles, /\.wedding-party-details\[hidden\]\{display:none\}/);
   assert.match(javascript, /navigator\.clipboard\.writeText\(text\)/);
   assert.match(javascript, /mailto:\?subject=/);
   assert.match(javascript, /window\.print\(\)/);
