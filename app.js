@@ -711,6 +711,7 @@ function formatWeddingPartyDescription(value) {
   closeList();
   return output.join('');
 }
+function formatEditableText(value) { return formatWeddingPartyDescription(value); }
 function amountOptions(item = {}) {
   return `<option value="optional" ${item.optional ? 'selected' : ''}>Optional</option>${Array.from({ length: 50 }, (_, index) => {
     const amount = index + 1;
@@ -1092,7 +1093,7 @@ function renderWeddingPartyAttireImages(canView) {
     const entries = canView && Array.isArray(images[section]) ? images[section] : [];
     const note = canView && typeof notes[section] === 'string' ? notes[section] : '';
     gallery.hidden = entries.length === 0 && !note;
-    gallery.innerHTML = entries.map(image => `<figure><img src="${escapeAttribute(image.url)}" alt="${escapeAttribute(image.caption || `${section === 'ladies' ? 'Ladies’' : 'Gentlemen’s'} wedding party attire inspiration`)}" loading="lazy" decoding="async">${image.caption ? `<figcaption>${escapeHtml(image.caption)}</figcaption>` : ''}</figure>`).join('') + (note ? `<p class="wedding-party-attire-note">${escapeHtml(note)}</p>` : '');
+    gallery.innerHTML = entries.map(image => `<figure><img src="${escapeAttribute(image.url)}" alt="${escapeAttribute(image.caption || `${section === 'ladies' ? 'Ladies’' : 'Gentlemen’s'} wedding party attire inspiration`)}" loading="lazy" decoding="async">${image.caption ? `<figcaption>${formatEditableText(image.caption)}</figcaption>` : ''}</figure>`).join('') + (note ? `<div class="wedding-party-attire-note">${formatEditableText(note)}</div>` : '');
   });
 }
 
@@ -1130,6 +1131,9 @@ function render() {
   const registrySection = document.querySelector('#registrySection');
   const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => normalizeAccountName(member.name) === normalizeAccountName(signedInPersonName));
   const isWeddingPartyMember = isWedding && (hostAuthenticated || Boolean(signedInWeddingPartyMember));
+  document.querySelectorAll('#registryAttireSection .guest-attire-requirements').forEach(requirements => {
+    requirements.hidden = isWeddingPartyMember;
+  });
   const showingWeddingPartyPage = isWeddingPartyMember && selectedWeddingTab === 'party';
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWeddingPartyMember;
