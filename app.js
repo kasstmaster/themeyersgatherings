@@ -1141,15 +1141,18 @@ function render() {
   document.querySelectorAll('#registryAttireSection .guest-attire-requirements').forEach(requirements => {
     requirements.hidden = isWeddingPartyMember;
   });
+  if (isWeddingPartyMember && selectedWeddingTab === 'attire') selectedWeddingTab = 'party';
   if ((!isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostAuthenticated && selectedWeddingTab === 'couple')) selectedWeddingTab = 'attire';
   const showingBrideGroomPage = isWedding && hostAuthenticated && selectedWeddingTab === 'couple';
   const showingWeddingPartyPage = isWeddingPartyMember && selectedWeddingTab === 'party';
-  const showingAttirePage = isWedding && selectedWeddingTab === 'attire';
+  const showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire';
+  const showingAttirePage = isWedding && ((!isWeddingPartyMember && selectedWeddingTab === 'attire') || showingPartyAttirePage);
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
-    button.hidden = button.dataset.weddingTab === 'party' && !isWeddingPartyMember;
+    button.hidden = (button.dataset.weddingTab === 'party' && !isWeddingPartyMember)
+      || (button.dataset.weddingTab === 'attire' && isWeddingPartyMember);
     if (button.dataset.weddingTab === 'couple' && !hostAuthenticated) button.hidden = true;
     const isSelected = button.dataset.weddingTab === selectedWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
@@ -1201,7 +1204,7 @@ function render() {
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !showingRegistryPage;
   document.querySelector('#registryAttireSection').hidden = !showingAttirePage;
-  renderWeddingPartyAttireImages(isWeddingPartyMember && showingAttirePage);
+  renderWeddingPartyAttireImages(showingPartyAttirePage);
   if (isWedding) renderAttireVideoCollection('#registryAttireVideosSection', '#registryAttireVideos');
   const registryButton = document.querySelector('#registryButton');
   registryButton.href = state.registryUrl || '#';
