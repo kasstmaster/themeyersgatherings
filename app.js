@@ -1094,7 +1094,12 @@ function renderWeddingPartyAttireImages(canView) {
     const entries = canView && Array.isArray(images[section]) ? images[section] : [];
     const note = canView && typeof notes[section] === 'string' ? notes[section] : '';
     gallery.hidden = entries.length === 0 && !note;
-    gallery.innerHTML = entries.map(image => `<figure><img src="${escapeAttribute(image.url)}" alt="${escapeAttribute(image.caption || `${section === 'ladies' ? 'Ladies’' : 'Gentlemen’s'} wedding party attire inspiration`)}" loading="lazy" decoding="async">${image.caption ? `<figcaption>${formatEditableText(image.caption)}</figcaption>` : ''}</figure>`).join('') + (note ? `<div class="wedding-party-attire-note">${formatEditableText(note)}</div>` : '');
+    gallery.innerHTML = entries.map(image => {
+      const alt = image.caption || `${section === 'ladies' ? 'Ladies’' : 'Gentlemen’s'} wedding party attire inspiration`;
+      const isCurrentGentlemenImage = section === 'gentlemen' && entries.length === 1;
+      const imageMarkup = `<img src="${escapeAttribute(image.url)}" alt="${escapeAttribute(alt)}" loading="lazy" decoding="async">`;
+      return `<figure${isCurrentGentlemenImage ? ' class="current-gentlemen-attire-image"' : ''}>${isCurrentGentlemenImage ? `<a href="${escapeAttribute(image.url)}" target="_blank" rel="noopener noreferrer" aria-label="Open gentlemen’s attire image full size">${imageMarkup}</a>` : imageMarkup}${image.caption ? `<figcaption>${formatEditableText(image.caption)}</figcaption>` : ''}</figure>`;
+    }).join('') + (note ? `<div class="wedding-party-attire-note">${formatEditableText(note)}</div>` : '');
   });
 }
 

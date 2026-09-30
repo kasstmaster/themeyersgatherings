@@ -139,11 +139,19 @@ test('wedding detail editor places party copy and private attire before tip vide
 });
 
 test('wedding party attire images show the complete upload with rounded edges', async () => {
-  const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+  const [styles, javascript] = await Promise.all([
+    readFile(new URL('../styles.css', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
 
   assert.match(styles, /\.wedding-party-attire-gallery img\{[^}]*width:100%;height:auto;[^}]*border-radius:5px/);
   assert.match(styles, /\.wedding-party-attire-image-list img\{[^}]*object-fit:contain;[^}]*border-radius:4px/);
   assert.doesNotMatch(styles, /\.wedding-party-attire-gallery img\{[^}]*object-fit:cover/);
+  assert.match(javascript, /section === 'gentlemen' && entries\.length === 1/);
+  assert.match(javascript, /class="current-gentlemen-attire-image"/);
+  assert.match(javascript, /target="_blank" rel="noopener noreferrer" aria-label="Open gentlemen’s attire image full size"/);
+  assert.match(styles, /\.wedding-party-attire-gallery \.current-gentlemen-attire-image\{grid-column:1\/-1\}/);
+  assert.match(styles, /\.current-gentlemen-attire-image a\{[^}]*cursor:zoom-in/);
 });
 
 test('wedding party viewers keep shopping links but do not see guest attire requirements', async () => {
