@@ -79,3 +79,17 @@ test('wedding party manager only accepts people from wedding-invited accounts', 
   assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
   assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ name, title: selectedTitle\.value, description:/);
 });
+
+test('wedding party descriptions do not impose a character limit', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+  const newMemberDescription = html.match(/<textarea id="adminWeddingPartyDescription"[^>]*>/)?.[0] || '';
+  const existingMemberDescription = javascript.match(/<textarea class="wedding-party-description-input"[^>]*>/)?.[0] || '';
+
+  assert.ok(newMemberDescription, 'the new wedding party member description field should exist');
+  assert.ok(existingMemberDescription, 'the existing wedding party member description field should exist');
+  assert.doesNotMatch(newMemberDescription, /\bmaxlength=/i);
+  assert.doesNotMatch(existingMemberDescription, /\bmaxlength=/i);
+});
