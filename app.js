@@ -361,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS) }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] } }
     }
   };
 }
@@ -498,6 +498,13 @@ function normalizeState(saved) {
         ...structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS),
         ...(savedDescriptions && typeof savedDescriptions === 'object' ? savedDescriptions : {})
       };
+      const savedAttireImages = loaded.events.wedding.weddingPartyAttireImages;
+      loaded.events.wedding.weddingPartyAttireImages = Object.fromEntries(['ladies', 'gentlemen'].map(section => [section,
+        Array.isArray(savedAttireImages?.[section]) ? savedAttireImages[section].filter(image => image && typeof image.url === 'string').map(image => ({
+          id: String(image.id || ''), url: image.url, caption: typeof image.caption === 'string' ? image.caption : '',
+          contentType: typeof image.contentType === 'string' ? image.contentType : '', width: Number(image.width) || 0, height: Number(image.height) || 0
+        })) : []
+      ]));
       // Older state stored a duplicate description on every member. Preserve
       // customized text by promoting the first description found for a title.
       const promotedTitles = new Set();
@@ -1073,6 +1080,16 @@ function ensureAccount(callback) {
   showSignInPage();
 }
 
+function renderWeddingPartyAttireImages(canView) {
+  const images = state.weddingPartyAttireImages || {};
+  [['ladies', '#weddingPartyLadiesAttire'], ['gentlemen', '#weddingPartyGentlemenAttire']].forEach(([section, selector]) => {
+    const gallery = document.querySelector(selector);
+    const entries = canView && Array.isArray(images[section]) ? images[section] : [];
+    gallery.hidden = entries.length === 0;
+    gallery.innerHTML = entries.map(image => `<figure><img src="${escapeAttribute(image.url)}" alt="${escapeAttribute(image.caption || `${section === 'ladies' ? 'Ladies’' : 'Gentlemen’s'} wedding party attire inspiration`)}" loading="lazy" decoding="async">${image.caption ? `<figcaption>${escapeHtml(image.caption)}</figcaption>` : ''}</figure>`).join('');
+  });
+}
+
 function render() {
   const event = EVENT_DETAILS[viewedEventId];
   const isWedding = event.registryOnly === true;
@@ -1147,6 +1164,7 @@ function render() {
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !isWedding || showingWeddingPartyPage;
   document.querySelector('#registryAttireSection').hidden = !isWedding || showingWeddingPartyPage;
+  renderWeddingPartyAttireImages(isWeddingPartyMember && !showingWeddingPartyPage);
   if (isWedding) renderAttireVideoCollection('#registryAttireVideosSection', '#registryAttireVideos');
   const registryButton = document.querySelector('#registryButton');
   registryButton.href = state.registryUrl || '#';
@@ -1585,6 +1603,7 @@ function openAccountsAdmin() {
       state.weddingPartyDescriptions[title] = event.target.value.trim();
       saveState(); showToast(`${title} description updated for everyone with this title.`);
     }));
+    renderWeddingPartyAttireAdmin();
     const titleSelect = document.querySelector('#adminWeddingPartyTitle');
     const usedTitles = new Set(state.weddingPartyMembers.map(member => member.title));
     titleSelect.innerHTML = '<option value="">Select title</option>' + WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${!title.multiple && usedTitles.has(title.value) ? 'disabled' : ''}>${escapeHtml(title.value)}${!title.multiple && usedTitles.has(title.value) ? ' (assigned)' : ''}</option>`).join('');
@@ -1594,6 +1613,12 @@ function openAccountsAdmin() {
     }));
   }
   const dialog = document.querySelector('#accountsDialog'); if (!dialog.open) dialog.showModal();
+}
+function renderWeddingPartyAttireAdmin() {
+  state.weddingPartyAttireImages ??= { ladies: [], gentlemen: [] };
+  const list = document.querySelector('#adminWeddingPartyAttireImages');
+  const entries = ['ladies', 'gentlemen'].flatMap(section => (state.weddingPartyAttireImages[section] || []).map((image, index) => ({ section, image, index })));
+  list.innerHTML = entries.length ? entries.map(({ section, image, index }) => `<article><img src="${escapeAttribute(image.url)}" alt=""><div><strong>For the ${section === 'ladies' ? 'Ladies' : 'Gentlemen'}</strong><span>${escapeHtml(image.caption || 'No caption')}</span></div><button type="button" data-remove-party-attire="${section}:${index}">Remove</button></article>`).join('') : '<p class="guest-empty">No private attire images yet.</p>';
 }
 function openQrCode(account) {
   qrAdminAccount = account;
@@ -1690,6 +1715,7 @@ let templatePreviewObjectUrl = '';
 let templatePreviewLoadId = 0;
 let templateEditorResizeObserver = null;
 function templateAssetUrl(id) { return `${SHARED_STATE_URL.replace(/\/$/, '')}/invitation-backgrounds/${encodeURIComponent(id)}`; }
+function weddingPartyAttireAssetUrl(id) { return templateAssetUrl(`wedding-attire-${id}`); }
 async function backgroundMetadata(file) {
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(file?.type)) throw new Error('Choose a PNG, JPEG, or WebP image.');
   const bitmap = await createImageBitmap(file);
@@ -1712,6 +1738,18 @@ async function uploadTemplateBackground(templateId, file) {
     throw new Error(details || `Background upload failed (${response.status}).`);
   }
   return { ...metadata, url: templateAssetUrl(templateId), updatedAt: new Date().toISOString() };
+}
+async function uploadWeddingPartyAttireImage(id, file) {
+  if (!SHARED_STATE_URL) throw new Error('Configure the shared-state Worker before uploading attire images.');
+  const metadata = await backgroundMetadata(file);
+  const response = await fetchWithTimeout(weddingPartyAttireAssetUrl(id), { method: 'PUT', headers: { 'Content-Type': file.type, 'X-Host-Password': hostCredential }, body: file });
+  if (!response.ok) {
+    const details = await response.text();
+    if (response.status === 401) throw new Error('The Worker host password does not match this website.');
+    if (response.status === 503) throw new Error(details || 'Image storage is unavailable. Verify the Worker R2 bucket binding.');
+    throw new Error(details || `Attire image upload failed (${response.status}).`);
+  }
+  return { id, ...metadata, url: weddingPartyAttireAssetUrl(id) };
 }
 function renderTemplateManager() {
   document.querySelector('#invitationTemplatesHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation templates`;
@@ -2087,6 +2125,37 @@ document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', 
   state.weddingPartyMembers.push({ name, title: selectedTitle.value });
   firstInput.value = ''; lastInput.value = ''; titleInput.value = ''; error.textContent = '';
   saveState(); openAccountsAdmin(); showToast(`${name} added to the wedding party.`);
+});
+document.querySelector('#adminAddWeddingPartyAttireImage').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  const fileInput = document.querySelector('#adminWeddingPartyAttireFile');
+  const captionInput = document.querySelector('#adminWeddingPartyAttireCaption');
+  const section = document.querySelector('#adminWeddingPartyAttireSection').value;
+  const error = document.querySelector('#adminWeddingPartyAttireError');
+  if (!fileInput.files[0]) { error.textContent = 'Choose an image to upload.'; return; }
+  button.disabled = true; button.textContent = 'Uploading…'; error.textContent = '';
+  try {
+    const uploaded = await uploadWeddingPartyAttireImage(crypto.randomUUID(), fileInput.files[0]);
+    state.weddingPartyAttireImages ??= { ladies: [], gentlemen: [] };
+    state.weddingPartyAttireImages[section].push({ ...uploaded, caption: captionInput.value.trim() });
+    fileInput.value = ''; captionInput.value = '';
+    saveState(); renderWeddingPartyAttireAdmin(); showToast('Private wedding party attire image added.');
+  } catch (uploadError) { console.error(uploadError); error.textContent = uploadError.message || 'Could not upload the image.'; }
+  finally { button.disabled = false; button.textContent = 'Upload image'; }
+});
+document.querySelector('#adminWeddingPartyAttireImages').addEventListener('click', async event => {
+  const button = event.target.closest('[data-remove-party-attire]');
+  if (!button) return;
+  const [section, rawIndex] = button.dataset.removePartyAttire.split(':');
+  const index = Number(rawIndex), image = state.weddingPartyAttireImages?.[section]?.[index];
+  if (!image) return;
+  button.disabled = true;
+  try {
+    const response = await fetchWithTimeout(weddingPartyAttireAssetUrl(image.id), { method: 'DELETE', headers: { 'X-Host-Password': hostCredential } });
+    if (!response.ok && response.status !== 404) throw new Error(`Image removal failed (${response.status}).`);
+    state.weddingPartyAttireImages[section].splice(index, 1);
+    saveState(); renderWeddingPartyAttireAdmin(); showToast('Private attire image removed.');
+  } catch (removeError) { console.error(removeError); document.querySelector('#adminWeddingPartyAttireError').textContent = 'Could not remove the image. Please try again.'; button.disabled = false; }
 });
 document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value) return; state.eventDate = event.target.value; state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
 document.querySelector('#adminRegistryUrl').addEventListener('change', event => {

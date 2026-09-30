@@ -202,19 +202,21 @@
           <div class="affordable-attire-guidance">
             <article>
               <h4>For the Ladies</h4>
+              <ul><li>Ankle-length or floor-length dresses, formal skirts, or elegant jumpsuits are requested.</li><li>Evening fabrics such as satin, silk, velvet, chiffon, crepe, and similar materials are encouraged.</li><li>Cutouts, slits, and lower or more dramatic necklines are perfectly welcome when styled tastefully.</li><li>Please avoid casual attire and bold or overly busy patterns. Subtle patterns, texture, and elegant detailing are welcome.</li></ul>
               <h5>Shop Pre-Loved</h5>
               <p class="attire-shop-links"><a href="https://www.thredup.com/women/dresses/formal-dresses?department_tags=women&amp;category_tags=dresses&amp;occasion_tags=formal&amp;chars_skirt_dress_name=long&amp;material_groups=silk" target="_blank" rel="noopener noreferrer">ThreadUp</a><span>•</span><a href="https://poshmark.com/" target="_blank" rel="noopener noreferrer">Poshmark</a><span>•</span><a href="https://www.ebay.com/" target="_blank" rel="noopener noreferrer">eBay</a></p>
               <h5>Shop Affordable New</h5>
               <p class="attire-shop-links"><a href="https://www.lulus.com/categories/26081_2226/formal-dresses.html?r=low&amp;f=1222&amp;icid=fall_It_list_26" target="_blank" rel="noopener noreferrer">LuLus</a><span>•</span><a href="https://www.nordstromrack.com/" target="_blank" rel="noopener noreferrer">Nordstrom Rack</a></p>
-              <ul><li>Ankle-length or floor-length dresses, formal skirts, or elegant jumpsuits are requested.</li><li>Evening fabrics such as satin, silk, velvet, chiffon, crepe, and similar materials are encouraged.</li><li>Cutouts, slits, and lower or more dramatic necklines are perfectly welcome when styled tastefully.</li><li>Please avoid casual attire and bold or overly busy patterns. Subtle patterns, texture, and elegant detailing are welcome.</li></ul>
+              <div id="weddingPartyLadiesAttire" class="wedding-party-attire-gallery" aria-label="Wedding party attire inspiration" hidden></div>
             </article>
             <article>
               <h4>For the Gentlemen</h4>
+              <ul><li>Suit and tie required.</li><li>We encourage rich, darker tones such as black, navy, burgundy, plum, emerald, charcoal, and other similarly refined colors.</li></ul>
               <h5>Shop Pre-Loved</h5>
               <p class="attire-shop-links"><a href="https://poshmark.com/browse/mens-formal-suits?sort_by=price_asc&amp;department=Men&amp;category=Suits_%26_Blazers&amp;sub_category=Suits&amp;price%5B%5D=20-&amp;availability=available" target="_blank" rel="noopener noreferrer">Poshmark</a><span>•</span><a href="https://www.ebay.com/" target="_blank" rel="noopener noreferrer">eBay</a></p>
               <h5>Shop Affordable New</h5>
               <p class="attire-shop-links"><a href="https://www.nordstromrack.com/shop/men/clothing/suits/suit-sets?sort=PriceLowToHigh" target="_blank" rel="noopener noreferrer">Nordstrom Rack</a><span>•</span><a href="https://suitshop.com/" target="_blank" rel="noopener noreferrer">SuitShop</a></p>
-              <ul><li>Suit and tie required.</li><li>We encourage rich, darker tones such as black, navy, burgundy, plum, emerald, charcoal, and other similarly refined colors.</li></ul>
+              <div id="weddingPartyGentlemenAttire" class="wedding-party-attire-gallery" aria-label="Wedding party attire inspiration" hidden></div>
             </article>
           </div>
           <p class="affordable-attire-closing"><em>A great outfit is a great outfit, whether it came from a department store, a resale shop, or someone's closet.</em></p>
@@ -435,6 +437,18 @@
           <h3>Title descriptions</h3>
           <p>Edit a title once to update its description for every person assigned that title. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, and <code>`code`</code>.</p>
           <div id="adminWeddingPartyDescriptions" class="wedding-party-description-editors"></div>
+          <section class="wedding-party-attire-admin" aria-labelledby="weddingPartyAttireAdminHeading">
+            <h3 id="weddingPartyAttireAdminHeading">Private attire images</h3>
+            <p>Add inspiration at the bottom of the ladies’ or gentlemen’s attire section. These images and captions are shown only to signed-in Wedding Party members.</p>
+            <div id="adminWeddingPartyAttireImages" class="wedding-party-attire-image-list"></div>
+            <div class="wedding-party-attire-add">
+              <select id="adminWeddingPartyAttireSection" aria-label="Attire section"><option value="ladies">For the Ladies</option><option value="gentlemen">For the Gentlemen</option></select>
+              <input id="adminWeddingPartyAttireCaption" type="text" maxlength="240" placeholder="Caption (optional)" aria-label="Image caption" />
+              <label class="template-dropzone compact"><input id="adminWeddingPartyAttireFile" type="file" accept="image/png,image/jpeg,image/webp" /><span><strong>Choose an image</strong></span><small>PNG, JPEG, or WebP · 15 MB maximum</small></label>
+              <button id="adminAddWeddingPartyAttireImage" type="button">Upload image</button>
+            </div>
+            <p id="adminWeddingPartyAttireError" class="form-error" role="alert"></p>
+          </section>
         </section>
         <section class="anylist-sync" aria-label="AnyList account sync">
           <br><button id="syncAnyListButton" type="button">Sync AnyList Address Book</button>

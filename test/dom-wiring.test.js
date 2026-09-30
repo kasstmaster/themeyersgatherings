@@ -72,6 +72,17 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding'\)/);
 });
 
+test('private attire galleries are rendered only for wedding party viewers', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+  assert.match(html, /id="weddingPartyLadiesAttire"[\s\S]*id="weddingPartyGentlemenAttire"/);
+  assert.match(javascript, /renderWeddingPartyAttireImages\(isWeddingPartyMember && !showingWeddingPartyPage\)/);
+  assert.match(javascript, /const entries = canView && Array\.isArray\(images\[section\]\) \? images\[section\] : \[\]/);
+  assert.match(html, /id="adminWeddingPartyAttireCaption"[\s\S]*id="adminWeddingPartyAttireFile"/);
+});
+
 test('wedding party manager only accepts people from wedding-invited accounts', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
