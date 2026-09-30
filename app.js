@@ -10,7 +10,7 @@ const DEFAULT_CHRISTMAS_DATE = '2026-12-25';
 const DEFAULT_WEDDING_DATE = '2027-08-10';
 const DEFAULT_REGISTRY_URL = 'https://www.amazon.com/wedding/share/kassandraandsteven';
 const WEDDING_PARTY_TITLES = [
-  { value: 'Maid/Matron of Honor', multiple: false },
+  { value: 'Matron of Honor', multiple: false },
   { value: 'Best Man', multiple: false },
   { value: 'Bridesmaid', multiple: true },
   { value: 'Groomsmen', multiple: true },
