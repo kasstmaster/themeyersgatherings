@@ -361,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -504,6 +504,10 @@ function normalizeState(saved) {
           id: String(image.id || ''), url: image.url, caption: typeof image.caption === 'string' ? image.caption : '',
           contentType: typeof image.contentType === 'string' ? image.contentType : '', width: Number(image.width) || 0, height: Number(image.height) || 0
         })) : []
+      ]));
+      const savedAttireNotes = loaded.events.wedding.weddingPartyAttireNotes;
+      loaded.events.wedding.weddingPartyAttireNotes = Object.fromEntries(['ladies', 'gentlemen'].map(section => [
+        section, typeof savedAttireNotes?.[section] === 'string' ? savedAttireNotes[section] : ''
       ]));
       // Older state stored a duplicate description on every member. Preserve
       // customized text by promoting the first description found for a title.
@@ -1082,11 +1086,13 @@ function ensureAccount(callback) {
 
 function renderWeddingPartyAttireImages(canView) {
   const images = state.weddingPartyAttireImages || {};
+  const notes = state.weddingPartyAttireNotes || {};
   [['ladies', '#weddingPartyLadiesAttire'], ['gentlemen', '#weddingPartyGentlemenAttire']].forEach(([section, selector]) => {
     const gallery = document.querySelector(selector);
     const entries = canView && Array.isArray(images[section]) ? images[section] : [];
-    gallery.hidden = entries.length === 0;
-    gallery.innerHTML = entries.map(image => `<figure><img src="${escapeAttribute(image.url)}" alt="${escapeAttribute(image.caption || `${section === 'ladies' ? 'Ladies’' : 'Gentlemen’s'} wedding party attire inspiration`)}" loading="lazy" decoding="async">${image.caption ? `<figcaption>${escapeHtml(image.caption)}</figcaption>` : ''}</figure>`).join('');
+    const note = canView && typeof notes[section] === 'string' ? notes[section] : '';
+    gallery.hidden = entries.length === 0 && !note;
+    gallery.innerHTML = entries.map(image => `<figure><img src="${escapeAttribute(image.url)}" alt="${escapeAttribute(image.caption || `${section === 'ladies' ? 'Ladies’' : 'Gentlemen’s'} wedding party attire inspiration`)}" loading="lazy" decoding="async">${image.caption ? `<figcaption>${escapeHtml(image.caption)}</figcaption>` : ''}</figure>`).join('') + (note ? `<p class="wedding-party-attire-note">${escapeHtml(note)}</p>` : '');
   });
 }
 
@@ -1616,9 +1622,12 @@ function openAccountsAdmin() {
 }
 function renderWeddingPartyAttireAdmin() {
   state.weddingPartyAttireImages ??= { ladies: [], gentlemen: [] };
+  state.weddingPartyAttireNotes ??= { ladies: '', gentlemen: '' };
+  document.querySelector('#adminWeddingPartyLadiesAttireNote').value = state.weddingPartyAttireNotes.ladies || '';
+  document.querySelector('#adminWeddingPartyGentlemenAttireNote').value = state.weddingPartyAttireNotes.gentlemen || '';
   const list = document.querySelector('#adminWeddingPartyAttireImages');
   const entries = ['ladies', 'gentlemen'].flatMap(section => (state.weddingPartyAttireImages[section] || []).map((image, index) => ({ section, image, index })));
-  list.innerHTML = entries.length ? entries.map(({ section, image, index }) => `<article><img src="${escapeAttribute(image.url)}" alt=""><div><strong>For the ${section === 'ladies' ? 'Ladies' : 'Gentlemen'}</strong><span>${escapeHtml(image.caption || 'No caption')}</span></div><button type="button" data-remove-party-attire="${section}:${index}">Remove</button></article>`).join('') : '<p class="guest-empty">No private attire images yet.</p>';
+  list.innerHTML = entries.length ? entries.map(({ section, image, index }) => `<article><img src="${escapeAttribute(image.url)}" alt=""><label><strong>For the ${section === 'ladies' ? 'Ladies' : 'Gentlemen'}</strong><textarea data-party-attire-caption="${section}:${index}" aria-label="Caption for ${section === 'ladies' ? 'ladies’' : 'gentlemen’s'} attire image" placeholder="Caption (optional)">${escapeHtml(image.caption || '')}</textarea></label><button type="button" data-remove-party-attire="${section}:${index}">Remove</button></article>`).join('') : '<p class="guest-empty">No private attire images yet.</p>';
 }
 function openQrCode(account) {
   qrAdminAccount = account;
@@ -2169,6 +2178,22 @@ document.querySelector('#adminWeddingPartyAttireImages').addEventListener('click
     state.weddingPartyAttireImages[section].splice(index, 1);
     saveState(); renderWeddingPartyAttireAdmin(); showToast('Private attire image removed.');
   } catch (removeError) { console.error(removeError); document.querySelector('#adminWeddingPartyAttireError').textContent = 'Could not remove the image. Please try again.'; button.disabled = false; }
+});
+document.querySelector('#adminWeddingPartyAttireImages').addEventListener('change', event => {
+  const input = event.target.closest('[data-party-attire-caption]');
+  if (!input) return;
+  const [section, rawIndex] = input.dataset.partyAttireCaption.split(':');
+  const image = state.weddingPartyAttireImages?.[section]?.[Number(rawIndex)];
+  if (!image) return;
+  image.caption = input.value.trim();
+  saveState(); showToast('Image caption updated.');
+});
+[['#adminWeddingPartyLadiesAttireNote', 'ladies'], ['#adminWeddingPartyGentlemenAttireNote', 'gentlemen']].forEach(([selector, section]) => {
+  document.querySelector(selector).addEventListener('change', event => {
+    state.weddingPartyAttireNotes ??= { ladies: '', gentlemen: '' };
+    state.weddingPartyAttireNotes[section] = event.target.value.trim();
+    saveState(); showToast(`Note for the ${section} updated.`);
+  });
 });
 document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value) return; state.eventDate = event.target.value; state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
 document.querySelector('#adminRegistryUrl').addEventListener('change', event => {

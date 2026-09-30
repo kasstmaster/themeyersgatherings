@@ -439,11 +439,15 @@
           <div id="adminWeddingPartyDescriptions" class="wedding-party-description-editors"></div>
           <section class="wedding-party-attire-admin" aria-labelledby="weddingPartyAttireAdminHeading">
             <h3 id="weddingPartyAttireAdminHeading">Private attire images</h3>
-            <p>Add inspiration at the bottom of the ladies’ or gentlemen’s attire section. These images and captions are shown only to signed-in Wedding Party members.</p>
+            <p>Add inspiration at the bottom of the ladies’ or gentlemen’s attire section. These images, captions, and notes are shown only to signed-in Wedding Party members.</p>
+            <div class="wedding-party-attire-notes">
+              <label><span>Note for the Ladies</span><textarea id="adminWeddingPartyLadiesAttireNote" placeholder="Optional note shown below all ladies’ images"></textarea></label>
+              <label><span>Note for the Gentlemen</span><textarea id="adminWeddingPartyGentlemenAttireNote" placeholder="Optional note shown below all gentlemen’s images"></textarea></label>
+            </div>
             <div id="adminWeddingPartyAttireImages" class="wedding-party-attire-image-list"></div>
             <div class="wedding-party-attire-add">
               <select id="adminWeddingPartyAttireSection" aria-label="Attire section"><option value="ladies">For the Ladies</option><option value="gentlemen">For the Gentlemen</option></select>
-              <input id="adminWeddingPartyAttireCaption" type="text" maxlength="240" placeholder="Caption (optional)" aria-label="Image caption" />
+              <textarea id="adminWeddingPartyAttireCaption" placeholder="Caption (optional)" aria-label="Image caption"></textarea>
               <label class="template-dropzone compact" id="adminWeddingPartyAttireDropzone" data-empty-label="Drop an image here"><input id="adminWeddingPartyAttireFile" type="file" accept="image/png,image/jpeg,image/webp" /><span><strong>Drop an image here</strong> or choose a file</span><small>PNG, JPEG, or WebP · 15 MB maximum</small></label>
               <button id="adminAddWeddingPartyAttireImage" type="button">Upload image</button>
             </div>
