@@ -416,6 +416,22 @@ test('page editor sections are directly below Variables and before Wedding Party
   });
 });
 
+test('page editor sections are directly below Variables and before Wedding Party Members', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const sectionIds = ['adminWeddingVariableHelp', 'brideGroomAdmin', 'perfectExperienceAdmin', 'bacheloretteAdmin', 'whatToExpectAdmin', 'weddingPartyAdmin'];
+  const positions = sectionIds.map(id => html.indexOf(`id="${id}"`));
+
+  assert.ok(positions.every(position => position >= 0));
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+
+  sectionIds.slice(1).forEach(id => {
+    const sectionStart = html.indexOf(`<section id="${id}"`);
+    const sectionEnd = html.indexOf('</section>', sectionStart);
+    const section = html.slice(sectionStart, sectionEnd);
+    assert.equal((section.match(/<h3\b/g) || []).length, 1, `${id} should contain one title`);
+  });
+});
+
 test('wedding party manager creates wedding-enabled accounts for new people', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
