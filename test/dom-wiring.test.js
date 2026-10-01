@@ -200,6 +200,21 @@ test('The Perfect Experience is an editable tab for every wedding party member',
   assert.match(javascript, /perfectExperiencePanel'\)\.hidden = !showingWeddingPartyPage \|\| selectedMatronTab !== 'experience'/);
 });
 
+test('Bachelorette is a blank editable page under The Perfect Experience editor', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
+  assert.ok(weddingEditor.indexOf('The Perfect Experience page') < weddingEditor.indexOf('Bachelorette page'));
+  assert.match(html, /id="adminBacheloretteContent"/);
+  assert.match(html, /id="bacheloretteInfoContent" class="bachelorette-info-content"><\/div>/);
+  assert.match(javascript, /bacheloretteContent: ''/);
+  assert.match(javascript, /formatEditableText\(state\.bacheloretteContent\)/);
+  assert.match(javascript, /state\.bacheloretteContent = event\.target\.value/);
+});
+
 test('host can preview the wedding as a general guest without selecting an account', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
@@ -352,7 +367,7 @@ test('wedding party descriptions are shared and editable by title', async () => 
   assert.doesNotMatch(javascript.match(/data-wedding-party-description=[\s\S]*?<\/label>/)?.[0] || '', /\bmaxlength=/i);
 });
 
-test('bachelorette party brief replaces the Matron of Honor duties panel', async () => {
+test('bachelorette party page is private to the Matron of Honor and shareable', async () => {
   const [html, javascript, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8'),
@@ -362,7 +377,7 @@ test('bachelorette party brief replaces the Matron of Honor duties panel', async
   assert.match(html, /id="matronInfoTabs"[\s\S]*data-matron-tab="duties"[\s\S]*data-matron-tab="bachelorette"/);
   assert.match(html, /id="weddingPartyDetails"[\s\S]*id="bacheloretteInfoPanel"[\s\S]*id="copyBacheloretteInfo"[\s\S]*id="emailBacheloretteInfo"[\s\S]*id="printBacheloretteInfo"/);
   assert.doesNotMatch(html, /id="bacheloretteInfoDialog"/);
-  assert.match(html, /relaxed girls' getaway[\s\S]*The Most Important Rule[\s\S]*cozy two-night girls' getaway/);
+  assert.match(javascript, /bacheloretteInfoContent'\)\.innerHTML = formatEditableText\(state\.bacheloretteContent\)/);
   assert.match(javascript, /isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember\?\.title === 'Matron of Honor'/);
   assert.match(javascript, /weddingPartyDetails'\)\.hidden = showingWeddingPartyPage && selectedMatronTab !== 'duties'/);
   assert.match(styles, /\.wedding-party-details\[hidden\]\{display:none\}/);
