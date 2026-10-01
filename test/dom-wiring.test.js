@@ -373,6 +373,17 @@ test('variables are grouped below their title and above a single divider', async
   assert.doesNotMatch(styles, /\.wedding-party-admin\{[^}]*border-bottom/);
 });
 
+test('the editor title is its own section with one bottom divider', async () => {
+  const [html, styles] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /<section class="admin-editor-heading" aria-labelledby="adminHeading">\s*<p class="section-kicker">Host dashboard<\/p>\s*<h2 id="adminHeading">Edit the menu<\/h2>\s*<\/section>\s*<label class="admin-date">/);
+  assert.match(styles, /\.admin-editor-heading\{[^}]*border-bottom:1px solid var\(--border\)/);
+  assert.doesNotMatch(styles, /\.admin-editor-heading\{[^}]*border-top/);
+});
+
 test('every wedding details section has a divider and the requested title', async () => {
   const [html, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
