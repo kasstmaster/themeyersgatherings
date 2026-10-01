@@ -116,16 +116,23 @@ test('Wedding Details is a guest-only editable page immediately after Attire', a
 });
 
 test('Bride & Groom is a host-only Markdown page edited from wedding details', async () => {
-  const [html, javascript] = await Promise.all([
+  const [html, javascript, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
-    readFile(new URL('../app.js', import.meta.url), 'utf8')
+    readFile(new URL('../app.js', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
   assert.ok(html.indexOf('data-wedding-tab="couple"') < html.indexOf('data-wedding-tab="party"'));
   assert.match(html, /data-wedding-tab="couple"[^>]*hidden>Bride &amp; Groom/);
   assert.match(html, /id="brideGroomHeading">Bride &amp; Groom/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
+  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Bride &amp; Groom page'));
   assert.ok(weddingEditor.indexOf('Bride &amp; Groom page') < weddingEditor.indexOf('Title descriptions'));
+  const accountsEditor = html.match(/<dialog id="accountsDialog"[\s\S]*?<\/dialog>/)?.[0] || '';
+  assert.doesNotMatch(accountsEditor, /Wedding Party Members/);
+  assert.match(html, /class="admin-dialog-footer">\s*<button id="adminDoneButton"[^>]*>Done editing<\/button>/);
+  assert.match(styles, /#adminDialog \.modal-card\{[^}]*max-height:calc\(100dvh - 32px\)[^}]*overflow-y:auto/);
+  assert.match(styles, /\.admin-dialog-footer\{[^}]*position:sticky[^}]*bottom:-38px/);
   const editor = html.match(/<textarea id="adminBrideGroomContent"[^>]*>/)?.[0] || '';
   assert.doesNotMatch(editor, /maxlength/);
   assert.match(javascript, /button\.dataset\.weddingTab === 'couple' && !hostView/);
