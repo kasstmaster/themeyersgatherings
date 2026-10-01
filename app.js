@@ -1741,13 +1741,28 @@ function openAccountsAdmin() {
       state.weddingPartyMembers.splice(Number(button.dataset.removeWeddingParty), 1);
       saveState(); openAccountsAdmin(); showToast('Wedding party member removed.');
     }));
+    document.querySelectorAll('[data-move-wedding-party]').forEach(button => button.addEventListener('click', () => {
+      const memberIndex = Number(button.dataset.weddingPartyMoveIndex);
+      const member = state.weddingPartyMembers[memberIndex];
+      const roleIndexes = state.weddingPartyMembers.map((partyMember, index) => ({ partyMember, index }))
+        .filter(({ partyMember }) => partyMember.title === member.title)
+        .map(({ index }) => index);
+      const rolePosition = roleIndexes.indexOf(memberIndex);
+      const targetIndex = roleIndexes[rolePosition + (button.dataset.moveWeddingParty === 'up' ? -1 : 1)];
+      if (targetIndex === undefined) return;
+      [state.weddingPartyMembers[memberIndex], state.weddingPartyMembers[targetIndex]] = [state.weddingPartyMembers[targetIndex], state.weddingPartyMembers[memberIndex]];
+      saveState(); openAccountsAdmin(); showToast(`${member.name} moved ${button.dataset.moveWeddingParty}.`);
+    }));
   }
   const dialog = document.querySelector('#accountsDialog'); if (!dialog.open) dialog.showModal();
 }
 
 function renderWeddingPartyMemberList(members) {
-  const memberCard = (member, index) => `<div class="wedding-party-member" data-wedding-party-index="${index}"><strong>${escapeHtml(member.name)}</strong><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div>`;
-  const cardsFor = title => members.map((member, index) => ({ member, index })).filter(({ member }) => member.title === title).map(({ member, index }) => memberCard(member, index)).join('');
+  const memberCard = (member, index, rolePosition, roleCount) => `<div class="wedding-party-member" data-wedding-party-index="${index}"><strong>${escapeHtml(member.name)}</strong><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><span class="wedding-party-order-controls"><button type="button" data-move-wedding-party="up" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} up within ${escapeAttribute(member.title)}" ${rolePosition === 0 ? 'disabled' : ''}>↑</button><button type="button" data-move-wedding-party="down" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} down within ${escapeAttribute(member.title)}" ${rolePosition === roleCount - 1 ? 'disabled' : ''}>↓</button></span><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div>`;
+  const cardsFor = title => {
+    const roleMembers = members.map((member, index) => ({ member, index })).filter(({ member }) => member.title === title);
+    return roleMembers.map(({ member, index }, rolePosition) => memberCard(member, index, rolePosition, roleMembers.length)).join('');
+  };
   const fullWidthGroup = (title, position) => `<div class="wedding-party-role-group wedding-party-role-group-${position}" aria-label="${escapeAttribute(title)}">${cardsFor(title)}</div>`;
   const pairedGroup = (leftTitle, rightTitle) => `<div class="wedding-party-pair"><div class="wedding-party-role-column" aria-label="${escapeAttribute(leftTitle)}">${cardsFor(leftTitle)}</div><div class="wedding-party-role-column" aria-label="${escapeAttribute(rightTitle)}">${cardsFor(rightTitle)}</div></div>`;
 

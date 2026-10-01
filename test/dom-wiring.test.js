@@ -322,6 +322,15 @@ test('wedding party editor arranges complementary roles together', async () => {
   assert.match(styles, /\.wedding-party-pair\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
 
+test('wedding party members can move up and down within their role', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+
+  assert.match(javascript, /data-move-wedding-party="up"[\s\S]*data-move-wedding-party="down"/);
+  assert.match(javascript, /partyMember\.title === member\.title/);
+  assert.match(javascript, /roleIndexes\[rolePosition \+ \(button\.dataset\.moveWeddingParty === 'up' \? -1 : 1\)\]/);
+  assert.match(javascript, /\[state\.weddingPartyMembers\[memberIndex\], state\.weddingPartyMembers\[targetIndex\]\] = \[state\.weddingPartyMembers\[targetIndex\], state\.weddingPartyMembers\[memberIndex\]\]/);
+});
+
 test('wedding party descriptions are shared and editable by title', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
