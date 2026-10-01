@@ -339,8 +339,24 @@ test('gathering details include labeled locations and editable text variables', 
   assert.match(html, /Gathering date[\s\S]*<span>Home<\/span>[\s\S]*id="adminWeddingLocations"[\s\S]*<span>Church<\/span>[\s\S]*<span>Venue<\/span>/);
   assert.match(javascript, /adminWeddingLocations'\)\.hidden = !isWedding/);
   assert.match(javascript, /eventState\.homeAddress = typeof eventState\.homeAddress === 'string'/);
-  assert.match(javascript, /replace\(\/\\\{\(date\|church\|registry\|monetary\)\\\}\/g/);
+  assert.match(javascript, /replace\(\/\\\{\(date\|home\|church\|venue\|registry\|monetary\)\\\}\/g/);
+  assert.match(javascript, /home: state\.homeAddress \|\| ''/);
+  assert.match(javascript, /venue: state\.venueAddress \|\| ''/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\) \{\s+value = expandEditableTextVariables\(value\)/);
+});
+
+test('wedding role and page editors share the Bachelorette editor height', async () => {
+  const [html, javascript, styles] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  ]);
+
+  ['adminBrideGroomContent', 'adminPerfectExperienceContent', 'adminBacheloretteContent', 'adminWhatToExpectContent'].forEach(id => {
+    assert.match(html, new RegExp(`<textarea class="wedding-copy-editor" id="${id}"`));
+  });
+  assert.match(javascript, /<textarea class="wedding-copy-editor" data-wedding-party-description=/);
+  assert.match(styles, /\.wedding-copy-editor\{[^}]*height:36px;min-height:36px/);
 });
 
 test('wedding party manager creates wedding-enabled accounts for new people', async () => {

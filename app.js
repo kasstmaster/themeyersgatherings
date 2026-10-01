@@ -768,14 +768,16 @@ function editableTextVariables() {
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
   return {
     date: Number.isNaN(eventDate.getTime()) ? '' : new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', ''),
+    home: state.homeAddress || '',
     church: state.churchAddress || '',
+    venue: state.venueAddress || '',
     registry: state.registryUrl || '',
     monetary: state.monetaryGiftUrl || ''
   };
 }
 function expandEditableTextVariables(value) {
   const variables = editableTextVariables();
-  return String(value || '').replace(/\{(date|church|registry|monetary)\}/g, (_placeholder, name) => variables[name]);
+  return String(value || '').replace(/\{(date|home|church|venue|registry|monetary)\}/g, (_placeholder, name) => variables[name]);
 }
 function formatEditableText(value) { return formatWeddingPartyDescription(value); }
 function amountOptions(item = {}) {
@@ -1671,7 +1673,7 @@ function renderAdminAttireVideos() {
 }
 function renderWeddingPartyDescriptionAdmin() {
   state.weddingPartyDescriptions ??= structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS);
-  document.querySelector('#adminWeddingPartyDescriptions').innerHTML = WEDDING_PARTY_TITLES.map(title => `<label class="wedding-party-description-editor"><span>${escapeHtml(title.value)}</span><textarea data-wedding-party-description="${escapeAttribute(title.value)}" aria-label="Description for ${escapeAttribute(title.value)}" placeholder="Description and instructions for this title">${escapeHtml(state.weddingPartyDescriptions[title.value] || '')}</textarea></label>`).join('');
+  document.querySelector('#adminWeddingPartyDescriptions').innerHTML = WEDDING_PARTY_TITLES.map(title => `<label class="wedding-party-description-editor"><span>${escapeHtml(title.value)}</span><textarea class="wedding-copy-editor" data-wedding-party-description="${escapeAttribute(title.value)}" aria-label="Description for ${escapeAttribute(title.value)}" placeholder="Description and instructions for this title">${escapeHtml(state.weddingPartyDescriptions[title.value] || '')}</textarea></label>`).join('');
   document.querySelectorAll('[data-wedding-party-description]').forEach(input => input.addEventListener('change', event => {
     const title = event.target.dataset.weddingPartyDescription;
     state.weddingPartyDescriptions[title] = event.target.value.trim();
