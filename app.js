@@ -702,6 +702,10 @@ async function loadSharedState() {
 }
 function escapeHtml(value) { const el = document.createElement('div'); el.textContent = value; return el.innerHTML; }
 function escapeAttribute(value) { return escapeHtml(value).replaceAll('"', '&quot;').replaceAll("'", '&#39;'); }
+function safeEditableLink(value) {
+  const href = String(value || '').trim();
+  return /^(?:https?:|mailto:|tel:|\/(?!\/)|\.{1,2}\/|#)/i.test(href) ? href : '';
+}
 function formatWeddingPartyDescription(value) {
   const formatMarkdown = text => escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -712,11 +716,18 @@ function formatWeddingPartyDescription(value) {
   const formatInline = line => {
     const parts = [];
     let cursor = 0;
-    for (const match of line.matchAll(/<([^<>\r\n]+)>/g)) {
+    for (const match of line.matchAll(/\[([^\]\r\n]+)\]\(([^)\r\n]+)\)|<([^<>\r\n]+)>/g)) {
       parts.push(formatMarkdown(line.slice(cursor, match.index)));
-      const address = match[1].trim();
-      if (address) parts.push(`<a class="map-link" href="geo:0,0?q=${encodeURIComponent(address)}" title="Open ${escapeAttribute(address)} in your maps app">${escapeHtml(address)}</a>`);
-      else parts.push(formatMarkdown(match[0]));
+      if (match[1] !== undefined) {
+        const href = safeEditableLink(match[2]);
+        parts.push(href
+          ? `<a href="${escapeAttribute(href)}">${formatMarkdown(match[1])}</a>`
+          : formatMarkdown(match[0]));
+      } else {
+        const address = match[3].trim();
+        if (address) parts.push(`<a class="map-link" href="geo:0,0?q=${encodeURIComponent(address)}" title="Open ${escapeAttribute(address)} in your maps app">${escapeHtml(address)}</a>`);
+        else parts.push(formatMarkdown(match[0]));
+      }
       cursor = match.index + match[0].length;
     }
     parts.push(formatMarkdown(line.slice(cursor)));

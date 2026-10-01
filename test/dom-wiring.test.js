@@ -323,6 +323,10 @@ test('all editable wedding party copy supports safe Markdown formatting', async 
   assert.match(javascript, /function formatEditableText\(value\) \{ return formatWeddingPartyDescription\(value\); \}/);
   assert.match(javascript, /output\.push\('<hr>'\)/, 'a standalone --- should render a divider');
   assert.match(javascript, /href="geo:0,0\?q=\$\{encodeURIComponent\(address\)\}"/, 'angle-bracketed addresses should use the device maps handler');
+  assert.match(javascript, /function safeEditableLink\(value\)/, 'editable links should be checked before rendering');
+  assert.match(javascript, /`<a href="\$\{escapeAttribute\(href\)\}">\$\{formatMarkdown\(match\[1\]\)\}<\/a>`/, 'Markdown links should render clickable, formatted text');
+  assert.match(javascript, /\(\?:https\?:\|mailto:\|tel:/, 'only explicitly supported URL schemes should be accepted');
+  assert.match(html, /\[linked text\]\(https:\/\/example\.com\)/, 'editor help should document Markdown links');
   assert.match(html, /Put <code>---<\/code> on its own line for a divider/);
 });
 
