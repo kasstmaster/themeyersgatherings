@@ -311,6 +311,17 @@ test('wedding party manager creates wedding-enabled accounts for new people', as
   assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ name, title: selectedTitle\.value \}\)/);
 });
 
+test('wedding party editor arranges complementary roles together', async () => {
+  const [javascript, styles] = await Promise.all([
+    readFile(new URL('../app.js', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  ]);
+
+  const renderer = javascript.match(/function renderWeddingPartyMemberList[\s\S]*?\n}/)?.[0] || '';
+  assert.match(renderer, /fullWidthGroup\('Officiant', 'top'\)[\s\S]*pairedGroup\('Matron of Honor', 'Best Man'\)[\s\S]*pairedGroup\('Bridesmaid', 'Groomsman'\)[\s\S]*pairedGroup\('Flower Girl', 'Ring Bearer'\)[\s\S]*fullWidthGroup\('Ushers', 'bottom'\)/);
+  assert.match(styles, /\.wedding-party-pair\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+});
+
 test('wedding party descriptions are shared and editable by title', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 

@@ -10,14 +10,14 @@ const DEFAULT_CHRISTMAS_DATE = '2026-12-25';
 const DEFAULT_WEDDING_DATE = '2027-08-10';
 const DEFAULT_REGISTRY_URL = 'https://www.amazon.com/wedding/share/kassandraandsteven';
 const WEDDING_PARTY_TITLES = [
+  { value: 'Officiant', multiple: false },
   { value: 'Matron of Honor', multiple: false },
   { value: 'Best Man', multiple: false },
   { value: 'Bridesmaid', multiple: true },
   { value: 'Groomsman', multiple: true },
-  { value: 'Ring Bearer', multiple: true },
   { value: 'Flower Girl', multiple: true },
-  { value: 'Ushers', multiple: true },
-  { value: 'Officiant', multiple: false }
+  { value: 'Ring Bearer', multiple: true },
+  { value: 'Ushers', multiple: true }
 ];
 const DEFAULT_WEDDING_PARTY_DESCRIPTIONS = {
   'Matron of Honor': `**Planning & bride support**
@@ -1718,7 +1718,7 @@ function openAccountsAdmin() {
   if (viewedEventId === 'wedding') {
     state.weddingPartyMembers ??= [];
     document.querySelector('#adminWeddingPartyMembers').innerHTML = state.weddingPartyMembers.length
-      ? state.weddingPartyMembers.map((member, index) => `<div class="wedding-party-member" data-wedding-party-index="${index}"><strong>${escapeHtml(member.name)}</strong><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div>`).join('')
+      ? renderWeddingPartyMemberList(state.weddingPartyMembers)
       : '<p class="guest-empty">No wedding party members yet.</p>';
     document.querySelectorAll('[data-wedding-party-index]').forEach(row => {
       const member = state.weddingPartyMembers[Number(row.dataset.weddingPartyIndex)];
@@ -1731,7 +1731,7 @@ function openAccountsAdmin() {
         }
         member.title = selectedTitle.value;
         document.querySelector('#adminWeddingPartyError').textContent = '';
-        saveState(); showToast(`${member.name}'s title updated.`);
+        saveState(); openAccountsAdmin(); showToast(`${member.name}'s title updated.`);
       });
     });
     const titleSelect = document.querySelector('#adminWeddingPartyTitle');
@@ -1743,6 +1743,19 @@ function openAccountsAdmin() {
     }));
   }
   const dialog = document.querySelector('#accountsDialog'); if (!dialog.open) dialog.showModal();
+}
+
+function renderWeddingPartyMemberList(members) {
+  const memberCard = (member, index) => `<div class="wedding-party-member" data-wedding-party-index="${index}"><strong>${escapeHtml(member.name)}</strong><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div>`;
+  const cardsFor = title => members.map((member, index) => ({ member, index })).filter(({ member }) => member.title === title).map(({ member, index }) => memberCard(member, index)).join('');
+  const fullWidthGroup = (title, position) => `<div class="wedding-party-role-group wedding-party-role-group-${position}" aria-label="${escapeAttribute(title)}">${cardsFor(title)}</div>`;
+  const pairedGroup = (leftTitle, rightTitle) => `<div class="wedding-party-pair"><div class="wedding-party-role-column" aria-label="${escapeAttribute(leftTitle)}">${cardsFor(leftTitle)}</div><div class="wedding-party-role-column" aria-label="${escapeAttribute(rightTitle)}">${cardsFor(rightTitle)}</div></div>`;
+
+  return fullWidthGroup('Officiant', 'top')
+    + pairedGroup('Matron of Honor', 'Best Man')
+    + pairedGroup('Bridesmaid', 'Groomsman')
+    + pairedGroup('Flower Girl', 'Ring Bearer')
+    + fullWidthGroup('Ushers', 'bottom');
 }
 function renderWeddingPartyAttireAdmin() {
   state.weddingPartyAttireImages ??= { ladies: [], gentlemen: [] };
