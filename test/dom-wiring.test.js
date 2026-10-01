@@ -430,5 +430,6 @@ test('gathering-specific host tools match the current gathering content', async 
 
   assert.match(javascript, /#editItemsButton'\)\.textContent = isWedding \? 'Wedding Details' : 'Menu'/);
   assert.match(javascript, /#clearClaimButton'\)\.hidden = isWedding/);
+  assert.match(javascript, /#previewWeddingPartyButton'\)\.hidden = !isWedding/);
   assert.match(styles, /\.host-tools-panel \.host-tool-actions button\[hidden\]\{display:none\}/);
 });
