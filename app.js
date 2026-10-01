@@ -1180,6 +1180,7 @@ function render() {
   renderSyncStatus();
   updateHostToolsPanel();
   document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Menu';
+  document.querySelector('#clearClaimButton').hidden = isWedding;
   renderEventDock();
   updateHeaderImage(event);
   const eventDate = new Date(`${state.eventDate}T12:00:00`);

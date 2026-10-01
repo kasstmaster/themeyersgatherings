@@ -422,8 +422,9 @@ test('host tools are persistent buttons directly below the signed-in household',
   assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
 });
 
-test('the host editor button describes the current gathering content', async () => {
+test('gathering-specific host tools match the current gathering content', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
   assert.match(javascript, /#editItemsButton'\)\.textContent = isWedding \? 'Wedding Details' : 'Menu'/);
+  assert.match(javascript, /#clearClaimButton'\)\.hidden = isWedding/);
 });
