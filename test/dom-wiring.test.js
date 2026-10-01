@@ -330,6 +330,19 @@ test('all editable wedding party copy supports safe Markdown formatting', async 
   assert.match(html, /Put <code>---<\/code> on its own line for a divider/);
 });
 
+test('gathering details include labeled locations and editable text variables', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /Gathering date[\s\S]*<span>Home<\/span>[\s\S]*id="adminWeddingLocations"[\s\S]*<span>Church<\/span>[\s\S]*<span>Venue<\/span>/);
+  assert.match(javascript, /adminWeddingLocations'\)\.hidden = !isWedding/);
+  assert.match(javascript, /eventState\.homeAddress = typeof eventState\.homeAddress === 'string'/);
+  assert.match(javascript, /replace\(\/\\\{\(date\|church\|registry\|monetary\)\\\}\/g/);
+  assert.match(javascript, /function formatWeddingPartyDescription\(value\) \{\s+value = expandEditableTextVariables\(value\)/);
+});
+
 test('wedding party manager creates wedding-enabled accounts for new people', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';

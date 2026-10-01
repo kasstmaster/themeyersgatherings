@@ -349,7 +349,7 @@ function defaultInvitationSettings(eventDate) {
   event.setUTCDate(event.getUTCDate() - 14);
   return { rsvpDate: event.toISOString().slice(0, 10), addressLine1: '221 W China Grade Loop', addressLine2: 'Bakersfield CA 93308' };
 }
-function makeEvent(items, eventDate, menuVersion) { return { items, rsvps: [], eventDate, ...defaultInvitationSettings(eventDate), accountSelectionResetFor: '', menuVersion, quantityUnits: structuredClone(DEFAULT_QUANTITY_UNITS) }; }
+function makeEvent(items, eventDate, menuVersion) { return { items, rsvps: [], eventDate, homeAddress: '', ...defaultInvitationSettings(eventDate), accountSelectionResetFor: '', menuVersion, quantityUnits: structuredClone(DEFAULT_QUANTITY_UNITS) }; }
 function initialAppState() {
   return {
     activeEventId: 'thanksgiving',
@@ -361,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', bacheloretteContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), churchAddress: '', venueAddress: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', bacheloretteContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -468,6 +468,7 @@ function normalizeState(saved) {
             children: Math.max(0, Number(rsvp.children) || 0)
           })) : [];
         eventState.eventDate = typeof eventState.eventDate === 'string' ? eventState.eventDate : fallback.eventDate;
+        eventState.homeAddress = typeof eventState.homeAddress === 'string' ? eventState.homeAddress : '';
         const invitationFallback = defaultInvitationSettings(eventState.eventDate);
         eventState.rsvpDate = typeof eventState.rsvpDate === 'string' ? eventState.rsvpDate : invitationFallback.rsvpDate;
         eventState.addressLine1 = typeof eventState.addressLine1 === 'string' ? eventState.addressLine1 : invitationFallback.addressLine1;
@@ -487,6 +488,8 @@ function normalizeState(saved) {
         return { ...template, eventId: assignedEventId || loaded.activeEventId };
       });
       loaded.events.wedding.registryUrl = loaded.events.wedding.registryUrl || DEFAULT_REGISTRY_URL;
+      loaded.events.wedding.churchAddress = typeof loaded.events.wedding.churchAddress === 'string' ? loaded.events.wedding.churchAddress : '';
+      loaded.events.wedding.venueAddress = typeof loaded.events.wedding.venueAddress === 'string' ? loaded.events.wedding.venueAddress : '';
       loaded.events.wedding.monetaryGiftUrl = typeof loaded.events.wedding.monetaryGiftUrl === 'string'
         ? loaded.events.wedding.monetaryGiftUrl
         : '';
@@ -707,6 +710,7 @@ function safeEditableLink(value) {
   return /^(?:https?:|mailto:|tel:|\/(?!\/)|\.{1,2}\/|#)/i.test(href) ? href : '';
 }
 function formatWeddingPartyDescription(value) {
+  value = expandEditableTextVariables(value);
   const formatMarkdown = text => escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/__(.+?)__/g, '<strong>$1</strong>')
@@ -759,6 +763,19 @@ function formatWeddingPartyDescription(value) {
   });
   closeList();
   return output.join('');
+}
+function editableTextVariables() {
+  const eventDate = new Date(`${state.eventDate}T12:00:00`);
+  return {
+    date: Number.isNaN(eventDate.getTime()) ? '' : new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', ''),
+    church: state.churchAddress || '',
+    registry: state.registryUrl || '',
+    monetary: state.monetaryGiftUrl || ''
+  };
+}
+function expandEditableTextVariables(value) {
+  const variables = editableTextVariables();
+  return String(value || '').replace(/\{(date|church|registry|monetary)\}/g, (_placeholder, name) => variables[name]);
 }
 function formatEditableText(value) { return formatWeddingPartyDescription(value); }
 function amountOptions(item = {}) {
@@ -1609,7 +1626,12 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
 function openAdmin() {
   const isWedding = EVENT_DETAILS[viewedEventId].registryOnly === true;
   document.querySelector('#adminEventDate').value = state.eventDate;
+  document.querySelector('#adminHomeAddress').value = state.homeAddress || '';
   document.querySelector('#adminHeading').textContent = isWedding ? 'Edit wedding details' : 'Edit the menu';
+  document.querySelector('#adminWeddingLocations').hidden = !isWedding;
+  document.querySelector('#adminWeddingVariableHelp').hidden = !isWedding;
+  document.querySelector('#adminChurchAddress').value = isWedding ? state.churchAddress || '' : '';
+  document.querySelector('#adminVenueAddress').value = isWedding ? state.venueAddress || '' : '';
   document.querySelector('#adminRegistryFields').hidden = !isWedding;
   document.querySelector('#adminAttireFields').hidden = !isWedding;
   document.querySelector('#adminRegistryUrl').value = state.registryUrl || '';
@@ -2381,6 +2403,17 @@ document.querySelector('#adminWeddingPartyAttireImages').addEventListener('chang
   });
 });
 document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value) return; state.eventDate = event.target.value; state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
+document.querySelector('#adminHomeAddress').addEventListener('change', event => {
+  state.homeAddress = event.target.value.trim();
+  saveState(); showToast('Home address updated.');
+});
+[['#adminChurchAddress', 'churchAddress', 'Church'], ['#adminVenueAddress', 'venueAddress', 'Venue']].forEach(([selector, key, label]) => {
+  document.querySelector(selector).addEventListener('change', event => {
+    if (viewedEventId !== 'wedding') return;
+    state[key] = event.target.value.trim();
+    saveState(); showToast(`${label} address updated.`);
+  });
+});
 document.querySelector('#adminRegistryUrl').addEventListener('change', event => {
   if (EVENT_DETAILS[viewedEventId].registryOnly !== true) return;
   state.registryUrl = event.target.value.trim();

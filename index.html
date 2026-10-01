@@ -335,10 +335,18 @@
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2 id="adminHeading">Edit the menu</h2>
         <label class="admin-date"><span>Gathering date</span><input id="adminEventDate" type="date" required /></label>
+        <div class="admin-locations">
+          <label><span>Home</span><input id="adminHomeAddress" type="text" autocomplete="street-address" placeholder="Home address" /></label>
+          <div id="adminWeddingLocations" class="admin-wedding-locations" hidden>
+            <label><span>Church</span><input id="adminChurchAddress" type="text" autocomplete="street-address" placeholder="Church address" /></label>
+            <label><span>Venue</span><input id="adminVenueAddress" type="text" autocomplete="street-address" placeholder="Venue address" /></label>
+          </div>
+        </div>
         <div id="adminRegistryFields" class="admin-registry" hidden>
           <label><span>Wedding registry link</span><input id="adminRegistryUrl" type="url" placeholder="https://www.example.com/our-registry" /></label>
           <label><span>Monetary gift link</span><input id="adminMonetaryGiftUrl" type="url" placeholder="https://www.example.com/our-gift-fund" /></label>
         </div>
+        <p id="adminWeddingVariableHelp" class="admin-variable-help" hidden>In any editable wedding text, insert <code>{date}</code>, <code>{church}</code>, <code>{registry}</code>, or <code>{monetary}</code> to keep those details up to date automatically.</p>
         <div id="adminAttireFields" class="admin-attire" hidden>
           <section id="weddingPartyAdmin" class="wedding-party-admin" aria-labelledby="weddingPartyAdminHeading">
             <h3 id="weddingPartyAdminHeading">Wedding Party Members</h3>
@@ -356,7 +364,7 @@
           </section>
           <section class="bride-groom-admin" aria-labelledby="brideGroomAdminHeading">
             <h3 id="brideGroomAdminHeading">Bride &amp; Groom page</h3>
-            <p>Edit the private page shown only to the host. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link.</p>
+            <p>Edit the private page shown only to the host. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link. You can also insert <code>{date}</code>, <code>{church}</code>, <code>{registry}</code>, or <code>{monetary}</code>.</p>
             <label><span>Page content</span><textarea id="adminBrideGroomContent" placeholder="Add your notes here…"></textarea></label>
           </section>
           <section class="perfect-experience-admin" aria-labelledby="perfectExperienceAdminHeading">
