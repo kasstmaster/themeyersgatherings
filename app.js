@@ -361,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', bacheloretteContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -495,6 +495,9 @@ function normalizeState(saved) {
         : '';
       loaded.events.wedding.perfectExperienceContent = typeof loaded.events.wedding.perfectExperienceContent === 'string'
         ? loaded.events.wedding.perfectExperienceContent
+        : '';
+      loaded.events.wedding.bacheloretteContent = typeof loaded.events.wedding.bacheloretteContent === 'string'
+        ? loaded.events.wedding.bacheloretteContent
         : '';
       loaded.events.wedding.whatToExpectContent = typeof loaded.events.wedding.whatToExpectContent === 'string'
         ? loaded.events.wedding.whatToExpectContent
@@ -1241,6 +1244,10 @@ function render() {
       || '<p class="guest-empty">No Perfect Experience details have been added yet.</p>';
   }
   document.querySelector('#bacheloretteInfoPanel').hidden = !isViewingMatron || selectedMatronTab !== 'bachelorette';
+  if (isViewingMatron && selectedMatronTab === 'bachelorette') {
+    document.querySelector('#bacheloretteInfoContent').innerHTML = formatEditableText(state.bacheloretteContent)
+      || '<p class="guest-empty">No bachelorette party information has been added yet.</p>';
+  }
   document.querySelector('#weddingPartyIntro').textContent = isViewingMatron && selectedMatronTab === 'bachelorette'
       ? 'Your bachelorette party preferences and planning information are below.'
       : showingWeddingPartyPage && selectedMatronTab === 'experience'
@@ -1449,6 +1456,12 @@ document.querySelector('#adminPerfectExperienceContent').addEventListener('chang
   saveState();
   showToast('The Perfect Experience page updated.');
 });
+document.querySelector('#adminBacheloretteContent').addEventListener('change', event => {
+  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  state.bacheloretteContent = event.target.value;
+  saveState();
+  showToast('Bachelorette page updated.');
+});
 document.querySelector('#adminWhatToExpectContent').addEventListener('change', event => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
   state.whatToExpectContent = event.target.value;
@@ -1591,6 +1604,7 @@ function openAdmin() {
     renderWeddingPartyAdmin();
     document.querySelector('#adminBrideGroomContent').value = state.brideGroomContent || '';
     document.querySelector('#adminPerfectExperienceContent').value = state.perfectExperienceContent || '';
+    document.querySelector('#adminBacheloretteContent').value = state.bacheloretteContent || '';
     document.querySelector('#adminWhatToExpectContent').value = state.whatToExpectContent || '';
     renderWeddingPartyDescriptionAdmin();
     renderWeddingPartyAttireAdmin();
