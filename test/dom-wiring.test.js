@@ -130,9 +130,13 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.ok(weddingEditor.indexOf('Bride &amp; Groom page') < weddingEditor.indexOf('Title descriptions'));
   const accountsEditor = html.match(/<dialog id="accountsDialog"[\s\S]*?<\/dialog>/)?.[0] || '';
   assert.doesNotMatch(accountsEditor, /Wedding Party Members/);
-  assert.match(html, /class="admin-dialog-footer">\s*<button id="adminDoneButton"[^>]*>Done editing<\/button>/);
-  assert.match(styles, /#adminDialog \.modal-card\{[^}]*max-height:calc\(100dvh - 32px\)[^}]*overflow-y:auto/);
-  assert.match(styles, /\.admin-dialog-footer\{[^}]*position:sticky[^}]*bottom:-38px/);
+  assert.match(html, /class="editor-dialog-footer">\s*<button id="adminDoneButton"[^>]*>Done editing<\/button>/);
+  assert.match(styles, /\.editor-dialog \.modal-card\{[^}]*max-height:calc\(100dvh - 32px\)[^}]*overflow-y:auto/);
+  assert.match(styles, /\.editor-dialog-footer\{[^}]*position:sticky[^}]*bottom:-38px/);
+  for (const dialogId of ['adminDialog', 'eventsDialog', 'accountsDialog', 'invitationTemplatesDialog']) {
+    const editorDialog = html.match(new RegExp(`<dialog id="${dialogId}"[\\s\\S]*?</dialog>`))?.[0] || '';
+    assert.match(editorDialog, /class="editor-dialog-footer">[\s\S]*?>Done(?: editing)?<\/button>/);
+  }
   const editor = html.match(/<textarea id="adminBrideGroomContent"[^>]*>/)?.[0] || '';
   assert.doesNotMatch(editor, /maxlength/);
   assert.match(javascript, /button\.dataset\.weddingTab === 'couple' && !hostView/);
