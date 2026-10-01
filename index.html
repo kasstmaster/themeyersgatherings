@@ -355,7 +355,7 @@
       </form>
     </dialog>
 
-    <dialog id="adminDialog" class="wide-dialog">
+    <dialog id="adminDialog" class="wide-dialog editor-dialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2 id="adminHeading">Edit the menu</h2>
@@ -365,6 +365,20 @@
           <label><span>Monetary gift link</span><input id="adminMonetaryGiftUrl" type="url" placeholder="https://www.example.com/our-gift-fund" /></label>
         </div>
         <div id="adminAttireFields" class="admin-attire" hidden>
+          <section id="weddingPartyAdmin" class="wedding-party-admin" aria-labelledby="weddingPartyAdminHeading">
+            <h3 id="weddingPartyAdminHeading">Wedding Party Members</h3>
+            <p>Add a person by the same first and last name they use to sign in. If they do not have an account yet, one will be created with wedding access.</p>
+            <div id="adminWeddingPartyMembers" class="wedding-party-member-list"></div>
+            <div class="wedding-party-add">
+              <input id="adminWeddingPartyFirstName" placeholder="First name" maxlength="60" aria-label="Wedding party member first name" />
+              <input id="adminWeddingPartyLastName" placeholder="Last name" maxlength="60" aria-label="Wedding party member last name" />
+              <select id="adminWeddingPartyTitle" aria-label="Wedding party title">
+                <option value="">Select title</option>
+              </select>
+              <button id="adminAddWeddingPartyMember" type="button">Add member</button>
+            </div>
+            <p class="form-error" id="adminWeddingPartyError" role="alert"></p>
+          </section>
           <section class="bride-groom-admin" aria-labelledby="brideGroomAdminHeading">
             <h3 id="brideGroomAdminHeading">Bride &amp; Groom page</h3>
             <p>Edit the private page shown only to the host. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, and <code>`code`</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link.</p>
@@ -427,7 +441,9 @@
           <p class="form-error" id="adminUnitError" role="alert"></p>
         </section>
         </div>
-        <button class="primary-button" value="default">Done editing</button>
+        <div class="editor-dialog-footer">
+          <button id="adminDoneButton" class="primary-button" value="default">Done editing</button>
+        </div>
       </form>
     </dialog>
 
@@ -454,16 +470,18 @@
       </form>
     </dialog>
 
-    <dialog id="eventsDialog">
+    <dialog id="eventsDialog" class="editor-dialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2>Manage gatherings</h2>
         <div id="eventChoices" class="event-choices"></div>
-        <button class="primary-button" value="default">Done</button>
+        <div class="editor-dialog-footer">
+          <button class="primary-button" value="default">Done</button>
+        </div>
       </form>
     </dialog>
 
-    <dialog id="accountsDialog" class="wide-dialog">
+    <dialog id="accountsDialog" class="wide-dialog editor-dialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2>Manage accounts</h2>
@@ -473,29 +491,17 @@
           <button id="adminAddAccountButton" type="button">Add account</button>
         </div>
         <p class="form-error" id="adminAccountError" role="alert"></p>
-        <section id="weddingPartyAdmin" class="wedding-party-admin" aria-labelledby="weddingPartyAdminHeading" hidden>
-          <h3 id="weddingPartyAdminHeading">Wedding party members</h3>
-          <p>Add a person by the same first and last name they use to sign in. If they do not have an account yet, one will be created with wedding access.</p>
-          <div id="adminWeddingPartyMembers" class="wedding-party-member-list"></div>
-          <div class="wedding-party-add">
-            <input id="adminWeddingPartyFirstName" placeholder="First name" maxlength="60" aria-label="Wedding party member first name" />
-            <input id="adminWeddingPartyLastName" placeholder="Last name" maxlength="60" aria-label="Wedding party member last name" />
-            <select id="adminWeddingPartyTitle" aria-label="Wedding party title">
-              <option value="">Select title</option>
-            </select>
-            <button id="adminAddWeddingPartyMember" type="button">Add member</button>
-          </div>
-          <p class="form-error" id="adminWeddingPartyError" role="alert"></p>
-        </section>
         <section class="anylist-sync" aria-label="AnyList account sync">
           <br><button id="syncAnyListButton" type="button">Sync AnyList Address Book</button>
           <p id="anyListSyncResult" class="anylist-sync-result" role="status" aria-live="polite"></p>
         </section>
-        <br><button class="primary-button" value="default">Done editing</button>
+        <div class="editor-dialog-footer">
+          <button class="primary-button" value="default">Done editing</button>
+        </div>
       </form>
     </dialog>
 
-    <dialog id="invitationTemplatesDialog" class="wide-dialog template-manager-dialog">
+    <dialog id="invitationTemplatesDialog" class="wide-dialog template-manager-dialog editor-dialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2 id="invitationTemplatesHeading">Invitation templates</h2>
@@ -514,7 +520,9 @@
           <p id="invitationOverflowWarning" class="form-error" role="alert"></p>
           <div class="invitation-actions"><button id="downloadAllInvitations" type="button">Download All Invitations</button><button id="emailAllInvitations" type="button">Email All Invitations</button></div>
         </section>
-        <button class="primary-button" value="default">Done</button>
+        <div class="editor-dialog-footer">
+          <button class="primary-button" value="default">Done</button>
+        </div>
       </form>
     </dialog>
 
