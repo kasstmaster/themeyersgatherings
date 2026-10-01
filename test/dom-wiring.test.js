@@ -126,8 +126,8 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.match(html, /data-wedding-tab="couple"[^>]*hidden>Bride &amp; Groom/);
   assert.match(html, /id="brideGroomHeading">Bride &amp; Groom/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
-  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Bride &amp; Groom page'));
-  assert.ok(weddingEditor.indexOf('Bride &amp; Groom page') < weddingEditor.indexOf('Title Descriptions'));
+  assert.ok(weddingEditor.indexOf('Bride &amp; Groom page') < weddingEditor.indexOf('Wedding Party Members'));
+  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Title Descriptions'));
   const accountsEditor = html.match(/<dialog id="accountsDialog"[\s\S]*?<\/dialog>/)?.[0] || '';
   assert.doesNotMatch(accountsEditor, /Wedding Party Members/);
   assert.match(html, /class="editor-dialog-footer">\s*<button id="adminDoneButton"[^>]*>Done editing<\/button>/);
@@ -338,6 +338,7 @@ test('gathering details include labeled locations and editable text variables', 
 
   assert.match(html, /Gathering date[\s\S]*<span>Home<\/span>[\s\S]*id="adminWeddingLocations"[\s\S]*<span>Church<\/span>[\s\S]*<span>Venue<\/span>/);
   assert.match(javascript, /adminWeddingLocations'\)\.hidden = !isWedding/);
+  assert.match(javascript, /adminWeddingVariableHeading'\)\.hidden = !isWedding/);
   assert.match(javascript, /eventState\.homeAddress = typeof eventState\.homeAddress === 'string'/);
   assert.match(javascript, /replace\(\/\\\{\(date\|home\|church\|venue\|registry\|monetary\)\\\}\/g/);
   assert.match(javascript, /home: state\.homeAddress \|\| ''/);
@@ -359,16 +360,29 @@ test('wedding role and page editors share the Bachelorette editor height', async
   assert.match(styles, /\.wedding-copy-editor\{[^}]*height:36px;min-height:36px/);
 });
 
-test('variables are a titled divider section before Wedding Party Members', async () => {
+test('variables are grouped below their title and above a single divider', async () => {
   const [html, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /id="adminWeddingVariableHelp"[\s\S]*<h3 id="adminWeddingVariableHeading">Variables<\/h3>[\s\S]*id="weddingPartyAdmin"[\s\S]*>Wedding Party Members<\/h3>/);
+  assert.match(html, /id="adminWeddingVariableHelp"[\s\S]*<h3 id="adminWeddingVariableHeading" hidden>Variables<\/h3>[\s\S]*<span>Home<\/span>[\s\S]*<span>Church<\/span>[\s\S]*<span>Venue<\/span>[\s\S]*<span>Wedding registry link<\/span>[\s\S]*<span>Monetary gift link<\/span>[\s\S]*id="brideGroomAdmin"/);
   assert.ok(html.indexOf('id="adminWeddingVariableHelp"') < html.indexOf('id="weddingPartyAdmin"'));
-  assert.match(styles, /\.admin-variable-help\{[^}]*border-top:1px solid var\(--border\);border-bottom:1px solid var\(--border\)/);
-  assert.match(styles, /\.wedding-party-admin\{[^}]*border-bottom:1px solid var\(--border\)/);
+  assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
+  assert.doesNotMatch(styles, /\.admin-variable-help[^}]*border-(?:top|bottom)/);
+  assert.doesNotMatch(styles, /\.admin-attire>section[^}]*border-bottom/);
+  assert.doesNotMatch(styles, /\.wedding-party-admin\{[^}]*border-bottom/);
+});
+
+test('the editor title is its own section with one bottom divider', async () => {
+  const [html, styles] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /<section class="admin-editor-section admin-editor-heading" aria-labelledby="adminHeading">\s*<p class="section-kicker">Host dashboard<\/p>\s*<h2 id="adminHeading">Edit the menu<\/h2>\s*<\/section>\s*<label class="admin-date">/);
+  assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
+  assert.doesNotMatch(styles, /\.admin-editor-heading\{[^}]*border-(?:top|bottom)/);
 });
 
 test('every wedding details section has a divider and the requested title', async () => {
@@ -378,12 +392,28 @@ test('every wedding details section has a divider and the requested title', asyn
   ]);
   const headings = [
     'Variables', 'Wedding Party Members', 'Bride &amp; Groom page', 'The Perfect Experience page',
-    'Bachelorette page', 'Title Descriptions', 'Wedding Party Attire Images', 'Guest Attire Tip Videos'
+    'Bachelorette page', 'What to Expect page', 'Title Descriptions', 'Wedding Party Attire Images', 'Guest Attire Tip Videos'
   ];
 
   headings.forEach(heading => assert.match(html, new RegExp(`>${heading}<\\/h3>`)));
-  assert.match(html, /<section class="guest-attire-videos-admin"[\s\S]*>Guest Attire Tip Videos<\/h3>[\s\S]*id="adminAttireVideos"[\s\S]*<\/section>/);
-  assert.match(styles, /\.admin-attire>section\{[^}]*border-bottom:1px solid var\(--border\)/);
+  assert.match(html, /<section id="guestAttireVideosAdmin" class="admin-editor-section guest-attire-videos-admin"[\s\S]*>Guest Attire Tip Videos<\/h3>[\s\S]*id="adminAttireVideos"[\s\S]*<\/section>/);
+  assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
+});
+
+test('page editor sections are directly below Variables and before Wedding Party Members', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const sectionIds = ['adminWeddingVariableHelp', 'brideGroomAdmin', 'perfectExperienceAdmin', 'bacheloretteAdmin', 'whatToExpectAdmin', 'weddingPartyAdmin'];
+  const positions = sectionIds.map(id => html.indexOf(`id="${id}"`));
+
+  assert.ok(positions.every(position => position >= 0));
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+
+  sectionIds.slice(1).forEach(id => {
+    const sectionStart = html.indexOf(`<section id="${id}"`);
+    const sectionEnd = html.indexOf('</section>', sectionStart);
+    const section = html.slice(sectionStart, sectionEnd);
+    assert.equal((section.match(/<h3\b/g) || []).length, 1, `${id} should contain one title`);
+  });
 });
 
 test('wedding party manager creates wedding-enabled accounts for new people', async () => {

@@ -1631,7 +1631,9 @@ function openAdmin() {
   document.querySelector('#adminHomeAddress').value = state.homeAddress || '';
   document.querySelector('#adminHeading').textContent = isWedding ? 'Edit wedding details' : 'Edit the menu';
   document.querySelector('#adminWeddingLocations').hidden = !isWedding;
-  document.querySelector('#adminWeddingVariableHelp').hidden = !isWedding;
+  document.querySelector('#adminWeddingVariableHelp').classList.toggle('wedding-variables-visible', isWedding);
+  document.querySelector('#adminWeddingVariableHeading').hidden = !isWedding;
+  document.querySelector('#adminWeddingVariableDescription').hidden = !isWedding;
   document.querySelector('#adminChurchAddress').value = isWedding ? state.churchAddress || '' : '';
   document.querySelector('#adminVenueAddress').value = isWedding ? state.venueAddress || '' : '';
   document.querySelector('#adminRegistryFields').hidden = !isWedding;
