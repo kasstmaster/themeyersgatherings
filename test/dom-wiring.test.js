@@ -127,7 +127,7 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.match(html, /id="brideGroomHeading">Bride &amp; Groom/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
   assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Bride &amp; Groom page'));
-  assert.ok(weddingEditor.indexOf('Bride &amp; Groom page') < weddingEditor.indexOf('Title descriptions'));
+  assert.ok(weddingEditor.indexOf('Bride &amp; Groom page') < weddingEditor.indexOf('Title Descriptions'));
   const accountsEditor = html.match(/<dialog id="accountsDialog"[\s\S]*?<\/dialog>/)?.[0] || '';
   assert.doesNotMatch(accountsEditor, /Wedding Party Members/);
   assert.match(html, /class="editor-dialog-footer">\s*<button id="adminDoneButton"[^>]*>Done editing<\/button>/);
@@ -254,12 +254,12 @@ test('private attire galleries are rendered only for wedding party viewers', asy
   assert.match(html, /id="adminWeddingPartyAttireCaption"[\s\S]*id="adminWeddingPartyAttireFile"/);
 });
 
-test('wedding detail editor places party copy and private attire before tip videos', async () => {
+test('wedding detail editor places party copy and wedding party attire before guest tip videos', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
 
-  assert.ok(weddingEditor.indexOf('Title descriptions') < weddingEditor.indexOf('Private attire images'));
-  assert.ok(weddingEditor.indexOf('Private attire images') < weddingEditor.indexOf('Formal attire tip videos'));
+  assert.ok(weddingEditor.indexOf('Title Descriptions') < weddingEditor.indexOf('Wedding Party Attire Images'));
+  assert.ok(weddingEditor.indexOf('Wedding Party Attire Images') < weddingEditor.indexOf('Guest Attire Tip Videos'));
   assert.equal((html.match(/id="adminWeddingPartyDescriptions"/g) || []).length, 1);
   assert.equal((html.match(/id="adminWeddingPartyAttireImages"/g) || []).length, 1);
 });
@@ -369,6 +369,21 @@ test('variables are a titled divider section before Wedding Party Members', asyn
   assert.ok(html.indexOf('id="adminWeddingVariableHelp"') < html.indexOf('id="weddingPartyAdmin"'));
   assert.match(styles, /\.admin-variable-help\{[^}]*border-top:1px solid var\(--border\);border-bottom:1px solid var\(--border\)/);
   assert.match(styles, /\.wedding-party-admin\{[^}]*border-bottom:1px solid var\(--border\)/);
+});
+
+test('every wedding details section has a divider and the requested title', async () => {
+  const [html, styles] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  ]);
+  const headings = [
+    'Variables', 'Wedding Party Members', 'Bride &amp; Groom page', 'The Perfect Experience page',
+    'Bachelorette page', 'Title Descriptions', 'Wedding Party Attire Images', 'Guest Attire Tip Videos'
+  ];
+
+  headings.forEach(heading => assert.match(html, new RegExp(`>${heading}<\\/h3>`)));
+  assert.match(html, /<section class="guest-attire-videos-admin"[\s\S]*>Guest Attire Tip Videos<\/h3>[\s\S]*id="adminAttireVideos"[\s\S]*<\/section>/);
+  assert.match(styles, /\.admin-attire>section\{[^}]*border-bottom:1px solid var\(--border\)/);
 });
 
 test('wedding party manager creates wedding-enabled accounts for new people', async () => {

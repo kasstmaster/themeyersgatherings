@@ -386,12 +386,12 @@
             <label><span>Page content</span><textarea class="wedding-copy-editor" id="adminWhatToExpectContent" placeholder="Add what guests can expect here…"></textarea></label>
           </section>
           <section class="wedding-party-descriptions-admin" aria-labelledby="weddingPartyDescriptionsAdminHeading">
-            <h3 id="weddingPartyDescriptionsAdminHeading">Title descriptions</h3>
+            <h3 id="weddingPartyDescriptionsAdminHeading">Title Descriptions</h3>
             <p>Edit a title once to update its description for every person assigned that title. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link.</p>
             <div id="adminWeddingPartyDescriptions" class="wedding-party-description-editors"></div>
           </section>
           <section class="wedding-party-attire-admin" aria-labelledby="weddingPartyAttireAdminHeading">
-            <h3 id="weddingPartyAttireAdminHeading">Private attire images</h3>
+            <h3 id="weddingPartyAttireAdminHeading">Wedding Party Attire Images</h3>
             <p>Add inspiration at the bottom of the ladies’ or gentlemen’s attire section. These images, captions, and notes are shown only to signed-in Wedding Party members. Editable text supports Markdown such as <strong>**bold**</strong>, <strong>*italics*</strong>, <strong>- bullets</strong>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link.</p>
             <div class="wedding-party-attire-notes">
               <label><span>Note for the Ladies</span><textarea id="adminWeddingPartyLadiesAttireNote" placeholder="Optional note shown below all ladies’ images"></textarea></label>
@@ -406,11 +406,13 @@
             </div>
             <p id="adminWeddingPartyAttireError" class="form-error" role="alert"></p>
           </section>
-          <h3>Formal attire tip videos</h3>
-          <p>Add YouTube or Vimeo links to display on the Wedding Attire page.</p>
-          <div id="adminAttireVideos"></div>
-          <div class="admin-video-add"><input id="adminNewAttireVideo" type="url" placeholder="https://www.youtube.com/watch?v=…" /><button id="adminAddAttireVideo" type="button">Add video</button></div>
-          <p class="form-error" id="adminAttireVideoError" role="alert"></p>
+          <section class="guest-attire-videos-admin" aria-labelledby="guestAttireVideosAdminHeading">
+            <h3 id="guestAttireVideosAdminHeading">Guest Attire Tip Videos</h3>
+            <p>Add YouTube or Vimeo links to display on the Wedding Attire page.</p>
+            <div id="adminAttireVideos"></div>
+            <div class="admin-video-add"><input id="adminNewAttireVideo" type="url" placeholder="https://www.youtube.com/watch?v=…" /><button id="adminAddAttireVideo" type="button">Add video</button></div>
+            <p class="form-error" id="adminAttireVideoError" role="alert"></p>
+          </section>
         </div>
         <div id="menuAdminFields">
         <div id="adminItems" class="admin-items"></div>
