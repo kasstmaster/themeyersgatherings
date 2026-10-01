@@ -300,11 +300,13 @@ test('all editable wedding party copy supports safe Markdown formatting', async 
   assert.match(html, /Put <code>---<\/code> on its own line for a divider/);
 });
 
-test('wedding party manager only accepts people from wedding-invited accounts', async () => {
+test('wedding party manager creates wedding-enabled accounts for new people', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
 
   assert.match(addHandler, /accountNameMatches\(name, item\.name\)/);
+  assert.match(addHandler, /account = \{ name, selected: false, selectedEvents: \{ wedding: true \}, alwaysInvite: false \}/);
+  assert.match(addHandler, /appState\.accounts\.push\(account\)/);
   assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
   assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ name, title: selectedTitle\.value \}\)/);
 });

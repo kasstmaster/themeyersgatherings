@@ -2255,16 +2255,23 @@ document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', 
   const name = `${firstInput.value.trim()} ${lastInput.value.trim()}`.trim();
   if (!firstInput.value.trim() || !lastInput.value.trim()) { error.textContent = 'Enter a first and last name.'; return; }
   if (!titleInput.value) { error.textContent = 'Select a wedding party title.'; return; }
-  const account = appState.accounts.find(item => accountNameMatches(name, item.name));
-  if (!account || !accountCanSignIn(account, 'wedding')) { error.textContent = 'That person must belong to an account invited to the wedding.'; return; }
   state.weddingPartyMembers ??= [];
   if (state.weddingPartyMembers.some(member => normalizeAccountName(member.name) === normalizeAccountName(name))) { error.textContent = 'That person is already in the wedding party.'; return; }
   const selectedTitle = WEDDING_PARTY_TITLES.find(title => title.value === titleInput.value);
   if (!selectedTitle) { error.textContent = 'Select a valid wedding party title.'; return; }
   if (!selectedTitle.multiple && state.weddingPartyMembers.some(member => member.title === selectedTitle.value)) { error.textContent = `${selectedTitle.value} has already been assigned.`; return; }
+  let account = appState.accounts.find(item => accountNameMatches(name, item.name));
+  const accountCreated = !account;
+  if (accountCreated) {
+    account = { name, selected: false, selectedEvents: { wedding: true }, alwaysInvite: false };
+    appState.accounts.push(account);
+  } else if (!accountCanSignIn(account, 'wedding')) {
+    error.textContent = 'That person belongs to an existing account that is not invited to the wedding.';
+    return;
+  }
   state.weddingPartyMembers.push({ name, title: selectedTitle.value });
   firstInput.value = ''; lastInput.value = ''; titleInput.value = ''; error.textContent = '';
-  saveState(); openAccountsAdmin(); showToast(`${name} added to the wedding party.`);
+  saveState(); openAccountsAdmin(); showToast(`${name} added to the wedding party${accountCreated ? ' with a new account' : ''}.`);
 });
 document.querySelector('#adminAddWeddingPartyAttireImage').addEventListener('click', async event => {
   const button = event.currentTarget;
