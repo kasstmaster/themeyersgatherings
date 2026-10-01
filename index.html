@@ -346,7 +346,10 @@
           <label><span>Wedding registry link</span><input id="adminRegistryUrl" type="url" placeholder="https://www.example.com/our-registry" /></label>
           <label><span>Monetary gift link</span><input id="adminMonetaryGiftUrl" type="url" placeholder="https://www.example.com/our-gift-fund" /></label>
         </div>
-        <p id="adminWeddingVariableHelp" class="admin-variable-help" hidden>In any editable wedding text, insert <code>{date}</code>, <code>{home}</code>, <code>{church}</code>, <code>{venue}</code>, <code>{registry}</code>, or <code>{monetary}</code> to keep those details up to date automatically.</p>
+        <section id="adminWeddingVariableHelp" class="admin-variable-help" hidden aria-labelledby="adminWeddingVariableHeading">
+          <h3 id="adminWeddingVariableHeading">Variables</h3>
+          <p>In any editable wedding text, insert <code>{date}</code>, <code>{home}</code>, <code>{church}</code>, <code>{venue}</code>, <code>{registry}</code>, or <code>{monetary}</code> to keep those details up to date automatically.</p>
+        </section>
         <div id="adminAttireFields" class="admin-attire" hidden>
           <section id="weddingPartyAdmin" class="wedding-party-admin" aria-labelledby="weddingPartyAdminHeading">
             <h3 id="weddingPartyAdminHeading">Wedding Party Members</h3>

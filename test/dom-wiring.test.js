@@ -359,6 +359,18 @@ test('wedding role and page editors share the Bachelorette editor height', async
   assert.match(styles, /\.wedding-copy-editor\{[^}]*height:36px;min-height:36px/);
 });
 
+test('variables are a titled divider section before Wedding Party Members', async () => {
+  const [html, styles] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /id="adminWeddingVariableHelp"[\s\S]*<h3 id="adminWeddingVariableHeading">Variables<\/h3>[\s\S]*id="weddingPartyAdmin"[\s\S]*>Wedding Party Members<\/h3>/);
+  assert.ok(html.indexOf('id="adminWeddingVariableHelp"') < html.indexOf('id="weddingPartyAdmin"'));
+  assert.match(styles, /\.admin-variable-help\{[^}]*border-top:1px solid var\(--border\);border-bottom:1px solid var\(--border\)/);
+  assert.match(styles, /\.wedding-party-admin\{[^}]*border-bottom:1px solid var\(--border\)/);
+});
+
 test('wedding party manager creates wedding-enabled accounts for new people', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
