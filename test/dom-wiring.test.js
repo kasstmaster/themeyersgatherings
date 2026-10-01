@@ -421,3 +421,9 @@ test('host tools are persistent buttons directly below the signed-in household',
   assert.match(html, /id="hostToolsPanel"[\s\S]*>Gatherings<\/button>[\s\S]*>Wedding Details<\/button>[\s\S]*>Clear a Claim<\/button>[\s\S]*>Accounts<\/button>[\s\S]*>View As<\/button>[\s\S]*>Templates<\/button>/);
   assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
 });
+
+test('the host editor button describes the current gathering content', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+
+  assert.match(javascript, /#editItemsButton'\)\.textContent = isWedding \? 'Wedding Details' : 'Menu'/);
+});

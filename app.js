@@ -1179,6 +1179,7 @@ function render() {
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
   renderSyncStatus();
   updateHostToolsPanel();
+  document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Menu';
   renderEventDock();
   updateHeaderImage(event);
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
