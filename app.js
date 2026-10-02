@@ -10,6 +10,31 @@ const DEFAULT_EVENT_DATE = '2026-11-28';
 const DEFAULT_CHRISTMAS_DATE = '2026-12-25';
 const DEFAULT_WEDDING_DATE = '2027-08-10';
 const DEFAULT_REGISTRY_URL = 'https://www.amazon.com/wedding/share/kassandraandsteven';
+const DEFAULT_WEDDING_TIMELINE = `**11:00 AM**\tGetting ready begins\tHair, makeup, food, drinks, music. Deliberately generous amount of time.
+**1:30 PM**\tSteven begins getting ready\tGroom/groomsmen do not need to start nearly as early.
+**2:30 PM**\tChurch/setup complete\tFlorals, candles, programs, reception setup, cameras, audio, etc. should be DONE.
+**3:00 PM**\tSteven completely ready\tHe can relax with his groomsmen.
+**3:00 PM**\tKassandra gets dressed\tMom/MOH/etc. help. No rushing.
+**3:15 PM**\tWedding party ready\tEveryone is now officially “on deck.”
+**3:30 PM**\tDoors open / guests arrive\tPrelude music. Ushers seat guests. Unplugged-ceremony reminder displayed.
+**3:45 PM**\tWedding party disappears\tNobody wandering around where guests can see them. Steven takes his place.
+**3:55 PM**\tDoors close / final lineup\tWedding party lines up. Kassandra and Dad have a few private minutes together.
+**4:00 PM**\t**CEREMONY**\tTraditional processional, vows, rings, prayer, pronouncement.
+**4:25–4:30 PM**\tRecessional\tYou are married.
+**4:30 PM**\tCocktail hour begins\tGuests immediately transition into drinks, music and conversation.
+**4:30–4:45 PM**\tFormal portraits\t**Hard 15-minute limit.** Predetermined shot list only.
+**4:45–5:05 PM**\t**Kassandra + Steven disappear**\tPrivate room. Drinks waiting. No photographers. No wedding party. No questions.
+**5:05 PM**\tJoin the reception\tNo grand entrance. You simply walk in together.
+**5:15 PM**\t**First dance**\tYour first real reception moment. Short, intimate, natural.
+**5:20–5:30 PM**\tEveryone settles for dinner\tDrinks refreshed, guests find seats, dinner service begins.
+**5:30–7:15 PM**\t**DINNER**\tThis gets a huge block because you actually want to experience it.
+**During dinner**\tToasts & speeches\tSpaced naturally between courses rather than one giant speech block.
+**~7:15 PM**\tCake/dessert begins\tNo elaborate cake-cutting production required unless you want one.
+**~7:30 PM**\t**Daddy-daughter dance**\tDad comes to get Kassandra as dinner winds down.
+**~7:35 PM onward**\t**THE BALL**\tMusic gradually transitions. Couples naturally join the floor.
+**7:35–10:30 PM-ish**\tDancing / drinks / dessert / conversation\tNothing else is scheduled. This is the wedding.
+**~10:30 PM onward**\tDeparture window opens\tTransportation is available, but there is no countdown.
+**Whenever it feels right**\t**Kassandra + Steven leave**\tNo mandatory staged exit. You're done when you're ready.`;
 const WEDDING_PARTY_TITLES = [
   { value: 'Officiant', multiple: false },
   { value: 'Matron of Honor', multiple: false },
@@ -362,7 +387,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', brideGroomPages: [], perfectExperienceContent: '', bacheloretteContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', brideGroomPages: [], perfectExperienceContent: '', bacheloretteContent: '', timelineContent: DEFAULT_WEDDING_TIMELINE, whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -515,6 +540,9 @@ function normalizeState(saved) {
       loaded.events.wedding.bacheloretteContent = typeof loaded.events.wedding.bacheloretteContent === 'string'
         ? loaded.events.wedding.bacheloretteContent
         : '';
+      loaded.events.wedding.timelineContent = typeof loaded.events.wedding.timelineContent === 'string'
+        ? loaded.events.wedding.timelineContent
+        : DEFAULT_WEDDING_TIMELINE;
       loaded.events.wedding.whatToExpectContent = typeof loaded.events.wedding.whatToExpectContent === 'string'
         ? loaded.events.wedding.whatToExpectContent
         : '';
@@ -804,6 +832,13 @@ function expandEditableTextVariables(value) {
   return String(value || '').replace(/\{(date|home|church|venue|registry|monetary)\}/g, (_placeholder, name) => variables[name]);
 }
 function formatEditableText(value) { return formatWeddingPartyDescription(value); }
+function renderWeddingTimeline(value) {
+  const rows = String(value || '').split(/\r?\n/).map(line => line.split('\t')).filter(columns => columns.some(column => column.trim()));
+  return rows.map(columns => {
+    const [time = '', event = '', notes = ''] = columns;
+    return `<tr><td>${formatEditableText(time)}</td><td>${formatEditableText(event)}</td><td>${formatEditableText(notes)}</td></tr>`;
+  }).join('');
+}
 function amountOptions(item = {}) {
   return `<option value="optional" ${item.optional ? 'selected' : ''}>Optional</option>${Array.from({ length: 50 }, (_, index) => {
     const amount = index + 1;
@@ -1250,9 +1285,11 @@ function render() {
   });
   if (isWeddingPartyMember && selectedWeddingTab === 'attire') selectedWeddingTab = 'party';
   if (isWeddingPartyMember && selectedWeddingTab === 'expect') selectedWeddingTab = 'party';
+  if (!hostView && !isWeddingPartyMember && selectedWeddingTab === 'timeline') selectedWeddingTab = 'attire';
   if ((!isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostView && selectedWeddingTab === 'couple')) selectedWeddingTab = 'attire';
   const showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple';
   const showingWeddingPartyPage = isWeddingPartyMember && selectedWeddingTab === 'party';
+  const showingTimelinePage = isWedding && (hostView || isWeddingPartyMember) && selectedWeddingTab === 'timeline';
   const showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire';
   const showingAttirePage = isWedding && ((!isWeddingPartyMember && selectedWeddingTab === 'attire') || showingPartyAttirePage);
   const showingWhatToExpectPage = isWedding && !isWeddingPartyMember && selectedWeddingTab === 'expect';
@@ -1261,6 +1298,7 @@ function render() {
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     button.hidden = (button.dataset.weddingTab === 'party' && !isWeddingPartyMember)
+      || (button.dataset.weddingTab === 'timeline' && !hostView && !isWeddingPartyMember)
       || (button.dataset.weddingTab === 'attire' && isWeddingPartyMember)
       || (button.dataset.weddingTab === 'expect' && isWeddingPartyMember);
     if (button.dataset.weddingTab === 'couple' && !hostView) button.hidden = true;
@@ -1280,6 +1318,10 @@ function render() {
     brideGroomContent.innerHTML = formatEditableText(state.brideGroomContent);
     if (activeBrideGroomPage.id !== 'main') brideGroomContent.innerHTML = formatEditableText(activeBrideGroomPage.content);
     if (!brideGroomContent.innerHTML) brideGroomContent.innerHTML = '<p class="guest-empty">No Bride & Groom details have been added yet.</p>';
+  }
+  document.querySelector('#weddingTimelineSection').hidden = !showingTimelinePage;
+  if (showingTimelinePage) {
+    document.querySelector('#weddingTimelineBody').innerHTML = renderWeddingTimeline(state.timelineContent);
   }
   document.querySelector('#whatToExpectSection').hidden = !showingWhatToExpectPage;
   if (showingWhatToExpectPage) {
@@ -1555,6 +1597,12 @@ document.querySelector('#adminBacheloretteContent').addEventListener('change', e
   saveState();
   showToast('Bachelorette page updated.');
 });
+document.querySelector('#adminTimelineContent').addEventListener('change', event => {
+  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  state.timelineContent = event.target.value;
+  saveState();
+  showToast('Wedding timeline updated.');
+});
 document.querySelector('#adminWhatToExpectContent').addEventListener('change', event => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
   state.whatToExpectContent = event.target.value;
@@ -1751,6 +1799,7 @@ function openAdmin() {
     renderBrideGroomPageAdmin();
     document.querySelector('#adminPerfectExperienceContent').value = state.perfectExperienceContent || '';
     document.querySelector('#adminBacheloretteContent').value = state.bacheloretteContent || '';
+    document.querySelector('#adminTimelineContent').value = state.timelineContent || '';
     document.querySelector('#adminWhatToExpectContent').value = state.whatToExpectContent || '';
     renderWeddingPartyDescriptionAdmin();
     renderWeddingPartyAttireAdmin();

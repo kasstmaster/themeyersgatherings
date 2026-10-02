@@ -468,7 +468,7 @@ test('every wedding details section has a divider and the requested title', asyn
   ];
 
   sectionHeadings.forEach(heading => assert.match(html, new RegExp(`>${heading}<\\/h3>`)));
-  ['Bride &amp; Groom page', 'The Perfect Experience page', 'Bachelorette page', 'What to Expect page']
+  ['Bride &amp; Groom page', 'The Perfect Experience page', 'Bachelorette page', 'Wedding Timeline page', 'What to Expect page']
     .forEach(heading => assert.match(html, new RegExp(`<span>${heading}<\\/span>`)));
   assert.match(html, /<section id="guestAttireVideosAdmin" class="admin-editor-section guest-attire-videos-admin"[\s\S]*>Guest Attire Tip Videos<\/h3>[\s\S]*id="adminAttireVideos"[\s\S]*<\/section>/);
   assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
@@ -484,12 +484,29 @@ test('page editors are grouped in one Pages section between Variables and Weddin
   const pagesStart = html.indexOf('<section id="weddingPagesAdmin"');
   const pagesEnd = html.indexOf('</section>', pagesStart);
   const pagesSection = html.slice(pagesStart, pagesEnd);
-  ['brideGroomAdmin', 'perfectExperienceAdmin', 'bacheloretteAdmin', 'whatToExpectAdmin']
+  ['brideGroomAdmin', 'perfectExperienceAdmin', 'bacheloretteAdmin', 'timelineAdmin', 'whatToExpectAdmin']
     .forEach(id => assert.match(pagesSection, new RegExp(`id="${id}"`)));
   assert.equal((pagesSection.match(/<h3\b/g) || []).length, 1);
-  assert.equal((pagesSection.match(/class="wedding-party-description-editor wedding-page-editor"/g) || []).length, 4);
+  assert.equal((pagesSection.match(/class="wedding-party-description-editor wedding-page-editor"/g) || []).length, 5);
   assert.doesNotMatch(pagesSection, /<h4\b/);
   assert.match(pagesSection, /class="wedding-party-description-editors wedding-page-editors"/);
+});
+
+test('Wedding Timeline is private to hosts and wedding party members and remains host-editable', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+  const pageTabs = html.match(/<nav id="weddingPartyTabs"[\s\S]*?<\/nav>/)?.[0] || '';
+
+  assert.match(pageTabs, /data-wedding-tab="party"[\s\S]*data-wedding-tab="timeline"[^>]*>Timeline<\/button>[\s\S]*data-wedding-tab="attire"/);
+  assert.match(html, /id="weddingTimelineSection"[^>]*hidden/);
+  assert.match(html, /<th scope="col">Time<\/th><th scope="col">What Happens<\/th><th scope="col">Notes<\/th>/);
+  assert.match(html, /id="adminTimelineContent"/);
+  assert.match(javascript, /button\.dataset\.weddingTab === 'timeline' && !hostView && !isWeddingPartyMember/);
+  assert.match(javascript, /\(hostView \|\| isWeddingPartyMember\) && selectedWeddingTab === 'timeline'/);
+  assert.match(javascript, /state\.timelineContent = event\.target\.value/);
+  assert.match(javascript, /\*\*11:00 AM\*\*[\s\S]*Whenever it feels right/);
 });
 
 test('wedding party manager creates wedding-enabled accounts for new people', async () => {
