@@ -151,6 +151,7 @@
       <section id="brideGroomSection" class="bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
         <p class="section-kicker">A private space for the couple</p>
         <h2 id="brideGroomHeading">Bride &amp; Groom</h2>
+        <nav id="brideGroomTabs" class="matron-info-tabs bride-groom-tabs" aria-label="Bride and Groom pages" role="tablist" hidden></nav>
         <div id="brideGroomContent" class="bride-groom-content"></div>
       </section>
 
@@ -370,7 +371,8 @@
             <h3 id="weddingPagesAdminHeading">Pages</h3>
             <p>Edit the content shown on each wedding page. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link. You can also insert <code>{date}</code>, <code>{home}</code>, <code>{church}</code>, <code>{venue}</code>, <code>{registry}</code>, or <code>{monetary}</code>.</p>
             <div class="wedding-party-description-editors wedding-page-editors">
-              <label id="brideGroomAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Bride &amp; Groom page</span><textarea class="wedding-copy-editor" id="adminBrideGroomContent" aria-label="Bride &amp; Groom page content" placeholder="Add your notes here…"></textarea></label>
+              <div id="brideGroomAdmin" class="wedding-party-description-editor wedding-page-editor"><div class="wedding-page-editor-heading"><span>Bride &amp; Groom page</span><button id="adminAddBrideGroomPage" class="add-bride-groom-page" type="button" aria-label="Add another Bride &amp; Groom page" title="Add another page">+</button></div><textarea class="wedding-copy-editor" id="adminBrideGroomContent" aria-label="Bride &amp; Groom page content" placeholder="Add your notes here…"></textarea></div>
+              <div id="adminBrideGroomPages" class="bride-groom-page-editors"></div>
               <label id="perfectExperienceAdmin" class="wedding-party-description-editor wedding-page-editor"><span>The Perfect Experience page</span><textarea class="wedding-copy-editor" id="adminPerfectExperienceContent" aria-label="The Perfect Experience page content" placeholder="Add the perfect experience details here…"></textarea></label>
               <label id="bacheloretteAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Bachelorette page</span><textarea class="wedding-copy-editor" id="adminBacheloretteContent" aria-label="Bachelorette page content" placeholder="Add bachelorette party information here…"></textarea></label>
               <label id="whatToExpectAdmin" class="wedding-party-description-editor wedding-page-editor"><span>What to Expect page</span><textarea class="wedding-copy-editor" id="adminWhatToExpectContent" aria-label="What to Expect page content" placeholder="Add what guests can expect here…"></textarea></label>

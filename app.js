@@ -361,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', bacheloretteContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', brideGroomPages: [], perfectExperienceContent: '', bacheloretteContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -394,6 +394,7 @@ let guestName = '';
 let signedInPersonName = '';
 let selectedWeddingTab = 'attire';
 let selectedMatronTab = 'experience';
+let selectedBrideGroomPage = 'main';
 let hostWeddingPartyViewName = '';
 const GENERAL_GUEST_PREVIEW = '__general_guest__';
 let pendingAccountAction = null;
@@ -500,6 +501,13 @@ function normalizeState(saved) {
       loaded.events.wedding.brideGroomContent = typeof loaded.events.wedding.brideGroomContent === 'string'
         ? loaded.events.wedding.brideGroomContent
         : '';
+      loaded.events.wedding.brideGroomPages = Array.isArray(loaded.events.wedding.brideGroomPages)
+        ? loaded.events.wedding.brideGroomPages.filter(page => page && typeof page === 'object').map((page, index) => ({
+          id: String(page.id || `bride-groom-page-${index + 2}`),
+          title: String(page.title || `Page ${index + 2}`),
+          content: typeof page.content === 'string' ? page.content : ''
+        }))
+        : [];
       loaded.events.wedding.perfectExperienceContent = typeof loaded.events.wedding.perfectExperienceContent === 'string'
         ? loaded.events.wedding.perfectExperienceContent
         : '';
@@ -1251,8 +1259,16 @@ function render() {
   });
   document.querySelector('#brideGroomSection').hidden = !showingBrideGroomPage;
   if (showingBrideGroomPage) {
-    document.querySelector('#brideGroomContent').innerHTML = formatEditableText(state.brideGroomContent)
-      || '<p class="guest-empty">No Bride & Groom details have been added yet.</p>';
+    const brideGroomPages = [{ id: 'main', title: 'Bride & Groom', content: state.brideGroomContent || '' }, ...(state.brideGroomPages || [])];
+    if (!brideGroomPages.some(page => page.id === selectedBrideGroomPage)) selectedBrideGroomPage = 'main';
+    const brideGroomTabs = document.querySelector('#brideGroomTabs');
+    brideGroomTabs.hidden = brideGroomPages.length < 2;
+    brideGroomTabs.innerHTML = brideGroomPages.map(page => `<button type="button" role="tab" data-bride-groom-page="${escapeAttribute(page.id)}" aria-selected="${page.id === selectedBrideGroomPage}" tabindex="${page.id === selectedBrideGroomPage ? '0' : '-1'}">${escapeHtml(page.title)}</button>`).join('');
+    const activeBrideGroomPage = brideGroomPages.find(page => page.id === selectedBrideGroomPage) || brideGroomPages[0];
+    const brideGroomContent = document.querySelector('#brideGroomContent');
+    brideGroomContent.innerHTML = formatEditableText(state.brideGroomContent);
+    if (activeBrideGroomPage.id !== 'main') brideGroomContent.innerHTML = formatEditableText(activeBrideGroomPage.content);
+    if (!brideGroomContent.innerHTML) brideGroomContent.innerHTML = '<p class="guest-empty">No Bride & Groom details have been added yet.</p>';
   }
   document.querySelector('#whatToExpectSection').hidden = !showingWhatToExpectPage;
   if (showingWhatToExpectPage) {
@@ -1488,6 +1504,34 @@ document.querySelector('#adminBrideGroomContent').addEventListener('change', eve
   saveState();
   showToast('Bride & Groom page updated.');
 });
+document.querySelector('#adminAddBrideGroomPage').addEventListener('click', () => {
+  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  state.brideGroomPages ||= [];
+  const pageNumber = state.brideGroomPages.length + 2;
+  const page = { id: `bride-groom-${Date.now()}`, title: `Page ${pageNumber}`, content: '' };
+  state.brideGroomPages.push(page);
+  selectedBrideGroomPage = page.id;
+  saveState();
+  renderBrideGroomPageAdmin();
+  document.querySelector(`[data-bride-groom-admin-page="${CSS.escape(page.id)}"] input`).focus();
+  showToast(`Bride & Groom Page ${pageNumber} added.`);
+});
+document.querySelector('#brideGroomTabs').addEventListener('click', event => {
+  const button = event.target.closest('[data-bride-groom-page]');
+  if (!button) return;
+  selectedBrideGroomPage = button.dataset.brideGroomPage;
+  render();
+});
+document.querySelector('#brideGroomTabs').addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  event.preventDefault();
+  const tabs = [...document.querySelectorAll('#brideGroomTabs [data-bride-groom-page]')];
+  const currentIndex = tabs.findIndex(button => button.dataset.brideGroomPage === selectedBrideGroomPage);
+  const direction = event.key === 'ArrowRight' ? 1 : -1;
+  selectedBrideGroomPage = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.brideGroomPage;
+  render();
+  document.querySelector(`[data-bride-groom-page="${CSS.escape(selectedBrideGroomPage)}"]`).focus();
+});
 document.querySelector('#adminPerfectExperienceContent').addEventListener('change', event => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
   state.perfectExperienceContent = event.target.value;
@@ -1652,6 +1696,7 @@ function openAdmin() {
   if (isWedding) {
     renderWeddingPartyAdmin();
     document.querySelector('#adminBrideGroomContent').value = state.brideGroomContent || '';
+    renderBrideGroomPageAdmin();
     document.querySelector('#adminPerfectExperienceContent').value = state.perfectExperienceContent || '';
     document.querySelector('#adminBacheloretteContent').value = state.bacheloretteContent || '';
     document.querySelector('#adminWhatToExpectContent').value = state.whatToExpectContent || '';
@@ -1675,6 +1720,27 @@ function openAdmin() {
     remove.addEventListener('click', () => { state.items = state.items.filter(i => i.id !== row.dataset.adminId); saveState(); openAdmin(); });
   });
   const dialog = document.querySelector('#adminDialog'); if (!dialog.open) dialog.showModal();
+}
+function renderBrideGroomPageAdmin() {
+  const pages = state.brideGroomPages || [];
+  const container = document.querySelector('#adminBrideGroomPages');
+  container.innerHTML = pages.map((page, index) => `<div class="wedding-party-description-editor wedding-page-editor bride-groom-extra-page" data-bride-groom-admin-page="${escapeAttribute(page.id)}"><div class="wedding-page-editor-heading"><input type="text" value="${escapeAttribute(page.title)}" aria-label="Bride & Groom page ${index + 2} tab name" maxlength="60"><button type="button" class="admin-delete" aria-label="Delete ${escapeAttribute(page.title)} page" title="Delete page">×</button></div><textarea class="wedding-copy-editor" aria-label="${escapeAttribute(page.title)} page content" placeholder="Add your notes here…">${escapeHtml(page.content)}</textarea></div>`).join('');
+  container.querySelectorAll('[data-bride-groom-admin-page]').forEach(editor => {
+    const page = pages.find(item => item.id === editor.dataset.brideGroomAdminPage);
+    const [heading, content] = [editor.querySelector('input'), editor.querySelector('textarea')];
+    heading.addEventListener('change', () => {
+      page.title = heading.value.trim() || 'Untitled page';
+      saveState(); renderBrideGroomPageAdmin(); showToast('Bride & Groom page name updated.');
+    });
+    content.addEventListener('change', () => {
+      page.content = content.value; saveState(); showToast(`${page.title} page updated.`);
+    });
+    editor.querySelector('.admin-delete').addEventListener('click', () => {
+      state.brideGroomPages = pages.filter(item => item.id !== page.id);
+      if (selectedBrideGroomPage === page.id) selectedBrideGroomPage = 'main';
+      saveState(); renderBrideGroomPageAdmin(); showToast(`${page.title} page removed.`);
+    });
+  });
 }
 function renderAdminAttireVideos() {
   const videos = state.attireVideos || [];

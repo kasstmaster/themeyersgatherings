@@ -141,9 +141,28 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.doesNotMatch(editor, /maxlength/);
   assert.match(javascript, /button\.dataset\.weddingTab === 'couple' && !hostView/);
   assert.match(javascript, /showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple'/);
-  assert.match(javascript, /brideGroomContent'\)\.innerHTML = formatEditableText\(state\.brideGroomContent\)/);
+  assert.match(javascript, /brideGroomContent\.innerHTML = formatEditableText\(state\.brideGroomContent\)/);
   assert.match(javascript, /#adminBrideGroomContent'\)\.addEventListener\('change'/);
   assert.match(javascript, /state\.brideGroomContent = event\.target\.value/);
+});
+
+test('hosts can add editable tabbed pages inside Bride & Groom', async () => {
+  const [html, javascript, styles] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /id="brideGroomTabs"[^>]*role="tablist"[^>]*hidden/);
+  assert.match(html, /Bride &amp; Groom page<\/span><button id="adminAddBrideGroomPage"[^>]*>\+<\/button>/);
+  assert.match(html, /id="adminBrideGroomPages"/);
+  assert.match(javascript, /brideGroomPages: \[\]/);
+  assert.match(javascript, /#adminAddBrideGroomPage'[\s\S]*state\.brideGroomPages\.push\(page\)/);
+  assert.match(javascript, /data-bride-groom-page=/);
+  assert.match(javascript, /data-bride-groom-admin-page=/);
+  assert.match(javascript, /page\.title = heading\.value\.trim\(\)/);
+  assert.match(javascript, /page\.content = content\.value/);
+  assert.match(styles, /\.bride-groom-tabs\{/);
 });
 
 test('wedding page tabs use guest-facing labels and audience-specific visibility', async () => {
