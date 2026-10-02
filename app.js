@@ -1658,6 +1658,42 @@ document.querySelector('#rsvpForm').addEventListener('submit', () => {
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
   saveState(); showToast(`RSVP saved — we can't wait to see you!`);
 });
+const editorInputSaveTimers = new WeakMap();
+function commitPendingEditorControl(control) {
+  clearTimeout(editorInputSaveTimers.get(control));
+  editorInputSaveTimers.delete(control);
+  if (!control.hasAttribute('data-editor-dirty')) return;
+  control.removeAttribute('data-editor-dirty');
+  control.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function commitPendingEditorInputs(form, submitter) {
+  const dirtyControls = [...form.querySelectorAll('[data-editor-dirty]')];
+  if (submitter?.value === 'cancel') {
+    dirtyControls.forEach(control => {
+      clearTimeout(editorInputSaveTimers.get(control));
+      editorInputSaveTimers.delete(control);
+      control.removeAttribute('data-editor-dirty');
+    });
+    return;
+  }
+  dirtyControls.forEach(control => {
+    commitPendingEditorControl(control);
+  });
+}
+document.querySelectorAll('.editor-dialog form').forEach(form => {
+  form.addEventListener('input', event => {
+    if (!event.target.matches('input:not([type="file"]), select, textarea')) return;
+    event.target.dataset.editorDirty = 'true';
+    clearTimeout(editorInputSaveTimers.get(event.target));
+    editorInputSaveTimers.set(event.target, setTimeout(() => commitPendingEditorControl(event.target), 300));
+  });
+  form.addEventListener('change', event => {
+    clearTimeout(editorInputSaveTimers.get(event.target));
+    editorInputSaveTimers.delete(event.target);
+    delete event.target.dataset.editorDirty;
+  });
+  form.addEventListener('submit', event => commitPendingEditorInputs(form, event.submitter));
+});
 document.querySelector('#guestListButton').addEventListener('click', () => {
   if (!hostAuthenticated) return;
   const list = document.querySelector('#guestList');

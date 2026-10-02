@@ -31,6 +31,19 @@ test('sync status stays hidden unless shared saving needs attention', async () =
   assert.doesNotMatch(javascript, /Cross-device saving is on/);
 });
 
+test('editor inputs autosave while typing and done commits anything still pending', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+
+  assert.match(javascript, /const editorInputSaveTimers = new WeakMap\(\)/);
+  assert.match(javascript, /function commitPendingEditorControl\(control\)/);
+  assert.match(javascript, /setTimeout\(\(\) => commitPendingEditorControl\(event\.target\), 300\)/);
+  assert.match(javascript, /function commitPendingEditorInputs\(form, submitter\)/);
+  assert.match(javascript, /form\.querySelectorAll\('\[data-editor-dirty\]'\)/);
+  assert.match(javascript, /control\.dispatchEvent\(new Event\('change', \{ bubbles: true \}\)\)/);
+  assert.match(javascript, /form\.addEventListener\('submit', event => commitPendingEditorInputs\(form, event\.submitter\)\)/);
+  assert.match(javascript, /submitter\?\.value === 'cancel'/);
+});
+
 test('template editor renders and refreshes a real QR preview', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
