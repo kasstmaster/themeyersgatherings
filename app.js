@@ -1678,6 +1678,11 @@ function commitPendingEditorControl(control) {
   control.dispatchEvent(new Event('change', { bubbles: true }));
 }
 function commitPendingEditorInputs(form) {
+  // Extra Bride & Groom pages are rendered dynamically. Capture the complete
+  // title/content pair before committing individual controls because saving a
+  // title rebuilds the page editors and can otherwise replace an unsaved
+  // textarea before Done finishes processing the form.
+  if (form.closest('#adminDialog')) commitBrideGroomPageEditors();
   const dirtyControls = [...form.querySelectorAll('[data-editor-dirty]')];
   dirtyControls.forEach(control => {
     commitPendingEditorControl(control);
@@ -1788,6 +1793,31 @@ function renderBrideGroomPageAdmin() {
       saveState(); renderBrideGroomPageAdmin(); showToast(`${page.title} page removed.`);
     });
   });
+}
+function commitBrideGroomPageEditors() {
+  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  let changed = false;
+  document.querySelectorAll('#adminBrideGroomPages [data-bride-groom-admin-page]').forEach(editor => {
+    const page = state.brideGroomPages?.find(item => item.id === editor.dataset.brideGroomAdminPage);
+    if (!page) return;
+    const heading = editor.querySelector('input');
+    const content = editor.querySelector('textarea');
+    const title = heading.value.trim() || 'Untitled page';
+    if (page.title !== title || page.content !== content.value) {
+      page.title = title;
+      page.content = content.value;
+      changed = true;
+    }
+    [heading, content].forEach(control => {
+      clearTimeout(editorInputSaveTimers.get(control));
+      editorInputSaveTimers.delete(control);
+      control.removeAttribute('data-editor-dirty');
+    });
+  });
+  if (changed) {
+    saveState();
+    showToast('Bride & Groom page updated.');
+  }
 }
 function renderAdminAttireVideos() {
   const videos = state.attireVideos || [];
