@@ -1658,6 +1658,20 @@ document.querySelector('#rsvpForm').addEventListener('submit', () => {
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
   saveState(); showToast(`RSVP saved — we can't wait to see you!`);
 });
+function commitPendingEditorInputs(form, submitter) {
+  if (submitter?.value === 'cancel') return;
+  [...form.querySelectorAll('[data-editor-dirty]')].forEach(control => {
+    control.removeAttribute('data-editor-dirty');
+    control.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+document.querySelectorAll('.editor-dialog form').forEach(form => {
+  form.addEventListener('input', event => {
+    if (event.target.matches('input:not([type="file"]), select, textarea')) event.target.dataset.editorDirty = 'true';
+  });
+  form.addEventListener('change', event => { delete event.target.dataset.editorDirty; });
+  form.addEventListener('submit', event => commitPendingEditorInputs(form, event.submitter));
+});
 document.querySelector('#guestListButton').addEventListener('click', () => {
   if (!hostAuthenticated) return;
   const list = document.querySelector('#guestList');
