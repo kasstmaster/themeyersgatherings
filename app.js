@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'meyers-thanksgiving-v2';
 const BACKUP_STORAGE_KEY = `${STORAGE_KEY}-backup`;
+const SHARED_SAVE_PENDING_KEY = `${STORAGE_KEY}-shared-save-pending`;
 const LEGACY_STORAGE_KEYS = ['meyers-thanksgiving-v1'];
 const SHARED_STATE_URL = document.querySelector('meta[name="shared-state-url"]')?.content.trim() || '';
 const REPOSITORY_STATE_URL = document.querySelector('meta[name="repository-state-url"]')?.content.trim() || 'data/app-state.json';
@@ -617,7 +618,10 @@ function saveState() {
 }
 
 let sharedSaveTimer;
-let sharedSavePending = false;
+let sharedSavePending = (() => {
+  try { return Boolean(SHARED_STATE_URL && localStorage.getItem(SHARED_SAVE_PENDING_KEY)); }
+  catch { return false; }
+})();
 let sharedSaveInProgress = false;
 let sharedSaveError = false;
 let sharedSaveRetryCount = 0;
@@ -644,6 +648,7 @@ function renderSyncStatus() {
 function queueSharedStateSave() {
   if (!SHARED_STATE_URL) return;
   sharedSavePending = true;
+  try { localStorage.setItem(SHARED_SAVE_PENDING_KEY, 'true'); } catch { /* The state backup already reports storage failures. */ }
   sharedSaveError = false;
   sharedSaveRetryCount = 0;
   renderSyncStatus();
@@ -651,7 +656,10 @@ function queueSharedStateSave() {
   sharedSaveTimer = setTimeout(saveSharedState, 250);
 }
 async function saveSharedState() {
-  if (!sharedSavePending) return;
+  // Timers can fire while a slower request is still running. Keeping PUTs
+  // strictly sequential prevents an older request from finishing last and
+  // replacing a newer edit on the shared copy.
+  if (!sharedSavePending || sharedSaveInProgress) return;
   sharedSavePending = false;
   sharedSaveInProgress = true;
   let saveFailed = false;
@@ -664,6 +672,9 @@ async function saveSharedState() {
     if (!response.ok) throw new Error(`Shared state save failed (${response.status})`);
     sharedSaveError = false;
     sharedSaveRetryCount = 0;
+    if (!sharedSavePending) {
+      try { localStorage.removeItem(SHARED_SAVE_PENDING_KEY); } catch { /* Retry marker cleanup is best effort. */ }
+    }
   } catch (error) {
     console.error(error);
     saveFailed = true;
@@ -1666,19 +1677,14 @@ function commitPendingEditorControl(control) {
   control.removeAttribute('data-editor-dirty');
   control.dispatchEvent(new Event('change', { bubbles: true }));
 }
-function commitPendingEditorInputs(form, submitter) {
+function commitPendingEditorInputs(form) {
   const dirtyControls = [...form.querySelectorAll('[data-editor-dirty]')];
-  if (submitter?.value === 'cancel') {
-    dirtyControls.forEach(control => {
-      clearTimeout(editorInputSaveTimers.get(control));
-      editorInputSaveTimers.delete(control);
-      control.removeAttribute('data-editor-dirty');
-    });
-    return;
-  }
   dirtyControls.forEach(control => {
     commitPendingEditorControl(control);
   });
+}
+function commitAllPendingEditorInputs() {
+  document.querySelectorAll('.editor-dialog form').forEach(commitPendingEditorInputs);
 }
 document.querySelectorAll('.editor-dialog form').forEach(form => {
   form.addEventListener('input', event => {
@@ -1692,7 +1698,12 @@ document.querySelectorAll('.editor-dialog form').forEach(form => {
     editorInputSaveTimers.delete(event.target);
     delete event.target.dataset.editorDirty;
   });
-  form.addEventListener('submit', event => commitPendingEditorInputs(form, event.submitter));
+  // Closing with Done, the X button, or Escape all means the host is finished
+  // editing. Always flush the current value; the old cancel branch silently
+  // discarded keystrokes made within the debounce window.
+  form.addEventListener('submit', () => commitPendingEditorInputs(form));
+  form.closest('dialog').addEventListener('cancel', () => commitPendingEditorInputs(form));
+  form.closest('dialog').addEventListener('close', () => commitPendingEditorInputs(form));
 });
 document.querySelector('#guestListButton').addEventListener('click', () => {
   if (!hostAuthenticated) return;
@@ -2630,6 +2641,7 @@ document.querySelectorAll('.affordable-attire-toggle').forEach(button => {
 });
 
 render();
+if (sharedSavePending) queueSharedStateSave();
 startApp();
 singleColumnMenu.addEventListener('change', render);
 window.addEventListener('focus', loadSharedState);
@@ -2641,8 +2653,10 @@ window.addEventListener('online', () => {
     loadSharedState();
   }
 });
+window.addEventListener('pagehide', commitAllPendingEditorInputs);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') loadSharedState();
+  if (document.visibilityState === 'hidden') commitAllPendingEditorInputs();
+  else loadSharedState();
 });
 if (SHARED_STATE_URL) setInterval(loadSharedState, 30000);
 
