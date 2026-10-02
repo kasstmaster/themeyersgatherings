@@ -361,7 +361,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), churchAddress: '', venueAddress: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', bacheloretteContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', perfectExperienceContent: '', bacheloretteContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -488,8 +488,12 @@ function normalizeState(saved) {
         return { ...template, eventId: assignedEventId || loaded.activeEventId };
       });
       loaded.events.wedding.registryUrl = loaded.events.wedding.registryUrl || DEFAULT_REGISTRY_URL;
-      loaded.events.wedding.churchAddress = typeof loaded.events.wedding.churchAddress === 'string' ? loaded.events.wedding.churchAddress : '';
-      loaded.events.wedding.venueAddress = typeof loaded.events.wedding.venueAddress === 'string' ? loaded.events.wedding.venueAddress : '';
+      const wedding = loaded.events.wedding;
+      const locationFields = ['churchWeekDay', 'churchYear', 'churchTime', 'churchStreet', 'churchCityStateZip', 'venueTime', 'venueStreet', 'venueCityStateZip'];
+      locationFields.forEach(key => { wedding[key] = typeof wedding[key] === 'string' ? wedding[key] : ''; });
+      // Preserve addresses entered before church and venue details were split into reusable lines.
+      if (!wedding.churchStreet && typeof wedding.churchAddress === 'string') wedding.churchStreet = wedding.churchAddress;
+      if (!wedding.venueStreet && typeof wedding.venueAddress === 'string') wedding.venueStreet = wedding.venueAddress;
       loaded.events.wedding.monetaryGiftUrl = typeof loaded.events.wedding.monetaryGiftUrl === 'string'
         ? loaded.events.wedding.monetaryGiftUrl
         : '';
@@ -766,11 +770,12 @@ function formatWeddingPartyDescription(value) {
 }
 function editableTextVariables() {
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
+  const locationLines = keys => keys.map(key => state[key] || '').join('\n');
   return {
     date: Number.isNaN(eventDate.getTime()) ? '' : new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', ''),
     home: state.homeAddress || '',
-    church: state.churchAddress || '',
-    venue: state.venueAddress || '',
+    church: locationLines(['churchWeekDay', 'churchYear', 'churchTime', 'churchStreet', 'churchCityStateZip']),
+    venue: locationLines(['venueTime', 'venueStreet', 'venueCityStateZip']),
     registry: state.registryUrl || '',
     monetary: state.monetaryGiftUrl || ''
   };
@@ -1634,8 +1639,12 @@ function openAdmin() {
   document.querySelector('#adminWeddingVariableHelp').classList.toggle('wedding-variables-visible', isWedding);
   document.querySelector('#adminWeddingVariableHeading').hidden = !isWedding;
   document.querySelector('#adminWeddingVariableDescription').hidden = !isWedding;
-  document.querySelector('#adminChurchAddress').value = isWedding ? state.churchAddress || '' : '';
-  document.querySelector('#adminVenueAddress').value = isWedding ? state.venueAddress || '' : '';
+  const weddingLocationInputs = {
+    adminChurchWeekDay: 'churchWeekDay', adminChurchYear: 'churchYear', adminChurchTime: 'churchTime',
+    adminChurchStreet: 'churchStreet', adminChurchCityStateZip: 'churchCityStateZip', adminVenueTime: 'venueTime',
+    adminVenueStreet: 'venueStreet', adminVenueCityStateZip: 'venueCityStateZip'
+  };
+  Object.entries(weddingLocationInputs).forEach(([id, key]) => { document.querySelector(`#${id}`).value = isWedding ? state[key] || '' : ''; });
   document.querySelector('#adminRegistryFields').hidden = !isWedding;
   document.querySelector('#adminAttireFields').hidden = !isWedding;
   document.querySelector('#adminRegistryUrl').value = state.registryUrl || '';
@@ -2411,7 +2420,12 @@ document.querySelector('#adminHomeAddress').addEventListener('change', event => 
   state.homeAddress = event.target.value.trim();
   saveState(); showToast('Home address updated.');
 });
-[['#adminChurchAddress', 'churchAddress', 'Church'], ['#adminVenueAddress', 'venueAddress', 'Venue']].forEach(([selector, key, label]) => {
+[
+  ['#adminChurchWeekDay', 'churchWeekDay', 'Church'], ['#adminChurchYear', 'churchYear', 'Church'],
+  ['#adminChurchTime', 'churchTime', 'Church'], ['#adminChurchStreet', 'churchStreet', 'Church'],
+  ['#adminChurchCityStateZip', 'churchCityStateZip', 'Church'], ['#adminVenueTime', 'venueTime', 'Venue'],
+  ['#adminVenueStreet', 'venueStreet', 'Venue'], ['#adminVenueCityStateZip', 'venueCityStateZip', 'Venue']
+].forEach(([selector, key, label]) => {
   document.querySelector(selector).addEventListener('change', event => {
     if (viewedEventId !== 'wedding') return;
     state[key] = event.target.value.trim();
