@@ -387,7 +387,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', brideGroomPages: [], perfectExperienceContent: '', bacheloretteContent: '', timelineContent: DEFAULT_WEDDING_TIMELINE, whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', brideGroomPages: [], perfectExperienceContent: '', bacheloretteContent: '', timelineAboveContent: '', timelineContent: DEFAULT_WEDDING_TIMELINE, timelineBelowContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -543,6 +543,12 @@ function normalizeState(saved) {
       loaded.events.wedding.timelineContent = typeof loaded.events.wedding.timelineContent === 'string'
         ? loaded.events.wedding.timelineContent
         : DEFAULT_WEDDING_TIMELINE;
+      loaded.events.wedding.timelineAboveContent = typeof loaded.events.wedding.timelineAboveContent === 'string'
+        ? loaded.events.wedding.timelineAboveContent
+        : '';
+      loaded.events.wedding.timelineBelowContent = typeof loaded.events.wedding.timelineBelowContent === 'string'
+        ? loaded.events.wedding.timelineBelowContent
+        : '';
       loaded.events.wedding.whatToExpectContent = typeof loaded.events.wedding.whatToExpectContent === 'string'
         ? loaded.events.wedding.whatToExpectContent
         : '';
@@ -1320,7 +1326,9 @@ function render() {
   }
   document.querySelector('#weddingTimelineSection').hidden = !showingTimelinePage;
   if (showingTimelinePage) {
+    document.querySelector('#weddingTimelineAboveContent').innerHTML = formatEditableText(expandEditableTextVariables(state.timelineAboveContent));
     document.querySelector('#weddingTimelineBody').innerHTML = renderWeddingTimeline(state.timelineContent);
+    document.querySelector('#weddingTimelineBelowContent').innerHTML = formatEditableText(expandEditableTextVariables(state.timelineBelowContent));
   }
   document.querySelector('#whatToExpectSection').hidden = !showingWhatToExpectPage;
   if (showingWhatToExpectPage) {
@@ -1604,6 +1612,14 @@ document.querySelector('#adminTimelineContent').addEventListener('change', event
   saveState();
   showToast('Wedding timeline updated.');
 });
+['Above', 'Below'].forEach(position => {
+  document.querySelector(`#adminTimeline${position}Content`).addEventListener('change', event => {
+    if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+    state[`timeline${position}Content`] = event.target.value;
+    saveState();
+    showToast(`Text ${position.toLowerCase()} the wedding timeline updated.`);
+  });
+});
 document.querySelector('#adminWhatToExpectContent').addEventListener('change', event => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
   state.whatToExpectContent = event.target.value;
@@ -1800,7 +1816,9 @@ function openAdmin() {
     renderBrideGroomPageAdmin();
     document.querySelector('#adminPerfectExperienceContent').value = state.perfectExperienceContent || '';
     document.querySelector('#adminBacheloretteContent').value = state.bacheloretteContent || '';
+    document.querySelector('#adminTimelineAboveContent').value = state.timelineAboveContent || '';
     document.querySelector('#adminTimelineContent').value = state.timelineContent || '';
+    document.querySelector('#adminTimelineBelowContent').value = state.timelineBelowContent || '';
     document.querySelector('#adminWhatToExpectContent').value = state.whatToExpectContent || '';
     renderWeddingPartyDescriptionAdmin();
     renderWeddingPartyAttireAdmin();
