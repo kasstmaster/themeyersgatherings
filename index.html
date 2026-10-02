@@ -182,12 +182,14 @@
       <section id="weddingTimelineSection" class="wedding-timeline-section" aria-labelledby="weddingTimelineHeading" hidden>
         <p class="section-kicker">The wedding day at a glance</p>
         <h2 id="weddingTimelineHeading">Wedding Timeline</h2>
+        <div id="weddingTimelineAboveContent" class="wedding-timeline-copy"></div>
         <div class="wedding-timeline-table-wrap">
           <table class="wedding-timeline-table">
             <thead><tr><th scope="col">Time</th><th scope="col">What Happens</th><th scope="col">Notes</th></tr></thead>
             <tbody id="weddingTimelineBody"></tbody>
           </table>
         </div>
+        <div id="weddingTimelineBelowContent" class="wedding-timeline-copy"></div>
       </section>
 
       <div id="guestAttireAnchor"></div>
@@ -387,7 +389,7 @@
               <div id="adminBrideGroomPages" class="bride-groom-page-editors"></div>
               <label id="perfectExperienceAdmin" class="wedding-party-description-editor wedding-page-editor"><span>The Perfect Experience page</span><textarea class="wedding-copy-editor" id="adminPerfectExperienceContent" aria-label="The Perfect Experience page content" placeholder="Add the perfect experience details here…"></textarea></label>
               <label id="bacheloretteAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Bachelorette page</span><textarea class="wedding-copy-editor" id="adminBacheloretteContent" aria-label="Bachelorette page content" placeholder="Add bachelorette party information here…"></textarea></label>
-              <label id="timelineAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Wedding Timeline page</span><small>Enter one row per line with the time, event, and notes separated by tabs. Bold text can be wrapped in <code>**double asterisks**</code>.</small><textarea class="wedding-copy-editor wedding-timeline-editor" id="adminTimelineContent" aria-label="Wedding Timeline page content"></textarea></label>
+              <div id="timelineAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Wedding Timeline page</span><label><small>Text above the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineAboveContent" aria-label="Text above the Wedding Timeline" placeholder="Add text above the timeline…"></textarea></label><label><small>Timeline rows — enter one row per line with the time, event, and notes separated by tabs. Bold text can be wrapped in <code>**double asterisks**</code>.</small><textarea class="wedding-copy-editor wedding-timeline-editor" id="adminTimelineContent" aria-label="Wedding Timeline rows"></textarea></label><label><small>Text below the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineBelowContent" aria-label="Text below the Wedding Timeline" placeholder="Add text below the timeline…"></textarea></label></div>
               <label id="whatToExpectAdmin" class="wedding-party-description-editor wedding-page-editor"><span>What to Expect page</span><textarea class="wedding-copy-editor" id="adminWhatToExpectContent" aria-label="What to Expect page content" placeholder="Add what guests can expect here…"></textarea></label>
             </div>
           </section>

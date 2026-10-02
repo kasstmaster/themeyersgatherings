@@ -512,10 +512,15 @@ test('Wedding Timeline is private to hosts and wedding party members and remains
   assert.match(pageTabs, /data-wedding-tab="party"[\s\S]*data-wedding-tab="timeline"[^>]*>Timeline<\/button>[\s\S]*data-wedding-tab="attire"/);
   assert.match(html, /id="weddingTimelineSection"[^>]*hidden/);
   assert.match(html, /<th scope="col">Time<\/th><th scope="col">What Happens<\/th><th scope="col">Notes<\/th>/);
+  assert.match(html, /id="weddingTimelineAboveContent"[\s\S]*id="weddingTimelineBody"[\s\S]*id="weddingTimelineBelowContent"/);
+  assert.match(html, /id="adminTimelineAboveContent"[\s\S]*id="adminTimelineContent"[\s\S]*id="adminTimelineBelowContent"/);
   assert.match(html, /id="adminTimelineContent"/);
   assert.match(javascript, /partyMemberCanViewTab = \['party', 'timeline', 'registry'\]/);
   assert.match(javascript, /\(hostView \|\| isWeddingPartyMember\) && selectedWeddingTab === 'timeline'/);
   assert.match(javascript, /state\.timelineContent = event\.target\.value/);
+  assert.match(javascript, /state\[`timeline\$\{position\}Content`\] = event\.target\.value/);
+  assert.match(javascript, /#weddingTimelineAboveContent'[\s\S]*formatEditableText\(expandEditableTextVariables\(state\.timelineAboveContent\)\)/);
+  assert.match(javascript, /#weddingTimelineBelowContent'[\s\S]*formatEditableText\(expandEditableTextVariables\(state\.timelineBelowContent\)\)/);
   assert.match(javascript, /\*\*11:00 AM\*\*[\s\S]*Whenever it feels right/);
 });
 
