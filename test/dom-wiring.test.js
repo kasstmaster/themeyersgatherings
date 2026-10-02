@@ -31,17 +31,32 @@ test('sync status stays hidden unless shared saving needs attention', async () =
   assert.doesNotMatch(javascript, /Cross-device saving is on/);
 });
 
-test('editor inputs autosave while typing and done commits anything still pending', async () => {
+test('editor inputs autosave while typing and every exit commits anything still pending', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
   assert.match(javascript, /const editorInputSaveTimers = new WeakMap\(\)/);
   assert.match(javascript, /function commitPendingEditorControl\(control\)/);
   assert.match(javascript, /setTimeout\(\(\) => commitPendingEditorControl\(event\.target\), 300\)/);
-  assert.match(javascript, /function commitPendingEditorInputs\(form, submitter\)/);
+  assert.match(javascript, /function commitPendingEditorInputs\(form\)/);
   assert.match(javascript, /form\.querySelectorAll\('\[data-editor-dirty\]'\)/);
   assert.match(javascript, /control\.dispatchEvent\(new Event\('change', \{ bubbles: true \}\)\)/);
-  assert.match(javascript, /form\.addEventListener\('submit', event => commitPendingEditorInputs\(form, event\.submitter\)\)/);
-  assert.match(javascript, /submitter\?\.value === 'cancel'/);
+  assert.match(javascript, /form\.addEventListener\('submit', \(\) => commitPendingEditorInputs\(form\)\)/);
+  assert.match(javascript, /addEventListener\('cancel', \(\) => commitPendingEditorInputs\(form\)\)/);
+  assert.match(javascript, /addEventListener\('close', \(\) => commitPendingEditorInputs\(form\)\)/);
+  assert.match(javascript, /window\.addEventListener\('pagehide', commitAllPendingEditorInputs\)/);
+  assert.match(javascript, /document\.visibilityState === 'hidden'\) commitAllPendingEditorInputs\(\)/);
+  const pendingCommitFunction = javascript.match(/function commitPendingEditorInputs\(form\)[\s\S]*?\n}/)?.[0] || '';
+  assert.doesNotMatch(pendingCommitFunction, /cancel/);
+});
+
+test('shared saves are serialized and unfinished saves survive a page reload', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+
+  assert.match(javascript, /SHARED_SAVE_PENDING_KEY/);
+  assert.match(javascript, /localStorage\.setItem\(SHARED_SAVE_PENDING_KEY, 'true'\)/);
+  assert.match(javascript, /if \(!sharedSavePending \|\| sharedSaveInProgress\) return/);
+  assert.match(javascript, /localStorage\.removeItem\(SHARED_SAVE_PENDING_KEY\)/);
+  assert.match(javascript, /if \(sharedSavePending\) queueSharedStateSave\(\)/);
 });
 
 test('template editor renders and refreshes a real QR preview', async () => {
