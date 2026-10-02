@@ -193,6 +193,19 @@ test('hosts can add editable tabbed pages inside Bride & Groom', async () => {
   assert.match(styles, /\.bride-groom-tabs\{/);
 });
 
+test('Done saves dynamic Bride & Groom page titles and content together before editors rerender', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const pendingCommit = javascript.match(/function commitPendingEditorInputs\(form\)[\s\S]*?\n}/)?.[0] || '';
+  const pageCommit = javascript.match(/function commitBrideGroomPageEditors\(\)[\s\S]*?\n}/)?.[0] || '';
+
+  assert.match(pendingCommit, /commitBrideGroomPageEditors\(\)[\s\S]*dirtyControls/);
+  assert.match(pageCommit, /#adminBrideGroomPages \[data-bride-groom-admin-page\]/);
+  assert.match(pageCommit, /page\.title = title/);
+  assert.match(pageCommit, /page\.content = content\.value/);
+  assert.match(pageCommit, /control\.removeAttribute\('data-editor-dirty'\)/);
+  assert.match(pageCommit, /if \(changed\) \{[\s\S]*saveState\(\)/);
+});
+
 test('wedding page tabs use guest-facing labels and audience-specific visibility', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
