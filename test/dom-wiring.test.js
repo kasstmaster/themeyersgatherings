@@ -396,7 +396,7 @@ test('every wedding details section has a divider and the requested title', asyn
 
   sectionHeadings.forEach(heading => assert.match(html, new RegExp(`>${heading}<\\/h3>`)));
   ['Bride &amp; Groom page', 'The Perfect Experience page', 'Bachelorette page', 'What to Expect page']
-    .forEach(heading => assert.match(html, new RegExp(`>${heading}<\\/h4>`)));
+    .forEach(heading => assert.match(html, new RegExp(`<span>${heading}<\\/span>`)));
   assert.match(html, /<section id="guestAttireVideosAdmin" class="admin-editor-section guest-attire-videos-admin"[\s\S]*>Guest Attire Tip Videos<\/h3>[\s\S]*id="adminAttireVideos"[\s\S]*<\/section>/);
   assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
 });
@@ -414,7 +414,9 @@ test('page editors are grouped in one Pages section between Variables and Weddin
   ['brideGroomAdmin', 'perfectExperienceAdmin', 'bacheloretteAdmin', 'whatToExpectAdmin']
     .forEach(id => assert.match(pagesSection, new RegExp(`id="${id}"`)));
   assert.equal((pagesSection.match(/<h3\b/g) || []).length, 1);
-  assert.equal((pagesSection.match(/<h4\b/g) || []).length, 4);
+  assert.equal((pagesSection.match(/class="wedding-party-description-editor wedding-page-editor"/g) || []).length, 4);
+  assert.doesNotMatch(pagesSection, /<h4\b/);
+  assert.match(pagesSection, /class="wedding-party-description-editors wedding-page-editors"/);
 });
 
 test('wedding party manager creates wedding-enabled accounts for new people', async () => {
