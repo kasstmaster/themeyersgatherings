@@ -143,6 +143,7 @@
       <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
         <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="false" hidden>Bride &amp; Groom</button>
         <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
+        <button type="button" role="tab" data-wedding-tab="timeline" aria-controls="weddingTimelineSection" aria-selected="false">Timeline</button>
         <button type="button" role="tab" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="true">Attire</button>
         <button type="button" role="tab" data-wedding-tab="expect" aria-controls="whatToExpectSection" aria-selected="false">Wedding Details</button>
         <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
@@ -176,6 +177,17 @@
           <div id="bacheloretteInfoContent" class="bachelorette-info-content"></div>
         </section>
         <div id="weddingPartyAttirePanel"></div>
+      </section>
+
+      <section id="weddingTimelineSection" class="wedding-timeline-section" aria-labelledby="weddingTimelineHeading" hidden>
+        <p class="section-kicker">The wedding day at a glance</p>
+        <h2 id="weddingTimelineHeading">Wedding Timeline</h2>
+        <div class="wedding-timeline-table-wrap">
+          <table class="wedding-timeline-table">
+            <thead><tr><th scope="col">Time</th><th scope="col">What Happens</th><th scope="col">Notes</th></tr></thead>
+            <tbody id="weddingTimelineBody"></tbody>
+          </table>
+        </div>
       </section>
 
       <div id="guestAttireAnchor"></div>
@@ -375,6 +387,7 @@
               <div id="adminBrideGroomPages" class="bride-groom-page-editors"></div>
               <label id="perfectExperienceAdmin" class="wedding-party-description-editor wedding-page-editor"><span>The Perfect Experience page</span><textarea class="wedding-copy-editor" id="adminPerfectExperienceContent" aria-label="The Perfect Experience page content" placeholder="Add the perfect experience details here…"></textarea></label>
               <label id="bacheloretteAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Bachelorette page</span><textarea class="wedding-copy-editor" id="adminBacheloretteContent" aria-label="Bachelorette page content" placeholder="Add bachelorette party information here…"></textarea></label>
+              <label id="timelineAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Wedding Timeline page</span><small>Enter one row per line with the time, event, and notes separated by tabs. Bold text can be wrapped in <code>**double asterisks**</code>.</small><textarea class="wedding-copy-editor wedding-timeline-editor" id="adminTimelineContent" aria-label="Wedding Timeline page content"></textarea></label>
               <label id="whatToExpectAdmin" class="wedding-party-description-editor wedding-page-editor"><span>What to Expect page</span><textarea class="wedding-copy-editor" id="adminWhatToExpectContent" aria-label="What to Expect page content" placeholder="Add what guests can expect here…"></textarea></label>
             </div>
           </section>
