@@ -146,6 +146,20 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.match(javascript, /state\.brideGroomContent = event\.target\.value/);
 });
 
+test('Bride & Groom can add persistent inner pages and matching editors', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+  assert.match(html, /Bride &amp; Groom page<\/span><button id="adminAddBrideGroomPage"[^>]*>\+<\/button>/);
+  assert.match(html, /id="brideGroomContent"[\s\S]*id="brideGroomAdditionalPages"/);
+  assert.match(html, /id="adminBrideGroomContent"[\s\S]*id="adminBrideGroomAdditionalPages"/);
+  assert.match(javascript, /brideGroomAdditionalPages: \[\]/);
+  assert.match(javascript, /#adminAddBrideGroomPage'[\s\S]*state\.brideGroomAdditionalPages\.push\(''\)/);
+  assert.match(javascript, /function renderBrideGroomAdditionalPageEditors\(\)[\s\S]*data-bride-groom-page/);
+  assert.match(javascript, /#brideGroomAdditionalPages'\)\.innerHTML = state\.brideGroomAdditionalPages\.map/);
+});
+
 test('wedding page tabs use guest-facing labels and audience-specific visibility', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
