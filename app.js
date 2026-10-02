@@ -1297,11 +1297,10 @@ function render() {
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
-    button.hidden = (button.dataset.weddingTab === 'party' && !isWeddingPartyMember)
-      || (button.dataset.weddingTab === 'timeline' && !hostView && !isWeddingPartyMember)
-      || (button.dataset.weddingTab === 'attire' && isWeddingPartyMember)
-      || (button.dataset.weddingTab === 'expect' && isWeddingPartyMember);
-    if (button.dataset.weddingTab === 'couple' && !hostView) button.hidden = true;
+    const hostCanViewTab = button.dataset.weddingTab !== 'party';
+    const partyMemberCanViewTab = ['party', 'timeline', 'registry'].includes(button.dataset.weddingTab);
+    const guestCanViewTab = ['attire', 'expect', 'registry'].includes(button.dataset.weddingTab);
+    button.hidden = !(hostView ? hostCanViewTab : isWeddingPartyMember ? partyMemberCanViewTab : guestCanViewTab);
     const isSelected = button.dataset.weddingTab === selectedWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
     button.tabIndex = isSelected ? 0 : -1;
