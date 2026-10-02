@@ -343,8 +343,20 @@
           <div class="admin-locations">
             <label><span>Home</span><input id="adminHomeAddress" type="text" autocomplete="street-address" placeholder="Home address" /></label>
             <div id="adminWeddingLocations" class="admin-wedding-locations" hidden>
-              <label><span>Church</span><input id="adminChurchAddress" type="text" autocomplete="street-address" placeholder="Church address" /></label>
-              <label><span>Venue</span><input id="adminVenueAddress" type="text" autocomplete="street-address" placeholder="Venue address" /></label>
+              <fieldset>
+                <legend>Church</legend>
+                <label><span>Week, Day of Month</span><input id="adminChurchWeekDay" type="text" placeholder="Saturday, August 10th" /></label>
+                <label><span>Year</span><input id="adminChurchYear" type="text" inputmode="text" placeholder="2027" /></label>
+                <label><span>Time</span><input id="adminChurchTime" type="text" placeholder="4:00 PM" /></label>
+                <label><span>Street</span><input id="adminChurchStreet" type="text" autocomplete="address-line1" placeholder="Street address" /></label>
+                <label><span>City, State, Zip</span><input id="adminChurchCityStateZip" type="text" autocomplete="address-line2" placeholder="City, State, Zip" /></label>
+              </fieldset>
+              <fieldset>
+                <legend>Venue</legend>
+                <label><span>Time</span><input id="adminVenueTime" type="text" placeholder="6:00 PM" /></label>
+                <label><span>Street</span><input id="adminVenueStreet" type="text" autocomplete="address-line1" placeholder="Street address" /></label>
+                <label><span>City, State, Zip</span><input id="adminVenueCityStateZip" type="text" autocomplete="address-line2" placeholder="City, State, Zip" /></label>
+              </fieldset>
             </div>
           </div>
           <div id="adminRegistryFields" class="admin-registry" hidden>

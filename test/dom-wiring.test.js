@@ -336,14 +336,27 @@ test('gathering details include labeled locations and editable text variables', 
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /Gathering date[\s\S]*<span>Home<\/span>[\s\S]*id="adminWeddingLocations"[\s\S]*<span>Church<\/span>[\s\S]*<span>Venue<\/span>/);
+  assert.match(html, /Gathering date[\s\S]*<span>Home<\/span>[\s\S]*id="adminWeddingLocations"[\s\S]*<legend>Church<\/legend>[\s\S]*<legend>Venue<\/legend>/);
   assert.match(javascript, /adminWeddingLocations'\)\.hidden = !isWedding/);
   assert.match(javascript, /adminWeddingVariableHeading'\)\.hidden = !isWedding/);
   assert.match(javascript, /eventState\.homeAddress = typeof eventState\.homeAddress === 'string'/);
   assert.match(javascript, /replace\(\/\\\{\(date\|home\|church\|venue\|registry\|monetary\)\\\}\/g/);
   assert.match(javascript, /home: state\.homeAddress \|\| ''/);
-  assert.match(javascript, /venue: state\.venueAddress \|\| ''/);
+  assert.match(javascript, /church: locationLines\(\['churchWeekDay', 'churchYear', 'churchTime', 'churchStreet', 'churchCityStateZip'\]\)/);
+  assert.match(javascript, /venue: locationLines\(\['venueTime', 'venueStreet', 'venueCityStateZip'\]\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\) \{\s+value = expandEditableTextVariables\(value\)/);
+});
+
+test('church and venue variables use labeled custom-text inputs for every output line', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  const church = html.match(/<legend>Church<\/legend>([\s\S]*?)<\/fieldset>/)?.[1] || '';
+  const venue = html.match(/<legend>Venue<\/legend>([\s\S]*?)<\/fieldset>/)?.[1] || '';
+
+  for (const label of ['Week, Day of Month', 'Year', 'Time', 'Street', 'City, State, Zip']) assert.match(church, new RegExp(`<span>${label}</span>`));
+  for (const label of ['Time', 'Street', 'City, State, Zip']) assert.match(venue, new RegExp(`<span>${label}</span>`));
+  assert.equal((church.match(/type="text"/g) || []).length, 5);
+  assert.equal((venue.match(/type="text"/g) || []).length, 3);
+  assert.doesNotMatch(`${church}${venue}`, /type="(?:date|time|number)"/);
 });
 
 test('wedding role and page editors share the Bachelorette editor height', async () => {
@@ -366,7 +379,7 @@ test('variables group the gathering date and reusable values above one divider',
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /id="adminWeddingVariableHelp"[\s\S]*<h3 id="adminWeddingVariableHeading" hidden>Variables<\/h3>[\s\S]*<span>Gathering date<\/span>[\s\S]*<span>Home<\/span>[\s\S]*<span>Church<\/span>[\s\S]*<span>Venue<\/span>[\s\S]*<span>Wedding registry link<\/span>[\s\S]*<span>Monetary gift link<\/span>[\s\S]*id="weddingPagesAdmin"/);
+  assert.match(html, /id="adminWeddingVariableHelp"[\s\S]*<h3 id="adminWeddingVariableHeading" hidden>Variables<\/h3>[\s\S]*<span>Gathering date<\/span>[\s\S]*<span>Home<\/span>[\s\S]*<legend>Church<\/legend>[\s\S]*<legend>Venue<\/legend>[\s\S]*<span>Wedding registry link<\/span>[\s\S]*<span>Monetary gift link<\/span>[\s\S]*id="weddingPagesAdmin"/);
   assert.ok(html.indexOf('id="adminWeddingVariableHelp"') < html.indexOf('id="weddingPagesAdmin"'));
   assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
   assert.doesNotMatch(styles, /\.admin-variable-help[^}]*border-(?:top|bottom)/);
