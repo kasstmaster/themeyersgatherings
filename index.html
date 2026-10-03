@@ -190,15 +190,17 @@
         <div id="weddingTimelineBelowContent" class="wedding-timeline-copy"></div>
       </section>
 
-      <section id="guestSection" class="guest-section" aria-label="Guest information" hidden>
+      <section id="guestSection" class="wedding-party-section guest-section" aria-labelledby="guestHeading" hidden>
+        <p class="section-kicker">Everything you need to celebrate</p>
+        <h2 id="guestHeading">Guest</h2>
+        <p class="wedding-party-intro">Attire guidance and wedding-day details are below.</p>
         <nav id="guestInfoTabs" class="matron-info-tabs guest-info-tabs" aria-label="Guest information pages" role="tablist">
           <button type="button" role="tab" data-guest-tab="attire" aria-controls="registryAttireSection" aria-selected="true">Attire</button>
           <button type="button" role="tab" data-guest-tab="details" aria-controls="whatToExpectSection" aria-selected="false">Wedding Details</button>
         </nav>
-      </section>
 
-      <div id="guestAttireAnchor"></div>
-      <section id="registryAttireSection" class="registry-attire-section" aria-labelledby="registryAttireHeading" hidden>
+        <div id="guestAttireAnchor"></div>
+        <section id="registryAttireSection" class="registry-attire-section" aria-labelledby="registryAttireHeading" hidden>
         <section id="registryAffordableAttire" class="affordable-attire">
           <p class="section-kicker">Dress for the occasion</p>
           <h2 id="registryAttireHeading">Formal Attire Required</h2>
@@ -230,12 +232,13 @@
         <section id="registryAttireVideosSection" class="attire-videos" aria-labelledby="registryAttireVideosHeading" hidden>
           <p class="section-kicker">A little inspiration</p><h3 id="registryAttireVideosHeading">Formal Attire Tips</h3><div id="registryAttireVideos" class="attire-video-grid"></div>
         </section>
-      </section>
+        </section>
 
-      <section id="whatToExpectSection" class="what-to-expect-section" aria-labelledby="whatToExpectHeading" hidden>
-        <p class="section-kicker">Plan for the celebration</p>
-        <h2 id="whatToExpectHeading">Wedding Details</h2>
-        <div id="whatToExpectContent" class="what-to-expect-content"></div>
+        <section id="whatToExpectSection" class="what-to-expect-section" aria-labelledby="whatToExpectHeading" hidden>
+          <p class="section-kicker">Plan for the celebration</p>
+          <h2 id="whatToExpectHeading">Wedding Details</h2>
+          <div id="whatToExpectContent" class="what-to-expect-content"></div>
+        </section>
       </section>
 
       <section id="registrySection" class="registry-section" aria-labelledby="registryHeading" hidden>

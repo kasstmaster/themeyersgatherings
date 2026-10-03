@@ -199,13 +199,17 @@ test('Guest and Registry are separate main tabs with Attire selected under Guest
 });
 
 test('Wedding Details is an editable sub tab immediately after Attire under Guest', async () => {
-  const [html, javascript] = await Promise.all([
+  const [html, javascript, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
-    readFile(new URL('../app.js', import.meta.url), 'utf8')
+    readFile(new URL('../app.js', import.meta.url), 'utf8'),
+    readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
   const guestTabs = html.match(/<nav id="guestInfoTabs"[\s\S]*?<\/nav>/)?.[0] || '';
   assert.match(guestTabs, /data-guest-tab="attire"[\s\S]*data-guest-tab="details"[^>]*>Wedding Details<\/button>/);
+  const guestSection = html.match(/<section id="guestSection"[\s\S]*?<section id="registrySection"/)?.[0] || '';
+  assert.match(guestSection, /class="wedding-party-section guest-section"[\s\S]*id="guestHeading">Guest<[\s\S]*id="guestInfoTabs"[\s\S]*id="guestAttireAnchor"[\s\S]*id="registryAttireSection"[\s\S]*id="whatToExpectSection"/);
+  assert.match(styles, /\.guest-section \.registry-attire-section,\.guest-section \.what-to-expect-section\{[^}]*margin:0[^}]*background:transparent[^}]*border:0[^}]*box-shadow:none/);
   assert.match(html, /id="whatToExpectSection"[^>]*hidden/);
   assert.match(html, /<h2 id="whatToExpectHeading">Wedding Details<\/h2>/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
