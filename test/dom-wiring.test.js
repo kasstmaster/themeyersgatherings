@@ -64,6 +64,16 @@ test('invited families show household and overall adult and child totals', async
   assert.match(javascript, /const invitedAccounts = appState\.accounts\.filter\(account => accountIsInvited\(account, viewedEventId\)\)/);
 });
 
+test('every gathering can assign its own plus ones and include them in adult invitation totals', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
+
+  assert.match(accountRenderer, />Plus ones<\/span>/);
+  assert.match(accountRenderer, /account\.plusOnes\[viewedEventId\] = Number\(event\.target\.value\)/);
+  assert.match(javascript, /plusOneCount\(account, viewedEventId\)/);
+  assert.match(javascript, /adults: sum\.adults \+ accountSignInNames\(account\.name\)\.length \+ plusOneCount/);
+});
+
 test('gathering access and invitations are independent per-account settings', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
