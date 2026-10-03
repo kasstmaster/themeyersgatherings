@@ -171,12 +171,13 @@ test('wedding party access is tied to the individual sign-in name', async () => 
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /id="weddingPartyTabs"[\s\S]*>Wedding Party<[\s\S]*>Attire<[\s\S]*>Registry</);
+  assert.match(html, /id="weddingPartyTabs"[\s\S]*>Wedding Party<[\s\S]*>Guest<[\s\S]*>Timeline<[\s\S]*>Registry</);
   assert.match(javascript, /signedInPersonName = accountName/);
   assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => normalizeAccountName\(member\.name\) === normalizeAccountName\(signedInPersonName\)\)/);
   assert.match(javascript, /viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWedding/);
-  assert.match(javascript, /visibleWeddingPartyMembers = hostView \? weddingPartyMembers : \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
+  assert.match(javascript, /hostResponsibilityRoles = WEDDING_PARTY_TITLES\.map/);
+  assert.match(javascript, /visibleWeddingPartyMembers = hostView \? hostResponsibilityRoles : \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
   assert.match(javascript, /state\.weddingPartyDescriptions\?\.\[member\.title\]/);
   assert.match(javascript, /formatWeddingPartyDescription\(description\)/);
@@ -184,34 +185,34 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
 });
 
-test('wedding attire and registry have separate guest-visible tabs with attire selected by default', async () => {
+test('Guest and Registry are separate main tabs with Attire selected under Guest by default', async () => {
   const [html, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
   assert.ok(html.indexOf('id="registryAttireSection"') < html.indexOf('id="registrySection"'));
-  assert.match(html, /data-wedding-tab="attire"[^>]*aria-selected="true">Attire/);
+  assert.match(html, /data-wedding-tab="guest"[^>]*aria-selected="true">Guest/);
   assert.match(html, /data-wedding-tab="registry"[^>]*aria-selected="false">Registry/);
   assert.match(styles, /\.wedding-party-tabs button\{[^}]*color:#fff/);
   assert.match(styles, /\.wedding-party-tabs button\[aria-selected="true"\]\{[^}]*border:1px solid var\(--gold\)[^}]*background:var\(--orange\)[^}]*color:#fff/);
 });
 
-test('Wedding Details is a guest-and-host editable page immediately after Attire', async () => {
+test('Wedding Details is an editable sub tab immediately after Attire under Guest', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  const pageTabs = html.match(/<nav id="weddingPartyTabs"[\s\S]*?<\/nav>/)?.[0] || '';
-  assert.match(pageTabs, /data-wedding-tab="attire"[\s\S]*data-wedding-tab="expect"[^>]*>Wedding Details<\/button>[\s\S]*data-wedding-tab="registry"/);
+  const guestTabs = html.match(/<nav id="guestInfoTabs"[\s\S]*?<\/nav>/)?.[0] || '';
+  assert.match(guestTabs, /data-guest-tab="attire"[\s\S]*data-guest-tab="details"[^>]*>Wedding Details<\/button>/);
   assert.match(html, /id="whatToExpectSection"[^>]*hidden/);
   assert.match(html, /<h2 id="whatToExpectHeading">Wedding Details<\/h2>/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
   assert.ok(weddingEditor.indexOf('The Perfect Experience page') < weddingEditor.indexOf('What to Expect page'));
   assert.match(javascript, /whatToExpectContent: ''/);
   assert.match(javascript, /hostCanViewTab = true/);
-  assert.match(javascript, /guestCanViewTab = \['attire', 'expect', 'registry'\]/);
+  assert.match(javascript, /guestCanViewTab = \['guest', 'registry'\]/);
   assert.match(javascript, /formatEditableText\(state\.whatToExpectContent\)/);
   assert.match(javascript, /state\.whatToExpectContent = event\.target\.value/);
 });
@@ -290,11 +291,11 @@ test('wedding page tabs use guest-facing labels and audience-specific visibility
   assert.match(html, />Responsibilities<\/button>/);
   assert.match(javascript, /hostCanViewTab = true/);
   assert.match(javascript, /partyMemberCanViewTab = \['party', 'timeline', 'registry'\]/);
-  assert.match(javascript, /guestCanViewTab = \['attire', 'expect', 'registry'\]/);
+  assert.match(javascript, /guestCanViewTab = \['guest', 'registry'\]/);
   assert.match(javascript, /button\.hidden = !\(hostView \? hostCanViewTab : isWeddingPartyMember \? partyMemberCanViewTab : guestCanViewTab\)/);
   assert.match(javascript, /showingWeddingPartyPage = isWedding && \(hostView \|\| isWeddingPartyMember\) && selectedWeddingTab === 'party'/);
-  assert.match(javascript, /matronInfoTabs\.hidden = !showingWeddingPartyPage \|\| hostView/);
-  assert.match(javascript, /\$\{!hostView && description \?/);
+  assert.match(javascript, /matronInfoTabs\.hidden = !showingWeddingPartyPage/);
+  assert.match(javascript, /\$\{description \?/);
   assert.match(styles, /\.wedding-party-tabs\{[^}]*flex-wrap:wrap/);
   assert.doesNotMatch(styles, /\.wedding-party-tabs\{[^}]*overflow-x:auto/);
   assert.match(javascript, /registrySection\.hidden = !showingRegistryPage/);
@@ -309,11 +310,10 @@ test('wedding party attire shares the Wedding Party card and Registry remains ri
 
   const pageTabs = html.match(/<nav id="weddingPartyTabs"[\s\S]*?<\/nav>/)?.[0] || '';
   assert.ok(pageTabs.indexOf('data-wedding-tab="party"') < pageTabs.indexOf('data-wedding-tab="registry"'));
-  assert.ok(pageTabs.indexOf('data-wedding-tab="party"') < pageTabs.indexOf('data-wedding-tab="attire"'));
+  assert.ok(pageTabs.indexOf('data-wedding-tab="party"') < pageTabs.indexOf('data-wedding-tab="guest"'));
   assert.match(html, /data-matron-tab="experience"[^>]*>The Perfect Experience<\/button>\s*<button[^>]*data-matron-tab="duties"[^>]*>Responsibilities<\/button>\s*<button[^>]*data-matron-tab="attire"[^>]*>Attire<\/button>/);
-  assert.match(javascript, /isWeddingPartyMember && selectedWeddingTab === 'attire'\) selectedWeddingTab = 'party'/);
   assert.match(javascript, /showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire'/);
-  assert.match(javascript, /showingAttirePage = isWedding && \(\(!isWeddingPartyMember && selectedWeddingTab === 'attire'\) \|\| showingPartyAttirePage\)/);
+  assert.match(javascript, /showingAttirePage = \(showingGuestPage && selectedGuestTab === 'attire'\) \|\| showingPartyAttirePage/);
   assert.match(javascript, /renderWeddingPartyAttireImages\(showingPartyAttirePage\)/);
   assert.match(javascript, /showingPartyAttirePage[\s\S]*weddingPartyAttirePanel[\s\S]*attireDestination\.append\(registryAttireSection\)/);
   assert.match(html, /id="weddingPartyAttirePanel"[\s\S]*id="guestAttireAnchor"[\s\S]*id="registryAttireSection"/);
@@ -325,7 +325,7 @@ test('selected wedding detail tabs use white text inside a visible tab', async (
   assert.match(styles, /\.matron-info-tabs button\[aria-selected="true"\]\{[^}]*border:1px solid var\(--gold\)[^}]*background:var\(--orange\)[^}]*color:#fff/);
 });
 
-test('The Perfect Experience is an editable tab for wedding party members but not hosts', async () => {
+test('all Wedding Party sub tabs are available to hosts and wedding party members', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
@@ -337,9 +337,9 @@ test('The Perfect Experience is an editable tab for wedding party members but no
   assert.match(javascript, /perfectExperienceContent: ''/);
   assert.match(javascript, /formatEditableText\(state\.perfectExperienceContent\)/);
   assert.match(javascript, /state\.perfectExperienceContent = event\.target\.value/);
-  assert.match(javascript, /matronInfoTabs\.hidden = !showingWeddingPartyPage \|\| hostView/);
-  assert.match(javascript, /button\.hidden = button\.dataset\.matronTab === 'bachelorette' && !isViewingMatron/);
-  assert.match(javascript, /perfectExperiencePanel'\)\.hidden = hostView \|\| !showingWeddingPartyPage \|\| selectedMatronTab !== 'experience'/);
+  assert.match(javascript, /matronInfoTabs\.hidden = !showingWeddingPartyPage/);
+  assert.match(javascript, /button\.hidden = button\.dataset\.matronTab === 'bachelorette' && !hostView && !isViewingMatron/);
+  assert.match(javascript, /perfectExperiencePanel'\)\.hidden = !showingWeddingPartyPage \|\| selectedMatronTab !== 'experience'/);
 });
 
 test('Bachelorette is a blank editable page under The Perfect Experience editor', async () => {
@@ -367,7 +367,7 @@ test('host can preview the wedding as a general guest without selecting an accou
   assert.match(javascript, /const GENERAL_GUEST_PREVIEW = '__general_guest__'/);
   assert.match(javascript, />General guest<\/option>/);
   assert.match(javascript, /hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
-  assert.match(javascript, /hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW \? 'attire' : 'party'/);
+  assert.match(javascript, /hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW \? 'guest' : 'party'/);
 });
 
 test('View As removes host-only UI and provides a persistent return to Host View', async () => {
@@ -581,7 +581,7 @@ test('Wedding Timeline is private to hosts and wedding party members and remains
   ]);
   const pageTabs = html.match(/<nav id="weddingPartyTabs"[\s\S]*?<\/nav>/)?.[0] || '';
 
-  assert.match(pageTabs, /data-wedding-tab="party"[\s\S]*data-wedding-tab="timeline"[^>]*>Timeline<\/button>[\s\S]*data-wedding-tab="attire"/);
+  assert.match(pageTabs, /data-wedding-tab="party"[\s\S]*data-wedding-tab="guest"[^>]*>Guest<\/button>[\s\S]*data-wedding-tab="timeline"[^>]*>Timeline<\/button>/);
   assert.match(html, /id="weddingTimelineSection"[^>]*hidden/);
   assert.match(html, /<th scope="col">Time<\/th><th scope="col">What Happens<\/th><th scope="col">Notes<\/th>/);
   assert.match(html, /id="weddingTimelineAboveContent"[\s\S]*id="weddingTimelineBody"[\s\S]*id="weddingTimelineBelowContent"/);
@@ -637,7 +637,7 @@ test('wedding party descriptions are shared and editable by title', async () => 
   assert.doesNotMatch(javascript.match(/data-wedding-party-description=[\s\S]*?<\/label>/)?.[0] || '', /\bmaxlength=/i);
 });
 
-test('bachelorette party page is private to the Matron of Honor and shareable', async () => {
+test('bachelorette party page is available to the host and Matron of Honor and is shareable', async () => {
   const [html, javascript, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8'),
@@ -649,7 +649,7 @@ test('bachelorette party page is private to the Matron of Honor and shareable', 
   assert.doesNotMatch(html, /id="bacheloretteInfoDialog"/);
   assert.match(javascript, /bacheloretteInfoContent'\)\.innerHTML = formatEditableText\(state\.bacheloretteContent\)/);
   assert.match(javascript, /isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember\?\.title === 'Matron of Honor'/);
-  assert.match(javascript, /weddingPartyDetails'\)\.hidden = !hostView && showingWeddingPartyPage && selectedMatronTab !== 'duties'/);
+  assert.match(javascript, /weddingPartyDetails'\)\.hidden = !showingWeddingPartyPage \|\| selectedMatronTab !== 'duties'/);
   assert.match(styles, /\.wedding-party-details\[hidden\]\{display:none\}/);
   assert.match(javascript, /navigator\.clipboard\.writeText\(text\)/);
   assert.match(javascript, /mailto:\?subject=/);
@@ -660,7 +660,7 @@ test('bachelorette party page is private to the Matron of Honor and shareable', 
 test('wedding defaults match each signed-in audience', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
-  assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*hostAuthenticated \? 'couple' : partyMember \? 'party' : 'attire'/);
+  assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*hostAuthenticated \? 'couple' : partyMember \? 'party' : 'guest'/);
   assert.match(javascript, /selectedMatronTab = 'experience'/);
   assert.match(javascript, /enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
 });
