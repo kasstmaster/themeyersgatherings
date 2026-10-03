@@ -5,20 +5,21 @@ import {
   normalizedPerson, parsePerson, syncAnyListAccounts
 } from '../scripts/anylist-accounts.js';
 
-test('converts three households in category order and ignores notes', () => {
+test('converts three households in category order and collects children from note lines', () => {
   const result = convertCategory('SYSWERDA / HEIL / STEGALL - 2897 Panzl St, Muskegon MI 49444', [
     { name: 'Eric Syswerda' }, { name: 'Vandy Syswerda' }, { name: 'Danielle Syswerda' },
-    { name: 'Ian Heil' }, { name: 'Lexi Heil', notes: 'Sheridan' }, { name: 'Vanden Stegall' }
+    { name: 'Ian Heil' }, { name: 'Lexi Heil', notes: 'Sheridan\n Avery ' }, { name: 'Vanden Stegall' }
   ]);
   assert.equal(result.account, 'Eric,Vandy,Danielle Syswerda/Ian,Lexi Heil/Vanden Stegall');
-  assert.doesNotMatch(result.account, /Sheridan/);
+  assert.deepEqual(result.children, ['Sheridan', 'Avery']);
 });
 
-test('ignores a note and category address', () => {
+test('keeps child notes separate from adult account names and ignores the category address', () => {
   const result = convertCategory('SYLVESTRE / BENJAMIN - PO Box 89, 39 Heidt Place, Dillon SK', [
     { name: 'Buddy Sylvestre' }, { name: 'Deandra Benjamin', notes: 'Briette' }
   ]);
   assert.equal(result.account, 'Buddy Sylvestre/Deandra Benjamin');
+  assert.deepEqual(result.children, ['Briette']);
   assert.doesNotMatch(result.account, /Briette|PO Box/);
 });
 
@@ -86,9 +87,9 @@ test('reconstructs ordered categories and item membership from raw AnyList data'
 
   const result = categoriesFromRawUserData(userData, 'address-book-id');
   assert.deepEqual(result.categories.map(category => category.name), ['ADAMS', 'SMITH - Main St']);
-  assert.deepEqual(result.categories[1].items, [{ name: 'First Smith' }, { name: 'Second Smith' }]);
+  assert.deepEqual(result.categories[1].items, [{ name: 'First Smith', notes: '' }, { name: 'Second Smith', notes: 'private note' }]);
   assert.equal(result.unassigned, 1);
-  assert.doesNotMatch(JSON.stringify(result.categories), /private note/);
+  assert.match(JSON.stringify(result.categories), /private note/);
 });
 
 test('matches a category assignment only on the requested raw list', () => {
@@ -105,7 +106,7 @@ test('matches a category assignment only on the requested raw list', () => {
   };
 
   const result = categoriesFromRawUserData(userData, 'target');
-  assert.deepEqual(result.categories[0].items, [{ name: 'Right Smith' }]);
+  assert.deepEqual(result.categories[0].items, [{ name: 'Right Smith', notes: '' }]);
 });
 
 function category(id, names, heading = 'HALL') {
@@ -141,9 +142,12 @@ test('person removed updates the linked record and preserves selected', () => {
 
 test('person added updates the same linked record', () => {
   const state = { accounts: [{ name: 'Ben Hall IV,Sherri Hall', selected: false, anyListCategoryId: 'hall-123' }], events: {} };
-  syncAnyListAccounts(state, [category('hall-123', ['Ben Hall IV', 'Sherri Hall', 'Katie Hall'])]);
+  const updated = category('hall-123', ['Ben Hall IV', 'Sherri Hall', 'Katie Hall']);
+  updated.children = ['Jamie', 'Morgan'];
+  syncAnyListAccounts(state, [updated]);
   assert.equal(state.accounts.length, 1);
   assert.deepEqual(accountPeople(state.accounts[0].name), ['Ben Hall IV', 'Sherri Hall', 'Katie Hall']);
+  assert.deepEqual(state.accounts[0].children, ['Jamie', 'Morgan']);
 });
 
 test('Roman numeral suffix is part of legacy anchor identity', () => {

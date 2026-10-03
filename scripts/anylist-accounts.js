@@ -80,7 +80,10 @@ export function categoriesFromRawUserData(userData, listId) {
       const category = categoryByAssignment.get(compositeKey)
         ?? (assignment?.categoryGroupId == null ? categoryById.get(String(assignment?.categoryId)) : undefined);
       if (!category) continue;
-      category.items.push({ name: item?.name }); // Never copy the private details/notes field.
+      // In the Address Book, each non-empty note line is the name of a child in
+      // this household. Keep it separate from the adult's item name so children
+      // are displayed and counted without becoming sign-in identities.
+      category.items.push({ name: item?.name, notes: item?.details ?? item?.notes ?? '' });
       assigned = true;
     }
     if (!assigned) unassigned += 1;
@@ -98,6 +101,8 @@ export function convertCategory(categoryName, items) {
   const households = new Map();
   const skipped = [];
   const orderedPeople = [];
+  const children = [];
+  const childKeys = new Set();
   for (const item of items) {
     const fullName = clean(item?.name);
     const person = parsePerson(fullName);
@@ -111,6 +116,12 @@ export function convertCategory(categoryName, items) {
     });
     households.get(surnameKey).people.push(person);
     orderedPeople.push(person.fullName);
+    String(item?.notes ?? '').split(/\r?\n/).map(clean).filter(Boolean).forEach(child => {
+      const childKey = key(child);
+      if (childKeys.has(childKey)) return;
+      childKeys.add(childKey);
+      children.push(child);
+    });
   }
   // The heading remains only an ordering hint. Membership and surnames come from
   // the people, so renaming an AnyList category cannot change its identity.
@@ -122,7 +133,7 @@ export function convertCategory(categoryName, items) {
     if (people.some(person => person.suffix)) return people.map(person => person.fullName).join(',');
     return `${people.map(person => person.givenNames).join(',')} ${lastName}`;
   }).join('/') : null;
-  return { account, anchor: orderedPeople[0] || null, people: orderedPeople, skipped };
+  return { account, anchor: orderedPeople[0] || null, people: orderedPeople, children, skipped };
 }
 
 /** Expand both legacy compact households and explicit comma-separated full names. */
@@ -183,7 +194,7 @@ export function syncAnyListAccounts(state, categories) {
       index = best[0]?.candidateIndex ?? -1;
     }
     if (index < 0) {
-      state.accounts.push({ name: category.account, selected: false, anyListCategoryId: categoryId });
+      state.accounts.push({ name: category.account, children: category.children || [], selected: false, anyListCategoryId: categoryId });
       claimedIndexes.add(state.accounts.length - 1);
       added.push(category.account);
       continue;
@@ -192,6 +203,7 @@ export function syncAnyListAccounts(state, categories) {
     const account = state.accounts[index];
     const oldName = account.name;
     account.name = category.account;
+    account.children = category.children || [];
     account.anyListCategoryId = categoryId;
     migrateAccountReferences(state, oldName, account.name);
     updated.push(account.name);
