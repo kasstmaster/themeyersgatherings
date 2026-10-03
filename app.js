@@ -919,6 +919,27 @@ function accountSignInNames(accountName) {
     }).filter(Boolean);
   });
 }
+function accountContactGroups(accountName) {
+  const groups = [];
+  accountSignInNames(accountName).forEach(fullName => {
+    const words = fullName.trim().split(/\s+/);
+    const suffix = words.length > 2 && /^(?:jr\.?|sr\.?|i|ii|iii|iv|v|vi|vii|viii|ix|x)$/i.test(words.at(-1)) ? words.pop() : '';
+    const surname = words.pop() || '';
+    const givenName = [...words, suffix].filter(Boolean).join(' ');
+    if (!surname || !givenName) return;
+    const existingGroup = groups.find(group => group.surname.toLocaleLowerCase() === surname.toLocaleLowerCase());
+    if (existingGroup) existingGroup.givenNames.push(givenName);
+    else groups.push({ surname, givenNames: [givenName] });
+  });
+  return groups;
+}
+function accountContactsHtml(account) {
+  const adults = accountContactGroups(account.name).map(group => `<div><strong>${escapeHtml(group.surname)}:</strong> ${group.givenNames.map(escapeHtml).join(', ')}</div>`).join('');
+  const children = (account.children || []).length
+    ? `<div class="account-children"><strong>Children:</strong> ${account.children.map(escapeHtml).join(', ')}</div>`
+    : '';
+  return adults + children;
+}
 function firstAccountLastName(accountName) {
   const firstPerson = accountSignInNames(accountName)[0] || accountName;
   const words = firstPerson.trim().split(/\s+/);
@@ -1956,7 +1977,7 @@ function openAccountsAdmin() {
   const sortedAccounts = appState.accounts.map((account, index) => ({ account, index })).sort((left, right) =>
     firstAccountLastName(left.account.name).localeCompare(firstAccountLastName(right.account.name), 'en-US', { sensitivity: 'base' })
     || left.account.name.localeCompare(right.account.name, 'en-US', { sensitivity: 'base' }));
-  document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => `<div class="account-row" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Can sign in</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people"><strong>${escapeHtml(account.name)}</strong>${(account.children || []).length ? `<span>Children</span><ul>${account.children.map(child => `<li>${escapeHtml(child)}</li>`).join('')}</ul>` : ''}</div><div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button></div></div>`).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
+  document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => `<div class="account-row" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Can sign in</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people">${accountContactsHtml(account)}</div><div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button></div></div>`).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
   document.querySelectorAll('.account-row').forEach(row => {
     const [access, , previewActions] = row.children;
     const viewQr = previewActions.querySelector('.account-qr-button');

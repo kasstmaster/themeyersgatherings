@@ -55,7 +55,7 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .account-selection{display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important;margin:0!important;color:var(--ink)!important;font-size:.78rem!important}
 .account-selection input{width:18px;height:18px;accent-color:var(--orange)}
 .account-selection input:disabled{cursor:not-allowed;opacity:.7}
-.account-people{min-width:0;padding:10px 12px;border:1px solid var(--border);border-radius:4px;background:#fff}.account-people strong{display:block;overflow-wrap:anywhere}.account-people span{display:block;margin-top:7px;color:var(--muted);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}.account-people ul{margin:3px 0 0;padding-left:20px;color:var(--muted);font-size:.85rem;line-height:1.45}
+.account-people{min-width:0;padding:10px 12px;border:1px solid var(--border);border-radius:4px;background:#fff;overflow-wrap:anywhere;line-height:1.45}.account-people strong{font-weight:800}.account-children{margin-top:7px;color:var(--muted)}
 .account-row button{align-self:stretch}.account-preview-actions{display:flex;gap:5px}.account-row .account-qr-button,.account-row .account-invitation-button{background:#e7edf4;color:var(--navy);font-size:.7rem;font-weight:800;padding:8px}.account-row .account-invitation-button:disabled{color:#8a8a8a;cursor:not-allowed;opacity:.65}.account-row .account-delete-button{background:#f3ddd5;color:#982f17;font-size:1.2rem}
 @media(max-width:520px){.account-row{grid-template-columns:1fr auto}.account-access{grid-column:1/3}.account-preview-actions{grid-column:2}.account-people{grid-column:1}}
 
