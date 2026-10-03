@@ -684,7 +684,9 @@ test('host tools are persistent buttons directly below the signed-in household',
   const toolsIndex = html.indexOf('id="hostToolsPanel"');
   const mainIndex = html.indexOf('<main>');
   assert.ok(accountIndex < toolsIndex && toolsIndex < mainIndex);
-  assert.match(html, /id="hostToolsPanel"[\s\S]*>Gatherings<\/button>[\s\S]*>Wedding Details<\/button>[\s\S]*>Clear a Claim<\/button>[\s\S]*>Accounts<\/button>[\s\S]*>View As<\/button>[\s\S]*>Templates<\/button>/);
+  assert.match(html, /id="hostToolsPanel"[\s\S]*>Wedding Details<\/button>[\s\S]*>Clear a Claim<\/button>[\s\S]*>Accounts<\/button>[\s\S]*>View As<\/button>[\s\S]*>Templates<\/button>/);
+  assert.doesNotMatch(html, /id="manageEventsButton"|>Gatherings<\/button>/);
+  assert.doesNotMatch(javascript, /#manageEventsButton/);
   assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
 });
 
