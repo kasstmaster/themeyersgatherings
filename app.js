@@ -1420,10 +1420,13 @@ function render() {
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !showingRegistryPage;
   const registryAttireSection = document.querySelector('#registryAttireSection');
-  const attireDestination = showingPartyAttirePage
-    ? document.querySelector('#weddingPartyAttirePanel')
-    : document.querySelector('#guestAttireAnchor');
-  if (registryAttireSection.parentElement !== attireDestination) attireDestination.append(registryAttireSection);
+  const weddingPartyAttirePanel = document.querySelector('#weddingPartyAttirePanel');
+  const guestAttireAnchor = document.querySelector('#guestAttireAnchor');
+  if (showingPartyAttirePage && registryAttireSection.parentElement !== weddingPartyAttirePanel) {
+    weddingPartyAttirePanel.append(registryAttireSection);
+  } else if (!showingPartyAttirePage && registryAttireSection.previousElementSibling !== guestAttireAnchor) {
+    guestAttireAnchor.after(registryAttireSection);
+  }
   registryAttireSection.classList.toggle('wedding-party-attire-section', showingPartyAttirePage);
   registryAttireSection.hidden = !showingAttirePage;
   renderWeddingPartyAttireImages(showingPartyAttirePage);
