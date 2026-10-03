@@ -142,9 +142,8 @@
       <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
         <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="false" hidden>Bride &amp; Groom</button>
         <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
+        <button type="button" role="tab" data-wedding-tab="guest" aria-controls="guestSection" aria-selected="true">Guest</button>
         <button type="button" role="tab" data-wedding-tab="timeline" aria-controls="weddingTimelineSection" aria-selected="false">Timeline</button>
-        <button type="button" role="tab" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="true">Attire</button>
-        <button type="button" role="tab" data-wedding-tab="expect" aria-controls="whatToExpectSection" aria-selected="false">Wedding Details</button>
         <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
       </nav>
 
@@ -189,6 +188,13 @@
           </table>
         </div>
         <div id="weddingTimelineBelowContent" class="wedding-timeline-copy"></div>
+      </section>
+
+      <section id="guestSection" class="guest-section" aria-label="Guest information" hidden>
+        <nav id="guestInfoTabs" class="matron-info-tabs guest-info-tabs" aria-label="Guest information pages" role="tablist">
+          <button type="button" role="tab" data-guest-tab="attire" aria-controls="registryAttireSection" aria-selected="true">Attire</button>
+          <button type="button" role="tab" data-guest-tab="details" aria-controls="whatToExpectSection" aria-selected="false">Wedding Details</button>
+        </nav>
       </section>
 
       <div id="guestAttireAnchor"></div>

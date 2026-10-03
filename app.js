@@ -421,7 +421,8 @@ let viewedEventId = appState.activeEventId;
 let state = appState.events[viewedEventId];
 let guestName = '';
 let signedInPersonName = '';
-let selectedWeddingTab = 'attire';
+let selectedWeddingTab = 'guest';
+let selectedGuestTab = 'attire';
 let selectedMatronTab = 'experience';
 let selectedBrideGroomPage = 'main';
 let hostWeddingPartyViewName = '';
@@ -1242,7 +1243,7 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   state = nextState;
   if (eventId === 'wedding' && !preserveWeddingView) {
     const partyMember = state.weddingPartyMembers?.some(member => normalizeAccountName(member.name) === normalizeAccountName(signedInPersonName));
-    selectedWeddingTab = hostAuthenticated ? 'couple' : partyMember ? 'party' : 'attire';
+    selectedWeddingTab = hostAuthenticated ? 'couple' : partyMember ? 'party' : 'guest';
     selectedMatronTab = 'experience';
     if (hostAuthenticated) hostWeddingPartyViewName = '';
   }
@@ -1322,25 +1323,31 @@ function render() {
   document.querySelectorAll('#registryAttireSection .guest-attire-requirements').forEach(requirements => {
     requirements.hidden = isWeddingPartyMember;
   });
-  if (isWeddingPartyMember && selectedWeddingTab === 'attire') selectedWeddingTab = 'party';
-  if (isWeddingPartyMember && selectedWeddingTab === 'expect') selectedWeddingTab = 'party';
-  if (!hostView && !isWeddingPartyMember && selectedWeddingTab === 'timeline') selectedWeddingTab = 'attire';
-  if ((!hostView && !isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostView && selectedWeddingTab === 'couple')) selectedWeddingTab = 'attire';
+  if (!hostView && !isWeddingPartyMember && selectedWeddingTab === 'timeline') selectedWeddingTab = 'guest';
+  if ((!hostView && !isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostView && selectedWeddingTab === 'couple')) selectedWeddingTab = 'guest';
   const showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple';
   const showingWeddingPartyPage = isWedding && (hostView || isWeddingPartyMember) && selectedWeddingTab === 'party';
   const showingTimelinePage = isWedding && (hostView || isWeddingPartyMember) && selectedWeddingTab === 'timeline';
+  const showingGuestPage = isWedding && !isWeddingPartyMember && selectedWeddingTab === 'guest';
   const showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire';
-  const showingAttirePage = isWedding && ((!isWeddingPartyMember && selectedWeddingTab === 'attire') || showingPartyAttirePage);
-  const showingWhatToExpectPage = isWedding && !isWeddingPartyMember && selectedWeddingTab === 'expect';
+  const showingAttirePage = (showingGuestPage && selectedGuestTab === 'attire') || showingPartyAttirePage;
+  const showingWhatToExpectPage = showingGuestPage && selectedGuestTab === 'details';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     const hostCanViewTab = true;
     const partyMemberCanViewTab = ['party', 'timeline', 'registry'].includes(button.dataset.weddingTab);
-    const guestCanViewTab = ['attire', 'expect', 'registry'].includes(button.dataset.weddingTab);
+    const guestCanViewTab = ['guest', 'registry'].includes(button.dataset.weddingTab);
     button.hidden = !(hostView ? hostCanViewTab : isWeddingPartyMember ? partyMemberCanViewTab : guestCanViewTab);
     const isSelected = button.dataset.weddingTab === selectedWeddingTab;
+    button.setAttribute('aria-selected', String(isSelected));
+    button.tabIndex = isSelected ? 0 : -1;
+  });
+  const guestSection = document.querySelector('#guestSection');
+  guestSection.hidden = !showingGuestPage;
+  guestSection.querySelectorAll('[data-guest-tab]').forEach(button => {
+    const isSelected = button.dataset.guestTab === selectedGuestTab;
     button.setAttribute('aria-selected', String(isSelected));
     button.tabIndex = isSelected ? 0 : -1;
   });
@@ -1373,25 +1380,29 @@ function render() {
   const viewedWeddingPartyMember = viewingAsGuest
     ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
     : signedInWeddingPartyMember;
-  const visibleWeddingPartyMembers = hostView ? weddingPartyMembers : [viewedWeddingPartyMember].filter(Boolean);
+  const hostResponsibilityRoles = WEDDING_PARTY_TITLES.map(({ value: title }) => ({
+    title,
+    name: weddingPartyMembers.filter(member => member.title === title).map(member => member.name).join(', ') || 'No one assigned'
+  }));
+  const visibleWeddingPartyMembers = hostView ? hostResponsibilityRoles : [viewedWeddingPartyMember].filter(Boolean);
   const isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember?.title === 'Matron of Honor';
   const matronInfoTabs = document.querySelector('#matronInfoTabs');
-  if (!isViewingMatron && selectedMatronTab === 'bachelorette') selectedMatronTab = 'experience';
-  matronInfoTabs.hidden = !showingWeddingPartyPage || hostView;
+  if (!hostView && !isViewingMatron && selectedMatronTab === 'bachelorette') selectedMatronTab = 'experience';
+  matronInfoTabs.hidden = !showingWeddingPartyPage;
   matronInfoTabs.querySelectorAll('[data-matron-tab]').forEach(button => {
-    button.hidden = button.dataset.matronTab === 'bachelorette' && !isViewingMatron;
+    button.hidden = button.dataset.matronTab === 'bachelorette' && !hostView && !isViewingMatron;
     const isSelected = button.dataset.matronTab === selectedMatronTab;
     button.setAttribute('aria-selected', String(isSelected));
     button.tabIndex = isSelected ? 0 : -1;
   });
-  document.querySelector('#weddingPartyDetails').hidden = !hostView && showingWeddingPartyPage && selectedMatronTab !== 'duties';
-  document.querySelector('#perfectExperiencePanel').hidden = hostView || !showingWeddingPartyPage || selectedMatronTab !== 'experience';
-  if (!hostView && showingWeddingPartyPage && selectedMatronTab === 'experience') {
+  document.querySelector('#weddingPartyDetails').hidden = !showingWeddingPartyPage || selectedMatronTab !== 'duties';
+  document.querySelector('#perfectExperiencePanel').hidden = !showingWeddingPartyPage || selectedMatronTab !== 'experience';
+  if (showingWeddingPartyPage && selectedMatronTab === 'experience') {
     document.querySelector('#perfectExperienceContent').innerHTML = formatEditableText(state.perfectExperienceContent)
       || '<p class="guest-empty">No Perfect Experience details have been added yet.</p>';
   }
-  document.querySelector('#bacheloretteInfoPanel').hidden = !isViewingMatron || selectedMatronTab !== 'bachelorette';
-  if (isViewingMatron && selectedMatronTab === 'bachelorette') {
+  document.querySelector('#bacheloretteInfoPanel').hidden = (!hostView && !isViewingMatron) || selectedMatronTab !== 'bachelorette';
+  if ((hostView || isViewingMatron) && selectedMatronTab === 'bachelorette') {
     document.querySelector('#bacheloretteInfoContent').innerHTML = formatEditableText(state.bacheloretteContent)
       || '<p class="guest-empty">No bachelorette party information has been added yet.</p>';
   }
@@ -1405,7 +1416,7 @@ function render() {
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
     ? visibleWeddingPartyMembers.map(member => {
       const description = state.weddingPartyDescriptions?.[member.title] || '';
-      return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${!hostView && description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : ''}</article>`;
+      return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : ''}</article>`;
     }).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !showingRegistryPage;
@@ -1553,7 +1564,7 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
   if (!availableEventIds(account.name).length) { document.querySelector('#accountPasswordError').textContent = 'Sign-in access has not been enabled for your account yet.'; return; }
   guestName = account.name;
   signedInPersonName = accountName;
-  selectedWeddingTab = 'attire';
+  selectedWeddingTab = 'guest';
   document.querySelector('#accountPasswordError').textContent = '';
   showEventSelection();
   const action = pendingAccountAction; pendingAccountAction = null; action?.();
@@ -1583,6 +1594,22 @@ document.querySelector('#weddingPartyTabs').addEventListener('keydown', event =>
   selectedWeddingTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.weddingTab;
   render();
   document.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
+});
+document.querySelector('#guestInfoTabs').addEventListener('click', event => {
+  const button = event.target.closest('[data-guest-tab]');
+  if (!button) return;
+  selectedGuestTab = button.dataset.guestTab;
+  render();
+});
+document.querySelector('#guestInfoTabs').addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  event.preventDefault();
+  const tabs = [...document.querySelectorAll('#guestInfoTabs [data-guest-tab]')];
+  const currentIndex = tabs.findIndex(button => button.dataset.guestTab === selectedGuestTab);
+  const direction = event.key === 'ArrowRight' ? 1 : -1;
+  selectedGuestTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.guestTab;
+  render();
+  document.querySelector(`[data-guest-tab="${selectedGuestTab}"]`).focus();
 });
 document.querySelector('#adminBrideGroomContent').addEventListener('change', event => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
@@ -2453,7 +2480,7 @@ document.querySelector('#openWeddingPartyPreview').addEventListener('click', () 
   hostWeddingPartyViewName = document.querySelector('#hostWeddingPartyView').value;
   if (!hostWeddingPartyViewName) return;
   document.querySelector('#weddingPartyPreviewDialog').close();
-  selectedWeddingTab = hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW ? 'attire' : 'party';
+  selectedWeddingTab = hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW ? 'guest' : 'party';
   enterEvent('wedding', { preserveWeddingView: true });
 });
 document.querySelector('#cancelViewAsButton').addEventListener('click', () => {
