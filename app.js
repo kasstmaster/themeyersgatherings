@@ -2436,7 +2436,6 @@ function openClearClaimDialog() {
   updateClearClaimFamilies();
   document.querySelector('#clearClaimDialog').showModal();
 }
-document.querySelector('#manageEventsButton').addEventListener('click', openEventsAdmin);
 document.querySelector('#editItemsButton').addEventListener('click', openAdmin);
 document.querySelector('#clearClaimButton').addEventListener('click', openClearClaimDialog);
 document.querySelector('#editAccountsButton').addEventListener('click', openAccountsAdmin);
