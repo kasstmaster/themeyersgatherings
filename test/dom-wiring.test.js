@@ -595,7 +595,7 @@ test('Wedding Timeline is private to hosts and wedding party members and remains
   assert.match(html, /id="weddingTimelineAboveContent"[\s\S]*id="weddingTimelineBody"[\s\S]*id="weddingTimelineBelowContent"/);
   assert.match(html, /id="adminTimelineAboveContent"[\s\S]*id="adminTimelineContent"[\s\S]*id="adminTimelineBelowContent"/);
   assert.match(html, /id="adminTimelineContent"/);
-  assert.match(javascript, /partyMemberCanViewTab = \['party', 'timeline', 'registry'\]/);
+  assert.match(javascript, /partyMemberCanViewTab = \['party', 'timeline'\]/);
   assert.match(javascript, /\(hostView \|\| isWeddingPartyMember\) && selectedWeddingTab === 'timeline'/);
   assert.match(javascript, /state\.timelineContent = event\.target\.value/);
   assert.match(javascript, /state\[`timeline\$\{position\}Content`\] = event\.target\.value/);

@@ -1422,6 +1422,10 @@ function render() {
       return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${!hostView && description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : ''}</article>`;
     }).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
+  const registryDestination = showingPartyRegistryPage
+    ? document.querySelector('#weddingPartyRegistryPanel')
+    : document.querySelector('#guestRegistryPanel');
+  if (registrySection.parentElement !== registryDestination) registryDestination.append(registrySection);
   registrySection.hidden = !showingRegistryPage;
   const registryAttireSection = document.querySelector('#registryAttireSection');
   const attireDestination = showingPartyAttirePage
