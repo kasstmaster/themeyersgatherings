@@ -96,7 +96,7 @@
     return `${safe || 'Invitation'}.png`;
   }
   function eligibleAccounts(accounts, eventId) {
-    return accounts.filter(account => account?.qrToken && (account.alwaysInvite === true || account.selectedEvents?.[eventId] === true))
+    return accounts.filter(account => account?.qrToken && account.invitedEvents?.[eventId] === true)
       .sort((left, right) => left.name.localeCompare(right.name, 'en-US', { sensitivity: 'base' }));
   }
   function versionedImageUrl(src, version) {

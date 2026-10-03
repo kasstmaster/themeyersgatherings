@@ -70,12 +70,12 @@ test('multiple accounts receive distinct existing QR payloads and no printed nam
 
 test('bulk invitations include only invited accounts with QR access', () => {
   const accounts = [
-    { name: 'Event Guest', qrToken: 'event', selectedEvents: { wedding: true } },
-    { name: 'Always Guest', qrToken: 'always', alwaysInvite: true, selectedEvents: { wedding: false } },
-    { name: 'Not Invited', qrToken: 'no', selectedEvents: { wedding: false } },
-    { name: 'No QR Yet', selectedEvents: { wedding: true } }
+    { name: 'Invited Without Access', qrToken: 'invite', invitedEvents: { wedding: true }, selectedEvents: { wedding: false } },
+    { name: 'Access Without Invite', qrToken: 'access', invitedEvents: { wedding: false }, selectedEvents: { wedding: true } },
+    { name: 'Not Invited', qrToken: 'no', invitedEvents: { wedding: false } },
+    { name: 'No QR Yet', invitedEvents: { wedding: true } }
   ];
-  assert.deepEqual(Invitation.eligibleAccounts(accounts, 'wedding').map(account => account.name), ['Always Guest', 'Event Guest']);
+  assert.deepEqual(Invitation.eligibleAccounts(accounts, 'wedding').map(account => account.name), ['Invited Without Access']);
 });
 
 test('renderer uses uploaded original dimensions', async () => {
