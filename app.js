@@ -1428,10 +1428,6 @@ function render() {
   if (registrySection.parentElement !== registryDestination) registryDestination.append(registrySection);
   registrySection.hidden = !showingRegistryPage;
   const registryAttireSection = document.querySelector('#registryAttireSection');
-  const attireDestination = showingPartyAttirePage
-    ? document.querySelector('#weddingPartyAttirePanel')
-    : document.querySelector('#guestAttirePanel');
-  if (registryAttireSection.parentElement !== attireDestination) attireDestination.append(registryAttireSection);
   registryAttireSection.classList.toggle('wedding-party-attire-section', showingPartyAttirePage);
   registryAttireSection.hidden = !showingAttirePage;
   renderWeddingPartyAttireImages(showingPartyAttirePage);

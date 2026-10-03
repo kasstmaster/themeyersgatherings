@@ -306,7 +306,7 @@ test('wedding page tabs use guest-facing labels and audience-specific visibility
   assert.match(javascript, /registryAttireSection\.hidden = !showingAttirePage/);
 });
 
-test('Wedding Party shares Attire but does not mirror the main Registry tab', async () => {
+test('Wedding Party shares the stable Attire page but does not mirror the main Registry tab', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
@@ -319,9 +319,9 @@ test('Wedding Party shares Attire but does not mirror the main Registry tab', as
   assert.match(javascript, /showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire'/);
   assert.match(javascript, /showingAttirePage = showingPartyAttirePage \|\| \(showingGuestPage && selectedGuestTab === 'attire'\)/);
   assert.match(javascript, /renderWeddingPartyAttireImages\(showingPartyAttirePage\)/);
-  assert.match(javascript, /showingPartyAttirePage[\s\S]*weddingPartyAttirePanel[\s\S]*attireDestination\.append\(registryAttireSection\)/);
-  assert.doesNotMatch(javascript, /registryDestination|weddingPartyRegistryPanel|guestRegistryPanel/);
-  assert.match(html, /id="weddingPartyAttirePanel"[\s\S]*id="guestAttirePanel"[\s\S]*id="registryAttireSection"/);
+  assert.doesNotMatch(javascript, /attireDestination|registryDestination|weddingPartyAttirePanel|guestAttirePanel|weddingPartyRegistryPanel|guestRegistryPanel/);
+  assert.doesNotMatch(html, /id="(?:weddingParty|guest)(?:Attire|Registry)Panel"/);
+  assert.match(html, /id="guestSection"[\s\S]*id="registryAttireSection"[\s\S]*id="registrySection"/);
 });
 
 test('selected wedding detail tabs use white text inside a visible tab', async () => {
