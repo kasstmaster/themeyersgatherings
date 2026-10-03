@@ -52,6 +52,20 @@ test('invited families show household and overall adult and child totals', async
   assert.match(html, /Families invited<\/h2>[\s\S]*id="invitedPeopleTotal"/);
   assert.match(javascript, /accountSignInNames\(account\.name\)\.length/);
   assert.match(javascript, /\(account\.children \|\| \[\]\)\.length/);
+  assert.match(javascript, /const invitedAccounts = appState\.accounts\.filter\(account => accountIsInvited\(account, viewedEventId\)\)/);
+});
+
+test('gathering access and invitations are independent per-account settings', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
+  const gatheringRenderer = javascript.match(/function openEventsAdmin\(\)[\s\S]*?\n}\nfunction updateClearClaimFamilies/)?.[0] || '';
+
+  assert.match(accountRenderer, />Can sign in<\/span>/);
+  assert.match(accountRenderer, />Invite<\/span>/);
+  assert.match(accountRenderer, /account\.selectedEvents\[viewedEventId\] = event\.target\.checked/);
+  assert.match(accountRenderer, /account\.invitedEvents\[viewedEventId\] = event\.target\.checked/);
+  assert.doesNotMatch(accountRenderer, /Always Invite|account-always-invite/);
+  assert.doesNotMatch(gatheringRenderer, /Activate|Deactivate|data-toggle-event/);
 });
 
 test('editor inputs autosave while typing and every exit commits anything still pending', async () => {
@@ -552,7 +566,7 @@ test('wedding party manager creates wedding-enabled accounts for new people', as
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
 
   assert.match(addHandler, /accountNameMatches\(name, item\.name\)/);
-  assert.match(addHandler, /account = \{ name, selected: false, selectedEvents: \{ wedding: true \}, alwaysInvite: false \}/);
+  assert.match(addHandler, /account = \{ name, selected: false, selectedEvents: \{ wedding: true \}, invitedEvents: \{ wedding: true \} \}/);
   assert.match(addHandler, /appState\.accounts\.push\(account\)/);
   assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
   assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ name, title: selectedTitle\.value \}\)/);

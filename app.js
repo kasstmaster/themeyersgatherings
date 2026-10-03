@@ -379,7 +379,6 @@ function makeEvent(items, eventDate, menuVersion) { return { items, rsvps: [], e
 function initialAppState() {
   return {
     activeEventId: 'thanksgiving',
-    activeEventIds: ['thanksgiving'],
     accountResetVersion: ACCOUNT_RESET_VERSION,
     signupResetVersion: SIGNUP_RESET_VERSION,
     accounts: structuredClone(GUEST_ACCOUNTS),
@@ -393,16 +392,15 @@ function initialAppState() {
 }
 
 function accountCanSignIn(account, eventId) {
-  return account.alwaysInvite === true || account.selectedEvents?.[eventId] === true;
+  return account.selectedEvents?.[eventId] === true;
 }
 
-function activeEventIds(source = appState) {
-  const ids = Array.isArray(source.activeEventIds) ? source.activeEventIds : [source.activeEventId];
-  return [...new Set(ids)].filter(id => source.events?.[id] && EVENT_DETAILS[id]);
+function accountIsInvited(account, eventId) {
+  return account.invitedEvents?.[eventId] === true;
 }
 
 function availableEventIds(accountName = guestName) {
-  const ids = activeEventIds();
+  const ids = Object.keys(EVENT_DETAILS).filter(id => appState.events?.[id]);
   if (isViewingAsGuest()) {
     if (hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW) return ids.filter(id => id === viewedEventId);
     const previewAccount = findAccount(hostWeddingPartyViewName);
@@ -442,8 +440,6 @@ function normalizeState(saved) {
         ...fresh,
         ...saved,
         activeEventId: saved.events[saved.activeEventId] ? saved.activeEventId : 'thanksgiving',
-        activeEventIds: (Array.isArray(saved.activeEventIds) ? saved.activeEventIds : [saved.activeEventId])
-          .filter(id => saved.events[id] && EVENT_DETAILS[id]),
         accounts: (Array.isArray(saved.accounts) ? saved.accounts : fresh.accounts).filter(account => account && typeof account.name === 'string').map(account => {
           const legacySelection = account.alwaysInvite === true || account.selected !== false;
           return {
@@ -454,14 +450,21 @@ function normalizeState(saved) {
               account.alwaysInvite === true || (typeof account.selectedEvents?.[eventId] === 'boolean'
                 ? account.selectedEvents[eventId]
                 : legacySelection)
+            ])),
+            invitedEvents: Object.fromEntries(Object.keys(EVENT_DETAILS).map(eventId => [
+              eventId,
+              typeof account.invitedEvents?.[eventId] === 'boolean'
+                ? account.invitedEvents[eventId]
+                : account.alwaysInvite === true || (typeof account.selectedEvents?.[eventId] === 'boolean'
+                  ? account.selectedEvents[eventId]
+                  : legacySelection)
             ]))
           };
         }),
         events: { ...fresh.events, ...saved.events },
         invitationTemplates: Array.isArray(saved.invitationTemplates) ? saved.invitationTemplates : []
       };
-      if (!loaded.activeEventIds.length && loaded.activeEventId) loaded.activeEventIds = [loaded.activeEventId];
-      loaded.activeEventId = loaded.activeEventIds[0] || loaded.activeEventId;
+      delete loaded.activeEventIds;
       if (loaded.events.christmas.menuVersion !== CHRISTMAS_MENU_VERSION) {
         const previousClaims = new Map(loaded.events.christmas.items.map(item => [item.id, item.claims]));
         loaded.events.christmas.items = christmasItems().map(item => ({ ...item, claims: previousClaims.get(item.id) || [] }));
@@ -605,7 +608,8 @@ function normalizeState(saved) {
     upgraded.accounts = [...recoveredNames].map(name => ({
       name,
       selected: true,
-      selectedEvents: Object.fromEntries(Object.keys(EVENT_DETAILS).map(eventId => [eventId, true]))
+      selectedEvents: Object.fromEntries(Object.keys(EVENT_DETAILS).map(eventId => [eventId, true])),
+      invitedEvents: Object.fromEntries(Object.keys(EVENT_DETAILS).map(eventId => [eventId, true]))
     }));
     return upgraded;
   } catch { return initialAppState(); }
@@ -1247,7 +1251,6 @@ function render() {
   const isWedding = event.registryOnly === true;
   const hostView = isHostView();
   const viewingAsGuest = isViewingAsGuest();
-  const isPreview = hostView && !activeEventIds().includes(viewedEventId);
   const signedInAccount = document.querySelector('#signedInAccount');
   const previewAccount = viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW
     ? findAccount(hostWeddingPartyViewName)
@@ -1395,15 +1398,6 @@ function render() {
   monetaryGiftButton.classList.toggle('disabled', !state.monetaryGiftUrl);
   monetaryGiftButton.setAttribute('aria-disabled', String(!state.monetaryGiftUrl));
   monetaryGiftButton.textContent = state.monetaryGiftUrl ? 'Give a monetary gift' : (hostView ? 'Add monetary gift link in host tools' : 'Monetary gifts coming soon');
-  let previewBanner = document.querySelector('#previewBanner');
-  if (!previewBanner) {
-    previewBanner = document.createElement('div');
-    previewBanner.id = 'previewBanner';
-    previewBanner.className = 'preview-banner';
-    document.body.prepend(previewBanner);
-  }
-  previewBanner.hidden = !isPreview;
-  previewBanner.textContent = isPreview ? `Host preview: ${event.name} is not visible to guests` : '';
   const categories = [...new Set(state.items.map(item => item.category))];
   const categoryCard = category => `
     <article class="category-card">
@@ -1419,7 +1413,7 @@ function render() {
     .join('');
   const needed = state.items.reduce((sum, item) => sum + (item.optional ? 0 : Math.max(0, item.needed - item.claims.length)), 0);
   const guests = state.rsvps.reduce((sum, rsvp) => sum + rsvp.adults + rsvp.children, 0);
-  const invitedAccounts = appState.accounts.filter(account => accountCanSignIn(account, viewedEventId));
+  const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
   document.querySelector('#guestCount').textContent = guests;
   document.querySelector('#invitedCount').textContent = invitedAccounts.length;
   document.querySelector('#remainingCount').textContent = needed;
@@ -1526,7 +1520,7 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
   if (!firstName || !lastName) { document.querySelector('#accountPasswordError').textContent = 'Enter your first and last name, plus your suffix if you have one.'; return; }
   const account = accountForSignIn(accountName);
   if (!account) { document.querySelector('#accountPasswordError').textContent = 'That name and suffix are not recognized.'; return; }
-  if (!activeEventIds().some(id => accountCanSignIn(account, id))) { document.querySelector('#accountPasswordError').textContent = 'No active events'; return; }
+  if (!availableEventIds(account.name).length) { document.querySelector('#accountPasswordError').textContent = 'Sign-in access has not been enabled for your account yet.'; return; }
   guestName = account.name;
   signedInPersonName = accountName;
   selectedWeddingTab = 'attire';
@@ -1784,7 +1778,7 @@ document.querySelector('#guestListButton').addEventListener('click', () => {
 document.querySelector('#invitedListButton').addEventListener('click', () => {
   if (!hostAuthenticated) return;
   const invitedAccounts = appState.accounts
-    .filter(account => accountCanSignIn(account, viewedEventId))
+    .filter(account => accountIsInvited(account, viewedEventId))
     .sort((left, right) => left.name.localeCompare(right.name));
   const totals = invitedAccounts.reduce((sum, account) => ({
     adults: sum.adults + accountSignInNames(account.name).length,
@@ -1962,7 +1956,7 @@ function openAccountsAdmin() {
   const sortedAccounts = appState.accounts.map((account, index) => ({ account, index })).sort((left, right) =>
     firstAccountLastName(left.account.name).localeCompare(firstAccountLastName(right.account.name), 'en-US', { sensitivity: 'base' })
     || left.account.name.localeCompare(right.account.name, 'en-US', { sensitivity: 'base' }));
-  document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => `<div class="account-row" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''} ${account.alwaysInvite ? 'disabled' : ''}><span>Can sign in</span></label><label class="account-selection"><input class="account-always-invite" type="checkbox" ${account.alwaysInvite ? 'checked' : ''}><span>Always Invite</span></label></div><div class="account-people"><strong>${escapeHtml(account.name)}</strong>${(account.children || []).length ? `<span>Children</span><ul>${account.children.map(child => `<li>${escapeHtml(child)}</li>`).join('')}</ul>` : ''}</div><div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button></div></div>`).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
+  document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => `<div class="account-row" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Can sign in</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people"><strong>${escapeHtml(account.name)}</strong>${(account.children || []).length ? `<span>Children</span><ul>${account.children.map(child => `<li>${escapeHtml(child)}</li>`).join('')}</ul>` : ''}</div><div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button></div></div>`).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
   document.querySelectorAll('.account-row').forEach(row => {
     const [access, , previewActions] = row.children;
     const viewQr = previewActions.querySelector('.account-qr-button');
@@ -1974,14 +1968,11 @@ function openAccountsAdmin() {
       if (!event.target.checked && guestName === account.name) guestName = '';
       saveState();
     });
-    access.querySelector('.account-always-invite').addEventListener('change', event => {
+    access.querySelector('.account-invited').addEventListener('change', event => {
       const account = appState.accounts[Number(row.dataset.accountIndex)];
-      account.alwaysInvite = event.target.checked;
-      if (account.alwaysInvite) {
-        account.selectedEvents = Object.fromEntries(Object.keys(EVENT_DETAILS).map(eventId => [eventId, true]));
-      }
+      account.invitedEvents ??= {};
+      account.invitedEvents[viewedEventId] = event.target.checked;
       saveState();
-      openAccountsAdmin();
     });
     viewQr.addEventListener('click', () => openQrCode(appState.accounts[Number(row.dataset.accountIndex)]));
     viewInvitation.addEventListener('click', () => openInvitationPreview(appState.accounts[Number(row.dataset.accountIndex)]));
@@ -2362,28 +2353,16 @@ document.querySelector('#previewEditedTemplateButton').addEventListener('click',
 });
 function openEventsAdmin() {
   document.querySelector('#eventChoices').innerHTML = Object.entries(EVENT_DETAILS).map(([id, event]) => {
-    const active = activeEventIds().includes(id);
     const date = new Date(`${appState.events[id].eventDate}T12:00:00`);
     const formatted = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(date).replaceAll(',', '');
     const previewing = id === viewedEventId;
-    const lastActive = active && activeEventIds().length === 1;
-    return `<div class="event-choice"><div><strong>${event.name}</strong><span>${formatted}${active ? ' · Active' : ' · Hidden'}</span></div><div class="event-choice-actions"><button class="preview-event" type="button" data-preview-event="${id}" ${previewing ? 'disabled' : ''}>${previewing ? 'Previewing' : 'Preview'}</button><button type="button" data-toggle-event="${id}" class="${active ? 'deactivate-event' : ''}" ${lastActive ? 'disabled title="At least one event must remain active"' : ''}>${active ? 'Deactivate' : 'Activate'}</button></div></div>`;
+    return `<div class="event-choice"><div><strong>${event.name}</strong><span>${formatted}</span></div><div class="event-choice-actions"><button class="preview-event" type="button" data-preview-event="${id}" ${previewing ? 'disabled' : ''}>${previewing ? 'Previewing' : 'Preview'}</button></div></div>`;
   }).join('');
   document.querySelectorAll('[data-preview-event]').forEach(button => button.addEventListener('click', () => {
     const eventId = button.dataset.previewEvent;
     document.querySelector('#eventsDialog').close();
     enterEvent(eventId);
     showToast(`Previewing ${EVENT_DETAILS[eventId].name}.`);
-  }));
-  document.querySelectorAll('[data-toggle-event]').forEach(button => button.addEventListener('click', () => {
-    appState.events[viewedEventId] = state;
-    const id = button.dataset.toggleEvent;
-    const ids = activeEventIds();
-    appState.activeEventIds = ids.includes(id) ? ids.filter(eventId => eventId !== id) : [...ids, id];
-    appState.activeEventId = appState.activeEventIds[0] || id;
-    saveState();
-    openEventsAdmin();
-    showToast(`${EVENT_DETAILS[id].name} is now ${appState.activeEventIds.includes(id) ? 'active' : 'hidden'}.`);
   }));
   const dialog = document.querySelector('#eventsDialog');
   if (!dialog.open) dialog.showModal();
@@ -2538,10 +2517,10 @@ document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', 
   let account = appState.accounts.find(item => accountNameMatches(name, item.name));
   const accountCreated = !account;
   if (accountCreated) {
-    account = { name, selected: false, selectedEvents: { wedding: true }, alwaysInvite: false };
+    account = { name, selected: false, selectedEvents: { wedding: true }, invitedEvents: { wedding: true } };
     appState.accounts.push(account);
   } else if (!accountCanSignIn(account, 'wedding')) {
-    error.textContent = 'That person belongs to an existing account that is not invited to the wedding.';
+    error.textContent = 'That person belongs to an existing account without wedding sign-in access.';
     return;
   }
   state.weddingPartyMembers.push({ name, title: selectedTitle.value });
