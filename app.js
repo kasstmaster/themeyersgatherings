@@ -447,17 +447,17 @@ function normalizeState(saved) {
             alwaysInvite: account.alwaysInvite === true,
             selectedEvents: Object.fromEntries(Object.keys(EVENT_DETAILS).map(eventId => [
               eventId,
-              account.alwaysInvite === true || (typeof account.selectedEvents?.[eventId] === 'boolean'
+              typeof account.selectedEvents?.[eventId] === 'boolean'
                 ? account.selectedEvents[eventId]
-                : legacySelection)
+                : legacySelection
             ])),
             invitedEvents: Object.fromEntries(Object.keys(EVENT_DETAILS).map(eventId => [
               eventId,
               typeof account.invitedEvents?.[eventId] === 'boolean'
                 ? account.invitedEvents[eventId]
-                : account.alwaysInvite === true || (typeof account.selectedEvents?.[eventId] === 'boolean'
+                : typeof account.selectedEvents?.[eventId] === 'boolean'
                   ? account.selectedEvents[eventId]
-                  : legacySelection)
+                  : legacySelection
             ]))
           };
         }),
@@ -1977,7 +1977,7 @@ function openAccountsAdmin() {
   const sortedAccounts = appState.accounts.map((account, index) => ({ account, index })).sort((left, right) =>
     firstAccountLastName(left.account.name).localeCompare(firstAccountLastName(right.account.name), 'en-US', { sensitivity: 'base' })
     || left.account.name.localeCompare(right.account.name, 'en-US', { sensitivity: 'base' }));
-  document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => `<div class="account-row" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Can sign in</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people">${accountContactsHtml(account)}</div><div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button></div></div>`).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
+  document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => `<div class="account-row" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Give Access</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people">${accountContactsHtml(account)}</div><div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button></div></div>`).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
   document.querySelectorAll('.account-row').forEach(row => {
     const [access, , previewActions] = row.children;
     const viewQr = previewActions.querySelector('.account-qr-button');

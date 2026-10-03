@@ -69,12 +69,22 @@ test('gathering access and invitations are independent per-account settings', as
   const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
   const gatheringRenderer = javascript.match(/function openEventsAdmin\(\)[\s\S]*?\n}\nfunction updateClearClaimFamilies/)?.[0] || '';
 
-  assert.match(accountRenderer, />Can sign in<\/span>/);
+  assert.match(accountRenderer, />Give Access<\/span>/);
+  assert.doesNotMatch(accountRenderer, />Can sign in<\/span>/);
   assert.match(accountRenderer, />Invite<\/span>/);
   assert.match(accountRenderer, /account\.selectedEvents\[viewedEventId\] = event\.target\.checked/);
   assert.match(accountRenderer, /account\.invitedEvents\[viewedEventId\] = event\.target\.checked/);
   assert.doesNotMatch(accountRenderer, /Always Invite|account-always-invite/);
   assert.doesNotMatch(gatheringRenderer, /Activate|Deactivate|data-toggle-event/);
+});
+
+test('saved gathering access overrides retired account-wide access flags', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+  const normalizer = javascript.match(/function normalizeState\(saved\)[\s\S]*?\nfunction loadState\(\)/)?.[0] || '';
+
+  assert.match(normalizer, /typeof account\.selectedEvents\?\.\[eventId\] === 'boolean'\s*\? account\.selectedEvents\[eventId\]\s*: legacySelection/);
+  assert.doesNotMatch(normalizer, /account\.alwaysInvite === true \|\| \(typeof account\.selectedEvents/);
+  assert.match(normalizer, /typeof account\.invitedEvents\?\.\[eventId\] === 'boolean'[\s\S]*?: typeof account\.selectedEvents\?\.\[eventId\] === 'boolean'[\s\S]*?\? account\.selectedEvents\[eventId\][\s\S]*?: legacySelection/);
 });
 
 test('editor inputs autosave while typing and every exit commits anything still pending', async () => {
