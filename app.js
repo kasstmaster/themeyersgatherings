@@ -1333,16 +1333,15 @@ function render() {
   const showingTimelinePage = isWedding && (hostView || isWeddingPartyMember) && selectedWeddingTab === 'timeline';
   const showingGuestPage = isWedding && (hostView || !isWeddingPartyMember) && selectedWeddingTab === 'guest';
   const showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire';
-  const showingPartyRegistryPage = showingWeddingPartyPage && selectedMatronTab === 'registry';
   const showingAttirePage = showingPartyAttirePage || (showingGuestPage && selectedGuestTab === 'attire');
   const showingWhatToExpectPage = showingGuestPage && selectedGuestTab === 'expect';
-  const showingRegistryPage = showingPartyRegistryPage || (showingGuestPage && selectedGuestTab === 'registry');
+  const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     const hostCanViewTab = true;
-    const partyMemberCanViewTab = ['party', 'timeline'].includes(button.dataset.weddingTab);
-    const guestCanViewTab = button.dataset.weddingTab === 'guest';
+    const partyMemberCanViewTab = ['party', 'timeline', 'registry'].includes(button.dataset.weddingTab);
+    const guestCanViewTab = ['guest', 'registry'].includes(button.dataset.weddingTab);
     button.hidden = !(hostView ? hostCanViewTab : isWeddingPartyMember ? partyMemberCanViewTab : guestCanViewTab);
     const isSelected = button.dataset.weddingTab === selectedWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
