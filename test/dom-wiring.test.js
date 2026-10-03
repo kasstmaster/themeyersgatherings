@@ -44,6 +44,15 @@ test('AnyList accounts are read-only while wedding party editing remains availab
   assert.match(javascript, /id="adminAddWeddingPartyMember"|#adminAddWeddingPartyMember/);
 });
 
+test('contact accounts are displayed as surname groups with inline children', async () => {
+  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+
+  assert.match(javascript, /function accountContactGroups\(accountName\)/);
+  assert.match(javascript, /<strong>\$\{escapeHtml\(group\.surname\)\}:<\/strong> \$\{group\.givenNames\.map\(escapeHtml\)\.join\(', '\)\}/);
+  assert.match(javascript, /<strong>Children:<\/strong> \$\{account\.children\.map\(escapeHtml\)\.join\(', '\)\}/);
+  assert.match(javascript, /<div class="account-people">\$\{accountContactsHtml\(account\)\}<\/div>/);
+});
+
 test('invited families show household and overall adult and child totals', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
