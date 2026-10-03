@@ -320,7 +320,8 @@ test('wedding party attire shares the Wedding Party card and Registry remains ri
   assert.match(javascript, /showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire'/);
   assert.match(javascript, /showingAttirePage = \(showingGuestPage && selectedGuestTab === 'attire'\) \|\| showingPartyAttirePage/);
   assert.match(javascript, /renderWeddingPartyAttireImages\(showingPartyAttirePage\)/);
-  assert.match(javascript, /showingPartyAttirePage[\s\S]*weddingPartyAttirePanel[\s\S]*attireDestination\.append\(registryAttireSection\)/);
+  assert.match(javascript, /showingPartyAttirePage[\s\S]*weddingPartyAttirePanel\.append\(registryAttireSection\)/);
+  assert.match(javascript, /guestAttireAnchor\.after\(registryAttireSection\)/);
   assert.match(html, /id="weddingPartyAttirePanel"[\s\S]*id="guestAttireAnchor"[\s\S]*id="registryAttireSection"/);
 });
 
