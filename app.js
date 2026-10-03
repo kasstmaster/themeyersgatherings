@@ -1407,11 +1407,9 @@ function render() {
       || '<p class="guest-empty">No bachelorette party information has been added yet.</p>';
   }
   const weddingPartyIntro = document.querySelector('#weddingPartyIntro');
-  const hideWeddingPartyIntro = showingWeddingPartyPage && selectedMatronTab === 'experience';
+  const hideWeddingPartyIntro = hostView || (showingWeddingPartyPage && selectedMatronTab === 'experience');
   weddingPartyIntro.hidden = hideWeddingPartyIntro;
-  weddingPartyIntro.textContent = hostView
-    ? 'The people standing beside us on our wedding day.'
-    : isViewingMatron && selectedMatronTab === 'bachelorette'
+  weddingPartyIntro.textContent = isViewingMatron && selectedMatronTab === 'bachelorette'
       ? 'Your bachelorette party preferences and planning information are below.'
       : 'Your role, details, and wedding-day information are below.';
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
