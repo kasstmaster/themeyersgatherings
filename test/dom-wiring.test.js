@@ -88,6 +88,12 @@ test('gathering access and invitations are independent per-account settings', as
   assert.doesNotMatch(gatheringRenderer, /Activate|Deactivate|data-toggle-event/);
 });
 
+test('account invitation preview is stacked below the QR preview', async () => {
+  const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+  assert.match(styles, /\.account-preview-actions\{[^}]*display:flex;[^}]*flex-direction:column;/);
+});
+
 test('saved gathering access overrides retired account-wide access flags', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const normalizer = javascript.match(/function normalizeState\(saved\)[\s\S]*?\nfunction loadState\(\)/)?.[0] || '';
