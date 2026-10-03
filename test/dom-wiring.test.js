@@ -31,6 +31,29 @@ test('sync status stays hidden unless shared saving needs attention', async () =
   assert.doesNotMatch(javascript, /Cross-device saving is on/);
 });
 
+test('AnyList accounts are read-only while wedding party editing remains available', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+  const accountsEditor = html.match(/<dialog id="accountsDialog"[\s\S]*?<\/dialog>/)?.[0] || '';
+  assert.doesNotMatch(accountsEditor, /adminNewAccount|adminAddAccountButton/);
+  assert.match(accountsEditor, /id="syncAnyListButton"/);
+  const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
+  assert.doesNotMatch(accountRenderer, /addEventListener\('change', \(\) => renameAccount|account-delete-button/);
+  assert.match(javascript, /id="adminAddWeddingPartyMember"|#adminAddWeddingPartyMember/);
+});
+
+test('invited families show household and overall adult and child totals', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+  assert.match(html, /Families invited<\/h2>[\s\S]*id="invitedPeopleTotal"/);
+  assert.match(javascript, /accountSignInNames\(account\.name\)\.length/);
+  assert.match(javascript, /\(account\.children \|\| \[\]\)\.length/);
+});
+
 test('editor inputs autosave while typing and every exit commits anything still pending', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 

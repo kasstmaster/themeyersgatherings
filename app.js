@@ -1786,8 +1786,17 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
   const invitedAccounts = appState.accounts
     .filter(account => accountCanSignIn(account, viewedEventId))
     .sort((left, right) => left.name.localeCompare(right.name));
+  const totals = invitedAccounts.reduce((sum, account) => ({
+    adults: sum.adults + accountSignInNames(account.name).length,
+    children: sum.children + (account.children || []).length
+  }), { adults: 0, children: 0 });
+  document.querySelector('#invitedPeopleTotal').textContent = `${totals.adults} adult${totals.adults === 1 ? '' : 's'} · ${totals.children} child${totals.children === 1 ? '' : 'ren'} total`;
   document.querySelector('#invitedList').innerHTML = invitedAccounts.length
-    ? invitedAccounts.map(account => `<div class="guest-entry"><strong>${escapeHtml(invitedAccountDisplayName(account.name))}</strong></div>`).join('')
+    ? invitedAccounts.map(account => {
+      const adults = accountSignInNames(account.name).length;
+      const children = (account.children || []).length;
+      return `<div class="guest-entry"><strong>${escapeHtml(invitedAccountDisplayName(account.name))}</strong><span>${adults} adult${adults === 1 ? '' : 's'} · ${children} child${children === 1 ? '' : 'ren'}</span></div>`;
+    }).join('')
     : '<p class="guest-empty">No families are currently invited.</p>';
   document.querySelector('#invitedListDialog').showModal();
 });
@@ -1950,13 +1959,12 @@ function renderInvitationSettings() {
   document.querySelector('#invitationTemplateAssignment').innerHTML = '<option value="">No template assigned</option>' + invitationTemplatesForEvent().map(template => `<option value="${escapeAttribute(template.id)}" ${template.id === state.invitationTemplateId ? 'selected' : ''}>${escapeHtml(template.name)}</option>`).join('');
 }
 function openAccountsAdmin() {
-  document.querySelector('#adminAccountError').textContent = '';
   const sortedAccounts = appState.accounts.map((account, index) => ({ account, index })).sort((left, right) =>
     firstAccountLastName(left.account.name).localeCompare(firstAccountLastName(right.account.name), 'en-US', { sensitivity: 'base' })
     || left.account.name.localeCompare(right.account.name, 'en-US', { sensitivity: 'base' }));
-  document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => `<div class="account-row" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''} ${account.alwaysInvite ? 'disabled' : ''}><span>Can sign in</span></label><label class="account-selection"><input class="account-always-invite" type="checkbox" ${account.alwaysInvite ? 'checked' : ''}><span>Always Invite</span></label></div><input value="${escapeAttribute(account.name)}" maxlength="120" aria-label="Account name"><div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button></div><button class="account-delete-button" type="button" aria-label="Delete ${escapeAttribute(account.name)} account">×</button></div>`).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
+  document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => `<div class="account-row" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''} ${account.alwaysInvite ? 'disabled' : ''}><span>Can sign in</span></label><label class="account-selection"><input class="account-always-invite" type="checkbox" ${account.alwaysInvite ? 'checked' : ''}><span>Always Invite</span></label></div><div class="account-people"><strong>${escapeHtml(account.name)}</strong>${(account.children || []).length ? `<span>Children</span><ul>${account.children.map(child => `<li>${escapeHtml(child)}</li>`).join('')}</ul>` : ''}</div><div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button></div></div>`).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
   document.querySelectorAll('.account-row').forEach(row => {
-    const [access, name, previewActions, remove] = row.children;
+    const [access, , previewActions] = row.children;
     const viewQr = previewActions.querySelector('.account-qr-button');
     const viewInvitation = previewActions.querySelector('.account-invitation-button');
     access.querySelector('.account-selected').addEventListener('change', event => {
@@ -1975,18 +1983,8 @@ function openAccountsAdmin() {
       saveState();
       openAccountsAdmin();
     });
-    name.addEventListener('change', () => renameAccount(Number(row.dataset.accountIndex), name));
     viewQr.addEventListener('click', () => openQrCode(appState.accounts[Number(row.dataset.accountIndex)]));
     viewInvitation.addEventListener('click', () => openInvitationPreview(appState.accounts[Number(row.dataset.accountIndex)]));
-    remove.addEventListener('click', () => {
-      const [removed] = appState.accounts.splice(Number(row.dataset.accountIndex), 1);
-      Object.values(appState.events).forEach(eventState => {
-        eventState.items.forEach(item => { item.claims = item.claims.filter(name => name !== removed.name); });
-        eventState.rsvps = eventState.rsvps.filter(rsvp => rsvp.name !== removed.name);
-      });
-      if (guestName === removed.name) guestName = '';
-      saveState(); openAccountsAdmin(); showToast('Account removed.');
-    });
   });
   const dialog = document.querySelector('#accountsDialog'); if (!dialog.open) dialog.showModal();
 }
@@ -2073,24 +2071,6 @@ function openQrCode(account) {
 }
 document.querySelector('#downloadQrPng').addEventListener('click', () => { if (qrAdminAccount?.qrToken) downloadQrPng(qrAdminAccount); });
 document.querySelector('#downloadQrSvg').addEventListener('click', () => { if (qrAdminAccount?.qrToken) downloadQrSvg(qrAdminAccount); });
-function renameAccount(index, input) {
-  const oldName = appState.accounts[index]?.name;
-  const newName = input.value.trim();
-  const duplicate = appState.accounts.some((account, accountIndex) => accountIndex !== index && normalizeAccountName(account.name) === normalizeAccountName(newName));
-  if (!newName || duplicate) {
-    input.value = oldName || '';
-    document.querySelector('#adminAccountError').textContent = duplicate ? 'That account already exists.' : 'Account names cannot be empty.';
-    return;
-  }
-  appState.accounts[index].name = newName;
-  Object.values(appState.events).forEach(eventState => {
-    eventState.items.forEach(item => { item.claims = item.claims.map(name => name === oldName ? newName : name); });
-    eventState.rsvps.forEach(rsvp => { if (rsvp.name === oldName) rsvp.name = newName; });
-  });
-  if (guestName === oldName) guestName = newName;
-  document.querySelector('#adminAccountError').textContent = '';
-  saveState(); showToast('Account updated.');
-}
 [['invitationEventDate', 'eventDate'], ['invitationRsvpDate', 'rsvpDate'], ['invitationAddress1', 'addressLine1'], ['invitationAddress2', 'addressLine2']].forEach(([id, key]) => {
   document.querySelector(`#${id}`).addEventListener('change', event => {
     const value = event.target.value.trim(); if (!value) return;
@@ -2541,13 +2521,6 @@ document.querySelector('#clearClaimForm').addEventListener('submit', event => {
   document.querySelector('#clearClaimDialog').close();
   saveState();
   showToast(`${formatQuantity(removed, item)} of ${item.name} removed from ${contributionDisplayName(family)}.`);
-});
-document.querySelector('#adminAddAccountButton').addEventListener('click', () => {
-  const input = document.querySelector('#adminNewAccount');
-  const name = input.value.trim();
-  if (!name) { document.querySelector('#adminAccountError').textContent = 'Enter a last name.'; return; }
-  if (appState.accounts.some(account => normalizeAccountName(account.name) === normalizeAccountName(name))) { document.querySelector('#adminAccountError').textContent = 'That account already exists.'; return; }
-  appState.accounts.push({ name, selected: false, selectedEvents: { [viewedEventId]: false }, alwaysInvite: false }); input.value = ''; saveState(); openAccountsAdmin(); showToast(`${householdDisplayName(name)} account added. Enable it to allow sign-in.`);
 });
 document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', () => {
   const firstInput = document.querySelector('#adminWeddingPartyFirstName');

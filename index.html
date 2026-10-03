@@ -316,6 +316,7 @@
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Our family table</p><h2>Families invited</h2>
+        <p id="invitedPeopleTotal" class="invited-people-total"></p>
         <div id="invitedList" class="guest-list"></div>
         <button class="primary-button" value="default">Close</button>
       </form>
@@ -502,11 +503,6 @@
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">Host dashboard</p><h2>Manage accounts</h2>
         <div id="adminAccounts" class="admin-accounts"></div>
-        <div class="account-add">
-          <input id="adminNewAccount" placeholder="e.g. John,Jane Doe/John,Jane Smith" maxlength="120" aria-label="New account name" />
-          <button id="adminAddAccountButton" type="button">Add account</button>
-        </div>
-        <p class="form-error" id="adminAccountError" role="alert"></p>
         <section class="anylist-sync" aria-label="AnyList account sync">
           <br><button id="syncAnyListButton" type="button">Sync AnyList Address Book</button>
           <p id="anyListSyncResult" class="anylist-sync-result" role="status" aria-live="polite"></p>
