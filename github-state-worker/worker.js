@@ -83,6 +83,62 @@ async function handleInvitationBackground(request, env, key) {
   return response(request, env, 'Method not allowed.', 405, { Allow: 'GET, PUT, DELETE, OPTIONS' });
 }
 
+const ATTIRE_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/ogg']);
+const MAX_ATTIRE_VIDEO_BYTES = 50_000_000;
+async function handleAttireVideo(request, env, key) {
+  const bucket = env.INVITATION_BACKGROUNDS;
+  if (!bucket) return response(request, env, 'Video storage is not configured. Deploy the latest Worker and verify its R2 bucket.', 503);
+  if (request.method === 'GET') {
+    const range = request.headers.get('Range');
+    if (range && !/^bytes=(?:\d+-\d*|-\d+)$/.test(range)) return response(request, env, 'Unsupported video range.', 416);
+    let partial;
+    if (range) {
+      const metadata = await bucket.head(key);
+      if (!metadata) return response(request, env, 'Not found.', 404);
+      const [first, last] = range.slice(6).split('-');
+      const start = first ? Number(first) : Math.max(0, metadata.size - Number(last));
+      const end = first && last ? Math.min(Number(last), metadata.size - 1) : metadata.size - 1;
+      if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= metadata.size || (!first && Number(last) === 0)) {
+        return response(request, env, 'Range not satisfiable.', 416, { 'Content-Range': `bytes */${metadata.size}` });
+      }
+      partial = { offset: start, length: end - start + 1 };
+    }
+    const object = await bucket.get(key, partial ? { range: partial } : undefined);
+    if (!object) return response(request, env, 'Not found.', 404);
+    const headers = {
+      'Content-Type': object.httpMetadata?.contentType || 'video/mp4',
+      'Cache-Control': 'public, max-age=3600', 'Accept-Ranges': 'bytes',
+      'Content-Length': String(partial ? partial.length : object.size),
+      'ETag': object.httpEtag, 'X-Content-Type-Options': 'nosniff'
+    };
+    if (partial) headers['Content-Range'] = `bytes ${partial.offset}-${partial.offset + partial.length - 1}/${object.size}`;
+    return response(request, env, object.body, partial ? 206 : 200, headers);
+  }
+  if (!requireHost(request, env)) return response(request, env, 'Host authentication failed.', 401);
+  if (request.method === 'DELETE') { await bucket.delete(key); return response(request, env, null, 204); }
+  if (request.method !== 'PUT') return response(request, env, 'Method not allowed.', 405);
+  const contentType = (request.headers.get('Content-Type') || '').split(';')[0].toLowerCase();
+  if (!ATTIRE_VIDEO_TYPES.has(contentType)) return response(request, env, 'Only MP4, WebM, and Ogg videos are supported.', 415);
+  if (Number(request.headers.get('Content-Length') || 0) > MAX_ATTIRE_VIDEO_BYTES) return response(request, env, 'Video is too large (50 MB maximum).', 413);
+  // Bound streamed bodies too, without trusting Content-Length.
+  const reader = request.body?.getReader();
+  const chunks = []; let size = 0;
+  if (reader) {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_ATTIRE_VIDEO_BYTES) { await reader.cancel(); return response(request, env, 'Video is too large (50 MB maximum).', 413); }
+      chunks.push(value);
+    }
+  }
+  if (!size) return response(request, env, 'Video file is empty.', 400);
+  const video = new Uint8Array(size); let offset = 0;
+  for (const chunk of chunks) { video.set(chunk, offset); offset += chunk.byteLength; }
+  await bucket.put(key, video.buffer, { httpMetadata: { contentType }, customMetadata: { uploadedAt: new Date().toISOString() } });
+  return jsonResponse(request, env, { ok: true });
+}
+
 async function dispatchAnyListSync(env, syncId) {
   const [owner, repository] = (env.GITHUB_WORKFLOW_REPOSITORY || '').split('/');
   if (!owner || !repository) throw new Error('GITHUB_WORKFLOW_REPOSITORY must be configured.');
@@ -161,6 +217,14 @@ export default {
     }
     try {
       const url = new URL(request.url);
+      const videoMatch = /^\/attire-videos\/([a-zA-Z0-9-]+)$/.exec(url.pathname);
+      if (videoMatch) {
+        try { return await handleAttireVideo(request, env, `attire-videos/${videoMatch[1]}`); }
+        catch (error) {
+          console.error('Attire video storage failed.', error);
+          return response(request, env, 'Video storage failed. Deploy the latest Worker and verify that its R2 bucket exists.', 503);
+        }
+      }
       const backgroundKey = invitationBackgroundKey(url.pathname);
       if (backgroundKey) {
         try {

@@ -385,7 +385,7 @@
             <label><span>Wedding registry link</span><input id="adminRegistryUrl" type="url" placeholder="https://www.example.com/our-registry" /></label>
             <label><span>Monetary gift link</span><input id="adminMonetaryGiftUrl" type="url" placeholder="https://www.example.com/our-gift-fund" /></label>
           </fieldset>
-          <p id="adminWeddingVariableDescription" hidden>In any editable wedding text, insert <code>{date}</code>, <code>{home}</code>, <code>{church}</code>, <code>{venue}</code>, <code>{registry}</code>, or <code>{monetary}</code> to keep those details up to date automatically.</p>
+          <p id="adminWeddingVariableDescription" hidden>Edit the content shown on each wedding page. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link. You can also insert <code>{date}</code>, <code>{home}</code>, <code>{church}</code>, <code>{venue}</code>, <code>{registry}</code>, or <code>{monetary}</code>.</p>
         </section>
         <div id="adminAttireFields" class="admin-attire" hidden>
           <section id="weddingMenuAdmin" class="admin-editor-section wedding-menu-admin" aria-labelledby="weddingMenuAdminHeading">
@@ -401,7 +401,6 @@
           </section>
           <section id="weddingPartyAdmin" class="admin-editor-section wedding-party-admin" aria-labelledby="weddingPartyAdminHeading">
             <h3 id="weddingPartyAdminHeading">Wedding Party Members</h3>
-            <p>Add a person by the same first and last name they use to sign in. If they do not have an account yet, one will be created with wedding access.</p>
             <div id="adminWeddingPartyMembers" class="wedding-party-member-list"></div>
             <div class="wedding-party-add">
               <input id="adminWeddingPartyFirstName" placeholder="First name" maxlength="60" aria-label="Wedding party member first name" />
@@ -415,7 +414,6 @@
           </section>
           <section id="weddingPagesAdmin" class="admin-editor-section wedding-pages-admin" aria-labelledby="weddingPagesAdminHeading">
             <h3 id="weddingPagesAdminHeading">Pages</h3>
-            <p>Edit the content shown on each wedding page. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link. You can also insert <code>{date}</code>, <code>{home}</code>, <code>{church}</code>, <code>{venue}</code>, <code>{registry}</code>, or <code>{monetary}</code>.</p>
             <div class="wedding-party-description-editors wedding-page-editors">
               <fieldset id="brideGroomAdmin" class="wedding-party-description-editor wedding-page-editor wedding-editor-card"><legend>Bride &amp; Groom <button id="adminAddBrideGroomPage" class="add-bride-groom-page" type="button" aria-label="Add Bride &amp; Groom page" title="Add page">+</button></legend><div id="adminBrideGroomPages" class="bride-groom-page-editors"></div></fieldset>
               <fieldset id="timelineAdmin" class="wedding-party-description-editor wedding-page-editor wedding-editor-card"><legend>Wedding Timeline</legend><label class="editor-page-line"><small>Text above the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineAboveContent" aria-label="Text above the Wedding Timeline" placeholder="Add text above the timeline…"></textarea></label><label class="editor-page-line"><small>Timeline rows — enter one row per line with the time, event, and notes separated by tabs. Bold text can be wrapped in <code>**double asterisks**</code>.</small><textarea class="wedding-copy-editor wedding-timeline-editor" id="adminTimelineContent" aria-label="Wedding Timeline rows"></textarea></label><label class="editor-page-line"><small>Text below the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineBelowContent" aria-label="Text below the Wedding Timeline" placeholder="Add text below the timeline…"></textarea></label></fieldset>
@@ -425,7 +423,6 @@
           </section>
           <section id="weddingPartyAttireAdmin" class="admin-editor-section wedding-party-attire-admin" aria-labelledby="weddingPartyAttireAdminHeading">
             <h3 id="weddingPartyAttireAdminHeading">Wedding Party Attire Images</h3>
-            <p>Add inspiration at the bottom of the ladies’ or gentlemen’s attire section. These images, captions, and notes are shown only to signed-in Wedding Party members. Editable text supports Markdown such as <strong>**bold**</strong>, <strong>*italics*</strong>, <strong>- bullets</strong>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link.</p>
             <div class="wedding-party-attire-notes">
               <label><span>Note for the Ladies</span><textarea id="adminWeddingPartyLadiesAttireNote" placeholder="Optional note shown below all ladies’ images"></textarea></label>
               <label><span>Note for the Gentlemen</span><textarea id="adminWeddingPartyGentlemenAttireNote" placeholder="Optional note shown below all gentlemen’s images"></textarea></label>
@@ -441,9 +438,11 @@
           </section>
           <section id="guestAttireVideosAdmin" class="admin-editor-section guest-attire-videos-admin" aria-labelledby="guestAttireVideosAdminHeading">
             <h3 id="guestAttireVideosAdminHeading">Guest Attire Tip Videos</h3>
-            <p>Add YouTube or Vimeo links to display on the Wedding Attire page.</p>
+            <p>Add a YouTube or Vimeo link, or upload an MP4, WebM, or Ogg video (50 MB maximum).</p>
             <div id="adminAttireVideos"></div>
             <div class="admin-video-add"><input id="adminNewAttireVideo" type="url" placeholder="https://www.youtube.com/watch?v=…" /><button id="adminAddAttireVideo" type="button">Add video</button></div>
+            <div class="admin-video-upload"><label><span>Upload your video</span><input id="adminAttireVideoFile" type="file" accept="video/mp4,video/webm,video/ogg,.mp4,.webm,.ogg,.ogv" /></label><button id="adminUploadAttireVideo" type="button">Upload video</button></div>
+            <p id="adminAttireVideoProgress" role="status" hidden></p>
             <p class="form-error" id="adminAttireVideoError" role="alert"></p>
           </section>
         </div>
@@ -579,6 +578,7 @@
     <script src="vendor/qrcode.js" defer></script>
     <script src="invitation.js" defer></script>
     <script src="wedding-party.js" defer></script>
+    <script src="attire-videos.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>
