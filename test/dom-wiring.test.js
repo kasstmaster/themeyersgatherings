@@ -233,7 +233,7 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.match(html, /id="brideGroomHeading">Bride &amp; Groom/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
   assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Bride &amp; Groom page'));
-  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Responsibilities'));
+  assert.doesNotMatch(weddingEditor, /weddingPartyDescriptionsAdmin/);
   const accountsEditor = html.match(/<dialog id="accountsDialog"[\s\S]*?<\/dialog>/)?.[0] || '';
   assert.doesNotMatch(accountsEditor, /Wedding Party Members/);
   assert.match(html, /class="editor-dialog-footer">\s*<button id="adminDoneButton"[^>]*>Done editing<\/button>/);
@@ -403,9 +403,9 @@ test('wedding detail editor places party copy and wedding party attire before gu
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
 
-  assert.ok(weddingEditor.indexOf('Responsibilities') < weddingEditor.indexOf('Wedding Party Attire Images'));
+  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Wedding Party Attire Images'));
   assert.ok(weddingEditor.indexOf('Wedding Party Attire Images') < weddingEditor.indexOf('Guest Attire Tip Videos'));
-  assert.equal((html.match(/id="adminWeddingPartyDescriptions"/g) || []).length, 1);
+  assert.equal((html.match(/id="adminWeddingPartyDescriptions"/g) || []).length, 0);
   assert.equal((html.match(/id="adminWeddingPartyAttireImages"/g) || []).length, 1);
 });
 
@@ -548,7 +548,7 @@ test('every wedding details section has a divider and the requested title', asyn
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
   const sectionHeadings = [
-    'Variables', 'Pages', 'Wedding Party Members', 'Responsibilities',
+    'Variables', 'Pages', 'Wedding Party Members',
     'Wedding Party Attire Images', 'Guest Attire Tip Videos'
   ];
 
@@ -633,6 +633,8 @@ test('wedding party members can move up and down within their role', async () =>
 test('responsibilities and custom pages are edited per wedding party member', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   assert.match(javascript, /data-member-editor=/);
+  assert.match(javascript, /#adminWeddingPartyMembers \[data-member-editor\]/);
+  assert.match(javascript, /class="member-editor-content wedding-party-description-editor"/);
   assert.match(javascript, /member\.responsibilities = responsibilities/);
   assert.match(javascript, /member\.pages\.push\(page\)/);
   assert.match(javascript, /member\.pages = member\.pages\.filter/);

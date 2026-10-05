@@ -112,8 +112,9 @@ shared copy; browser storage is only an offline fallback.
 
 ## Wedding party responsibilities and personal pages
 
-In the Wedding gathering, open **Wedding Details → Responsibilities**. Each
-wedding party member has a separate responsibilities editor and a **+** button
+In the Wedding gathering, open **Wedding Details → Wedding Party Members**. Each
+wedding party member has responsibilities and page editors directly below their
+name and role, with a **+** button
 for adding personal pages. You can rename, edit, and delete these pages like the
 extra Bride & Groom pages. Members see their own responsibilities and personal
 pages; the host can edit all members and preview each person's view.
