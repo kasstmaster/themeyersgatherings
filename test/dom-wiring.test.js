@@ -537,7 +537,7 @@ test('the editor title is its own section without a bottom divider', async () =>
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /<section class="admin-editor-section admin-editor-heading" aria-labelledby="adminHeading">\s*<p class="section-kicker">Host dashboard<\/p>\s*<h2 id="adminHeading">Edit the menu<\/h2>\s*<\/section>\s*<section id="adminWeddingVariableHelp"/);
+  assert.match(html, /<section class="admin-editor-section admin-editor-heading" aria-labelledby="adminHeading">\s*<p class="section-kicker">Host dashboard<\/p>\s*<h2 id="adminHeading">Edit the menu<\/h2>\s*<\/section>\s*<p id="adminWeddingVariableDescription"[\s\S]*?<\/p>\s*<section id="adminWeddingVariableHelp"/);
   assert.doesNotMatch(styles, /\.admin-editor-section\{[^}]*border-(?:top|bottom)/);
   assert.doesNotMatch(styles, /\.admin-editor-heading\{[^}]*border-(?:top|bottom)/);
 });
@@ -561,7 +561,7 @@ test('wedding detail sections use titled cards without horizontal dividers', asy
 
 test('Menu and Wedding Party Members precede Pages in Wedding Details', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  const sectionIds = ['adminWeddingVariableHelp', 'weddingMenuAdmin', 'weddingPartyAdmin', 'weddingPagesAdmin'];
+  const sectionIds = ['adminWeddingVariableDescription', 'adminWeddingVariableHelp', 'weddingMenuAdmin', 'weddingPartyAdmin', 'weddingPagesAdmin'];
   const positions = sectionIds.map(id => html.indexOf(`id="${id}"`));
 
   assert.ok(positions.every(position => position >= 0));

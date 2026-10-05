@@ -1591,6 +1591,7 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
 function openAdmin() {
   if (!document.querySelector('#adminDialog').open) editedWeddingPartyMembers.clear();
   const isWedding = EVENT_DETAILS[viewedEventId].registryOnly === true;
+  document.querySelector('#adminDialog .modal-card').classList.toggle('wedding-details-editor', isWedding);
   document.querySelector('#adminEventDate').value = state.eventDate;
   document.querySelector('#adminHomeAddress').value = state.homeAddress || '';
   document.querySelector('#adminHeading').textContent = isWedding ? 'Edit wedding details' : 'Edit the menu';

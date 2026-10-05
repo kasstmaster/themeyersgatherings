@@ -236,3 +236,19 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .member-name-controls strong{flex-basis:100%}.wedding-party-member.is-editing .wedding-party-order-controls{display:none}.wedding-party-member.is-editing .wedding-party-member-heading{grid-template-columns:minmax(0,1fr) minmax(120px,1fr) 34px}@media(max-width:600px){.wedding-party-member.is-editing .wedding-party-member-heading{grid-template-columns:minmax(0,1fr) 34px}.wedding-party-member.is-editing .wedding-party-title{grid-column:1;grid-row:2}}
 
 .attire-video-grid video{display:block;width:100%;max-height:420px;border-radius:5px;background:#000}.admin-video-upload{display:flex;align-items:end;gap:12px;margin-top:12px}.admin-video-upload label{flex:1;min-width:0}.admin-video-upload input{max-width:100%;box-sizing:border-box}.admin-video-upload button{border:0;border-radius:4px;padding:12px;background:var(--orange);color:#fff;font-weight:700}@media(max-width:600px){.admin-video-upload{flex-direction:column;align-items:stretch}}
+
+/* Match the existing 33px Home input to Church card gap throughout Wedding Details. */
+#adminDialog .wedding-details-editor{--wedding-section-gap:33px;display:grid;gap:var(--wedding-section-gap)}
+#adminDialog .wedding-details-editor>[hidden]{display:none}
+.wedding-details-editor .admin-editor-section{margin:0;padding:0}
+.wedding-details-editor .admin-editor-section:not([hidden]){display:grid;gap:var(--wedding-section-gap)}
+.wedding-details-editor #adminAttireFields:not([hidden]){display:contents}
+.wedding-details-editor .admin-locations,.wedding-details-editor .admin-wedding-locations,.wedding-details-editor .wedding-page-editors,.wedding-details-editor .wedding-party-member-list,.wedding-details-editor .wedding-party-pair,.wedding-details-editor .wedding-party-role-column,.wedding-details-editor .wedding-party-role-group{gap:var(--wedding-section-gap);margin:0}
+.wedding-details-editor .admin-locations>label,.wedding-details-editor .admin-date{margin-bottom:0}
+.wedding-details-editor .admin-editor-section>h3,.wedding-details-editor .admin-editor-section>p,.wedding-details-editor #adminWeddingVariableDescription{margin:0}
+.wedding-details-editor #adminWeddingVariableDescription{font-size:.82rem;line-height:1.5;color:var(--muted)}
+.wedding-details-editor .wedding-party-attire-notes{margin:0}
+.wedding-details-editor .form-error:empty{display:none}
+.wedding-details-editor .editor-dialog-footer{margin-top:0}
+.wedding-details-editor>.admin-editor-section,.wedding-details-editor #adminAttireFields>.admin-editor-section{min-width:0}.wedding-details-editor input{box-sizing:border-box;max-width:100%}.wedding-details-editor #adminWeddingVariableDescription{overflow-wrap:anywhere}
+.wedding-details-editor .template-dropzone input{width:1px;max-width:1px;min-width:0}
