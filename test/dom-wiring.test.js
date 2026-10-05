@@ -176,7 +176,7 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => normalizeAccountName\(member\.name\) === normalizeAccountName\(signedInPersonName\)\)/);
   assert.match(javascript, /viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWedding/);
-  assert.match(javascript, /visibleWeddingPartyMembers = hostView \? weddingPartyMembers : \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
+  assert.match(javascript, /visibleWeddingPartyMembers = hostView\s*\? WeddingParty\.sortByRole\(weddingPartyMembers, WEDDING_PARTY_TITLES\.map\(role => role\.value\)\)\s*:\s*\[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
   assert.match(javascript, /member\.responsibilities/);
   assert.match(javascript, /formatWeddingPartyDescription\(description\)/);
