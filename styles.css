@@ -293,3 +293,9 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 /* Reserve the longest media-button label so all three fit the same text width. */
 .wedding-details-editor :is(#adminAddWeddingPartyAttireImage,#adminAddAttireVideo,#adminUploadAttireVideo)>span{grid-area:label}
 .wedding-details-editor :is(#adminAddWeddingPartyAttireImage,#adminAddAttireVideo,#adminUploadAttireVideo)::after{content:"Upload Video";visibility:hidden;grid-area:label}
+
+.wedding-party-details.host-responsibilities{grid-template-columns:minmax(0,1fr)}
+.host-responsibilities .wedding-party-card summary{cursor:pointer;color:var(--navy)}
+.host-responsibilities .wedding-party-role{display:inline-block}
+.host-responsibilities .wedding-party-member-name{display:block;margin:5px 0 0;font-family:"Times New Roman",Times,serif;font-size:1.6rem;font-weight:700;overflow-wrap:anywhere}
+.host-responsibilities .wedding-party-card[open]>summary{margin-bottom:12px}

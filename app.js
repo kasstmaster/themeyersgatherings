@@ -1088,7 +1088,9 @@ function render() {
   const viewedWeddingPartyMember = viewingAsGuest
     ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
     : signedInWeddingPartyMember;
-  const visibleWeddingPartyMembers = hostView ? weddingPartyMembers : [viewedWeddingPartyMember].filter(Boolean);
+  const visibleWeddingPartyMembers = hostView
+    ? WeddingParty.sortByRole(weddingPartyMembers, WEDDING_PARTY_TITLES.map(role => role.value))
+    : [viewedWeddingPartyMember].filter(Boolean);
   const personalPages = WeddingParty.visiblePages(weddingPartyMembers, hostView, viewedWeddingPartyMember?.id);
   const matronInfoTabs = document.querySelector('#matronInfoTabs');
   matronInfoTabs.querySelectorAll('[data-member-page]').forEach(button => button.remove());
@@ -1120,9 +1122,14 @@ function render() {
   const weddingPartyIntro = document.querySelector('#weddingPartyIntro');
   weddingPartyIntro.hidden = hostView || selectedMatronTab !== 'duties';
   weddingPartyIntro.textContent = 'Your personal wedding responsibilities are below.';
+  document.querySelector('#weddingPartyDetails').classList.toggle('host-responsibilities', hostView);
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
     ? visibleWeddingPartyMembers.map(member => {
       const description = member.responsibilities || '';
+      if (hostView) {
+        const content = description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>';
+        return `<details class="wedding-party-card" data-responsibilities-member="${escapeAttribute(member.id)}"><summary><span class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</span><span class="wedding-party-member-name">${escapeHtml(member.name)}</span></summary>${content}</details>`;
+      }
       return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>'}</article>`;
     }).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
