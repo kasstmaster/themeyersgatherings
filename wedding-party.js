@@ -26,5 +26,11 @@
       ...page, memberName: member.name, key: `member-page:${JSON.stringify([member.id, page.id])}`
     })));
   }
-  globalThis.WeddingParty = { normalizeMembers, visiblePages };
+  function sortByRole(members, roles) {
+    const rank = new Map(roles.map((role, index) => [role, index]));
+    // Sort a copy, preserving the host's ordering within each role.
+    return [...members].sort((left, right) =>
+      (rank.get(left.title) ?? roles.length) - (rank.get(right.title) ?? roles.length));
+  }
+  globalThis.WeddingParty = { normalizeMembers, visiblePages, sortByRole };
 })();

@@ -32,3 +32,26 @@ test('normalization is repeatable and tolerates malformed or duplicate member pa
   assert.equal(new Set(members.map(member => member.id)).size, members.length);
   assert.equal(new Set(members[0].pages.map(page => page.id)).size, 2);
 });
+
+
+test('responsibility editors follow role order without moving member data', () => {
+  const roles = ['Officiant', 'Matron of Honor', 'Best Man', 'Bridesmaid', 'Groomsman', 'Flower Girl', 'Ring Bearer', 'Ushers'];
+  const members = [
+    { id: 'groom', title: 'Groomsman' },
+    { id: 'bride2', title: 'Bridesmaid', responsibilities: 'Flowers', pages: [{ id: 'travel' }] },
+    { id: 'usher', title: 'Ushers' },
+    { id: 'best', title: 'Best Man' },
+    { id: 'officiant', title: 'Officiant' },
+    { id: 'bride1', title: 'Bridesmaid' },
+    { id: 'matron', title: 'Matron of Honor' },
+    { id: 'ring', title: 'Ring Bearer' },
+    { id: 'flower', title: 'Flower Girl' },
+    { id: 'other', title: '' }
+  ];
+  const original = structuredClone(members);
+  const sorted = globalThis.WeddingParty.sortByRole(members, roles);
+  assert.deepEqual(sorted.map(member => member.id), ['officiant', 'matron', 'best', 'bride2', 'bride1', 'groom', 'flower', 'ring', 'usher', 'other']);
+  assert.deepEqual(members, original);
+  assert.equal(sorted[3], members[1]);
+  assert.deepEqual(sorted[3].pages, [{ id: 'travel' }]);
+});
