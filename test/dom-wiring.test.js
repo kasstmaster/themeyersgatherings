@@ -176,10 +176,9 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => normalizeAccountName\(member\.name\) === normalizeAccountName\(signedInPersonName\)\)/);
   assert.match(javascript, /viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWedding/);
-  assert.match(javascript, /hostResponsibilityRoles = WEDDING_PARTY_TITLES\.map/);
-  assert.match(javascript, /visibleWeddingPartyMembers = hostView \? hostResponsibilityRoles : \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
+  assert.match(javascript, /visibleWeddingPartyMembers = hostView \? weddingPartyMembers : \[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
-  assert.match(javascript, /state\.weddingPartyDescriptions\?\.\[member\.title\]/);
+  assert.match(javascript, /member\.responsibilities/);
   assert.match(javascript, /formatWeddingPartyDescription\(description\)/);
   assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Preview Party\/Guest view/);
   assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
@@ -208,7 +207,7 @@ test('Wedding Details is an editable sub tab immediately after Attire under Gues
   const guestTabs = html.match(/<nav id="guestInfoTabs"[\s\S]*?<\/nav>/)?.[0] || '';
   assert.match(guestTabs, /data-guest-tab="attire"[\s\S]*data-guest-tab="details"[^>]*>Wedding Details<\/button>/);
   const guestSection = html.match(/<section id="guestSection"[\s\S]*?<section id="registrySection"/)?.[0] || '';
-  assert.match(guestSection, /class="wedding-party-section guest-section"[\s\S]*id="guestHeading">Guest<[\s\S]*id="guestInfoTabs"[\s\S]*id="guestAttireAnchor"[\s\S]*id="registryAttireSection"[\s\S]*id="whatToExpectSection"/);
+  assert.match(guestSection, /class="wedding-party-section guest-section"[\s\S]*id="guestHeading">Guest Information<[\s\S]*id="guestInfoTabs"[\s\S]*id="guestAttireAnchor"[\s\S]*id="registryAttireSection"[\s\S]*id="whatToExpectSection"/);
   assert.match(styles, /\.guest-section \.registry-attire-section,\.guest-section \.what-to-expect-section\{[^}]*margin:0[^}]*background:transparent[^}]*border:0[^}]*box-shadow:none/);
   assert.match(styles, /\.guest-section \.what-to-expect-content\{text-align:left\}/);
   assert.match(html, /id="whatToExpectSection"[^>]*hidden/);
@@ -234,7 +233,7 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.match(html, /id="brideGroomHeading">Bride &amp; Groom/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
   assert.ok(weddingEditor.indexOf('Bride &amp; Groom page') < weddingEditor.indexOf('Wedding Party Members'));
-  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Title Descriptions'));
+  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Responsibilities'));
   const accountsEditor = html.match(/<dialog id="accountsDialog"[\s\S]*?<\/dialog>/)?.[0] || '';
   assert.doesNotMatch(accountsEditor, /Wedding Party Members/);
   assert.match(html, /class="editor-dialog-footer">\s*<button id="adminDoneButton"[^>]*>Done editing<\/button>/);
@@ -297,7 +296,7 @@ test('wedding page tabs use guest-facing labels and audience-specific visibility
   assert.match(html, />Wedding Party<\/button>/);
   assert.match(html, />Responsibilities<\/button>/);
   assert.match(javascript, /hostCanViewTab = true/);
-  assert.match(javascript, /partyMemberCanViewTab = \['party', 'timeline', 'registry'\]/);
+  assert.match(javascript, /partyMemberCanViewTab = \['party', 'registry'\]/);
   assert.match(javascript, /guestCanViewTab = \['guest', 'registry'\]/);
   assert.match(javascript, /button\.hidden = !\(hostView \? hostCanViewTab : isWeddingPartyMember \? partyMemberCanViewTab : guestCanViewTab\)/);
   assert.match(javascript, /showingWeddingPartyPage = isWedding && \(hostView \|\| isWeddingPartyMember\) && selectedWeddingTab === 'party'/);
@@ -346,23 +345,19 @@ test('all Wedding Party sub tabs are available to hosts and wedding party member
   assert.match(javascript, /formatEditableText\(state\.perfectExperienceContent\)/);
   assert.match(javascript, /state\.perfectExperienceContent = event\.target\.value/);
   assert.match(javascript, /matronInfoTabs\.hidden = !showingWeddingPartyPage/);
-  assert.match(javascript, /button\.hidden = button\.dataset\.matronTab === 'bachelorette' && !hostView && !isViewingMatron/);
+  assert.match(javascript, /WeddingParty\.visiblePages\(weddingPartyMembers, hostView, viewedWeddingPartyMember\?\.id\)/);
   assert.match(javascript, /perfectExperiencePanel'\)\.hidden = !showingWeddingPartyPage \|\| selectedMatronTab !== 'experience'/);
 });
 
-test('Bachelorette is a blank editable page under The Perfect Experience editor', async () => {
+test('Bachelorette page and legacy role responsibilities are removed', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
-
-  const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
-  assert.ok(weddingEditor.indexOf('The Perfect Experience page') < weddingEditor.indexOf('Bachelorette page'));
-  assert.match(html, /id="adminBacheloretteContent"/);
-  assert.match(html, /id="bacheloretteInfoContent" class="bachelorette-info-content"><\/div>/);
-  assert.match(javascript, /bacheloretteContent: ''/);
-  assert.match(javascript, /formatEditableText\(state\.bacheloretteContent\)/);
-  assert.match(javascript, /state\.bacheloretteContent = event\.target\.value/);
+  assert.doesNotMatch(html, /Bachelorette|adminBachelorette|bacheloretteInfo/);
+  assert.doesNotMatch(javascript, /DEFAULT_WEDDING_PARTY_DESCRIPTIONS|bacheloretteInfo/);
+  assert.match(javascript, /delete loaded\.events\.wedding\.bacheloretteContent/);
+  assert.match(javascript, /delete loaded\.events\.wedding\.weddingPartyDescriptions/);
 });
 
 test('host can preview the wedding as a general guest without selecting an account', async () => {
@@ -408,7 +403,7 @@ test('wedding detail editor places party copy and wedding party attire before gu
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
 
-  assert.ok(weddingEditor.indexOf('Title Descriptions') < weddingEditor.indexOf('Wedding Party Attire Images'));
+  assert.ok(weddingEditor.indexOf('Responsibilities') < weddingEditor.indexOf('Wedding Party Attire Images'));
   assert.ok(weddingEditor.indexOf('Wedding Party Attire Images') < weddingEditor.indexOf('Guest Attire Tip Videos'));
   assert.equal((html.match(/id="adminWeddingPartyDescriptions"/g) || []).length, 1);
   assert.equal((html.match(/id="adminWeddingPartyAttireImages"/g) || []).length, 1);
@@ -509,17 +504,17 @@ test('church and venue variables use labeled custom-text inputs for every output
   assert.doesNotMatch(`${church}${venue}`, /type="(?:date|time|number)"/);
 });
 
-test('wedding role and page editors share the Bachelorette editor height', async () => {
+test('wedding responsibilities and page editors share compact editor sizing', async () => {
   const [html, javascript, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8'),
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  ['adminBrideGroomContent', 'adminPerfectExperienceContent', 'adminBacheloretteContent', 'adminWhatToExpectContent'].forEach(id => {
+  ['adminBrideGroomContent', 'adminPerfectExperienceContent', 'adminWhatToExpectContent'].forEach(id => {
     assert.match(html, new RegExp(`<textarea class="wedding-copy-editor" id="${id}"`));
   });
-  assert.match(javascript, /<textarea class="wedding-copy-editor" data-wedding-party-description=/);
+  assert.match(javascript, /<textarea class="wedding-copy-editor" data-member-responsibilities/);
   assert.match(styles, /\.wedding-copy-editor\{[^}]*height:36px;min-height:36px/);
 });
 
@@ -553,12 +548,12 @@ test('every wedding details section has a divider and the requested title', asyn
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
   const sectionHeadings = [
-    'Variables', 'Pages', 'Wedding Party Members', 'Title Descriptions',
+    'Variables', 'Pages', 'Wedding Party Members', 'Responsibilities',
     'Wedding Party Attire Images', 'Guest Attire Tip Videos'
   ];
 
   sectionHeadings.forEach(heading => assert.match(html, new RegExp(`>${heading}<\\/h3>`)));
-  ['Bride &amp; Groom page', 'The Perfect Experience page', 'Bachelorette page', 'Wedding Timeline page', 'What to Expect page']
+  ['Bride &amp; Groom page', 'The Perfect Experience page', 'Wedding Timeline page', 'What to Expect page']
     .forEach(heading => assert.match(html, new RegExp(`<span>${heading}<\\/span>`)));
   assert.match(html, /<section id="guestAttireVideosAdmin" class="admin-editor-section guest-attire-videos-admin"[\s\S]*>Guest Attire Tip Videos<\/h3>[\s\S]*id="adminAttireVideos"[\s\S]*<\/section>/);
   assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
@@ -574,15 +569,15 @@ test('page editors are grouped in one Pages section between Variables and Weddin
   const pagesStart = html.indexOf('<section id="weddingPagesAdmin"');
   const pagesEnd = html.indexOf('</section>', pagesStart);
   const pagesSection = html.slice(pagesStart, pagesEnd);
-  ['brideGroomAdmin', 'perfectExperienceAdmin', 'bacheloretteAdmin', 'timelineAdmin', 'whatToExpectAdmin']
+  ['brideGroomAdmin', 'perfectExperienceAdmin', 'timelineAdmin', 'whatToExpectAdmin']
     .forEach(id => assert.match(pagesSection, new RegExp(`id="${id}"`)));
   assert.equal((pagesSection.match(/<h3\b/g) || []).length, 1);
-  assert.equal((pagesSection.match(/class="wedding-party-description-editor wedding-page-editor"/g) || []).length, 5);
+  assert.equal((pagesSection.match(/class="wedding-party-description-editor wedding-page-editor"/g) || []).length, 4);
   assert.doesNotMatch(pagesSection, /<h4\b/);
   assert.match(pagesSection, /class="wedding-party-description-editors wedding-page-editors"/);
 });
 
-test('Wedding Timeline is private to hosts and wedding party members and remains host-editable', async () => {
+test('Wedding Timeline is private to hosts and remains host-editable', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
@@ -595,8 +590,8 @@ test('Wedding Timeline is private to hosts and wedding party members and remains
   assert.match(html, /id="weddingTimelineAboveContent"[\s\S]*id="weddingTimelineBody"[\s\S]*id="weddingTimelineBelowContent"/);
   assert.match(html, /id="adminTimelineAboveContent"[\s\S]*id="adminTimelineContent"[\s\S]*id="adminTimelineBelowContent"/);
   assert.match(html, /id="adminTimelineContent"/);
-  assert.match(javascript, /partyMemberCanViewTab = \['party', 'timeline', 'registry'\]/);
-  assert.match(javascript, /\(hostView \|\| isWeddingPartyMember\) && selectedWeddingTab === 'timeline'/);
+  assert.match(javascript, /partyMemberCanViewTab = \['party', 'registry'\]/);
+  assert.match(javascript, /hostView && selectedWeddingTab === 'timeline'/);
   assert.match(javascript, /state\.timelineContent = event\.target\.value/);
   assert.match(javascript, /state\[`timeline\$\{position\}Content`\] = event\.target\.value/);
   assert.match(javascript, /#weddingTimelineAboveContent'[\s\S]*formatEditableText\(expandEditableTextVariables\(state\.timelineAboveContent\)\)/);
@@ -612,7 +607,7 @@ test('wedding party manager creates wedding-enabled accounts for new people', as
   assert.match(addHandler, /account = \{ name, selected: false, selectedEvents: \{ wedding: true \}, invitedEvents: \{ wedding: true \} \}/);
   assert.match(addHandler, /appState\.accounts\.push\(account\)/);
   assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
-  assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ name, title: selectedTitle\.value \}\)/);
+  assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ id: crypto\.randomUUID\(\), name, title: selectedTitle\.value, responsibilities: \'\', pages: \[\] \}\)/);
 });
 
 test('wedding party editor arranges complementary roles together', async () => {
@@ -635,33 +630,25 @@ test('wedding party members can move up and down within their role', async () =>
   assert.match(javascript, /\[state\.weddingPartyMembers\[memberIndex\], state\.weddingPartyMembers\[targetIndex\]\] = \[state\.weddingPartyMembers\[targetIndex\], state\.weddingPartyMembers\[memberIndex\]\]/);
 });
 
-test('wedding party descriptions are shared and editable by title', async () => {
+test('responsibilities and custom pages are edited per wedding party member', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
-
-  assert.match(javascript, /const DEFAULT_WEDDING_PARTY_DESCRIPTIONS = \{[\s\S]*'Matron of Honor'[\s\S]*Officiant/);
-  assert.match(javascript, /id="adminWeddingPartyDescriptions"|#adminWeddingPartyDescriptions/);
-  assert.match(javascript, /data-wedding-party-description=/);
-  assert.match(javascript, /state\.weddingPartyDescriptions\[title\] = event\.target\.value\.trim\(\)/);
-  assert.doesNotMatch(javascript.match(/data-wedding-party-description=[\s\S]*?<\/label>/)?.[0] || '', /\bmaxlength=/i);
+  assert.match(javascript, /data-member-editor=/);
+  assert.match(javascript, /member\.responsibilities = responsibilities/);
+  assert.match(javascript, /member\.pages\.push\(page\)/);
+  assert.match(javascript, /member\.pages = member\.pages\.filter/);
+  assert.match(javascript, /commitWeddingPartyEditors\(\)/);
+  assert.match(javascript, /page\.title = title; page\.content = content/);
 });
 
-test('bachelorette party page is available to the host and Matron of Honor and is shareable', async () => {
-  const [html, javascript, styles] = await Promise.all([
+test('personal wedding party pages use member-scoped visibility and formatted content', async () => {
+  const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
-    readFile(new URL('../app.js', import.meta.url), 'utf8'),
-    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
-
-  assert.match(html, /id="matronInfoTabs"[\s\S]*data-matron-tab="duties"[\s\S]*data-matron-tab="bachelorette"/);
-  assert.match(html, /id="weddingPartyDetails"[\s\S]*id="bacheloretteInfoPanel"[\s\S]*id="copyBacheloretteInfo"[\s\S]*id="emailBacheloretteInfo"[\s\S]*id="printBacheloretteInfo"/);
-  assert.doesNotMatch(html, /id="bacheloretteInfoDialog"/);
-  assert.match(javascript, /bacheloretteInfoContent'\)\.innerHTML = formatEditableText\(state\.bacheloretteContent\)/);
-  assert.match(javascript, /isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember\?\.title === 'Matron of Honor'/);
-  assert.match(javascript, /weddingPartyDetails'\)\.hidden = !showingWeddingPartyPage \|\| selectedMatronTab !== 'duties'/);
-  assert.match(styles, /\.wedding-party-details\[hidden\]\{display:none\}/);
-  assert.match(javascript, /navigator\.clipboard\.writeText\(text\)/);
-  assert.match(javascript, /mailto:\?subject=/);
-  assert.match(javascript, /window\.print\(\)/);
+  assert.match(html, /id="weddingPartyPersonalPage"[^>]*hidden/);
+  assert.match(javascript, /WeddingParty\.visiblePages\(weddingPartyMembers, hostView, viewedWeddingPartyMember\?\.id\)/);
+  assert.match(javascript, /formatEditableText\(personalPage\.content\)/);
+  assert.match(javascript, /personalPanel\.innerHTML = personalPage/);
 });
 
 

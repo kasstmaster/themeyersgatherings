@@ -45,266 +45,6 @@ const WEDDING_PARTY_TITLES = [
   { value: 'Ring Bearer', multiple: true },
   { value: 'Ushers', multiple: true }
 ];
-const DEFAULT_WEDDING_PARTY_DESCRIPTIONS = {
-  'Matron of Honor': `**Planning & bride support**
-- Be the bride’s main bridal-party contact.
-- Help with DIY wedding projects.
-- Keep track of important bridal-party deadlines.
-**Bridal party**
-- Communicate important information to bridesmaids.
-- Make sure bridesmaids know deadlines for dresses, alterations, shoes, rehearsal, arrival times, etc.
-- Answer routine bridal-party questions so nothing goes through the bride.
-- Help coordinate bridesmaid dresses/accessories.
-- Make sure everyone knows the wedding-day schedule.
-- Help resolve minor bridal-party problems without involving the bride unnecessarily.
-**Bridal shower**
-- Help choose the date and location.
-- Help with invitations and RSVPs.
-- Coordinate food, décor and games if applicable.
-- Help set up and clean up.
-- Keep track of gifts and who gave them while the bride opens presents.
-- Help transport gifts afterward.
-**Bachelorette party**
-- Take the lead on planning or coordinate with the bridesmaids.
-- Discuss the bride's preferred type of celebration and budget.
-- Coordinate everyone's availability.
-- Make reservations/bookings (if applicable).
-- Communicate costs and itinerary.
-- Organize decorations, games, food, transportation, etc.
-- Make sure the plans actually reflect what the bride wants.
-- Keep an eye on the bride and group during the event.
-**Wedding week & rehearsal**
-- Attend the ceremony rehearsal.
-- Attend the rehearsal dinner.
-- Help make sure bridesmaids know exactly where to be and when.
-- Confirm everyone has their dresses, shoes and accessories.
-- Help with any final DIY/setup tasks you've specifically agreed upon.
-- Help prepare or organize the bride's wedding-day necessities.
-- Know the basic wedding-day timeline.
-- Know who the important vendors/contacts are in case something needs to be communicated.
-- Prepare speech/toast.
-**Getting ready**
-- Help keep the getting-ready room organized.
-- Make sure the bride eats and drinks.
-- Help field nonessential questions.
-- Make sure the bride has everything she needs before leaving.
-- Carry an emergency kit.
-- Help keep the bridal party moving according to schedule.
-- Make sure bouquets and personal items aren't forgotten.
-- Help keep unnecessary problems away from the bride.
-**Ceremony**
-- Arrange/fluff the bride's train and veil once she reaches the altar.
-- Hold the bride's bouquet during portions of the ceremony when necessary.
-- Straighten the dress/train when needed.
-- Sign the marriage license as a witness if requested and permitted under local requirements.
-- Help bustle or manage the dress immediately afterward if needed.
-**Photos & cocktail hour**
-- Help gather bridesmaids/family members for photographs.
-- Make sure the bride's dress, veil and bouquet look right.
-- Carry or temporarily hold the bride's belongings.
-- Help the bride transition from ceremony to portraits/reception.
-**Reception**
-- Give the Maid of Honor toast if the couple wants one.
-- Help bustle the bride's gown.
-- Help with bathroom trips if the dress makes them difficult.
-- Keep an eye on the bride's bouquet, phone and personal belongings.
-- Encourage the bridal party to participate when appropriate.
-- Help keep the bride informed about important upcoming moments without making her manage the timeline herself.
-**End of the night**
-- Help collect the bride's personal belongings.
-- Make sure her phone, purse, shoes, accessories, etc. don't get left behind.
-- Help ensure cards and gifts go to the designated secure person/location rather than personally assuming responsibility for them.
-- Make sure the couple has whatever they need before leaving.
-**After the wedding**
-- Return rented attire/items if previously arranged.
-- Help transport wedding items if needed.
-- Help with dress preservation arrangements if the bride asks.`,
-  'Best Man': `**Before the wedding**
-- Be the groom’s main wedding-party contact.
-- Communicate important information to the groomsmen.
-- Make sure groomsmen know deadlines for suits, fittings, shoes, rehearsal, arrival times, etc.
-- Answer routine groomsmen questions so nothing has to go through the groom.
-- Help coordinate suits/tuxedos and accessories.
-- Help resolve minor groomsmen issues without involving the groom unnecessarily.
-- Help plan and coordinate the bachelor party.
-- Communicate bachelor-party costs, plans and itinerary.
-- Keep track of important groomsmen deadlines.
-**Wedding week & rehearsal**
-- Attend the ceremony rehearsal.
-- Attend the rehearsal dinner.
-- Make sure groomsmen know exactly where to be and when.
-- Confirm everyone has their suit/tuxedo, shoes and accessories.
-- Know the basic wedding-day timeline.
-- Prepare speech/toast.
-- Help keep the groom on schedule.
-**Getting ready**
-- Help keep the groomsmen organized.
-- Make sure the groom has everything he needs.
-- Make sure boutonnieres and personal items aren't forgotten.
-- Help field nonessential questions.
-- Help keep unnecessary problems away from the groom.
-- Make sure the groomsmen are dressed and ready on time.
-**Ceremony**
-- Help organize the groomsmen before the processional.
-- Hold the bride's ring if the couple chooses.
-- Sign the marriage license as a witness if requested and permitted.
-- Help the groom with anything needed immediately following the ceremony.
-**Photos & reception**
-- Help gather groomsmen for photographs.
-- Give the Best Man toast if the couple wants one.
-- Encourage the groomsmen to participate appropriately.
-- Help keep the groom informed about important upcoming moments without making him manage the timeline himself.
-**End of the night**
-- Help collect the groom's personal belongings.
-- Make sure his phone, wallet, jacket, etc. don't get left behind.
-- Make sure the couple has whatever they need before leaving.`,
-  Bridesmaid: `**Before the wedding**
-- Order/purchase the selected bridesmaid dress by the deadline.
-- Complete alterations by the requested deadline.
-- Purchase/prepare required shoes and accessories.
-- Respond promptly to wedding-party communications and RSVPs.
-- Attend bridal-party events when reasonably able.
-- Help with agreed-upon DIY wedding projects.
-- Assist the Maid of Honor with the bridal shower and bachelorette party as needed.
-- Pay agreed-upon personal expenses associated with participation.
-**Wedding week & rehearsal**
-- Attend the ceremony rehearsal.
-- Attend the rehearsal dinner.
-- Know where to be and when.
-- Bring all required wedding-day attire and accessories.
-- Follow the wedding-day timeline provided by the couple/Maid of Honor.
-**Getting ready**
-- Arrive at the designated time.
-- Be dressed and ready by the required time.
-- Keep the getting-ready area reasonably organized.
-- Help with small tasks as needed.
-- Make sure personal belongings don't interfere with photographs/getting-ready areas.
-- Be available for bridal-party photographs.
-**Ceremony**
-- Participate in the processional and recessional.
-- Stand in the assigned position during the ceremony.
-- Follow instructions given during the rehearsal.
-**Reception**
-- Participate in wedding-party introductions if applicable.
-- Be present for scheduled photographs and wedding traditions.
-- Help create an enjoyable atmosphere by participating in dancing and festivities.
-- Keep track of personal belongings.`,
-  Groomsman: `**Before the wedding**
-- Order/rent/purchase the selected suit or tuxedo by the deadline.
-- Attend fittings when necessary.
-- Purchase/prepare required shoes and accessories.
-- Respond promptly to wedding-party communications.
-- Attend wedding-party events when reasonably able.
-- Participate in the bachelor party if attending.
-- Pay agreed-upon personal expenses associated with participation.
-**Wedding week & rehearsal**
-- Attend the ceremony rehearsal.
-- Attend the rehearsal dinner.
-- Know where to be and when.
-- Bring all required wedding-day attire and accessories.
-- Follow the wedding-day timeline provided by the couple/Best Man.
-**Getting ready**
-- Arrive at the designated time.
-- Be completely dressed and ready by the required time.
-- Help keep the getting-ready area organized.
-- Make sure personal belongings don't interfere with photographs.
-- Be available for wedding-party photographs.
-**Ceremony**
-- Participate in the processional/recessional as assigned.
-- Stand in the assigned position during the ceremony.
-- Follow instructions given during rehearsal.
-- Assist with seating or other ceremony duties if specifically assigned.
-**Reception**
-- Participate in wedding-party introductions if applicable.
-- Be present for scheduled photographs and traditions.
-- Participate in dancing and festivities.
-- Keep track of personal belongings.`,
-  'Ring Bearer': `**Before the wedding**
-- Attend the ceremony rehearsal with parent/guardian.
-- Practice walking down the aisle.
-- Have wedding attire ready before the wedding day.
-**Wedding day**
-- Arrive dressed and ready at the designated time.
-- Participate in photographs as requested.
-- Walk down the aisle at the designated time.
-- Carry the ring box, pillow or other designated item.`,
-  'Flower Girl': `**Before the wedding**
-- Attend the ceremony rehearsal with parent/guardian.
-- Practice walking down the aisle.
-- Have wedding attire and accessories ready.
-**Wedding day**
-- Arrive dressed and ready at the designated time.
-- Participate in photographs as requested.
-- Walk down the aisle at the designated time.
-- Carry a basket, flowers or other designated item.
-- Scatter petals if permitted by the church/venue and included in the ceremony plan.
-- Sit with a parent/guardian after the processional if appropriate for her age.`,
-  Ushers: `**Before the ceremony**
-- Attend the ceremony rehearsal.
-- Know the church layout and seating plan.
-- Know which rows are reserved for immediate family and special guests.
-- Know where restrooms and important areas are located.
-- Arrive earlier than regular guests.
-- Be fully dressed and stationed before guests begin arriving.
-- Have programs ready for distribution if applicable.
-**Guest arrival**
-- Welcome guests.
-- Distribute ceremony programs.
-- Help guests find appropriate seating.
-- Escort guests to their seats when appropriate.
-- Assist elderly guests or anyone needing extra help.
-- Keep reserved rows available for the appropriate family members.
-- Direct guests to accessible seating when needed.
-- Answer basic questions about the ceremony and reception.
-- Direct late-arriving guests according to the ceremony plan.
-**Ceremony**
-- Close/open church doors if assigned.
-- Help prevent interruptions during the processional.
-- Seat late arrivals at an appropriate time.
-- Assist with any church-specific duties assigned during rehearsal.
-**After the ceremony**
-- Help direct guests toward the exit/reception.
-- Help dismiss rows if you're doing a formal dismissal.
-- Assist guests who need help leaving the church.
-- Help ensure personal items/programs aren't left throughout the sanctuary if requested.`,
-  Officiant: `**Before the wedding**
-- Meet with the couple to discuss the ceremony.
-- Discuss the couple's preferences for the religious elements of the ceremony.
-- Help determine the ceremony order.
-- Discuss Scripture readings, prayers, vows and other faith-based elements.
-- Review and approve the final ceremony structure.
-- Prepare the message/homily.
-- Coordinate with anyone participating in Scripture readings, prayers or other ceremony elements.
-- Coordinate ceremony details with musicians/worship team as necessary.
-- Confirm any church-specific ceremony requirements.
-- Attend and lead the ceremony rehearsal.
-- Explain the ceremony order to the wedding party during rehearsal.
-- Make sure the couple understands when to speak, move, exchange rings, etc.
-**Marriage license**
-- Confirm the marriage license is available before the ceremony.
-- Complete the officiant portion of the marriage license.
-- Make sure required witnesses sign it.
-- Ensure the completed license is returned/filed according to the applicable requirements.
-**Wedding day**
-- Participate in Father of the Bride photographs.
-- Be available for any private father/daughter moment you want before the ceremony.
-- Escort the bride down the aisle, if that's your plan.
-- Transition from Father of the Bride to officiant once at the altar.
-- Conduct the ceremony.
-- Deliver the welcome/opening remarks.
-- Lead prayers and Scripture portions as planned.
-- Deliver the wedding message/homily.
-- Lead the couple through their vows.
-- Conduct the ring exchange.
-- Pronounce the couple married.
-- Present/introduce the newly married couple.
-- Complete marriage-license responsibilities following the ceremony.
-**Reception**
-- Participate in family photographs.
-- Give a blessing/prayer before dinner if desired.
-- Give a Father of the Bride toast/speech if desired.
-- Participate in the father-daughter dance.`
-};
 const CHRISTMAS_MENU_VERSION = 2;
 const ACCOUNT_RESET_VERSION = 1;
 const SIGNUP_RESET_VERSION = 1;
@@ -386,7 +126,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), weddingMealOptions: ['', '', ''], weddingChildMealOption: '', churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', brideGroomPages: [], perfectExperienceContent: '', bacheloretteContent: '', timelineAboveContent: '', timelineContent: DEFAULT_WEDDING_TIMELINE, timelineBelowContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyDescriptions: structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS), weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), weddingMealOptions: ['', '', ''], weddingChildMealOption: '', churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', brideGroomPages: [], perfectExperienceContent: '', timelineAboveContent: '', timelineContent: DEFAULT_WEDDING_TIMELINE, timelineBelowContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -560,9 +300,7 @@ function normalizeState(saved) {
       loaded.events.wedding.perfectExperienceContent = typeof loaded.events.wedding.perfectExperienceContent === 'string'
         ? loaded.events.wedding.perfectExperienceContent
         : '';
-      loaded.events.wedding.bacheloretteContent = typeof loaded.events.wedding.bacheloretteContent === 'string'
-        ? loaded.events.wedding.bacheloretteContent
-        : '';
+      delete loaded.events.wedding.bacheloretteContent;
       loaded.events.wedding.timelineContent = typeof loaded.events.wedding.timelineContent === 'string'
         ? loaded.events.wedding.timelineContent
         : DEFAULT_WEDDING_TIMELINE;
@@ -578,17 +316,8 @@ function normalizeState(saved) {
       loaded.events.wedding.attireVideos = Array.isArray(loaded.events.wedding.attireVideos)
         ? loaded.events.wedding.attireVideos.filter(url => typeof url === 'string')
         : [];
-      loaded.events.wedding.weddingPartyMembers = Array.isArray(loaded.events.wedding.weddingPartyMembers)
-        ? loaded.events.wedding.weddingPartyMembers.map(member => typeof member === 'string'
-          ? { name: member, title: '' }
-          : { name: String(member?.name || ''), title: ({ 'Maid/Matron of Honor': 'Matron of Honor', Groomsmen: 'Groomsman', Usher: 'Ushers' })[member?.title] || String(member?.title || ''), description: String(member?.description || '') })
-          .filter(member => member.name)
-        : [];
-      const savedDescriptions = loaded.events.wedding.weddingPartyDescriptions;
-      loaded.events.wedding.weddingPartyDescriptions = {
-        ...structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS),
-        ...(savedDescriptions && typeof savedDescriptions === 'object' ? savedDescriptions : {})
-      };
+      loaded.events.wedding.weddingPartyMembers = WeddingParty.normalizeMembers(loaded.events.wedding.weddingPartyMembers);
+      delete loaded.events.wedding.weddingPartyDescriptions;
       const savedAttireImages = loaded.events.wedding.weddingPartyAttireImages;
       loaded.events.wedding.weddingPartyAttireImages = Object.fromEntries(['ladies', 'gentlemen'].map(section => [section,
         Array.isArray(savedAttireImages?.[section]) ? savedAttireImages[section].filter(image => image && typeof image.url === 'string').map(image => ({
@@ -600,16 +329,6 @@ function normalizeState(saved) {
       loaded.events.wedding.weddingPartyAttireNotes = Object.fromEntries(['ladies', 'gentlemen'].map(section => [
         section, typeof savedAttireNotes?.[section] === 'string' ? savedAttireNotes[section] : ''
       ]));
-      // Older state stored a duplicate description on every member. Preserve
-      // customized text by promoting the first description found for a title.
-      const promotedTitles = new Set();
-      loaded.events.wedding.weddingPartyMembers.forEach(member => {
-        if (member.description && !promotedTitles.has(member.title) && !(savedDescriptions && Object.hasOwn(savedDescriptions, member.title))) {
-          loaded.events.wedding.weddingPartyDescriptions[member.title] = member.description;
-          promotedTitles.add(member.title);
-        }
-        delete member.description;
-      });
       return loaded;
     }
     // Upgrade the original single-Thanksgiving data. Keep its sign-ups so an
@@ -1333,11 +1052,11 @@ function render() {
   document.querySelectorAll('#registryAttireSection .guest-attire-requirements').forEach(requirements => {
     requirements.hidden = isWeddingPartyMember;
   });
-  if (!hostView && !isWeddingPartyMember && selectedWeddingTab === 'timeline') selectedWeddingTab = 'guest';
+  if (!hostView && selectedWeddingTab === 'timeline') selectedWeddingTab = 'guest';
   if ((!hostView && !isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostView && selectedWeddingTab === 'couple')) selectedWeddingTab = 'guest';
   const showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple';
   const showingWeddingPartyPage = isWedding && (hostView || isWeddingPartyMember) && selectedWeddingTab === 'party';
-  const showingTimelinePage = isWedding && (hostView || isWeddingPartyMember) && selectedWeddingTab === 'timeline';
+  const showingTimelinePage = isWedding && hostView && selectedWeddingTab === 'timeline';
   const showingGuestPage = isWedding && !isWeddingPartyMember && selectedWeddingTab === 'guest';
   const showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire';
   const showingAttirePage = (showingGuestPage && selectedGuestTab === 'attire') || showingPartyAttirePage;
@@ -1347,7 +1066,7 @@ function render() {
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     const hostCanViewTab = true;
-    const partyMemberCanViewTab = ['party', 'timeline', 'registry'].includes(button.dataset.weddingTab);
+    const partyMemberCanViewTab = ['party', 'registry'].includes(button.dataset.weddingTab);
     const guestCanViewTab = ['guest', 'registry'].includes(button.dataset.weddingTab);
     button.hidden = !(hostView ? hostCanViewTab : isWeddingPartyMember ? partyMemberCanViewTab : guestCanViewTab);
     const isSelected = button.dataset.weddingTab === selectedWeddingTab;
@@ -1390,42 +1109,42 @@ function render() {
   const viewedWeddingPartyMember = viewingAsGuest
     ? weddingPartyMembers.find(member => member.name === hostWeddingPartyViewName)
     : signedInWeddingPartyMember;
-  const hostResponsibilityRoles = WEDDING_PARTY_TITLES.map(({ value: title }) => ({
-    title,
-    name: weddingPartyMembers.filter(member => member.title === title).map(member => member.name).join(', ') || 'No one assigned'
-  }));
-  const visibleWeddingPartyMembers = hostView ? hostResponsibilityRoles : [viewedWeddingPartyMember].filter(Boolean);
-  const isViewingMatron = showingWeddingPartyPage && viewedWeddingPartyMember?.title === 'Matron of Honor';
+  const visibleWeddingPartyMembers = hostView ? weddingPartyMembers : [viewedWeddingPartyMember].filter(Boolean);
+  const personalPages = WeddingParty.visiblePages(weddingPartyMembers, hostView, viewedWeddingPartyMember?.id);
   const matronInfoTabs = document.querySelector('#matronInfoTabs');
-  if (!hostView && !isViewingMatron && selectedMatronTab === 'bachelorette') selectedMatronTab = 'experience';
+  matronInfoTabs.querySelectorAll('[data-member-page]').forEach(button => button.remove());
+  personalPages.forEach(page => {
+    const button = document.createElement('button');
+    button.type = 'button'; button.setAttribute('role', 'tab');
+    button.dataset.matronTab = page.key; button.dataset.memberPage = page.key;
+    button.setAttribute('aria-controls', 'weddingPartyPersonalPage');
+    button.textContent = hostView ? `${page.memberName} — ${page.title}` : page.title;
+    matronInfoTabs.append(button);
+  });
+  if (!['experience', 'duties', 'attire', ...personalPages.map(page => page.key)].includes(selectedMatronTab)) selectedMatronTab = 'experience';
   matronInfoTabs.hidden = !showingWeddingPartyPage;
   matronInfoTabs.querySelectorAll('[data-matron-tab]').forEach(button => {
-    button.hidden = button.dataset.matronTab === 'bachelorette' && !hostView && !isViewingMatron;
     const isSelected = button.dataset.matronTab === selectedMatronTab;
     button.setAttribute('aria-selected', String(isSelected));
     button.tabIndex = isSelected ? 0 : -1;
   });
+  const personalPage = personalPages.find(page => page.key === selectedMatronTab);
+  const personalPanel = document.querySelector('#weddingPartyPersonalPage');
+  personalPanel.hidden = !showingWeddingPartyPage || !personalPage;
+  personalPanel.innerHTML = personalPage ? `<h3>${escapeHtml(personalPage.title)}</h3>${formatEditableText(personalPage.content) || '<p class="guest-empty">No details have been added yet.</p>'}` : '';
   document.querySelector('#weddingPartyDetails').hidden = !showingWeddingPartyPage || selectedMatronTab !== 'duties';
   document.querySelector('#perfectExperiencePanel').hidden = !showingWeddingPartyPage || selectedMatronTab !== 'experience';
   if (showingWeddingPartyPage && selectedMatronTab === 'experience') {
     document.querySelector('#perfectExperienceContent').innerHTML = formatEditableText(state.perfectExperienceContent)
       || '<p class="guest-empty">No Perfect Experience details have been added yet.</p>';
   }
-  document.querySelector('#bacheloretteInfoPanel').hidden = (!hostView && !isViewingMatron) || selectedMatronTab !== 'bachelorette';
-  if ((hostView || isViewingMatron) && selectedMatronTab === 'bachelorette') {
-    document.querySelector('#bacheloretteInfoContent').innerHTML = formatEditableText(state.bacheloretteContent)
-      || '<p class="guest-empty">No bachelorette party information has been added yet.</p>';
-  }
   const weddingPartyIntro = document.querySelector('#weddingPartyIntro');
-  const hideWeddingPartyIntro = hostView || (showingWeddingPartyPage && selectedMatronTab === 'experience');
-  weddingPartyIntro.hidden = hideWeddingPartyIntro;
-  weddingPartyIntro.textContent = isViewingMatron && selectedMatronTab === 'bachelorette'
-      ? 'Your bachelorette party preferences and planning information are below.'
-      : 'Your role, details, and wedding-day information are below.';
+  weddingPartyIntro.hidden = hostView || selectedMatronTab !== 'duties';
+  weddingPartyIntro.textContent = 'Your personal wedding responsibilities are below.';
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
     ? visibleWeddingPartyMembers.map(member => {
-      const description = state.weddingPartyDescriptions?.[member.title] || '';
-      return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : ''}</article>`;
+      const description = member.responsibilities || '';
+      return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>'}</article>`;
     }).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !showingRegistryPage;
@@ -1663,12 +1382,6 @@ document.querySelector('#adminPerfectExperienceContent').addEventListener('chang
   saveState();
   showToast('The Perfect Experience page updated.');
 });
-document.querySelector('#adminBacheloretteContent').addEventListener('change', event => {
-  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
-  state.bacheloretteContent = event.target.value;
-  saveState();
-  showToast('Bachelorette page updated.');
-});
 document.querySelector('#adminTimelineContent').addEventListener('change', event => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
   state.timelineContent = event.target.value;
@@ -1709,9 +1422,6 @@ document.querySelector('#customItemForm').addEventListener('submit', event => {
   document.querySelector('#customItemDialog').close(); saveState(); showToast(`${name} was added to ${category}!`);
 });
 document.querySelector('#copyMenuButton').addEventListener('click', copyMenu);
-function bacheloretteInfoText() {
-  return `BACHELORETTE PARTY INFO\n\n${document.querySelector('#bacheloretteInfoContent').innerText}`;
-}
 document.querySelector('#matronInfoTabs').addEventListener('click', event => {
   const button = event.target.closest('[data-matron-tab]');
   if (!button) return;
@@ -1726,34 +1436,8 @@ document.querySelector('#matronInfoTabs').addEventListener('keydown', event => {
   const direction = event.key === 'ArrowRight' ? 1 : -1;
   selectedMatronTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.matronTab;
   render();
-  document.querySelector(`[data-matron-tab="${selectedMatronTab}"]`).focus();
+  document.querySelector(`[data-matron-tab="${CSS.escape(selectedMatronTab)}"]`).focus();
 });
-document.querySelector('#copyBacheloretteInfo').addEventListener('click', async () => {
-  const text = bacheloretteInfoText();
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.setAttribute('readonly', '');
-    textArea.style.position = 'fixed';
-    textArea.style.opacity = '0';
-    document.body.append(textArea);
-    textArea.select();
-    const copied = document.execCommand('copy');
-    textArea.remove();
-    if (!copied) { showToast('The information could not be copied. Please try again.'); return; }
-  }
-  showToast('Bachelorette party info copied!');
-});
-document.querySelector('#emailBacheloretteInfo').addEventListener('click', () => {
-  window.location.href = `mailto:?subject=${encodeURIComponent('Bachelorette Party Info')}&body=${encodeURIComponent(bacheloretteInfoText())}`;
-});
-document.querySelector('#printBacheloretteInfo').addEventListener('click', () => {
-  document.body.classList.add('bachelorette-printing');
-  window.print();
-});
-window.addEventListener('afterprint', () => document.body.classList.remove('bachelorette-printing'));
 document.querySelector('#menuGrid').addEventListener('click', event => {
   const claimButton = event.target.closest('[data-claim]');
   if (claimButton) {
@@ -1858,7 +1542,7 @@ function commitPendingEditorInputs(form) {
   // title/content pair before committing individual controls because saving a
   // title rebuilds the page editors and can otherwise replace an unsaved
   // textarea before Done finishes processing the form.
-  if (form.closest('#adminDialog')) commitBrideGroomPageEditors();
+  if (form.closest('#adminDialog')) { commitWeddingPartyEditors(); commitBrideGroomPageEditors(); }
   const dirtyControls = [...form.querySelectorAll('[data-editor-dirty]')];
   dirtyControls.forEach(control => {
     commitPendingEditorControl(control);
@@ -1941,7 +1625,6 @@ function openAdmin() {
     document.querySelector('#adminBrideGroomContent').value = state.brideGroomContent || '';
     renderBrideGroomPageAdmin();
     document.querySelector('#adminPerfectExperienceContent').value = state.perfectExperienceContent || '';
-    document.querySelector('#adminBacheloretteContent').value = state.bacheloretteContent || '';
     document.querySelector('#adminTimelineAboveContent').value = state.timelineAboveContent || '';
     document.querySelector('#adminTimelineContent').value = state.timelineContent || '';
     document.querySelector('#adminTimelineBelowContent').value = state.timelineBelowContent || '';
@@ -2020,13 +1703,51 @@ function renderAdminAttireVideos() {
     : '<p class="guest-empty">No attire videos have been added.</p>';
 }
 function renderWeddingPartyDescriptionAdmin() {
-  state.weddingPartyDescriptions ??= structuredClone(DEFAULT_WEDDING_PARTY_DESCRIPTIONS);
-  document.querySelector('#adminWeddingPartyDescriptions').innerHTML = WEDDING_PARTY_TITLES.map(title => `<label class="wedding-party-description-editor"><span>${escapeHtml(title.value)}</span><textarea class="wedding-copy-editor" data-wedding-party-description="${escapeAttribute(title.value)}" aria-label="Description for ${escapeAttribute(title.value)}" placeholder="Description and instructions for this title">${escapeHtml(state.weddingPartyDescriptions[title.value] || '')}</textarea></label>`).join('');
-  document.querySelectorAll('[data-wedding-party-description]').forEach(input => input.addEventListener('change', event => {
-    const title = event.target.dataset.weddingPartyDescription;
-    state.weddingPartyDescriptions[title] = event.target.value.trim();
-    saveState(); showToast(`${title} description updated for everyone with this title.`);
-  }));
+  const container = document.querySelector('#adminWeddingPartyDescriptions');
+  container.innerHTML = (state.weddingPartyMembers || []).map(member => `<section class="wedding-party-description-editor" data-member-editor="${escapeAttribute(member.id)}"><h4>${escapeHtml(member.name)} <small>${escapeHtml(member.title)}</small></h4><label><span>Responsibilities</span><textarea class="wedding-copy-editor" data-member-responsibilities aria-label="Responsibilities for ${escapeAttribute(member.name)}" placeholder="Assign responsibilities to this person…">${escapeHtml(member.responsibilities || '')}</textarea></label><div class="wedding-page-editor-heading"><span>Personal pages</span><button type="button" data-add-member-page aria-label="Add page for ${escapeAttribute(member.name)}">+</button></div><div>${(member.pages || []).map(page => `<div class="wedding-page-editor" data-member-page-editor="${escapeAttribute(page.id)}"><div class="wedding-page-editor-heading"><input data-page-title value="${escapeAttribute(page.title)}" maxlength="60" aria-label="Page name for ${escapeAttribute(member.name)}"><button type="button" class="admin-delete" data-delete-member-page aria-label="Delete ${escapeAttribute(page.title)}">×</button></div><textarea class="wedding-copy-editor" data-page-content aria-label="${escapeAttribute(page.title)} content for ${escapeAttribute(member.name)}">${escapeHtml(page.content)}</textarea></div>`).join('')}</div></section>`).join('') || '<p class="guest-empty">Add wedding party members above to assign responsibilities and create personal pages.</p>';
+  container.querySelectorAll('[data-member-editor]').forEach(editor => {
+    const member = state.weddingPartyMembers.find(item => item.id === editor.dataset.memberEditor);
+    editor.querySelectorAll('input, textarea').forEach(control => control.addEventListener('change', () => {
+      commitWeddingPartyEditors();
+    }));
+    editor.querySelector('[data-add-member-page]').addEventListener('click', () => {
+      if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+      commitWeddingPartyEditors();
+      member.pages ||= [];
+      const page = { id: crypto.randomUUID(), title: `Page ${member.pages.length + 1}`, content: '' };
+      member.pages.push(page); saveState(); renderWeddingPartyDescriptionAdmin();
+      container.querySelector(`[data-member-page-editor="${CSS.escape(page.id)}"] input`).focus();
+    });
+    editor.querySelectorAll('[data-delete-member-page]').forEach(button => button.addEventListener('click', () => {
+      if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+      commitWeddingPartyEditors();
+      const id = button.closest('[data-member-page-editor]').dataset.memberPageEditor;
+      member.pages = member.pages.filter(page => page.id !== id);
+      saveState(); renderWeddingPartyDescriptionAdmin();
+    }));
+  });
+}
+function commitWeddingPartyEditors() {
+  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  let changed = false;
+  document.querySelectorAll('#adminWeddingPartyDescriptions [data-member-editor]').forEach(editor => {
+    const member = state.weddingPartyMembers.find(item => item.id === editor.dataset.memberEditor);
+    if (!member) return;
+    const responsibilities = editor.querySelector('[data-member-responsibilities]').value;
+    if (member.responsibilities !== responsibilities) { member.responsibilities = responsibilities; changed = true; }
+    editor.querySelectorAll('[data-member-page-editor]').forEach(pageEditor => {
+      const page = member.pages.find(item => item.id === pageEditor.dataset.memberPageEditor);
+      if (!page) return;
+      const title = pageEditor.querySelector('[data-page-title]').value.trim() || 'Untitled page';
+      const content = pageEditor.querySelector('[data-page-content]').value;
+      if (page.title !== title || page.content !== content) { page.title = title; page.content = content; changed = true; }
+    });
+    editor.querySelectorAll('input, textarea').forEach(control => {
+      clearTimeout(editorInputSaveTimers.get(control)); editorInputSaveTimers.delete(control);
+      control.removeAttribute('data-editor-dirty');
+    });
+  });
+  if (changed) saveState();
 }
 function moveAdminItem(itemId, direction) {
   const itemIndex = state.items.findIndex(item => item.id === itemId);
@@ -2116,6 +1837,8 @@ function openAccountsAdmin() {
 }
 
 function renderWeddingPartyAdmin() {
+  commitWeddingPartyEditors();
+  renderWeddingPartyDescriptionAdmin();
   state.weddingPartyMembers ??= [];
   document.querySelector('#adminWeddingPartyMembers').innerHTML = state.weddingPartyMembers.length
     ? renderWeddingPartyMemberList(state.weddingPartyMembers)
@@ -2657,7 +2380,7 @@ document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', 
     error.textContent = 'That person belongs to an existing account without wedding sign-in access.';
     return;
   }
-  state.weddingPartyMembers.push({ name, title: selectedTitle.value });
+  state.weddingPartyMembers.push({ id: crypto.randomUUID(), name, title: selectedTitle.value, responsibilities: '', pages: [] });
   firstInput.value = ''; lastInput.value = ''; titleInput.value = ''; error.textContent = '';
   saveState(); renderWeddingPartyAdmin(); showToast(`${name} added to the wedding party${accountCreated ? ' with a new account' : ''}.`);
 });
