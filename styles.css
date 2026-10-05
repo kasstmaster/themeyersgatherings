@@ -281,3 +281,5 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .wedding-details-editor #guestAttireVideosAdmin .admin-video-upload label>span{grid-column:1/-1}
 .wedding-details-editor #adminAttireVideoFile{grid-column:1;grid-row:2;min-width:0;width:100%}
 .wedding-details-editor #adminUploadAttireVideo{grid-column:2;grid-row:2;padding:10px 12px}
+
+.wedding-details-editor .wedding-party-member{margin:0;border-radius:5px}.wedding-details-editor .wedding-party-member>legend{padding:0 6px;font-weight:800;color:var(--navy);overflow-wrap:anywhere;max-width:100%;box-sizing:border-box}
