@@ -213,7 +213,7 @@ test('Wedding Details is an editable sub tab immediately after Attire under Gues
   assert.match(html, /id="whatToExpectSection"[^>]*hidden/);
   assert.match(html, /<h2 id="whatToExpectHeading">Wedding Details<\/h2>/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
-  assert.ok(weddingEditor.indexOf('The Perfect Experience page') < weddingEditor.indexOf('What to Expect page'));
+  assert.ok(weddingEditor.indexOf('What to Expect page') < weddingEditor.indexOf('The Perfect Experience page'));
   assert.match(javascript, /whatToExpectContent: ''/);
   assert.match(javascript, /hostCanViewTab = true/);
   assert.match(javascript, /guestCanViewTab = \['guest', 'registry'\]/);
@@ -232,7 +232,7 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.match(html, /data-wedding-tab="couple"[^>]*hidden>Bride &amp; Groom/);
   assert.match(html, /id="brideGroomHeading">Bride &amp; Groom/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
-  assert.ok(weddingEditor.indexOf('Bride &amp; Groom page') < weddingEditor.indexOf('Wedding Party Members'));
+  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Bride &amp; Groom page'));
   assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Responsibilities'));
   const accountsEditor = html.match(/<dialog id="accountsDialog"[\s\S]*?<\/dialog>/)?.[0] || '';
   assert.doesNotMatch(accountsEditor, /Wedding Party Members/);
@@ -559,9 +559,9 @@ test('every wedding details section has a divider and the requested title', asyn
   assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
 });
 
-test('page editors are grouped in one Pages section between Variables and Wedding Party Members', async () => {
+test('Menu and Wedding Party Members precede Pages in Wedding Details', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  const sectionIds = ['adminWeddingVariableHelp', 'weddingPagesAdmin', 'weddingPartyAdmin'];
+  const sectionIds = ['adminWeddingVariableHelp', 'weddingMenuAdmin', 'weddingPartyAdmin', 'weddingPagesAdmin'];
   const positions = sectionIds.map(id => html.indexOf(`id="${id}"`));
 
   assert.ok(positions.every(position => position >= 0));
