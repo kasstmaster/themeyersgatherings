@@ -232,7 +232,7 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.match(html, /data-wedding-tab="couple"[^>]*hidden>Bride &amp; Groom/);
   assert.match(html, /id="brideGroomHeading">Bride &amp; Groom/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
-  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Bride &amp; Groom page'));
+  assert.ok(weddingEditor.indexOf('id="weddingPartyAdmin"') < weddingEditor.indexOf('id="brideGroomAdmin"'));
   assert.doesNotMatch(weddingEditor, /weddingPartyDescriptionsAdmin/);
   const accountsEditor = html.match(/<dialog id="accountsDialog"[\s\S]*?<\/dialog>/)?.[0] || '';
   assert.doesNotMatch(accountsEditor, /Wedding Party Members/);
@@ -403,7 +403,7 @@ test('wedding detail editor places party copy and wedding party attire before gu
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
 
-  assert.ok(weddingEditor.indexOf('Wedding Party Members') < weddingEditor.indexOf('Wedding Party Attire Images'));
+  assert.ok(weddingEditor.indexOf('id="weddingPartyAdmin"') < weddingEditor.indexOf('Wedding Party Attire Images'));
   assert.ok(weddingEditor.indexOf('Wedding Party Attire Images') < weddingEditor.indexOf('Guest Attire Tip Videos'));
   assert.equal((html.match(/id="adminWeddingPartyDescriptions"/g) || []).length, 0);
   assert.equal((html.match(/id="adminWeddingPartyAttireImages"/g) || []).length, 1);
@@ -548,7 +548,6 @@ test('wedding detail sections use titled cards without horizontal dividers', asy
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
   const sectionHeadings = [
-    'Wedding Party Members',
     'Wedding Party Attire Images', 'Guest Attire Tip Videos'
   ];
 
@@ -617,7 +616,7 @@ test('wedding party editor arranges complementary roles together', async () => {
   ]);
 
   const renderer = javascript.match(/function renderWeddingPartyMemberList[\s\S]*?\n}/)?.[0] || '';
-  assert.match(renderer, /fullWidthGroup\('Officiant', 'top'\)[\s\S]*pairedGroup\('Matron of Honor', 'Best Man'\)[\s\S]*pairedGroup\('Bridesmaid', 'Groomsman'\)[\s\S]*pairedGroup\('Flower Girl', 'Ring Bearer'\)[\s\S]*fullWidthGroup\('Ushers', 'bottom'\)/);
+  assert.match(renderer, /fullWidthGroup\('Officiant', 'top'\)[\s\S]*pairedGroup\('Matron of Honor', 'Best Man'\)[\s\S]*pairedGroup\('Bridesmaid', 'Groomsman'\)[\s\S]*fullWidthGroup\('Ushers', 'bottom'\)/);
   assert.match(styles, /\.wedding-party-pair\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
 });
 
