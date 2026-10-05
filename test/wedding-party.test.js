@@ -55,3 +55,19 @@ test('responsibility editors follow role order without moving member data', () =
   assert.equal(sorted[3], members[1]);
   assert.deepEqual(sorted[3].pages, [{ id: 'travel' }]);
 });
+
+
+test('first Bride & Groom page migrates once, retaining custom pages and allowing permanent removal', () => {
+  const wedding = { brideGroomContent: 'Original notes', brideGroomPages: [{ id: 'church', title: 'Church/Venue', content: 'Venue notes' }] };
+  globalThis.WeddingParty.normalizeBrideGroomPages(wedding);
+  assert.deepEqual(wedding.brideGroomPages.map(page => page.title), ['Bride & Groom', 'Church/Venue']);
+  assert.equal(wedding.brideGroomPages[0].content, 'Original notes');
+  wedding.brideGroomPages[0].title = 'Our plans';
+  globalThis.WeddingParty.normalizeBrideGroomPages(wedding);
+  assert.equal(wedding.brideGroomPages[0].title, 'Our plans');
+  assert.equal(wedding.brideGroomPages.length, 2);
+  wedding.brideGroomPages = [];
+  globalThis.WeddingParty.normalizeBrideGroomPages(wedding);
+  assert.deepEqual(wedding.brideGroomPages, []);
+  assert.equal('brideGroomContent' in wedding, false);
+});
