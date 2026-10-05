@@ -286,3 +286,4 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .wedding-details-editor .wedding-party-member{margin:0;border-radius:5px}.wedding-details-editor .wedding-party-member>legend{padding:0 6px;font-weight:800;color:var(--navy);overflow-wrap:anywhere;max-width:100%;box-sizing:border-box}
 
 .wedding-details-editor #adminAddWeddingPartyAttireImage,.wedding-details-editor #adminAddAttireVideo,.wedding-details-editor #adminUploadAttireVideo{width:120px;box-sizing:border-box;padding:10px 12px}
+.wedding-details-editor #weddingPartyAdmin .wedding-party-add{margin-top:var(--wedding-input-gap)}
