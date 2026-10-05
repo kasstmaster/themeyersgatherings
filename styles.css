@@ -264,3 +264,13 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .wedding-details-editor #weddingPartyAdmin,.wedding-details-editor #weddingPartyAttireAdmin{row-gap:8px}
 .wedding-details-editor .wedding-party-attire-notes,.wedding-details-editor .wedding-party-attire-image-list,.wedding-details-editor .wedding-party-attire-add{row-gap:6px;margin:0}
 .wedding-details-editor #adminWeddingPartyAttireDropzone{margin-top:0!important}
+
+.wedding-details-editor #adminCoreVariables,.wedding-details-editor #adminVenueCard{gap:0}
+.wedding-details-editor #adminCoreVariables label,.wedding-details-editor #adminVenueCard label{gap:0;margin:0}
+.wedding-details-editor #adminCoreVariables input{width:100%;margin:0}
+#adminDialog .modal-card:not(.wedding-details-editor) #adminCoreVariables{border:0;padding:0}
+.wedding-details-editor #weddingPartyAdmin,.wedding-details-editor #weddingPartyAdmin .wedding-party-member-list,.wedding-details-editor #weddingPartyAdmin .wedding-party-pair,.wedding-details-editor #weddingPartyAdmin .wedding-party-role-column,.wedding-details-editor #weddingPartyAdmin .wedding-party-role-group,.wedding-details-editor .wedding-party-add{row-gap:0}
+.wedding-details-editor #guestAttireVideosAdmin{row-gap:0}
+.wedding-details-editor #guestAttireVideosAdmin .admin-video-row,.wedding-details-editor #guestAttireVideosAdmin .admin-video-add{padding:0}
+.wedding-details-editor #guestAttireVideosAdmin .admin-video-upload{margin:0;align-items:center}
+.wedding-details-editor #guestAttireVideosAdmin .admin-video-upload label{margin:0;gap:0}

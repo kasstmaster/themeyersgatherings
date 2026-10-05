@@ -524,7 +524,7 @@ test('variables group the gathering date and reusable values without horizontal 
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /id="adminWeddingVariableHelp"[\s\S]*<h3 id="adminWeddingVariableHeading" hidden>Variables<\/h3>[\s\S]*<span>Gathering date<\/span>[\s\S]*<span>Home<\/span>[\s\S]*<legend>Church<\/legend>[\s\S]*<legend>Venue<\/legend>[\s\S]*<span>Wedding registry link<\/span>[\s\S]*<span>Monetary gift link<\/span>[\s\S]*id="weddingPagesAdmin"/);
+  assert.match(html, /id="adminWeddingVariableHelp"[\s\S]*<legend id="adminWeddingVariableHeading" hidden>Variables<\/legend>[\s\S]*<span>Gathering date<\/span>[\s\S]*<span>Home<\/span>[\s\S]*<legend>Church<\/legend>[\s\S]*<legend>Venue<\/legend>[\s\S]*<span>Wedding registry link<\/span>[\s\S]*<span>Monetary gift link<\/span>[\s\S]*id="weddingPagesAdmin"/);
   assert.ok(html.indexOf('id="adminWeddingVariableHelp"') < html.indexOf('id="weddingPagesAdmin"'));
   assert.doesNotMatch(styles, /\.admin-editor-section\{[^}]*border-(?:top|bottom)/);
   assert.doesNotMatch(styles, /\.admin-variable-help[^}]*border-(?:top|bottom)/);
@@ -548,7 +548,7 @@ test('wedding detail sections use titled cards without horizontal dividers', asy
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
   const sectionHeadings = [
-    'Variables', 'Pages', 'Wedding Party Members',
+    'Wedding Party Members',
     'Wedding Party Attire Images', 'Guest Attire Tip Videos'
   ];
 
@@ -571,7 +571,7 @@ test('Menu and Wedding Party Members precede Pages in Wedding Details', async ()
   const pagesSection = html.slice(pagesStart, pagesEnd);
   ['brideGroomAdmin', 'perfectExperienceAdmin', 'timelineAdmin', 'whatToExpectAdmin']
     .forEach(id => assert.match(pagesSection, new RegExp(`id="${id}"`)));
-  assert.equal((pagesSection.match(/<h3\b/g) || []).length, 1);
+  assert.equal((pagesSection.match(/<h3\b/g) || []).length, 0);
   assert.equal((pagesSection.match(/class="wedding-party-description-editor wedding-page-editor wedding-editor-card"/g) || []).length, 4);
   assert.match(pagesSection, /<legend>Bride &amp; Groom /);
   assert.match(pagesSection, /class="wedding-party-description-editors wedding-page-editors"/);

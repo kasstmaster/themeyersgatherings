@@ -361,10 +361,11 @@
         </section>
         <p id="adminWeddingVariableDescription" hidden>Edit the content shown on each wedding page. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link. You can also insert <code>{date}</code>, <code>{home}</code>, <code>{church}</code>, <code>{venue}</code>, <code>{registry}</code>, or <code>{monetary}</code>.</p>
         <section id="adminWeddingVariableHelp" class="admin-editor-section admin-variable-help" aria-labelledby="adminWeddingVariableHeading">
-          <h3 id="adminWeddingVariableHeading" hidden>Variables</h3>
+          <fieldset id="adminCoreVariables" class="wedding-editor-card"><legend id="adminWeddingVariableHeading" hidden>Variables</legend>
           <label class="admin-date"><span>Gathering date</span><input id="adminEventDate" type="date" required /></label>
-          <div class="admin-locations">
             <label><span>Home</span><input id="adminHomeAddress" type="text" autocomplete="street-address" placeholder="Home address" /></label>
+          </fieldset>
+          <div class="admin-locations">
             <div id="adminWeddingLocations" class="admin-wedding-locations" hidden>
               <fieldset>
                 <legend>Church</legend>
@@ -374,7 +375,7 @@
                 <label><span>Street</span><input id="adminChurchStreet" type="text" autocomplete="address-line1" placeholder="Street address" /></label>
                 <label><span>City, State, Zip</span><input id="adminChurchCityStateZip" type="text" autocomplete="address-line2" placeholder="City, State, Zip" /></label>
               </fieldset>
-              <fieldset>
+              <fieldset id="adminVenueCard">
                 <legend>Venue</legend>
                 <label><span>Time</span><input id="adminVenueTime" type="text" placeholder="6:00 PM" /></label>
                 <label><span>Street</span><input id="adminVenueStreet" type="text" autocomplete="address-line1" placeholder="Street address" /></label>
@@ -412,8 +413,7 @@
             </div>
             <p class="form-error" id="adminWeddingPartyError" role="alert"></p>
           </section>
-          <section id="weddingPagesAdmin" class="admin-editor-section wedding-pages-admin" aria-labelledby="weddingPagesAdminHeading">
-            <h3 id="weddingPagesAdminHeading">Pages</h3>
+          <section id="weddingPagesAdmin" class="admin-editor-section wedding-pages-admin" aria-label="Wedding page editors">
             <div class="wedding-party-description-editors wedding-page-editors">
               <fieldset id="brideGroomAdmin" class="wedding-party-description-editor wedding-page-editor wedding-editor-card"><legend>Bride &amp; Groom <button id="adminAddBrideGroomPage" class="add-bride-groom-page" type="button" aria-label="Add Bride &amp; Groom page" title="Add page">+</button></legend><div id="adminBrideGroomPages" class="bride-groom-page-editors"></div></fieldset>
               <fieldset id="timelineAdmin" class="wedding-party-description-editor wedding-page-editor wedding-editor-card"><legend>Wedding Timeline</legend><label class="editor-page-line"><small>Text above the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineAboveContent" aria-label="Text above the Wedding Timeline" placeholder="Add text above the timeline…"></textarea></label><label class="editor-page-line"><small>Timeline rows — enter one row per line with the time, event, and notes separated by tabs. Bold text can be wrapped in <code>**double asterisks**</code>.</small><textarea class="wedding-copy-editor wedding-timeline-editor" id="adminTimelineContent" aria-label="Wedding Timeline rows"></textarea></label><label class="editor-page-line"><small>Text below the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineBelowContent" aria-label="Text below the Wedding Timeline" placeholder="Add text below the timeline…"></textarea></label></fieldset>
