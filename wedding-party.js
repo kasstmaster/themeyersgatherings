@@ -32,5 +32,19 @@
     return [...members].sort((left, right) =>
       (rank.get(left.title) ?? roles.length) - (rank.get(right.title) ?? roles.length));
   }
-  globalThis.WeddingParty = { normalizeMembers, visiblePages, sortByRole };
+  function normalizeBrideGroomPages(wedding) {
+    const pages = Array.isArray(wedding.brideGroomPages) ? wedding.brideGroomPages : [];
+    wedding.brideGroomPages = pages.filter(page => page && typeof page === 'object').map((page, index) => ({
+      id: String(page.id || `bride-groom-page-${index + 2}`),
+      title: String(page.title || `Page ${index + 2}`),
+      content: typeof page.content === 'string' ? page.content : ''
+    }));
+    if (wedding.brideGroomPagesVersion !== 1) {
+      wedding.brideGroomPages.unshift({ id: 'main', title: 'Bride & Groom', content: typeof wedding.brideGroomContent === 'string' ? wedding.brideGroomContent : '' });
+    }
+    wedding.brideGroomPagesVersion = 1;
+    delete wedding.brideGroomContent;
+    return wedding.brideGroomPages;
+  }
+  globalThis.WeddingParty = { normalizeBrideGroomPages, normalizeMembers, visiblePages, sortByRole };
 })();

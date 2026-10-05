@@ -126,7 +126,7 @@ function initialAppState() {
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
-      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), weddingMealOptions: ['', '', ''], weddingChildMealOption: '', churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomContent: '', brideGroomPages: [], perfectExperienceContent: '', timelineAboveContent: '', timelineContent: DEFAULT_WEDDING_TIMELINE, timelineBelowContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
+      wedding: { ...makeEvent([], DEFAULT_WEDDING_DATE), weddingMealOptions: ['', '', ''], weddingChildMealOption: '', churchWeekDay: '', churchYear: '', churchTime: '', churchStreet: '', churchCityStateZip: '', venueTime: '', venueStreet: '', venueCityStateZip: '', registryUrl: DEFAULT_REGISTRY_URL, monetaryGiftUrl: '', brideGroomPagesVersion: 1, brideGroomPages: [{ id: 'main', title: 'Bride & Groom', content: '' }], perfectExperienceContent: '', timelineAboveContent: '', timelineContent: DEFAULT_WEDDING_TIMELINE, timelineBelowContent: '', whatToExpectContent: '', attireVideos: [], weddingPartyMembers: [], weddingPartyAttireImages: { ladies: [], gentlemen: [] }, weddingPartyAttireNotes: { ladies: '', gentlemen: '' } }
     }
   };
 }
@@ -287,16 +287,7 @@ function normalizeState(saved) {
       loaded.events.wedding.monetaryGiftUrl = typeof loaded.events.wedding.monetaryGiftUrl === 'string'
         ? loaded.events.wedding.monetaryGiftUrl
         : '';
-      loaded.events.wedding.brideGroomContent = typeof loaded.events.wedding.brideGroomContent === 'string'
-        ? loaded.events.wedding.brideGroomContent
-        : '';
-      loaded.events.wedding.brideGroomPages = Array.isArray(loaded.events.wedding.brideGroomPages)
-        ? loaded.events.wedding.brideGroomPages.filter(page => page && typeof page === 'object').map((page, index) => ({
-          id: String(page.id || `bride-groom-page-${index + 2}`),
-          title: String(page.title || `Page ${index + 2}`),
-          content: typeof page.content === 'string' ? page.content : ''
-        }))
-        : [];
+      WeddingParty.normalizeBrideGroomPages(loaded.events.wedding);
       loaded.events.wedding.perfectExperienceContent = typeof loaded.events.wedding.perfectExperienceContent === 'string'
         ? loaded.events.wedding.perfectExperienceContent
         : '';
@@ -1082,15 +1073,14 @@ function render() {
   });
   document.querySelector('#brideGroomSection').hidden = !showingBrideGroomPage;
   if (showingBrideGroomPage) {
-    const brideGroomPages = [{ id: 'main', title: 'Bride & Groom', content: state.brideGroomContent || '' }, ...(state.brideGroomPages || [])];
-    if (!brideGroomPages.some(page => page.id === selectedBrideGroomPage)) selectedBrideGroomPage = 'main';
+    const brideGroomPages = state.brideGroomPages || [];
+    if (!brideGroomPages.some(page => page.id === selectedBrideGroomPage)) selectedBrideGroomPage = brideGroomPages[0]?.id || '';
     const brideGroomTabs = document.querySelector('#brideGroomTabs');
     brideGroomTabs.hidden = brideGroomPages.length < 2;
     brideGroomTabs.innerHTML = brideGroomPages.map(page => `<button type="button" role="tab" data-bride-groom-page="${escapeAttribute(page.id)}" aria-selected="${page.id === selectedBrideGroomPage}" tabindex="${page.id === selectedBrideGroomPage ? '0' : '-1'}">${escapeHtml(page.title)}</button>`).join('');
     const activeBrideGroomPage = brideGroomPages.find(page => page.id === selectedBrideGroomPage) || brideGroomPages[0];
     const brideGroomContent = document.querySelector('#brideGroomContent');
-    brideGroomContent.innerHTML = formatEditableText(state.brideGroomContent);
-    if (activeBrideGroomPage.id !== 'main') brideGroomContent.innerHTML = formatEditableText(activeBrideGroomPage.content);
+    brideGroomContent.innerHTML = formatEditableText(activeBrideGroomPage?.content || '');
     if (!brideGroomContent.innerHTML) brideGroomContent.innerHTML = '<p class="guest-empty">No Bride & Groom details have been added yet.</p>';
   }
   document.querySelector('#weddingTimelineSection').hidden = !showingTimelinePage;
@@ -1342,16 +1332,11 @@ document.querySelector('#guestInfoTabs').addEventListener('keydown', event => {
   render();
   document.querySelector(`[data-guest-tab="${selectedGuestTab}"]`).focus();
 });
-document.querySelector('#adminBrideGroomContent').addEventListener('change', event => {
-  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
-  state.brideGroomContent = event.target.value;
-  saveState();
-  showToast('Bride & Groom page updated.');
-});
 document.querySelector('#adminAddBrideGroomPage').addEventListener('click', () => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  commitBrideGroomPageEditors();
   state.brideGroomPages ||= [];
-  const pageNumber = state.brideGroomPages.length + 2;
+  const pageNumber = state.brideGroomPages.length + 1;
   const page = { id: `bride-groom-${Date.now()}`, title: `Page ${pageNumber}`, content: '' };
   state.brideGroomPages.push(page);
   selectedBrideGroomPage = page.id;
@@ -1622,7 +1607,6 @@ function openAdmin() {
     [...document.querySelectorAll('[id^="adminWeddingMealOption"]')].forEach((input, index) => { input.value = state.weddingMealOptions?.[index] || ''; });
     document.querySelector('#adminWeddingChildMealOption').value = state.weddingChildMealOption || '';
     renderWeddingPartyAdmin();
-    document.querySelector('#adminBrideGroomContent').value = state.brideGroomContent || '';
     renderBrideGroomPageAdmin();
     document.querySelector('#adminPerfectExperienceContent').value = state.perfectExperienceContent || '';
     document.querySelector('#adminTimelineAboveContent').value = state.timelineAboveContent || '';
@@ -1653,18 +1637,14 @@ function openAdmin() {
 function renderBrideGroomPageAdmin() {
   const pages = state.brideGroomPages || [];
   const container = document.querySelector('#adminBrideGroomPages');
-  container.innerHTML = pages.map((page, index) => `<div class="wedding-party-description-editor wedding-page-editor bride-groom-extra-page" data-bride-groom-admin-page="${escapeAttribute(page.id)}"><div class="wedding-page-editor-heading"><input type="text" value="${escapeAttribute(page.title)}" aria-label="Bride & Groom page ${index + 2} tab name" maxlength="60"><button type="button" class="admin-delete" aria-label="Delete ${escapeAttribute(page.title)} page" title="Delete page">×</button></div><textarea class="wedding-copy-editor" aria-label="${escapeAttribute(page.title)} page content" placeholder="Add your notes here…">${escapeHtml(page.content)}</textarea></div>`).join('');
+  container.innerHTML = pages.map((page, index) => `<div class="wedding-party-description-editor wedding-page-editor bride-groom-extra-page" data-bride-groom-admin-page="${escapeAttribute(page.id)}"><div class="wedding-page-editor-heading"><input type="text" value="${escapeAttribute(page.title)}" aria-label="Bride & Groom page ${index + 1} tab name" maxlength="60"><button type="button" class="admin-delete" aria-label="Delete ${escapeAttribute(page.title)} page" title="Delete page">×</button></div><textarea class="wedding-copy-editor" aria-label="${escapeAttribute(page.title)} page content" placeholder="Add your notes here…">${escapeHtml(page.content)}</textarea></div>`).join('');
   container.querySelectorAll('[data-bride-groom-admin-page]').forEach(editor => {
     const page = pages.find(item => item.id === editor.dataset.brideGroomAdminPage);
     const [heading, content] = [editor.querySelector('input'), editor.querySelector('textarea')];
-    heading.addEventListener('change', () => {
-      page.title = heading.value.trim() || 'Untitled page';
-      saveState(); renderBrideGroomPageAdmin(); showToast('Bride & Groom page name updated.');
-    });
-    content.addEventListener('change', () => {
-      page.content = content.value; saveState(); showToast(`${page.title} page updated.`);
-    });
+    [heading, content].forEach(control => control.addEventListener('change', commitBrideGroomPageEditors));
     editor.querySelector('.admin-delete').addEventListener('click', () => {
+      if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+      commitBrideGroomPageEditors();
       state.brideGroomPages = pages.filter(item => item.id !== page.id);
       if (selectedBrideGroomPage === page.id) selectedBrideGroomPage = 'main';
       saveState(); renderBrideGroomPageAdmin(); showToast(`${page.title} page removed.`);
@@ -1704,7 +1684,7 @@ function renderAdminAttireVideos() {
 }
 function renderWeddingPartyDescriptionAdmin() {
   const container = document.querySelector('#adminWeddingPartyDescriptions');
-  container.innerHTML = WeddingParty.sortByRole(state.weddingPartyMembers || [], WEDDING_PARTY_TITLES.map(title => title.value)).map(member => `<section class="wedding-party-description-editor" data-member-editor="${escapeAttribute(member.id)}"><h4>${escapeHtml(member.name)} <small>${escapeHtml(member.title)}</small></h4><label><span>Responsibilities</span><textarea class="wedding-copy-editor" data-member-responsibilities aria-label="Responsibilities for ${escapeAttribute(member.name)}" placeholder="Assign responsibilities to this person…">${escapeHtml(member.responsibilities || '')}</textarea></label><div class="wedding-page-editor-heading"><span>Personal pages</span><button type="button" data-add-member-page aria-label="Add page for ${escapeAttribute(member.name)}">+</button></div><div>${(member.pages || []).map(page => `<div class="wedding-page-editor" data-member-page-editor="${escapeAttribute(page.id)}"><div class="wedding-page-editor-heading"><input data-page-title value="${escapeAttribute(page.title)}" maxlength="60" aria-label="Page name for ${escapeAttribute(member.name)}"><button type="button" class="admin-delete" data-delete-member-page aria-label="Delete ${escapeAttribute(page.title)}">×</button></div><textarea class="wedding-copy-editor" data-page-content aria-label="${escapeAttribute(page.title)} content for ${escapeAttribute(member.name)}">${escapeHtml(page.content)}</textarea></div>`).join('')}</div></section>`).join('') || '<p class="guest-empty">Add wedding party members above to assign responsibilities and create personal pages.</p>';
+  container.innerHTML = WeddingParty.sortByRole(state.weddingPartyMembers || [], WEDDING_PARTY_TITLES.map(title => title.value)).map(member => `<section class="wedding-party-description-editor" data-member-editor="${escapeAttribute(member.id)}"><div class="wedding-page-editor-heading member-editor-heading"><h4>${escapeHtml(member.name)}</h4><button type="button" class="add-bride-groom-page" data-add-member-page aria-label="Add page for ${escapeAttribute(member.name)}">+</button></div><p class="member-editor-role">${escapeHtml(member.title)}</p><div class="member-editor-pages editor-page-line"><label><span>Responsibilities</span><textarea class="wedding-copy-editor" data-member-responsibilities aria-label="Responsibilities for ${escapeAttribute(member.name)}" placeholder="Assign responsibilities to this person…">${escapeHtml(member.responsibilities || '')}</textarea></label><div>${(member.pages || []).map(page => `<div class="wedding-page-editor" data-member-page-editor="${escapeAttribute(page.id)}"><div class="wedding-page-editor-heading"><input data-page-title value="${escapeAttribute(page.title)}" maxlength="60" aria-label="Page name for ${escapeAttribute(member.name)}"><button type="button" class="admin-delete" data-delete-member-page aria-label="Delete ${escapeAttribute(page.title)}">×</button></div><textarea class="wedding-copy-editor" data-page-content aria-label="${escapeAttribute(page.title)} content for ${escapeAttribute(member.name)}">${escapeHtml(page.content)}</textarea></div>`).join('')}</div></div></section>`).join('') || '<p class="guest-empty">Add wedding party members above to assign responsibilities and create personal pages.</p>';
   container.querySelectorAll('[data-member-editor]').forEach(editor => {
     const member = state.weddingPartyMembers.find(item => item.id === editor.dataset.memberEditor);
     editor.querySelectorAll('input, textarea').forEach(control => control.addEventListener('change', () => {

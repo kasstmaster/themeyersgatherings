@@ -247,9 +247,9 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.doesNotMatch(editor, /maxlength/);
   assert.match(javascript, /hostCanViewTab = true/);
   assert.match(javascript, /showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple'/);
-  assert.match(javascript, /brideGroomContent\.innerHTML = formatEditableText\(state\.brideGroomContent\)/);
-  assert.match(javascript, /#adminBrideGroomContent'\)\.addEventListener\('change'/);
-  assert.match(javascript, /state\.brideGroomContent = event\.target\.value/);
+  assert.match(javascript, /brideGroomContent\.innerHTML = formatEditableText\(activeBrideGroomPage\?\.content/);
+  assert.match(javascript, /state\.brideGroomPages\?\.find/);
+  assert.match(javascript, /page\.content = content\.value/);
 });
 
 test('hosts can add editable tabbed pages inside Bride & Groom', async () => {
@@ -260,13 +260,13 @@ test('hosts can add editable tabbed pages inside Bride & Groom', async () => {
   ]);
 
   assert.match(html, /id="brideGroomTabs"[^>]*role="tablist"[^>]*hidden/);
-  assert.match(html, /Bride &amp; Groom page<\/span><button id="adminAddBrideGroomPage"[^>]*>\+<\/button>/);
+  assert.match(html, /Bride &amp; Groom<\/h4><button id="adminAddBrideGroomPage"[^>]*>\+<\/button>/);
   assert.match(html, /id="adminBrideGroomPages"/);
-  assert.match(javascript, /brideGroomPages: \[\]/);
+  assert.match(javascript, /brideGroomPagesVersion: 1, brideGroomPages: \[\{ id: 'main', title: 'Bride & Groom'/);
   assert.match(javascript, /#adminAddBrideGroomPage'[\s\S]*state\.brideGroomPages\.push\(page\)/);
   assert.match(javascript, /data-bride-groom-page=/);
   assert.match(javascript, /data-bride-groom-admin-page=/);
-  assert.match(javascript, /page\.title = heading\.value\.trim\(\)/);
+  assert.match(javascript, /page\.title = title/);
   assert.match(javascript, /page\.content = content\.value/);
   assert.match(styles, /\.bride-groom-tabs\{/);
   assert.match(styles, /\.bride-groom-section>h2:has\(\+\.bride-groom-tabs:not\(\[hidden\]\)\)\{margin-bottom:0\}/);
@@ -511,7 +511,7 @@ test('wedding responsibilities and page editors share compact editor sizing', as
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  ['adminBrideGroomContent', 'adminPerfectExperienceContent', 'adminWhatToExpectContent'].forEach(id => {
+  ['adminPerfectExperienceContent', 'adminWhatToExpectContent'].forEach(id => {
     assert.match(html, new RegExp(`<textarea class="wedding-copy-editor" id="${id}"`));
   });
   assert.match(javascript, /<textarea class="wedding-copy-editor" data-member-responsibilities/);
@@ -553,8 +553,8 @@ test('every wedding details section has a divider and the requested title', asyn
   ];
 
   sectionHeadings.forEach(heading => assert.match(html, new RegExp(`>${heading}<\\/h3>`)));
-  ['Bride &amp; Groom page', 'The Perfect Experience page', 'Wedding Timeline page', 'What to Expect page']
-    .forEach(heading => assert.match(html, new RegExp(`<span>${heading}<\\/span>`)));
+  ['The Perfect Experience (Wedding Party)', 'Wedding Timeline page', 'What to Expect (Guests)']
+    .forEach(heading => assert.ok(html.includes(`<span>${heading}</span>`)));
   assert.match(html, /<section id="guestAttireVideosAdmin" class="admin-editor-section guest-attire-videos-admin"[\s\S]*>Guest Attire Tip Videos<\/h3>[\s\S]*id="adminAttireVideos"[\s\S]*<\/section>/);
   assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
 });
@@ -573,7 +573,7 @@ test('Menu and Wedding Party Members precede Pages in Wedding Details', async ()
     .forEach(id => assert.match(pagesSection, new RegExp(`id="${id}"`)));
   assert.equal((pagesSection.match(/<h3\b/g) || []).length, 1);
   assert.equal((pagesSection.match(/class="wedding-party-description-editor wedding-page-editor"/g) || []).length, 4);
-  assert.doesNotMatch(pagesSection, /<h4\b/);
+  assert.match(pagesSection, /<h4>Bride &amp; Groom<\/h4>/);
   assert.match(pagesSection, /class="wedding-party-description-editors wedding-page-editors"/);
 });
 
