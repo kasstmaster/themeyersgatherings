@@ -270,6 +270,8 @@ test('hosts can add editable tabbed pages inside Bride & Groom', async () => {
   assert.match(javascript, /page\.title = heading\.value\.trim\(\)/);
   assert.match(javascript, /page\.content = content\.value/);
   assert.match(styles, /\.bride-groom-tabs\{/);
+  assert.match(styles, /\.bride-groom-section>h2:has\(\+\.bride-groom-tabs:not\(\[hidden\]\)\)\{margin-bottom:0\}/);
+  assert.match(styles, /\.bride-groom-tabs\{margin-top:0\}/);
 });
 
 test('Done saves dynamic Bride & Groom page titles and content together before editors rerender', async () => {
