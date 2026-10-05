@@ -110,6 +110,20 @@ shared copy; browser storage is only an offline fallback.
 > visitors can view the site's source code. Protect the shared endpoint with
 > appropriate access controls if RSVP names must remain private.
 
+## Wedding party responsibilities and personal pages
+
+In the Wedding gathering, open **Wedding Details → Responsibilities**. Each
+wedding party member has a separate responsibilities editor and a **+** button
+for adding personal pages. You can rename, edit, and delete these pages like the
+extra Bride & Groom pages. Members see their own responsibilities and personal
+pages; the host can edit all members and preview each person's view.
+
+**The Perfect Experience** and **Attire** are the shared Wedding Party pages.
+The Wedding Timeline remains available to the host. The former role descriptions
+and Bachelorette Party Info page are removed; responsibilities start blank and
+are no longer inherited from titles. New personal content uses the existing
+local backup and shared-state saving flow.
+
 ## AnyList Address Book sync
 
 The **Host tools → Sync AnyList Address Book** button starts a private GitHub

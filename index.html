@@ -162,18 +162,12 @@
           <button type="button" role="tab" data-matron-tab="experience" aria-controls="perfectExperiencePanel" aria-selected="true">The Perfect Experience</button>
           <button type="button" role="tab" data-matron-tab="duties" aria-controls="weddingPartyDetails" aria-selected="false">Responsibilities</button>
           <button type="button" role="tab" data-matron-tab="attire" aria-controls="registryAttireSection" aria-selected="false">Attire</button>
-          <button type="button" role="tab" data-matron-tab="bachelorette" aria-controls="bacheloretteInfoPanel" aria-selected="false">Bachelorette Party Info</button>
         </nav>
         <div id="weddingPartyDetails" class="wedding-party-details"></div>
         <section id="perfectExperiencePanel" class="perfect-experience-panel" aria-label="The Perfect Experience" hidden>
           <div id="perfectExperienceContent" class="perfect-experience-content"></div>
         </section>
-        <section id="bacheloretteInfoPanel" class="bachelorette-info-panel" aria-label="Bachelorette Party Info" hidden>
-          <div class="bachelorette-actions" aria-label="Share bachelorette party information">
-            <button id="copyBacheloretteInfo" type="button">Copy</button><button id="emailBacheloretteInfo" type="button">Email</button><button id="printBacheloretteInfo" type="button">Print</button>
-          </div>
-          <div id="bacheloretteInfoContent" class="bachelorette-info-content"></div>
-        </section>
+        <section id="weddingPartyPersonalPage" class="perfect-experience-panel" aria-label="Personal wedding party page" hidden></section>
         <div id="weddingPartyAttirePanel"></div>
       </section>
 
@@ -401,7 +395,6 @@
               <div id="brideGroomAdmin" class="wedding-party-description-editor wedding-page-editor"><div class="wedding-page-editor-heading"><span>Bride &amp; Groom page</span><button id="adminAddBrideGroomPage" class="add-bride-groom-page" type="button" aria-label="Add another Bride &amp; Groom page" title="Add another page">+</button></div><textarea class="wedding-copy-editor" id="adminBrideGroomContent" aria-label="Bride &amp; Groom page content" placeholder="Add your notes here…"></textarea></div>
               <div id="adminBrideGroomPages" class="bride-groom-page-editors"></div>
               <label id="perfectExperienceAdmin" class="wedding-party-description-editor wedding-page-editor"><span>The Perfect Experience page</span><textarea class="wedding-copy-editor" id="adminPerfectExperienceContent" aria-label="The Perfect Experience page content" placeholder="Add the perfect experience details here…"></textarea></label>
-              <label id="bacheloretteAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Bachelorette page</span><textarea class="wedding-copy-editor" id="adminBacheloretteContent" aria-label="Bachelorette page content" placeholder="Add bachelorette party information here…"></textarea></label>
               <div id="timelineAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Wedding Timeline page</span><label><small>Text above the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineAboveContent" aria-label="Text above the Wedding Timeline" placeholder="Add text above the timeline…"></textarea></label><label><small>Timeline rows — enter one row per line with the time, event, and notes separated by tabs. Bold text can be wrapped in <code>**double asterisks**</code>.</small><textarea class="wedding-copy-editor wedding-timeline-editor" id="adminTimelineContent" aria-label="Wedding Timeline rows"></textarea></label><label><small>Text below the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineBelowContent" aria-label="Text below the Wedding Timeline" placeholder="Add text below the timeline…"></textarea></label></div>
               <label id="whatToExpectAdmin" class="wedding-party-description-editor wedding-page-editor"><span>What to Expect page</span><textarea class="wedding-copy-editor" id="adminWhatToExpectContent" aria-label="What to Expect page content" placeholder="Add what guests can expect here…"></textarea></label>
             </div>
@@ -432,8 +425,8 @@
             <p class="form-error" id="adminWeddingPartyError" role="alert"></p>
           </section>
           <section id="weddingPartyDescriptionsAdmin" class="admin-editor-section wedding-party-descriptions-admin" aria-labelledby="weddingPartyDescriptionsAdminHeading">
-            <h3 id="weddingPartyDescriptionsAdminHeading">Title Descriptions</h3>
-            <p>Edit a title once to update its description for every person assigned that title. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link.</p>
+            <h3 id="weddingPartyDescriptionsAdminHeading">Responsibilities</h3>
+            <p>Assign responsibilities and create personal pages for each wedding party member. Each person sees only their own responsibilities and pages; the host can view and edit all of them. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link.</p>
             <div id="adminWeddingPartyDescriptions" class="wedding-party-description-editors"></div>
           </section>
           <section id="weddingPartyAttireAdmin" class="admin-editor-section wedding-party-attire-admin" aria-labelledby="weddingPartyAttireAdminHeading">
@@ -591,6 +584,7 @@
     </div>
     <script src="vendor/qrcode.js" defer></script>
     <script src="invitation.js" defer></script>
+    <script src="wedding-party.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>
