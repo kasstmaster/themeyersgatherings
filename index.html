@@ -287,6 +287,11 @@
         <p>We can't wait to celebrate together.</p>
         <div class="counter-row"><div><strong>Adults</strong><span>Age 18+</span></div><div class="stepper"><button type="button" data-step="-1" data-target="adults">−</button><output id="adults">1</output><button type="button" data-step="1" data-target="adults">+</button></div></div>
         <div class="counter-row"><div><strong>Children</strong><span>Age 17 and under</span></div><div class="stepper"><button type="button" data-step="-1" data-target="children">−</button><output id="children">0</output><button type="button" data-step="1" data-target="children">+</button></div></div>
+        <section id="weddingRsvpMenu" class="wedding-rsvp-menu" aria-labelledby="weddingRsvpMenuHeading" hidden>
+          <h3 id="weddingRsvpMenuHeading">Menu</h3>
+          <p>Choose a meal for each guest.</p>
+          <div id="weddingRsvpGuests"></div>
+        </section>
         <button class="primary-button" value="default">Save my RSVP</button>
       </form>
     </dialog>
@@ -399,6 +404,16 @@
               <label id="bacheloretteAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Bachelorette page</span><textarea class="wedding-copy-editor" id="adminBacheloretteContent" aria-label="Bachelorette page content" placeholder="Add bachelorette party information here…"></textarea></label>
               <div id="timelineAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Wedding Timeline page</span><label><small>Text above the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineAboveContent" aria-label="Text above the Wedding Timeline" placeholder="Add text above the timeline…"></textarea></label><label><small>Timeline rows — enter one row per line with the time, event, and notes separated by tabs. Bold text can be wrapped in <code>**double asterisks**</code>.</small><textarea class="wedding-copy-editor wedding-timeline-editor" id="adminTimelineContent" aria-label="Wedding Timeline rows"></textarea></label><label><small>Text below the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineBelowContent" aria-label="Text below the Wedding Timeline" placeholder="Add text below the timeline…"></textarea></label></div>
               <label id="whatToExpectAdmin" class="wedding-party-description-editor wedding-page-editor"><span>What to Expect page</span><textarea class="wedding-copy-editor" id="adminWhatToExpectContent" aria-label="What to Expect page content" placeholder="Add what guests can expect here…"></textarea></label>
+            </div>
+          </section>
+          <section id="weddingMenuAdmin" class="admin-editor-section wedding-menu-admin" aria-labelledby="weddingMenuAdminHeading">
+            <h3 id="weddingMenuAdminHeading">Menu</h3>
+            <p>Enter the three meal options available to everyone and the additional option available only to children.</p>
+            <div class="wedding-menu-fields">
+              <label><span>Adult and child option 1</span><input id="adminWeddingMealOption1" maxlength="100" placeholder="Meal option 1" /></label>
+              <label><span>Adult and child option 2</span><input id="adminWeddingMealOption2" maxlength="100" placeholder="Meal option 2" /></label>
+              <label><span>Adult and child option 3</span><input id="adminWeddingMealOption3" maxlength="100" placeholder="Meal option 3" /></label>
+              <label><span>Additional child option</span><input id="adminWeddingChildMealOption" maxlength="100" placeholder="Child meal option" /></label>
             </div>
           </section>
           <!-- Wedding party configuration sections. -->
