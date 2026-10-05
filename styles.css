@@ -252,3 +252,15 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .wedding-details-editor .editor-dialog-footer{margin-top:0}
 .wedding-details-editor>.admin-editor-section,.wedding-details-editor #adminAttireFields>.admin-editor-section{min-width:0}.wedding-details-editor input{box-sizing:border-box;max-width:100%}.wedding-details-editor #adminWeddingVariableDescription{overflow-wrap:anywhere}
 .wedding-details-editor .template-dropzone input{width:1px;max-width:1px;min-width:0}
+/* Compact input spacing inside Wedding Details cards and member/image editors. */
+.wedding-details-editor .wedding-editor-card,.wedding-details-editor .admin-wedding-locations fieldset,.wedding-details-editor .wedding-menu-fields{row-gap:6px}
+.wedding-details-editor .wedding-editor-card label,.wedding-details-editor .admin-wedding-locations label,.wedding-details-editor #weddingPartyAdmin label,.wedding-details-editor #weddingPartyAttireAdmin label{display:grid;gap:4px;margin-bottom:0}
+.wedding-details-editor #timelineAdmin>label{gap:4px;margin-top:0}
+.wedding-details-editor #adminBrideGroomPages{display:grid;gap:6px}
+.wedding-details-editor #adminBrideGroomPages:empty{display:none}
+.wedding-details-editor #adminBrideGroomPages>.wedding-page-editor,.wedding-details-editor .member-editor-content .wedding-page-editor{padding:0;margin:0}
+.wedding-details-editor .wedding-page-editor-heading{margin-bottom:0}
+.wedding-details-editor .member-editor-content .member-editor-pages,.wedding-details-editor .wedding-party-member.is-editing,.wedding-details-editor .wedding-party-member-heading,.wedding-details-editor .wedding-party-add{row-gap:6px}
+.wedding-details-editor #weddingPartyAdmin,.wedding-details-editor #weddingPartyAttireAdmin{row-gap:8px}
+.wedding-details-editor .wedding-party-attire-notes,.wedding-details-editor .wedding-party-attire-image-list,.wedding-details-editor .wedding-party-attire-add{row-gap:6px;margin:0}
+.wedding-details-editor #adminWeddingPartyAttireDropzone{margin-top:0!important}
