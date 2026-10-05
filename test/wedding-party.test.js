@@ -71,3 +71,15 @@ test('first Bride & Groom page migrates once, retaining custom pages and allowin
   assert.deepEqual(wedding.brideGroomPages, []);
   assert.equal('brideGroomContent' in wedding, false);
 });
+
+
+test('retired member titles are cleared while retaining their content', () => {
+  const members = normalizeMembers(['Flower Girl', 'Ring Bearer'].map((title, index) => ({
+    id: `member-${index}`, name: `Person ${index}`, title, responsibilities: 'Keep these duties',
+    pages: [{ id: 'travel', title: 'Travel', content: 'Keep these details' }]
+  })));
+  assert.deepEqual(members.map(member => member.title), ['', '']);
+  assert.equal(members.length, 2);
+  assert.ok(members.every(member => member.responsibilities === 'Keep these duties' && member.pages[0].content === 'Keep these details'));
+  assert.deepEqual(normalizeMembers(members), members);
+});

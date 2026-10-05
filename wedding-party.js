@@ -15,7 +15,7 @@
       });
       return {
         id, name: String(member.name || ''),
-        title: ({ 'Maid/Matron of Honor': 'Matron of Honor', Groomsmen: 'Groomsman', Usher: 'Ushers' })[member.title] || String(member.title || ''),
+        title: ['Flower Girl', 'Ring Bearer'].includes(member.title) ? '' : ({ 'Maid/Matron of Honor': 'Matron of Honor', Groomsmen: 'Groomsman', Usher: 'Ushers' })[member.title] || String(member.title || ''),
         // Old role descriptions and member.description are intentionally retired.
         responsibilities: typeof member.responsibilities === 'string' ? member.responsibilities : '', pages
       };

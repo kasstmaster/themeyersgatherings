@@ -41,8 +41,6 @@ const WEDDING_PARTY_TITLES = [
   { value: 'Best Man', multiple: false },
   { value: 'Bridesmaid', multiple: true },
   { value: 'Groomsman', multiple: true },
-  { value: 'Flower Girl', multiple: true },
-  { value: 'Ring Bearer', multiple: true },
   { value: 'Ushers', multiple: true }
 ];
 const CHRISTMAS_MENU_VERSION = 2;
@@ -891,19 +889,6 @@ function updateHostToolsPanel() {
   document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated || viewingAsGuest;
   document.querySelector('#cancelViewAsButton').hidden = !viewingAsGuest;
 }
-function setHostPasswordMode(enabled) {
-  const guestFields = document.querySelector('#guestSignInFields');
-  const hostFields = document.querySelector('#hostSignInFields');
-  guestFields.hidden = enabled;
-  hostFields.hidden = !enabled;
-  guestFields.querySelectorAll('input').forEach(input => { input.disabled = enabled; });
-  document.querySelector('#hostPassword').disabled = !enabled;
-  document.querySelector('#signInHeading').textContent = enabled ? 'Enter host password' : "What's your name?";
-  document.querySelector('#signInSubmit').textContent = enabled ? 'Sign in as host' : "Let's get started";
-  document.querySelector('#hostPasswordToggle').textContent = enabled ? 'OR SIGN IN WITH YOUR NAME' : 'HOST SIGN IN';
-  document.querySelector('#accountPasswordError').textContent = '';
-  (enabled ? document.querySelector('#hostPassword') : document.querySelector('#accountFirstName')).focus();
-}
 function showSignInPage() {
   document.querySelector('#signInPage').hidden = false;
   document.querySelector('#eventSelectionPage').hidden = true;
@@ -1251,14 +1236,10 @@ function openCustomItem(category) {
 
 document.querySelector('#passwordForm').addEventListener('submit', event => {
   event.preventDefault();
-  const hostPasswordInput = document.querySelector('#hostPassword');
-  if (!hostPasswordInput.disabled) {
-    const password = hostPasswordInput.value.trim();
-    if (password !== HOST_PASSWORD) {
-      document.querySelector('#accountPasswordError').textContent = 'That host password is incorrect.';
-      hostPasswordInput.focus();
-      return;
-    }
+  const firstNameInput = document.querySelector('#accountFirstName');
+  const firstName = firstNameInput.value.trim();
+  if (!isAccountQrRoute() && firstName === HOST_PASSWORD) {
+    const password = firstName;
     hostAuthenticated = true;
     hostCredential = password;
     guestName = HOST_DISPLAY_NAME;
@@ -1273,13 +1254,12 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
     pendingAccountAction = null;
     showSignedInDestination();
     document.querySelector('#accountPasswordError').textContent = '';
-    hostPasswordInput.value = '';
+    firstNameInput.value = '';
     render();
     if (action) action();
     else showToast('Host sign-in complete. You can RSVP and bring items as The Host.');
     return;
   }
-  const firstName = document.querySelector('#accountFirstName').value.trim();
   const lastName = document.querySelector('#accountLastName').value.trim();
   const suffix = document.querySelector('#accountSuffix').value.trim();
   const accountName = [firstName, lastName, suffix].filter(Boolean).join(' ');
@@ -1395,9 +1375,6 @@ document.querySelector('#hostWeddingPartyView').addEventListener('change', event
   if (!hostAuthenticated) return;
   hostWeddingPartyViewName = event.target.value;
   render();
-});
-document.querySelector('#hostPasswordToggle').addEventListener('click', () => {
-  setHostPasswordMode(document.querySelector('#hostPassword').disabled);
 });
 document.querySelector('#customItemForm').addEventListener('submit', event => {
   event.preventDefault();
@@ -1886,8 +1863,8 @@ function renderWeddingPartyMemberList(members) {
   return fullWidthGroup('Officiant', 'top')
     + pairedGroup('Matron of Honor', 'Best Man')
     + pairedGroup('Bridesmaid', 'Groomsman')
-    + pairedGroup('Flower Girl', 'Ring Bearer')
-    + fullWidthGroup('Ushers', 'bottom');
+    + fullWidthGroup('Ushers', 'bottom')
+    + fullWidthGroup('', 'unassigned');
 }
 function renderWeddingPartyAttireAdmin() {
   state.weddingPartyAttireImages ??= { ladies: [], gentlemen: [] };
@@ -2565,7 +2542,6 @@ async function startApp() {
   const qrToken = accountQrTokenFromLocation();
   if (isAccountQrRoute()) {
     qrScopedAccount = appState.accounts.find(account => account.qrToken === qrToken) || null;
-    document.querySelector('#hostPasswordToggle').hidden = true;
     if (!qrScopedAccount) {
       document.querySelector('#accountLinkError').hidden = false;
       document.querySelector('#guestSignInFields').hidden = true;
