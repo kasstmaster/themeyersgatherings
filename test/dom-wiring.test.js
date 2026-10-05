@@ -707,3 +707,17 @@ test('gathering-specific host tools match the current gathering content', async 
   assert.match(javascript, /#previewWeddingPartyButton'\)\.hidden = !isWedding/);
   assert.match(styles, /\.host-tools-panel \.host-tool-actions button\[hidden\]\{display:none\}/);
 });
+
+test('wedding RSVP menu is configured by the host and collected one guest at a time', async () => {
+  const [html, javascript] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../app.js', import.meta.url), 'utf8')
+  ]);
+
+  assert.match(html, /id="weddingMenuAdmin"[\s\S]*id="adminWeddingMealOption1"[\s\S]*id="adminWeddingMealOption2"[\s\S]*id="adminWeddingMealOption3"[\s\S]*id="adminWeddingChildMealOption"/);
+  assert.match(html, /id="weddingRsvpMenu"[^>]*hidden[\s\S]*id="weddingRsvpGuests"/);
+  assert.match(javascript, /function renderWeddingRsvpMenu\(selections = \[\]\)[\s\S]*\['adult', 'child'\]\.flatMap/);
+  assert.match(javascript, />Someone else<\/option>[\s\S]*Please note any dietary restrictions or food allergies\./);
+  assert.match(javascript, /type === 'child' \? `[\s\S]*value="none"[\s\S]*>None</);
+  assert.match(javascript, /menuSelections: Array\.isArray\(rsvp\.menuSelections\)/);
+});
