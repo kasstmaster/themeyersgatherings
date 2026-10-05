@@ -1585,6 +1585,7 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
   document.querySelector('#invitedListDialog').showModal();
 });
 function openAdmin() {
+  if (!document.querySelector('#adminDialog').open) editedWeddingPartyMembers.clear();
   const isWedding = EVENT_DETAILS[viewedEventId].registryOnly === true;
   document.querySelector('#adminEventDate').value = state.eventDate;
   document.querySelector('#adminHomeAddress').value = state.homeAddress || '';
@@ -1681,6 +1682,7 @@ function renderAdminAttireVideos() {
     ? videos.map((url, index) => `<div class="admin-video-row"><a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Video ${index + 1}</a><button type="button" data-remove-attire-video="${index}" aria-label="Remove video ${index + 1}">Remove</button></div>`).join('')
     : '<p class="guest-empty">No attire videos have been added.</p>';
 }
+const editedWeddingPartyMembers = new Set();
 function renderWeddingPartyDescriptionAdmin() {
   const container = document.querySelector('#adminWeddingPartyMembers');
   container.querySelectorAll('[data-member-editor]').forEach(editor => {
@@ -1692,6 +1694,13 @@ function renderWeddingPartyDescriptionAdmin() {
     editor.querySelectorAll('input, textarea').forEach(control => control.addEventListener('change', () => {
       commitWeddingPartyEditors();
     }));
+    editor.querySelector('[data-edit-member]').addEventListener('click', () => {
+      if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+      commitWeddingPartyEditors();
+      if (editedWeddingPartyMembers.has(member.id)) editedWeddingPartyMembers.delete(member.id);
+      else editedWeddingPartyMembers.add(member.id);
+      renderWeddingPartyAdmin();
+    });
     editor.querySelector('[data-add-member-page]').addEventListener('click', () => {
       if (!hostAuthenticated || viewedEventId !== 'wedding') return;
       commitWeddingPartyEditors();
@@ -1861,7 +1870,7 @@ function renderWeddingPartyAdmin() {
 }
 
 function renderWeddingPartyMemberList(members) {
-  const memberCard = (member, index, rolePosition, roleCount) => `<div class="wedding-party-member" data-wedding-party-index="${index}" data-member-editor="${escapeAttribute(member.id)}"><div class="wedding-party-member-heading"><div class="member-name-controls"><strong>${escapeHtml(member.name)}</strong><button type="button" class="add-bride-groom-page" data-add-member-page aria-label="Add page for ${escapeAttribute(member.name)}">+</button></div><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><span class="wedding-party-order-controls"><button type="button" data-move-wedding-party="up" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} up within ${escapeAttribute(member.title)}" ${rolePosition === 0 ? 'disabled' : ''}>↑</button><button type="button" data-move-wedding-party="down" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} down within ${escapeAttribute(member.title)}" ${rolePosition === roleCount - 1 ? 'disabled' : ''}>↓</button></span><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div><div class="member-editor-content wedding-party-description-editor"></div></div>`;
+  const memberCard = (member, index, rolePosition, roleCount) => `<div class="wedding-party-member ${editedWeddingPartyMembers.has(member.id) ? 'is-editing' : ''}" data-wedding-party-index="${index}" data-member-editor="${escapeAttribute(member.id)}"><div class="wedding-party-member-heading"><div class="member-name-controls"><strong>${escapeHtml(member.name)}</strong><button type="button" data-edit-member aria-expanded="${editedWeddingPartyMembers.has(member.id)}" aria-label="${editedWeddingPartyMembers.has(member.id) ? 'Done editing' : 'Edit'} ${escapeAttribute(member.name)}">${editedWeddingPartyMembers.has(member.id) ? 'Done' : 'Edit'}</button><button type="button" class="add-bride-groom-page" ${editedWeddingPartyMembers.has(member.id) ? '' : 'hidden'} data-add-member-page aria-label="Add page for ${escapeAttribute(member.name)}">+</button></div><span class="member-role-label" ${editedWeddingPartyMembers.has(member.id) ? 'hidden' : ''}>${escapeHtml(member.title || 'Wedding Party')}</span><select ${editedWeddingPartyMembers.has(member.id) ? '' : 'hidden'} class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><span class="wedding-party-order-controls"><button type="button" data-move-wedding-party="up" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} up within ${escapeAttribute(member.title)}" ${rolePosition === 0 ? 'disabled' : ''}>↑</button><button type="button" data-move-wedding-party="down" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} down within ${escapeAttribute(member.title)}" ${rolePosition === roleCount - 1 ? 'disabled' : ''}>↓</button></span><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div><div class="member-editor-content wedding-party-description-editor" ${editedWeddingPartyMembers.has(member.id) ? '' : 'hidden'}></div></div>`;
   const cardsFor = title => {
     const roleMembers = members.map((member, index) => ({ member, index })).filter(({ member }) => member.title === title);
     return roleMembers.map(({ member, index }, rolePosition) => memberCard(member, index, rolePosition, roleMembers.length)).join('');
