@@ -304,9 +304,7 @@ function normalizeState(saved) {
       loaded.events.wedding.whatToExpectContent = typeof loaded.events.wedding.whatToExpectContent === 'string'
         ? loaded.events.wedding.whatToExpectContent
         : '';
-      loaded.events.wedding.attireVideos = Array.isArray(loaded.events.wedding.attireVideos)
-        ? loaded.events.wedding.attireVideos.filter(url => typeof url === 'string')
-        : [];
+      loaded.events.wedding.attireVideos = AttireVideos.normalize(loaded.events.wedding.attireVideos);
       loaded.events.wedding.weddingPartyMembers = WeddingParty.normalizeMembers(loaded.events.wedding.weddingPartyMembers);
       delete loaded.events.wedding.weddingPartyDescriptions;
       const savedAttireImages = loaded.events.wedding.weddingPartyAttireImages;
@@ -941,9 +939,15 @@ function videoEmbedUrl(url) {
   return '';
 }
 function renderAttireVideoCollection(sectionSelector, containerSelector) {
-  const videos = (state.attireVideos || []).map(videoEmbedUrl).filter(Boolean);
+  const videos = (state.attireVideos || []).map(video => {
+    const uploaded = typeof video === 'object';
+    const url = uploaded ? AttireVideos.assetUrl(SHARED_STATE_URL, video.id) : videoEmbedUrl(video);
+    return url ? { video, url, uploaded } : null;
+  }).filter(Boolean);
   document.querySelector(sectionSelector).hidden = videos.length === 0;
-  document.querySelector(containerSelector).innerHTML = videos.map((url, index) => `<iframe src="${escapeAttribute(url)}" title="Formal attire tip ${index + 1}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`).join('');
+  document.querySelector(containerSelector).innerHTML = videos.map(({ video, url, uploaded }, index) => uploaded
+    ? `<video controls playsinline preload="metadata" aria-label="${escapeAttribute(video.name)}"><source src="${escapeAttribute(url)}" type="${escapeAttribute(video.contentType)}">Your browser does not support this video. <a href="${escapeAttribute(url)}">Download video</a></video>`
+    : `<iframe src="${escapeAttribute(url)}" title="Formal attire tip ${index + 1}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`).join('');
 }
 function showSignedInDestination() {
   document.querySelector('#signInPage').hidden = true;
@@ -1679,7 +1683,7 @@ function commitBrideGroomPageEditors() {
 function renderAdminAttireVideos() {
   const videos = state.attireVideos || [];
   document.querySelector('#adminAttireVideos').innerHTML = videos.length
-    ? videos.map((url, index) => `<div class="admin-video-row"><a href="${escapeAttribute(url)}" target="_blank" rel="noopener noreferrer">Video ${index + 1}</a><button type="button" data-remove-attire-video="${index}" aria-label="Remove video ${index + 1}">Remove</button></div>`).join('')
+    ? videos.map((video, index) => `<div class="admin-video-row"><a href="${escapeAttribute(typeof video === 'string' ? video : AttireVideos.assetUrl(SHARED_STATE_URL, video.id))}" target="_blank" rel="noopener noreferrer">${escapeHtml(typeof video === 'string' ? `Video ${index + 1}` : video.name)}</a><button type="button" data-remove-attire-video="${index}" aria-label="Remove video ${index + 1}">Remove</button></div>`).join('')
     : '<p class="guest-empty">No attire videos have been added.</p>';
 }
 const editedWeddingPartyMembers = new Set();
@@ -2482,12 +2486,60 @@ document.querySelector('#adminAddAttireVideo').addEventListener('click', () => {
   saveState();
   renderAdminAttireVideos();
 });
-document.querySelector('#adminAttireVideos').addEventListener('click', event => {
+document.querySelector('#adminUploadAttireVideo').addEventListener('click', async event => {
+  if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+  const input = document.querySelector('#adminAttireVideoFile');
+  const file = input.files[0];
+  const error = document.querySelector('#adminAttireVideoError');
+  error.textContent = AttireVideos.validate(file);
+  if (error.textContent) return;
+  if (!SHARED_STATE_URL) { error.textContent = 'Configure shared saving before uploading videos.'; return; }
+  const button = event.currentTarget;
+  const progress = document.querySelector('#adminAttireVideoProgress');
+  const video = { id: crypto.randomUUID(), name: file.name, contentType: AttireVideos.fileType(file) };
+  button.disabled = true; input.disabled = true; progress.hidden = false; progress.textContent = 'Uploading video…';
+  try {
+    await new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest();
+      request.open('PUT', AttireVideos.assetUrl(SHARED_STATE_URL, video.id));
+      request.setRequestHeader('Content-Type', video.contentType);
+      request.setRequestHeader('X-Host-Password', hostCredential);
+      request.timeout = 300000;
+      request.upload.onprogress = event => { if (event.lengthComputable) progress.textContent = `Uploading video… ${Math.round(event.loaded / event.total * 100)}%`; };
+      request.onload = () => request.status >= 200 && request.status < 300 ? resolve() : reject(new Error([404, 405].includes(request.status) ? 'Deploy the latest Cloudflare Worker to enable video uploads.' : request.responseText || `Video upload failed (${request.status}).`));
+      request.onerror = () => reject(new Error('Could not upload the video. Check your connection and the deployed Worker.'));
+      request.ontimeout = () => reject(new Error('Video upload timed out. Try again with a smaller video.'));
+      request.send(file);
+    });
+    const currentWedding = appState.events.wedding;
+    currentWedding.attireVideos ??= []; currentWedding.attireVideos.push(video);
+    if (state === currentWedding) saveState();
+    else { storeLocalState(appState); localStateRevision += 1; queueSharedStateSave(); }
+    input.value = ''; progress.textContent = 'Video uploaded.';
+    if (viewedEventId === 'wedding') renderAdminAttireVideos();
+    showToast('Attire video uploaded.');
+  } catch (uploadError) { error.textContent = uploadError.message; progress.hidden = true; }
+  finally { button.disabled = false; input.disabled = false; }
+});
+document.querySelector('#adminAttireVideos').addEventListener('click', async event => {
   const button = event.target.closest('[data-remove-attire-video]');
-  if (!button) return;
-  state.attireVideos.splice(Number(button.dataset.removeAttireVideo), 1);
-  saveState();
-  renderAdminAttireVideos();
+  if (!button || !hostAuthenticated || viewedEventId !== 'wedding') return;
+  const wedding = state;
+  const video = wedding.attireVideos[Number(button.dataset.removeAttireVideo)];
+  if (!video) return;
+  button.disabled = true;
+  try {
+    if (typeof video === 'object') {
+      const result = await fetchWithTimeout(AttireVideos.assetUrl(SHARED_STATE_URL, video.id), { method: 'DELETE', headers: { 'X-Host-Password': hostCredential } });
+      if (!result.ok && result.status !== 404) throw new Error('Could not remove the uploaded video. Please try again.');
+    }
+    const currentWedding = appState.events.wedding;
+    const index = currentWedding.attireVideos.findIndex(item => typeof video === 'string' ? item === video : item.id === video.id);
+    if (index >= 0) currentWedding.attireVideos.splice(index, 1);
+    if (state === currentWedding) saveState();
+    else { storeLocalState(appState); localStateRevision += 1; queueSharedStateSave(); }
+    if (viewedEventId === 'wedding') renderAdminAttireVideos();
+  } catch (error) { document.querySelector('#adminAttireVideoError').textContent = error.message; button.disabled = false; }
 });
 document.querySelector('#adminAddUnitButton').addEventListener('click', () => {
   const input = document.querySelector('#adminNewUnitName');

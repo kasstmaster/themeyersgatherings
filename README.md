@@ -125,6 +125,19 @@ and Bachelorette Party Info page are removed; responsibilities start blank and
 are no longer inherited from titles. New personal content uses the existing
 local backup and shared-state saving flow.
 
+## Guest attire video uploads
+
+In **Wedding Details → Guest Attire Tip Videos**, keep adding YouTube or Vimeo
+links or choose a video from your computer and select **Upload video**. Uploads
+support MP4, WebM, and Ogg files up to 50 MB. The upload reports progress, and
+uploaded videos play with native controls and can be removed from the same list.
+
+Deploy the updated Cloudflare Worker before using uploads on the published
+site. Videos use the existing `INVITATION_BACKGROUNDS` R2 binding under a separate
+`attire-videos/` prefix; no additional bucket or secrets are required. Only video
+metadata is stored in shared JSON, so uploads survive reloads and work across
+devices. The Worker supports byte-range playback for seeking.
+
 ## AnyList Address Book sync
 
 The **Host tools → Sync AnyList Address Book** button starts a private GitHub
