@@ -2368,7 +2368,7 @@ document.querySelector('#adminAddWeddingPartyAttireImage').addEventListener('cli
     fileInput.click();
     return;
   }
-  button.disabled = true; button.textContent = 'Uploading…'; error.textContent = '';
+  button.disabled = true; button.querySelector('span').textContent = 'Uploading…'; error.textContent = '';
   try {
     const uploaded = await uploadWeddingPartyAttireImage(crypto.randomUUID(), weddingPartyAttireFile);
     state.weddingPartyAttireImages ??= { ladies: [], gentlemen: [] };
@@ -2376,7 +2376,7 @@ document.querySelector('#adminAddWeddingPartyAttireImage').addEventListener('cli
     fileInput.value = ''; captionInput.value = ''; weddingPartyAttireFile = null; updateDropzone(weddingPartyAttireDropzone, null);
     saveState(); renderWeddingPartyAttireAdmin(); showToast('Private wedding party attire image added.');
   } catch (uploadError) { console.error(uploadError); error.textContent = uploadError.message || 'Could not upload the image.'; }
-  finally { button.disabled = false; button.textContent = 'Upload image'; }
+  finally { button.disabled = false; button.querySelector('span').textContent = 'Add Image'; }
 });
 document.querySelector('#adminWeddingPartyAttireImages').addEventListener('click', async event => {
   const button = event.target.closest('[data-remove-party-attire]');

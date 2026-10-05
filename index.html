@@ -424,10 +424,12 @@
             </div>
             <div id="adminWeddingPartyAttireImages" class="wedding-party-attire-image-list"></div>
             <div class="wedding-party-attire-add">
-              <select id="adminWeddingPartyAttireSection" aria-label="Attire section"><option value="ladies">For the Ladies</option><option value="gentlemen">For the Gentlemen</option></select>
               <textarea id="adminWeddingPartyAttireCaption" placeholder="Caption (optional)" aria-label="Image caption"></textarea>
               <label class="template-dropzone compact" id="adminWeddingPartyAttireDropzone" data-empty-label="Drop an image here"><input id="adminWeddingPartyAttireFile" type="file" accept="image/png,image/jpeg,image/webp" /><span><strong>Drop an image here</strong> or choose a file</span><small>PNG, JPEG, or WebP · 15 MB maximum</small></label>
-              <button id="adminAddWeddingPartyAttireImage" type="button">Add Image</button>
+              <div class="wedding-party-attire-actions">
+                <button id="adminAddWeddingPartyAttireImage" type="button"><span>Add Image</span></button>
+                <select id="adminWeddingPartyAttireSection" aria-label="Attire section"><option value="ladies">For the Ladies</option><option value="gentlemen">For the Gentlemen</option></select>
+              </div>
             </div>
             <p id="adminWeddingPartyAttireError" class="form-error" role="alert"></p>
           </section>
@@ -435,8 +437,8 @@
             <h3 id="guestAttireVideosAdminHeading">Guest Attire Tip Videos</h3>
             <p>Add a YouTube or Vimeo link, or upload an MP4, WebM, or Ogg video (50 MB maximum).</p>
             <div id="adminAttireVideos"></div>
-            <div class="admin-video-add"><input id="adminNewAttireVideo" type="url" placeholder="https://www.youtube.com/watch?v=…" /><button id="adminAddAttireVideo" type="button">Add video</button></div>
-            <div class="admin-video-upload"><label><span>Upload your video</span><input id="adminAttireVideoFile" type="file" accept="video/mp4,video/webm,video/ogg,.mp4,.webm,.ogg,.ogv" /></label><button id="adminUploadAttireVideo" type="button">Upload video</button></div>
+            <div class="admin-video-add"><input id="adminNewAttireVideo" type="url" placeholder="https://www.youtube.com/watch?v=…" /><button id="adminAddAttireVideo" type="button"><span>Add Video</span></button></div>
+            <div class="admin-video-upload"><label><span>Upload your video</span><input id="adminAttireVideoFile" type="file" accept="video/mp4,video/webm,video/ogg,.mp4,.webm,.ogg,.ogv" /></label><button id="adminUploadAttireVideo" type="button"><span>Upload Video</span></button></div>
             <p id="adminAttireVideoProgress" role="status" hidden></p>
             <p class="form-error" id="adminAttireVideoError" role="alert"></p>
           </section>
