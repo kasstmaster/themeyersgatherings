@@ -381,15 +381,15 @@
               </fieldset>
             </div>
           </div>
-          <div id="adminRegistryFields" class="admin-registry" hidden>
+          <fieldset id="adminRegistryFields" class="admin-registry wedding-editor-card" hidden><legend>Links</legend>
             <label><span>Wedding registry link</span><input id="adminRegistryUrl" type="url" placeholder="https://www.example.com/our-registry" /></label>
             <label><span>Monetary gift link</span><input id="adminMonetaryGiftUrl" type="url" placeholder="https://www.example.com/our-gift-fund" /></label>
-          </div>
+          </fieldset>
           <p id="adminWeddingVariableDescription" hidden>In any editable wedding text, insert <code>{date}</code>, <code>{home}</code>, <code>{church}</code>, <code>{venue}</code>, <code>{registry}</code>, or <code>{monetary}</code> to keep those details up to date automatically.</p>
         </section>
         <div id="adminAttireFields" class="admin-attire" hidden>
           <section id="weddingMenuAdmin" class="admin-editor-section wedding-menu-admin" aria-labelledby="weddingMenuAdminHeading">
-            <h3 id="weddingMenuAdminHeading">Menu</h3>
+            <fieldset class="wedding-editor-card"><legend id="weddingMenuAdminHeading">Menu</legend>
             <p>Enter the three meal options available to everyone and the additional option available only to children.</p>
             <div class="wedding-menu-fields">
               <label><span>Adult and child option 1</span><input id="adminWeddingMealOption1" maxlength="100" placeholder="Meal option 1" /></label>
@@ -397,6 +397,7 @@
               <label><span>Adult and child option 3</span><input id="adminWeddingMealOption3" maxlength="100" placeholder="Meal option 3" /></label>
               <label><span>Additional child option</span><input id="adminWeddingChildMealOption" maxlength="100" placeholder="Child meal option" /></label>
             </div>
+            </fieldset>
           </section>
           <section id="weddingPartyAdmin" class="admin-editor-section wedding-party-admin" aria-labelledby="weddingPartyAdminHeading">
             <h3 id="weddingPartyAdminHeading">Wedding Party Members</h3>
@@ -416,10 +417,10 @@
             <h3 id="weddingPagesAdminHeading">Pages</h3>
             <p>Edit the content shown on each wedding page. Formatting supports lines beginning with <code>-</code>, <code>**bold**</code>, <code>*italics*</code>, <code>`code`</code>, and <code>[linked text](https://example.com)</code>. Put <code>---</code> on its own line for a divider or wrap an address in <code>&lt;&gt;</code> for a maps link. You can also insert <code>{date}</code>, <code>{home}</code>, <code>{church}</code>, <code>{venue}</code>, <code>{registry}</code>, or <code>{monetary}</code>.</p>
             <div class="wedding-party-description-editors wedding-page-editors">
-              <div id="brideGroomAdmin" class="wedding-party-description-editor wedding-page-editor"><div class="wedding-page-editor-heading"><h4>Bride &amp; Groom</h4><button id="adminAddBrideGroomPage" class="add-bride-groom-page" type="button" aria-label="Add Bride &amp; Groom page" title="Add page">+</button></div><div id="adminBrideGroomPages" class="bride-groom-page-editors"></div></div>
-              <div id="timelineAdmin" class="wedding-party-description-editor wedding-page-editor"><span>Wedding Timeline page</span><label class="editor-page-line"><small>Text above the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineAboveContent" aria-label="Text above the Wedding Timeline" placeholder="Add text above the timeline…"></textarea></label><label class="editor-page-line"><small>Timeline rows — enter one row per line with the time, event, and notes separated by tabs. Bold text can be wrapped in <code>**double asterisks**</code>.</small><textarea class="wedding-copy-editor wedding-timeline-editor" id="adminTimelineContent" aria-label="Wedding Timeline rows"></textarea></label><label class="editor-page-line"><small>Text below the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineBelowContent" aria-label="Text below the Wedding Timeline" placeholder="Add text below the timeline…"></textarea></label></div>
-              <label id="whatToExpectAdmin" class="wedding-party-description-editor wedding-page-editor"><span>What to Expect (Guests)</span><div class="editor-page-line"><textarea class="wedding-copy-editor" id="adminWhatToExpectContent" aria-label="What to Expect page content" placeholder="Add what guests can expect here…"></textarea></div></label>
-              <label id="perfectExperienceAdmin" class="wedding-party-description-editor wedding-page-editor"><span>The Perfect Experience (Wedding Party)</span><div class="editor-page-line"><textarea class="wedding-copy-editor" id="adminPerfectExperienceContent" aria-label="The Perfect Experience page content" placeholder="Add the perfect experience details here…"></textarea></div></label>
+              <fieldset id="brideGroomAdmin" class="wedding-party-description-editor wedding-page-editor wedding-editor-card"><legend>Bride &amp; Groom <button id="adminAddBrideGroomPage" class="add-bride-groom-page" type="button" aria-label="Add Bride &amp; Groom page" title="Add page">+</button></legend><div id="adminBrideGroomPages" class="bride-groom-page-editors"></div></fieldset>
+              <fieldset id="timelineAdmin" class="wedding-party-description-editor wedding-page-editor wedding-editor-card"><legend>Wedding Timeline</legend><label class="editor-page-line"><small>Text above the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineAboveContent" aria-label="Text above the Wedding Timeline" placeholder="Add text above the timeline…"></textarea></label><label class="editor-page-line"><small>Timeline rows — enter one row per line with the time, event, and notes separated by tabs. Bold text can be wrapped in <code>**double asterisks**</code>.</small><textarea class="wedding-copy-editor wedding-timeline-editor" id="adminTimelineContent" aria-label="Wedding Timeline rows"></textarea></label><label class="editor-page-line"><small>Text below the timeline</small><textarea class="wedding-copy-editor" id="adminTimelineBelowContent" aria-label="Text below the Wedding Timeline" placeholder="Add text below the timeline…"></textarea></label></fieldset>
+              <fieldset id="whatToExpectAdmin" class="wedding-party-description-editor wedding-page-editor wedding-editor-card"><legend>Guest Pages</legend><span>What to Expect (Guests)</span><div class="editor-page-line"><textarea class="wedding-copy-editor" id="adminWhatToExpectContent" aria-label="What to Expect page content" placeholder="Add what guests can expect here…"></textarea></div></fieldset>
+              <fieldset id="perfectExperienceAdmin" class="wedding-party-description-editor wedding-page-editor wedding-editor-card"><legend>Wedding Party Pages</legend><span>The Perfect Experience (Wedding Party)</span><div class="editor-page-line"><textarea class="wedding-copy-editor" id="adminPerfectExperienceContent" aria-label="The Perfect Experience page content" placeholder="Add the perfect experience details here…"></textarea></div></fieldset>
             </div>
           </section>
           <section id="weddingPartyAttireAdmin" class="admin-editor-section wedding-party-attire-admin" aria-labelledby="weddingPartyAttireAdminHeading">

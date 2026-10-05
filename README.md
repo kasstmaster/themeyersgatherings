@@ -114,8 +114,8 @@ shared copy; browser storage is only an offline fallback.
 
 In the Wedding gathering, open **Wedding Details → Wedding Party Members**. Each
 wedding party member has responsibilities and page editors directly below their
-name and role, with a **+** button
-for adding personal pages. You can rename, edit, and delete these pages like the
+name and role after you select **Edit**, with a **+** button
+for adding personal pages. Select **Done** on the member card to hide the editors. You can rename, edit, and delete these pages like the
 extra Bride & Groom pages. Members see their own responsibilities and personal
 pages; the host can edit all members and preview each person's view.
 

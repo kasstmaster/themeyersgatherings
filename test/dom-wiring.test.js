@@ -260,7 +260,7 @@ test('hosts can add editable tabbed pages inside Bride & Groom', async () => {
   ]);
 
   assert.match(html, /id="brideGroomTabs"[^>]*role="tablist"[^>]*hidden/);
-  assert.match(html, /Bride &amp; Groom<\/h4><button id="adminAddBrideGroomPage"[^>]*>\+<\/button>/);
+  assert.match(html, /Bride &amp; Groom <button id="adminAddBrideGroomPage"[^>]*>\+<\/button>/);
   assert.match(html, /id="adminBrideGroomPages"/);
   assert.match(javascript, /brideGroomPagesVersion: 1, brideGroomPages: \[\{ id: 'main', title: 'Bride & Groom'/);
   assert.match(javascript, /#adminAddBrideGroomPage'[\s\S]*state\.brideGroomPages\.push\(page\)/);
@@ -518,7 +518,7 @@ test('wedding responsibilities and page editors share compact editor sizing', as
   assert.match(styles, /\.wedding-copy-editor\{[^}]*height:36px;min-height:36px/);
 });
 
-test('variables group the gathering date and reusable values above one divider', async () => {
+test('variables group the gathering date and reusable values without horizontal dividers', async () => {
   const [html, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
@@ -526,23 +526,23 @@ test('variables group the gathering date and reusable values above one divider',
 
   assert.match(html, /id="adminWeddingVariableHelp"[\s\S]*<h3 id="adminWeddingVariableHeading" hidden>Variables<\/h3>[\s\S]*<span>Gathering date<\/span>[\s\S]*<span>Home<\/span>[\s\S]*<legend>Church<\/legend>[\s\S]*<legend>Venue<\/legend>[\s\S]*<span>Wedding registry link<\/span>[\s\S]*<span>Monetary gift link<\/span>[\s\S]*id="weddingPagesAdmin"/);
   assert.ok(html.indexOf('id="adminWeddingVariableHelp"') < html.indexOf('id="weddingPagesAdmin"'));
-  assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
+  assert.doesNotMatch(styles, /\.admin-editor-section\{[^}]*border-(?:top|bottom)/);
   assert.doesNotMatch(styles, /\.admin-variable-help[^}]*border-(?:top|bottom)/);
   assert.doesNotMatch(styles, /\.admin-attire\{[^}]*border-(?:top|bottom)/);
 });
 
-test('the editor title is its own section with one bottom divider', async () => {
+test('the editor title is its own section without a bottom divider', async () => {
   const [html, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
   assert.match(html, /<section class="admin-editor-section admin-editor-heading" aria-labelledby="adminHeading">\s*<p class="section-kicker">Host dashboard<\/p>\s*<h2 id="adminHeading">Edit the menu<\/h2>\s*<\/section>\s*<section id="adminWeddingVariableHelp"/);
-  assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
+  assert.doesNotMatch(styles, /\.admin-editor-section\{[^}]*border-(?:top|bottom)/);
   assert.doesNotMatch(styles, /\.admin-editor-heading\{[^}]*border-(?:top|bottom)/);
 });
 
-test('every wedding details section has a divider and the requested title', async () => {
+test('wedding detail sections use titled cards without horizontal dividers', async () => {
   const [html, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
@@ -553,10 +553,10 @@ test('every wedding details section has a divider and the requested title', asyn
   ];
 
   sectionHeadings.forEach(heading => assert.match(html, new RegExp(`>${heading}<\\/h3>`)));
-  ['The Perfect Experience (Wedding Party)', 'Wedding Timeline page', 'What to Expect (Guests)']
-    .forEach(heading => assert.ok(html.includes(`<span>${heading}</span>`)));
+  ['Links', 'Menu', 'Bride &amp; Groom', 'Wedding Timeline', 'Guest Pages', 'Wedding Party Pages']
+    .forEach(heading => assert.ok(html.includes(`<legend>${heading}`) || html.includes(`id="weddingMenuAdminHeading">${heading}</legend>`)));
   assert.match(html, /<section id="guestAttireVideosAdmin" class="admin-editor-section guest-attire-videos-admin"[\s\S]*>Guest Attire Tip Videos<\/h3>[\s\S]*id="adminAttireVideos"[\s\S]*<\/section>/);
-  assert.match(styles, /\.admin-editor-section\{[^}]*border-bottom:1px solid var\(--border\)/);
+  assert.doesNotMatch(styles, /\.admin-editor-section\{[^}]*border-(?:top|bottom)/);
 });
 
 test('Menu and Wedding Party Members precede Pages in Wedding Details', async () => {
@@ -572,8 +572,8 @@ test('Menu and Wedding Party Members precede Pages in Wedding Details', async ()
   ['brideGroomAdmin', 'perfectExperienceAdmin', 'timelineAdmin', 'whatToExpectAdmin']
     .forEach(id => assert.match(pagesSection, new RegExp(`id="${id}"`)));
   assert.equal((pagesSection.match(/<h3\b/g) || []).length, 1);
-  assert.equal((pagesSection.match(/class="wedding-party-description-editor wedding-page-editor"/g) || []).length, 4);
-  assert.match(pagesSection, /<h4>Bride &amp; Groom<\/h4>/);
+  assert.equal((pagesSection.match(/class="wedding-party-description-editor wedding-page-editor wedding-editor-card"/g) || []).length, 4);
+  assert.match(pagesSection, /<legend>Bride &amp; Groom /);
   assert.match(pagesSection, /class="wedding-party-description-editors wedding-page-editors"/);
 });
 
