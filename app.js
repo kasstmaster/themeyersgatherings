@@ -1613,7 +1613,6 @@ function openAdmin() {
     document.querySelector('#adminTimelineContent').value = state.timelineContent || '';
     document.querySelector('#adminTimelineBelowContent').value = state.timelineBelowContent || '';
     document.querySelector('#adminWhatToExpectContent').value = state.whatToExpectContent || '';
-    renderWeddingPartyDescriptionAdmin();
     renderWeddingPartyAttireAdmin();
     renderAdminAttireVideos();
   }
@@ -1683,8 +1682,11 @@ function renderAdminAttireVideos() {
     : '<p class="guest-empty">No attire videos have been added.</p>';
 }
 function renderWeddingPartyDescriptionAdmin() {
-  const container = document.querySelector('#adminWeddingPartyDescriptions');
-  container.innerHTML = WeddingParty.sortByRole(state.weddingPartyMembers || [], WEDDING_PARTY_TITLES.map(title => title.value)).map(member => `<section class="wedding-party-description-editor" data-member-editor="${escapeAttribute(member.id)}"><div class="wedding-page-editor-heading member-editor-heading"><h4>${escapeHtml(member.name)}</h4><button type="button" class="add-bride-groom-page" data-add-member-page aria-label="Add page for ${escapeAttribute(member.name)}">+</button></div><p class="member-editor-role">${escapeHtml(member.title)}</p><div class="member-editor-pages editor-page-line"><label><span>Responsibilities</span><textarea class="wedding-copy-editor" data-member-responsibilities aria-label="Responsibilities for ${escapeAttribute(member.name)}" placeholder="Assign responsibilities to this person…">${escapeHtml(member.responsibilities || '')}</textarea></label><div>${(member.pages || []).map(page => `<div class="wedding-page-editor" data-member-page-editor="${escapeAttribute(page.id)}"><div class="wedding-page-editor-heading"><input data-page-title value="${escapeAttribute(page.title)}" maxlength="60" aria-label="Page name for ${escapeAttribute(member.name)}"><button type="button" class="admin-delete" data-delete-member-page aria-label="Delete ${escapeAttribute(page.title)}">×</button></div><textarea class="wedding-copy-editor" data-page-content aria-label="${escapeAttribute(page.title)} content for ${escapeAttribute(member.name)}">${escapeHtml(page.content)}</textarea></div>`).join('')}</div></div></section>`).join('') || '<p class="guest-empty">Add wedding party members above to assign responsibilities and create personal pages.</p>';
+  const container = document.querySelector('#adminWeddingPartyMembers');
+  container.querySelectorAll('[data-member-editor]').forEach(editor => {
+    const member = state.weddingPartyMembers.find(item => item.id === editor.dataset.memberEditor);
+    editor.querySelector('.member-editor-content').innerHTML = `<div class="member-editor-pages editor-page-line"><label><span>Responsibilities</span><textarea class="wedding-copy-editor" data-member-responsibilities aria-label="Responsibilities for ${escapeAttribute(member.name)}" placeholder="Assign responsibilities to this person…">${escapeHtml(member.responsibilities || '')}</textarea></label><div>${(member.pages || []).map(page => `<div class="wedding-page-editor" data-member-page-editor="${escapeAttribute(page.id)}"><div class="wedding-page-editor-heading"><input data-page-title value="${escapeAttribute(page.title)}" maxlength="60" aria-label="Page name for ${escapeAttribute(member.name)}"><button type="button" class="admin-delete" data-delete-member-page aria-label="Delete ${escapeAttribute(page.title)}">×</button></div><textarea class="wedding-copy-editor" data-page-content aria-label="${escapeAttribute(page.title)} content for ${escapeAttribute(member.name)}">${escapeHtml(page.content)}</textarea></div>`).join('')}</div></div>`;
+  });
   container.querySelectorAll('[data-member-editor]').forEach(editor => {
     const member = state.weddingPartyMembers.find(item => item.id === editor.dataset.memberEditor);
     editor.querySelectorAll('input, textarea').forEach(control => control.addEventListener('change', () => {
@@ -1695,7 +1697,7 @@ function renderWeddingPartyDescriptionAdmin() {
       commitWeddingPartyEditors();
       member.pages ||= [];
       const page = { id: crypto.randomUUID(), title: `Page ${member.pages.length + 1}`, content: '' };
-      member.pages.push(page); saveState(); renderWeddingPartyDescriptionAdmin();
+      member.pages.push(page); saveState(); renderWeddingPartyAdmin();
       container.querySelector(`[data-member-page-editor="${CSS.escape(page.id)}"] input`).focus();
     });
     editor.querySelectorAll('[data-delete-member-page]').forEach(button => button.addEventListener('click', () => {
@@ -1703,14 +1705,14 @@ function renderWeddingPartyDescriptionAdmin() {
       commitWeddingPartyEditors();
       const id = button.closest('[data-member-page-editor]').dataset.memberPageEditor;
       member.pages = member.pages.filter(page => page.id !== id);
-      saveState(); renderWeddingPartyDescriptionAdmin();
+      saveState(); renderWeddingPartyAdmin();
     }));
   });
 }
 function commitWeddingPartyEditors() {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
   let changed = false;
-  document.querySelectorAll('#adminWeddingPartyDescriptions [data-member-editor]').forEach(editor => {
+  document.querySelectorAll('#adminWeddingPartyMembers [data-member-editor]').forEach(editor => {
     const member = state.weddingPartyMembers.find(item => item.id === editor.dataset.memberEditor);
     if (!member) return;
     const responsibilities = editor.querySelector('[data-member-responsibilities]').value;
@@ -1818,11 +1820,11 @@ function openAccountsAdmin() {
 
 function renderWeddingPartyAdmin() {
   commitWeddingPartyEditors();
-  renderWeddingPartyDescriptionAdmin();
   state.weddingPartyMembers ??= [];
   document.querySelector('#adminWeddingPartyMembers').innerHTML = state.weddingPartyMembers.length
     ? renderWeddingPartyMemberList(state.weddingPartyMembers)
     : '<p class="guest-empty">No wedding party members yet.</p>';
+  renderWeddingPartyDescriptionAdmin();
   document.querySelectorAll('[data-wedding-party-index]').forEach(row => {
     const member = state.weddingPartyMembers[Number(row.dataset.weddingPartyIndex)];
     row.querySelector('.wedding-party-title').addEventListener('change', event => {
@@ -1859,7 +1861,7 @@ function renderWeddingPartyAdmin() {
 }
 
 function renderWeddingPartyMemberList(members) {
-  const memberCard = (member, index, rolePosition, roleCount) => `<div class="wedding-party-member" data-wedding-party-index="${index}"><strong>${escapeHtml(member.name)}</strong><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><span class="wedding-party-order-controls"><button type="button" data-move-wedding-party="up" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} up within ${escapeAttribute(member.title)}" ${rolePosition === 0 ? 'disabled' : ''}>↑</button><button type="button" data-move-wedding-party="down" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} down within ${escapeAttribute(member.title)}" ${rolePosition === roleCount - 1 ? 'disabled' : ''}>↓</button></span><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div>`;
+  const memberCard = (member, index, rolePosition, roleCount) => `<div class="wedding-party-member" data-wedding-party-index="${index}" data-member-editor="${escapeAttribute(member.id)}"><div class="wedding-party-member-heading"><div class="member-name-controls"><strong>${escapeHtml(member.name)}</strong><button type="button" class="add-bride-groom-page" data-add-member-page aria-label="Add page for ${escapeAttribute(member.name)}">+</button></div><select class="wedding-party-title" aria-label="Title for ${escapeAttribute(member.name)}"><option value="">Select title</option>${WEDDING_PARTY_TITLES.map(title => `<option value="${escapeAttribute(title.value)}" ${member.title === title.value ? 'selected' : ''}>${escapeHtml(title.value)}</option>`).join('')}</select><span class="wedding-party-order-controls"><button type="button" data-move-wedding-party="up" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} up within ${escapeAttribute(member.title)}" ${rolePosition === 0 ? 'disabled' : ''}>↑</button><button type="button" data-move-wedding-party="down" data-wedding-party-move-index="${index}" aria-label="Move ${escapeAttribute(member.name)} down within ${escapeAttribute(member.title)}" ${rolePosition === roleCount - 1 ? 'disabled' : ''}>↓</button></span><button type="button" data-remove-wedding-party="${index}" aria-label="Remove ${escapeAttribute(member.name)} from wedding party">×</button></div><div class="member-editor-content wedding-party-description-editor"></div></div>`;
   const cardsFor = title => {
     const roleMembers = members.map((member, index) => ({ member, index })).filter(({ member }) => member.title === title);
     return roleMembers.map(({ member, index }, rolePosition) => memberCard(member, index, rolePosition, roleMembers.length)).join('');
