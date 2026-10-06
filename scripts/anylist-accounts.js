@@ -1,4 +1,8 @@
 function clean(value) { return String(value ?? '').trim().replace(/\s+/g, ' '); }
+function packageSizeName(item) {
+  const value = item?.packageSizePb ?? item?.packageSize;
+  return clean(typeof value === 'string' ? value : value?.rawPackageSize ?? value?.size);
+}
 function key(value) { return clean(value).toLocaleLowerCase('en-US'); }
 
 // This intentionally enumerates the supported Roman numerals instead of accepting
@@ -83,7 +87,7 @@ export function categoriesFromRawUserData(userData, listId) {
       // In the Address Book, each non-empty note line is the name of a child in
       // this household. Keep it separate from the adult's item name so children
       // are displayed and counted without becoming sign-in identities.
-      category.items.push({ name: item?.name, notes: item?.details ?? item?.notes ?? '' });
+      category.items.push({ name: item?.name, notes: item?.details ?? item?.notes ?? '', ...(packageSizeName(item) ? { packageSize: packageSizeName(item) } : {}) });
       assigned = true;
     }
     if (!assigned) unassigned += 1;
@@ -102,6 +106,7 @@ export function convertCategory(categoryName, items) {
   const skipped = [];
   const orderedPeople = [];
   const children = [];
+  const signInAliases = [];
   const childKeys = new Set();
   for (const item of items) {
     const fullName = clean(item?.name);
@@ -116,6 +121,10 @@ export function convertCategory(categoryName, items) {
     });
     households.get(surnameKey).people.push(person);
     orderedPeople.push(person.fullName);
+    const alias = parsePerson(packageSizeName(item).replace(/^\((.*)\)$/, '$1'));
+    if (alias && normalizedPerson(alias.fullName) !== normalizedPerson(person.fullName)) {
+      signInAliases.push({ name: person.fullName, alias: alias.fullName });
+    }
     String(item?.notes ?? '').split(/\r?\n/).map(clean).filter(Boolean).forEach(child => {
       const childKey = key(child);
       if (childKeys.has(childKey)) return;
@@ -133,7 +142,7 @@ export function convertCategory(categoryName, items) {
     if (people.some(person => person.suffix)) return people.map(person => person.fullName).join(',');
     return `${people.map(person => person.givenNames).join(',')} ${lastName}`;
   }).join('/') : null;
-  return { account, anchor: orderedPeople[0] || null, people: orderedPeople, children, skipped };
+  return { account, anchor: orderedPeople[0] || null, people: orderedPeople, children, signInAliases, skipped };
 }
 
 /** Expand both legacy compact households and explicit comma-separated full names. */
@@ -194,7 +203,7 @@ export function syncAnyListAccounts(state, categories) {
       index = best[0]?.candidateIndex ?? -1;
     }
     if (index < 0) {
-      state.accounts.push({ name: category.account, children: category.children || [], selected: false, anyListCategoryId: categoryId });
+      state.accounts.push({ name: category.account, children: category.children || [], signInAliases: category.signInAliases || [], selected: false, anyListCategoryId: categoryId });
       claimedIndexes.add(state.accounts.length - 1);
       added.push(category.account);
       continue;
@@ -204,6 +213,7 @@ export function syncAnyListAccounts(state, categories) {
     const oldName = account.name;
     account.name = category.account;
     account.children = category.children || [];
+    account.signInAliases = category.signInAliases || [];
     account.anyListCategoryId = categoryId;
     migrateAccountReferences(state, oldName, account.name);
     updated.push(account.name);

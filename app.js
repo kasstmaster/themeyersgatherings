@@ -672,16 +672,29 @@ function firstAccountLastName(accountName) {
   if (words.length > 2 && /^(?:jr\.?|sr\.?|i|ii|iii|iv|v|vi|vii|viii|ix|x)$/i.test(words.at(-1))) words.pop();
   return words.at(-1) || '';
 }
-function accountNameMatches(enteredName, accountName) {
+function accountPersonName(enteredName, account) {
   const normalizedEntry = normalizeAccountName(enteredName);
-  return accountSignInNames(accountName).some(name => normalizeAccountName(name) === normalizedEntry);
+  const canonical = accountSignInNames(account.name).find(name => normalizeAccountName(name) === normalizedEntry);
+  if (canonical) return canonical;
+  const alias = (account.signInAliases || []).find(entry => entry && normalizeAccountName(entry.alias) === normalizedEntry
+    && accountSignInNames(account.name).some(name => normalizeAccountName(name) === normalizeAccountName(entry.name)));
+  return alias?.name || '';
+}
+function accountNameMatches(enteredName, accountName) {
+  const account = typeof accountName === 'object' ? accountName : appState.accounts.find(account => account.name === accountName) || { name: accountName };
+  return !!accountPersonName(enteredName, account);
+}
+function weddingPartyPersonMatches(memberName, enteredName) {
+  const account = findAccount(enteredName);
+  return normalizeAccountName(accountPersonName(memberName, account || { name: memberName }) || memberName)
+    === normalizeAccountName(accountPersonName(enteredName, account || { name: enteredName }) || enteredName);
 }
 function findAccount(name) {
   const normalizedName = normalizeAccountName(name);
   // Once signed in, guestName contains the complete stored household account
   // (which can include commas or slashes), not one person's sign-in name.
   return appState.accounts.find(account => normalizeAccountName(account.name) === normalizedName)
-    || appState.accounts.find(account => accountNameMatches(name, account.name));
+    || appState.accounts.find(account => accountNameMatches(name, account));
 }
 function accountQrTokenFromLocation() {
   const match = window.location.hash.match(/^#\/signin\/account\/([A-Za-z0-9_-]+)$/);
@@ -690,7 +703,7 @@ function accountQrTokenFromLocation() {
 function isAccountQrRoute() { return window.location.hash.startsWith('#/signin/account/'); }
 function accountForSignIn(name) {
   return qrScopedAccount
-    ? (accountNameMatches(name, qrScopedAccount.name) ? qrScopedAccount : null)
+    ? (accountNameMatches(name, qrScopedAccount) ? qrScopedAccount : null)
     : findAccount(name);
 }
 function accountQrUrl(account) {
@@ -1010,7 +1023,7 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   viewedEventId = eventId;
   state = nextState;
   if (eventId === 'wedding' && !preserveWeddingView) {
-    const partyMember = state.weddingPartyMembers?.some(member => normalizeAccountName(member.name) === normalizeAccountName(signedInPersonName));
+    const partyMember = state.weddingPartyMembers?.some(member => weddingPartyPersonMatches(member.name, signedInPersonName));
     selectedWeddingTab = hostAuthenticated ? 'couple' : partyMember ? 'party' : 'guest';
     selectedMatronTab = 'experience';
     if (hostAuthenticated) hostWeddingPartyViewName = '';
@@ -1086,7 +1099,7 @@ function render() {
   document.querySelector('.menu-section').hidden = event.hasMenu === false;
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');
-  const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => normalizeAccountName(member.name) === normalizeAccountName(signedInPersonName));
+  const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => weddingPartyPersonMatches(member.name, signedInPersonName));
   const isWeddingPartyMember = isWedding && ((viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW) || (!hostAuthenticated && Boolean(signedInWeddingPartyMember)));
   document.querySelectorAll('#registryAttireSection .guest-attire-requirements').forEach(requirements => {
     requirements.hidden = isWeddingPartyMember;
@@ -1334,7 +1347,7 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
   if (!account) { document.querySelector('#accountPasswordError').textContent = 'That name and suffix are not recognized.'; return; }
   if (!availableEventIds(account.name).length) { document.querySelector('#accountPasswordError').textContent = 'Sign-in access has not been enabled for your account yet.'; return; }
   guestName = account.name;
-  signedInPersonName = accountName;
+  signedInPersonName = accountPersonName(accountName, account) || accountName;
   selectedWeddingTab = 'guest';
   document.querySelector('#accountPasswordError').textContent = '';
   showEventSelection();
@@ -2432,7 +2445,7 @@ document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', 
   const selectedTitle = WEDDING_PARTY_TITLES.find(title => title.value === titleInput.value);
   if (!selectedTitle) { error.textContent = 'Select a valid wedding party title.'; return; }
   if (!selectedTitle.multiple && state.weddingPartyMembers.some(member => member.title === selectedTitle.value)) { error.textContent = `${selectedTitle.value} has already been assigned.`; return; }
-  let account = appState.accounts.find(item => accountNameMatches(name, item.name));
+  let account = appState.accounts.find(item => accountNameMatches(name, item));
   const accountCreated = !account;
   if (accountCreated) {
     account = { name, source: 'website', selected: false, selectedEvents: { wedding: true }, invitedEvents: { wedding: true } };
