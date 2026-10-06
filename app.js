@@ -2554,9 +2554,6 @@ async function startApp() {
       document.querySelector('#guestSignInFields').hidden = true;
       document.querySelector('#guestSignInFields').querySelectorAll('input').forEach(input => { input.disabled = true; });
       document.querySelector('#signInSubmit').hidden = true;
-      document.querySelector('.sign-in-intro').hidden = true;
-    } else {
-      document.querySelector('.sign-in-intro').textContent = 'Enter your name to continue. This link only accepts members of its assigned account.';
     }
   }
   render();
