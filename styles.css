@@ -302,3 +302,5 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .wedding-page-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:12px 0 20px}
 .wedding-page-actions button,.wedding-page-actions a{border:1px solid var(--border);border-radius:4px;padding:8px 12px;background:var(--registry-inner-background);color:var(--navy);font:inherit;font-size:.85rem;text-decoration:none;cursor:pointer}
 .wedding-export-preview{position:fixed;left:-10000px;top:0;width:800px;border:0}
+
+.account-row .account-delete-button{font-size:.75rem;font-weight:700;padding:8px}

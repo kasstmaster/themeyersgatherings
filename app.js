@@ -1835,15 +1835,31 @@ function renderInvitationSettings() {
   document.querySelector('#invitationAddress2').value = state.addressLine2 || invitationFallback.addressLine2;
   document.querySelector('#invitationTemplateAssignment').innerHTML = '<option value="">No template assigned</option>' + invitationTemplatesForEvent().map(template => `<option value="${escapeAttribute(template.id)}" ${template.id === state.invitationTemplateId ? 'selected' : ''}>${escapeHtml(template.name)}</option>`).join('');
 }
+function canDeleteWebsiteAccount(account) {
+  // AnyList-linked accounts stay managed by sync, even if first created here.
+  return !!account && account.anyListCategoryId == null && account.source !== 'anylist';
+}
+function deleteWebsiteAccount(account) {
+  if (!hostAuthenticated || !canDeleteWebsiteAccount(account)) return false;
+  const index = appState.accounts.indexOf(account);
+  if (index < 0) return false;
+  appState.accounts.splice(index, 1);
+  // Keep historical RSVPs, item claims, and member content intact.
+  if (qrScopedAccount === account) qrScopedAccount = null;
+  saveState(); render(); openAccountsAdmin();
+  showToast(`${account.name}'s account deleted.`);
+  return true;
+}
 function openAccountsAdmin() {
   const sortedAccounts = appState.accounts.map((account, index) => ({ account, index })).sort((left, right) =>
     firstAccountLastName(left.account.name).localeCompare(firstAccountLastName(right.account.name), 'en-US', { sensitivity: 'base' })
     || left.account.name.localeCompare(right.account.name, 'en-US', { sensitivity: 'base' }));
   document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => {
     const adultCount = accountSignInNames(account.name).length;
+    const deleteControl = canDeleteWebsiteAccount(account) ? `<button class="account-delete-button" type="button" aria-label="Delete account for ${escapeAttribute(account.name)}">Delete</button>` : '';
     const plusOnes = plusOneCount(account, viewedEventId);
     const plusOneControl = `<label class="account-plus-ones"><span>Plus ones</span><select aria-label="Plus ones for ${escapeAttribute(account.name)} at ${escapeAttribute(EVENT_DETAILS[viewedEventId].name)}">${Array.from({ length: adultCount + 1 }, (_, count) => `<option value="${count}" ${count === plusOnes ? 'selected' : ''}>${count}</option>`).join('')}</select></label>`;
-    return `<div class="account-row account-row-with-plus-ones" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Give Access</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people">${accountContactsHtml(account)}</div>${plusOneControl}<div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button></div></div>`;
+    return `<div class="account-row account-row-with-plus-ones" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Give Access</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people">${accountContactsHtml(account)}</div>${plusOneControl}<div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button>${deleteControl}</div></div>`;
   }).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
   document.querySelectorAll('.account-row').forEach(row => {
     const access = row.querySelector('.account-access');
@@ -1868,6 +1884,12 @@ function openAccountsAdmin() {
       account.invitedEvents ??= {};
       account.invitedEvents[viewedEventId] = event.target.checked;
       saveState();
+    });
+    row.querySelector('.account-delete-button')?.addEventListener('click', () => {
+      const account = appState.accounts[Number(row.dataset.accountIndex)];
+      if (!hostAuthenticated || !canDeleteWebsiteAccount(account)) return;
+      if (!window.confirm(`Delete ${account.name}'s account? This removes their sign-in access to all gatherings. Their RSVP history, item claims, and wedding party content will be kept.`)) return;
+      deleteWebsiteAccount(account);
     });
     viewQr.addEventListener('click', () => openQrCode(appState.accounts[Number(row.dataset.accountIndex)]));
     viewInvitation.addEventListener('click', () => openInvitationPreview(appState.accounts[Number(row.dataset.accountIndex)]));
@@ -2413,7 +2435,7 @@ document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', 
   let account = appState.accounts.find(item => accountNameMatches(name, item.name));
   const accountCreated = !account;
   if (accountCreated) {
-    account = { name, selected: false, selectedEvents: { wedding: true }, invitedEvents: { wedding: true } };
+    account = { name, source: 'website', selected: false, selectedEvents: { wedding: true }, invitedEvents: { wedding: true } };
     appState.accounts.push(account);
   } else if (!accountCanSignIn(account, 'wedding')) {
     error.textContent = 'That person belongs to an existing account without wedding sign-in access.';
