@@ -914,6 +914,65 @@ function showEventSelection() {
   document.querySelector('#eventSelectionPage').hidden = false;
   document.body.className = 'theme-wedding';
 }
+// Export only the selected subpage, using the same content and access as its on-screen view.
+function weddingPageExport(scope) {
+  const sectionIds = { couple: 'brideGroomSection', party: 'weddingPartySection', guest: 'guestSection' };
+  const section = document.getElementById(sectionIds[scope]);
+  if (!section || section.hidden || viewedEventId !== 'wedding') return null;
+  const selectedTab = section.querySelector('[role="tab"][aria-selected="true"]');
+  const panelId = scope === 'couple' ? 'brideGroomContent'
+    : scope === 'guest' ? (selectedGuestTab === 'attire' ? 'registryAttireSection' : 'whatToExpectSection')
+    : selectedMatronTab === 'experience' ? 'perfectExperiencePanel'
+    : selectedMatronTab === 'duties' ? 'weddingPartyDetails'
+    : selectedMatronTab === 'attire' ? 'registryAttireSection' : 'weddingPartyPersonalPage';
+  const panel = document.getElementById(panelId);
+  if (!panel || panel.hidden) return null;
+  const title = selectedTab?.textContent.trim() || state.brideGroomPages?.find(page => page.id === selectedBrideGroomPage)?.title || 'Bride & Groom';
+  const copy = panel.cloneNode(true);
+  copy.querySelectorAll('[hidden],button,nav,script,style,form').forEach(node => node.remove());
+  copy.querySelectorAll('details').forEach(node => { node.open = true; });
+  copy.querySelectorAll('iframe,video').forEach(node => {
+    const link = document.createElement('a');
+    link.href = node.src || node.querySelector('source')?.src || '';
+    link.textContent = `Video: ${link.href}`;
+    node.replaceWith(link);
+  });
+  copy.removeAttribute('id');
+  copy.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+  const holder = document.createElement('div');
+  holder.className = 'wedding-export-preview';
+  holder.append(copy); document.body.append(holder);
+  const textCopy = copy.cloneNode(true);
+  textCopy.querySelectorAll('a[href]').forEach(link => { link.append(` (${link.href})`); });
+  textCopy.querySelectorAll('img').forEach(image => { image.replaceWith(`${image.alt || 'Image'}: ${image.src}`); });
+  holder.append(textCopy);
+  const text = textCopy.innerText.trim();
+  const html = copy.innerHTML;
+  holder.remove();
+  return { title, text, html };
+}
+function printWeddingPage(page) {
+  document.querySelector('#weddingPrintFrame')?.remove();
+  const frame = document.createElement('iframe');
+  frame.id = 'weddingPrintFrame'; frame.title = 'Printable wedding page';
+  frame.className = 'wedding-export-preview';
+  frame.onload = () => {
+    frame.contentWindow.addEventListener('afterprint', () => frame.remove(), { once: true });
+    frame.contentWindow.focus(); frame.contentWindow.print();
+  };
+  frame.srcdoc = `<!doctype html><html><head><meta charset="UTF-8"><base href="${escapeAttribute(document.baseURI)}"><title>${escapeHtml(page.title)}</title><style>body{font:16px/1.5 Georgia,serif;color:#111;padding:24px}h1{font-size:26px}img{max-width:100%;height:auto}article,details{margin:16px 0}summary{font-weight:bold}.wedding-party-role,.wedding-party-member-name{display:block}table{border-collapse:collapse;width:100%}td,th{padding:8px;border:1px solid #aaa}a{color:inherit}a,li,p{overflow-wrap:anywhere}@media print{body{padding:0}img{max-height:8in;object-fit:contain}}</style></head><body><h1>${escapeHtml(page.title)}</h1>${page.html}</body></html>`;
+  document.body.append(frame);
+}
+document.querySelectorAll('[data-wedding-page-actions]').forEach(actions => {
+  actions.addEventListener('click', event => {
+    const button = event.target.closest('[data-print-wedding-page], [data-email-wedding-page]');
+    if (!button) return;
+    const page = weddingPageExport(actions.dataset.weddingPageActions);
+    if (!page) { event.preventDefault(); return; }
+    if (button.hasAttribute('data-print-wedding-page')) printWeddingPage(page);
+    else button.href = `mailto:?subject=${encodeURIComponent(`The Meyers Gatherings — ${page.title}`)}&body=${encodeURIComponent(`${page.title}\n\n${page.text}`)}`;
+  });
+});
 function videoEmbedUrl(url) {
   try {
     const parsed = new URL(url);

@@ -298,3 +298,7 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .host-responsibilities .wedding-party-role{display:inline-block}
 .host-responsibilities .wedding-party-member-name{display:block;margin:5px 0 0;font-family:"Times New Roman",Times,serif;font-size:1.6rem;font-weight:700;overflow-wrap:anywhere}
 .host-responsibilities .wedding-party-card[open]>summary{margin-bottom:12px}
+
+.wedding-page-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:12px 0 20px}
+.wedding-page-actions button,.wedding-page-actions a{border:1px solid var(--border);border-radius:4px;padding:8px 12px;background:var(--registry-inner-background);color:var(--navy);font:inherit;font-size:.85rem;text-decoration:none;cursor:pointer}
+.wedding-export-preview{position:fixed;left:-10000px;top:0;width:800px;border:0}
