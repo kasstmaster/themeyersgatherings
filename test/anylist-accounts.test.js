@@ -68,7 +68,7 @@ test('reconstructs ordered categories and item membership from raw AnyList data'
         items: [
           { name: 'Second Smith', details: 'private note', manualSortIndex: 20, categoryAssignments: [{ categoryGroupId: 'people', categoryId: 'smith' }] },
           { name: 'Nobody Jones', manualSortIndex: 15, categoryAssignments: [] },
-          { name: 'First Smith', manualSortIndex: 10, categoryAssignments: [{ categoryGroupId: 'people', categoryId: 'smith' }] },
+          { name: 'First Smith', packageSizePb: { rawPackageSize: 'One Smith' }, manualSortIndex: 10, categoryAssignments: [{ categoryGroupId: 'people', categoryId: 'smith' }] },
           { name: 'Amy Adams', manualSortIndex: 5, categoryAssignments: [{ categoryGroupId: 'people', categoryId: 'adams' }] }
         ]
       }],
@@ -87,7 +87,7 @@ test('reconstructs ordered categories and item membership from raw AnyList data'
 
   const result = categoriesFromRawUserData(userData, 'address-book-id');
   assert.deepEqual(result.categories.map(category => category.name), ['ADAMS', 'SMITH - Main St']);
-  assert.deepEqual(result.categories[1].items, [{ name: 'First Smith', notes: '' }, { name: 'Second Smith', notes: 'private note' }]);
+  assert.deepEqual(result.categories[1].items, [{ name: 'First Smith', notes: '', packageSize: 'One Smith' }, { name: 'Second Smith', notes: 'private note' }]);
   assert.equal(result.unassigned, 1);
   assert.match(JSON.stringify(result.categories), /private note/);
 });
@@ -207,4 +207,24 @@ test('an ambiguous legacy match is skipped instead of changing either account', 
   assert.deepEqual(result.skipped, ['hall-123']);
   assert.equal(state.accounts.length, 2);
   assert.ok(state.accounts.every(account => account.anyListCategoryId == null));
+});
+
+
+test('package-size names sync as alternate identities without adding household members', () => {
+  const converted = convertCategory('HALL', [
+    { name: 'Benjamin Hall IV', packageSizePb: { rawPackageSize: 'Ben Hall IV' } },
+    { name: 'Sherri Hall', packageSize: '' }
+  ]);
+  assert.deepEqual(converted.signInAliases, [{ name: 'Benjamin Hall IV', alias: 'Ben Hall IV' }]);
+  assert.deepEqual(converted.people, ['Benjamin Hall IV', 'Sherri Hall']);
+  const state = { accounts: [], events: {} };
+  syncAnyListAccounts(state, [{ ...converted, id: 'hall' }]);
+  assert.deepEqual(state.accounts[0].signInAliases, converted.signInAliases);
+  state.accounts[0].qrToken = 'keep-token';
+  syncAnyListAccounts(state, [{ ...convertCategory('HALL', [{ name: 'Benjamin Hall IV', packageSize: 'Benny Hall IV' }, { name: 'Sherri Hall' }]), id: 'hall' }]);
+  assert.equal(state.accounts.length, 1);
+  assert.equal(state.accounts[0].qrToken, 'keep-token');
+  assert.deepEqual(state.accounts[0].signInAliases, [{ name: 'Benjamin Hall IV', alias: 'Benny Hall IV' }]);
+  syncAnyListAccounts(state, [{ ...convertCategory('HALL', [{ name: 'Benjamin Hall IV' }, { name: 'Sherri Hall' }]), id: 'hall' }]);
+  assert.deepEqual(state.accounts[0].signInAliases, []);
 });

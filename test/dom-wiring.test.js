@@ -173,8 +173,8 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   ]);
 
   assert.match(html, /id="weddingPartyTabs"[\s\S]*>Wedding Party<[\s\S]*>Guest<[\s\S]*>Timeline<[\s\S]*>Registry</);
-  assert.match(javascript, /signedInPersonName = accountName/);
-  assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => normalizeAccountName\(member\.name\) === normalizeAccountName\(signedInPersonName\)\)/);
+  assert.match(javascript, /signedInPersonName = accountPersonName\(accountName, account\)/);
+  assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => weddingPartyPersonMatches\(member\.name, signedInPersonName\)\)/);
   assert.match(javascript, /viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWedding/);
   assert.match(javascript, /visibleWeddingPartyMembers = hostView\s*\? WeddingParty\.sortByRole\(weddingPartyMembers, WEDDING_PARTY_TITLES\.map\(role => role\.value\)\)\s*:\s*\[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
@@ -603,7 +603,7 @@ test('wedding party manager creates wedding-enabled accounts for new people', as
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
 
-  assert.match(addHandler, /accountNameMatches\(name, item\.name\)/);
+  assert.match(addHandler, /accountNameMatches\(name, item\)/);
   assert.match(addHandler, /account = \{ name, source: 'website', selected: false, selectedEvents: \{ wedding: true \}, invitedEvents: \{ wedding: true \} \}/);
   assert.match(addHandler, /appState\.accounts\.push\(account\)/);
   assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
