@@ -762,21 +762,21 @@ function downloadQrPng(account) {
   canvas.toBlob(blob => { if (blob) downloadBlob(blob, `${safeQrFilename(account.name)}.png`); }, 'image/png');
 }
 
-function invitationAccounts() {
-  return state.invitationQrMode === 'general'
+function invitationAccounts(mode = state.invitationQrMode) {
+  return mode === 'general'
     ? appState.accounts.filter(account => account.invitedEvents?.[viewedEventId] === true).sort((a, b) => a.name.localeCompare(b.name))
     : window.Invitation.eligibleAccounts(appState.accounts, viewedEventId);
 }
 function invitationTemplatesForEvent(eventId = viewedEventId) {
   return appState.invitationTemplates.filter(template => template.eventId === eventId);
 }
-function invitationQrUrl(account) {
-  return state.invitationQrMode !== 'general' && account?.qrToken ? accountQrUrl(account) : generalLoginUrl();
+function invitationQrUrl(account, mode = state.invitationQrMode) {
+  return mode !== 'general' && account?.qrToken ? accountQrUrl(account) : generalLoginUrl();
 }
 function canvasBlob(canvas) { return new Promise(resolve => canvas.toBlob(resolve, 'image/png')); }
-async function renderInvitation(canvas, account) {
+async function renderInvitation(canvas, account, mode = state.invitationQrMode) {
   const template = invitationTemplatesForEvent().find(item => item.id === state.invitationTemplateId);
-  const model = window.Invitation.invitationModel(template, state, invitationQrUrl(account));
+  const model = window.Invitation.invitationModel(template, state, invitationQrUrl(account, mode));
   await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl));
   return model;
 }
@@ -833,11 +833,11 @@ async function downloadInvitation(account) {
   const blob = await canvasBlob(canvas);
   if (blob) downloadBlob(blob, window.Invitation.filenameFor(account?.name || 'General Login', EVENT_DETAILS[viewedEventId].name));
 }
-async function invitationFile(account) {
+async function invitationFile(account, mode = state.invitationQrMode) {
   const canvas = document.createElement('canvas');
-  await renderInvitation(canvas, account);
+  await renderInvitation(canvas, account, mode);
   const blob = await canvasBlob(canvas);
-  if (!blob) throw new Error(`Could not create the invitation for ${account.name}.`);
+  if (!blob) throw new Error(`Could not create the invitation for ${account?.name || 'general login'}.`);
   return new File([blob], window.Invitation.filenameFor(account?.name || 'General Login', EVENT_DETAILS[viewedEventId].name), { type: 'image/png' });
 }
 function showToast(message) { const toast = document.querySelector('#toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2600); }
@@ -2023,32 +2023,61 @@ document.querySelector('#configureInvitationTemplate').addEventListener('click',
   renderTemplateManager();
   document.querySelector('#invitationTemplatesDialog').showModal();
 });
-document.querySelector('#downloadAllInvitations').addEventListener('click', async () => {
+let bulkInvitationAction = 'download';
+let bulkInvitationFiles = [];
+let bulkInvitationBusy = false;
+function openBulkInvitationChoice(action) {
   if (!state.invitationTemplateId) { showToast('Assign an invitation template first.'); return; }
-  for (const account of invitationAccounts()) { await downloadInvitation(account); await new Promise(resolve => setTimeout(resolve, 150)); }
-});
-document.querySelector('#emailAllInvitations').addEventListener('click', async event => {
-  if (!state.invitationTemplateId) { showToast('Assign an invitation template first.'); return; }
-  const accounts = invitationAccounts();
-  if (!accounts.length) { showToast('There are no invited families with QR access.'); return; }
-  const button = event.currentTarget;
-  button.disabled = true;
-  button.textContent = 'Preparing Invitations…';
+  bulkInvitationAction = action; bulkInvitationFiles = [];
+  document.querySelector('#bulkInvitationHeading').textContent = action === 'email' ? 'Email invitations' : 'Download invitations';
+  document.querySelector('#bulkInvitationStatus').textContent = '';
+  document.querySelector('#shareBulkInvitations').hidden = true;
+  document.querySelector('#bulkInvitationChoices').hidden = false;
+  document.querySelector('#bulkInvitationDialog').showModal();
+}
+document.querySelector('#downloadAllInvitations').addEventListener('click', () => openBulkInvitationChoice('download'));
+document.querySelector('#emailAllInvitations').addEventListener('click', () => openBulkInvitationChoice('email'));
+document.querySelector('#bulkInvitationDialog').addEventListener('cancel', event => { if (bulkInvitationBusy) event.preventDefault(); });
+document.querySelector('#bulkInvitationChoices').addEventListener('click', async event => {
+  const choice = event.target.closest('[data-bulk-qr]');
+  if (!choice || bulkInvitationBusy) return;
+  const mode = choice.dataset.bulkQr, dialog = document.querySelector('#bulkInvitationDialog');
+  const status = document.querySelector('#bulkInvitationStatus');
+  const buttons = [...dialog.querySelectorAll('button')];
+  bulkInvitationBusy = true; buttons.forEach(button => { button.disabled = true; });
+  status.textContent = 'Preparing invitations…';
   try {
-    const files = [];
-    for (const account of accounts) files.push(await invitationFile(account));
-    const share = { files, title: `${EVENT_DETAILS[viewedEventId].name} invitations`, text: 'Invitations are attached.' };
-    if (!navigator.share || (navigator.canShare && !navigator.canShare({ files }))) throw new Error('This browser cannot attach files to a new email. Try this button in Safari, Chrome, or Edge on a device with an email app installed.');
-    await navigator.share(share);
-  } catch (error) {
-    if (error.name !== 'AbortError') {
-      console.error(error);
-      showToast(error.message || 'Could not open an email with the invitations attached.');
+    let file;
+    if (mode === 'general') file = await invitationFile(null, 'general');
+    else {
+      const accounts = invitationAccounts('account');
+      if (!accounts.length) throw new Error('There are no invited accounts with individual QR access.');
+      const files = [];
+      for (const [index, account] of accounts.entries()) {
+        status.textContent = `Preparing invitation ${index + 1} of ${accounts.length}…`;
+        files.push(await invitationFile(account, 'account'));
+      }
+      const zip = await InvitationZip.zipFiles(files);
+      file = new File([zip], `${viewedEventId}-individual-invitations.zip`, { type: 'application/zip' });
     }
-  } finally {
-    button.disabled = false;
-    button.textContent = 'Email All Invitations';
-  }
+    if (bulkInvitationAction === 'download') { downloadBlob(file, file.name); dialog.close(); }
+    else {
+      bulkInvitationFiles = [file];
+      document.querySelector('#bulkInvitationChoices').hidden = true;
+      document.querySelector('#shareBulkInvitations').hidden = false;
+      status.textContent = 'Your invitation attachment is ready. Open sharing and choose your email app.';
+    }
+  } catch (error) { status.textContent = error.message || 'Could not prepare invitations. Please try again.'; }
+  finally { bulkInvitationBusy = false; buttons.forEach(button => { button.disabled = false; }); }
+});
+document.querySelector('#shareBulkInvitations').addEventListener('click', async () => {
+  try {
+    const files = bulkInvitationFiles;
+    if (!files.length) return;
+    if (!navigator.share || (navigator.canShare && !navigator.canShare({ files }))) throw new Error('This browser cannot attach invitations to an email. Download them instead, then attach the file in your email app.');
+    await navigator.share({ files, title: `${EVENT_DETAILS[viewedEventId].name} invitations`, text: 'Invitations are attached.' });
+    document.querySelector('#bulkInvitationDialog').close();
+  } catch (error) { if (error.name !== 'AbortError') document.querySelector('#bulkInvitationStatus').textContent = error.message; }
 });
 
 let templateDraft = null;

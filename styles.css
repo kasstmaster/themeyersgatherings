@@ -304,3 +304,4 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .wedding-export-preview{position:fixed;left:-10000px;top:0;width:800px;border:0}
 
 .account-row .account-delete-button{font-size:.75rem;font-weight:700;padding:8px}
+.invitation-actions[hidden]{display:none}
