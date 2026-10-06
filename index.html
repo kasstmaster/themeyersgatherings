@@ -571,9 +571,20 @@
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </div>
     <script src="vendor/qrcode.js" defer></script>
+    <dialog id="bulkInvitationDialog" aria-labelledby="bulkInvitationHeading">
+      <form method="dialog" class="modal-card">
+        <h2 id="bulkInvitationHeading">Choose invitation QR codes</h2>
+        <p>Use one invitation with the general login QR, or create an individual sign-in invitation for every invited account.</p>
+        <div class="invitation-actions" id="bulkInvitationChoices"><button type="button" data-bulk-qr="general">General Login QR</button><button type="button" data-bulk-qr="account">Individual Sign-in QRs (ZIP)</button></div>
+        <p id="bulkInvitationStatus" role="status" aria-live="polite"></p>
+        <div class="invitation-actions"><button id="shareBulkInvitations" type="button" hidden>Open Email / Share</button></div>
+        <button class="primary-button" value="cancel">Cancel</button>
+      </form>
+    </dialog>
     <script src="invitation.js" defer></script>
     <script src="wedding-party.js" defer></script>
     <script src="attire-videos.js" defer></script>
+    <script src="invitation-zip.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>
