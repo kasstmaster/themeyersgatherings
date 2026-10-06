@@ -305,3 +305,7 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 
 .account-row .account-delete-button{font-size:.75rem;font-weight:700;padding:8px}
 .invitation-actions[hidden]{display:none}
+
+.sign-in-card label{font-size:.95rem}
+.sign-in-card [data-sign-in-step][hidden],.sign-in-back[hidden]{display:none}
+.sign-in-back{display:block;margin:14px auto 0;border:0;background:transparent;color:#fff;font:inherit;text-decoration:underline;cursor:pointer;padding:8px 16px}

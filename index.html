@@ -21,12 +21,13 @@
           <h1 id="signInHeading">The Meyer's Gatherings</h1>
           <p id="accountLinkError" class="form-error invalid-sign-in-link" role="alert" hidden>This sign-in link is not valid.</p>
           <div class="name-fields" id="guestSignInFields">
-            <label><span>First name</span><input id="accountFirstName" type="text" autocomplete="given-name" required /></label>
-            <label><span>Last name</span><input id="accountLastName" type="text" autocomplete="family-name" /></label>
-            <label><span>Suffix <small>(if any)</small></span><input id="accountSuffix" type="text" autocomplete="honorific-suffix" placeholder="e.g. Jr. or IV" /></label>
+            <label data-sign-in-step="0"><span>First Name</span><input autofocus id="accountFirstName" type="text" autocomplete="given-name" required /></label>
+            <label data-sign-in-step="1" hidden><span>Last Name</span><input disabled id="accountLastName" type="text" autocomplete="family-name" /></label>
+            <label data-sign-in-step="2" hidden><span>Suffix <small>(if any)</small></span><input disabled id="accountSuffix" type="text" autocomplete="honorific-suffix" placeholder="e.g. Jr. or IV" /></label>
           </div>
           <p class="form-error" id="accountPasswordError" role="alert"></p>
-          <button class="primary-button" id="signInSubmit" type="submit">Let's get started</button>
+          <button class="primary-button" id="signInSubmit" type="submit">Next</button>
+          <button id="signInBack" class="sign-in-back" type="button" hidden>Back</button>
         </form>
       </div>
     </section>

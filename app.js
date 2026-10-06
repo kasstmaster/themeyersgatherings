@@ -906,11 +906,28 @@ function updateHostToolsPanel() {
   document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated || viewingAsGuest;
   document.querySelector('#cancelViewAsButton').hidden = !viewingAsGuest;
 }
+let signInStep = 0;
+function setSignInStep(step) {
+  signInStep = step;
+  document.querySelectorAll('[data-sign-in-step]').forEach(label => {
+    const active = Number(label.dataset.signInStep) === step;
+    label.hidden = !active;
+    const input = label.querySelector('input');
+    input.disabled = !active;
+    input.required = active && step < 2;
+  });
+  document.querySelector('#signInSubmit').textContent = step === 2 ? 'Get Started' : 'Next';
+  document.querySelector('#signInBack').hidden = step === 0;
+  document.querySelector('#accountPasswordError').textContent = '';
+  document.querySelector(`[data-sign-in-step="${step}"] input`).focus({ preventScroll: true });
+}
+document.querySelector('#signInBack').addEventListener('click', () => setSignInStep(Math.max(0, signInStep - 1)));
 function showSignInPage() {
   document.querySelector('#signInPage').hidden = false;
   document.querySelector('#eventSelectionPage').hidden = true;
   document.querySelector('#attirePage').hidden = true;
   document.querySelector('#eventPage').hidden = true;
+  if (!document.querySelector('#guestSignInFields').hidden) setSignInStep(0);
 }
 function renderEventSelection() {
   const ids = availableEventIds();
@@ -1342,6 +1359,14 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
     if (action) action();
     else showToast('Host sign-in complete. You can RSVP and bring items as The Host.');
     return;
+  }
+  if (signInStep < 2) {
+    const current = document.querySelector(`[data-sign-in-step="${signInStep}"] input`);
+    if (!current.value.trim()) {
+      document.querySelector('#accountPasswordError').textContent = signInStep === 0 ? 'Enter your first name.' : 'Enter your last name.';
+      current.focus(); return;
+    }
+    setSignInStep(signInStep + 1); return;
   }
   const lastName = document.querySelector('#accountLastName').value.trim();
   const suffix = document.querySelector('#accountSuffix').value.trim();
