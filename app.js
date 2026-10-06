@@ -706,7 +706,9 @@ function accountForSignIn(name) {
     ? (accountNameMatches(name, qrScopedAccount) ? qrScopedAccount : null)
     : findAccount(name);
 }
+function generalLoginUrl() { return `${window.location.origin}${window.location.pathname}`; }
 function accountQrUrl(account) {
+  if (account?.generalLogin) return generalLoginUrl();
   const base = `${window.location.origin}${window.location.pathname}`;
   return `${base}#/signin/account/${account.qrToken}`;
 }
@@ -761,13 +763,15 @@ function downloadQrPng(account) {
 }
 
 function invitationAccounts() {
-  return window.Invitation.eligibleAccounts(appState.accounts, viewedEventId);
+  return state.invitationQrMode === 'general'
+    ? appState.accounts.filter(account => account.invitedEvents?.[viewedEventId] === true).sort((a, b) => a.name.localeCompare(b.name))
+    : window.Invitation.eligibleAccounts(appState.accounts, viewedEventId);
 }
 function invitationTemplatesForEvent(eventId = viewedEventId) {
   return appState.invitationTemplates.filter(template => template.eventId === eventId);
 }
 function invitationQrUrl(account) {
-  return account?.qrToken ? accountQrUrl(account) : `${window.location.origin}${window.location.pathname}#/signin/sample-preview`;
+  return state.invitationQrMode !== 'general' && account?.qrToken ? accountQrUrl(account) : generalLoginUrl();
 }
 function canvasBlob(canvas) { return new Promise(resolve => canvas.toBlob(resolve, 'image/png')); }
 async function renderInvitation(canvas, account) {
@@ -783,7 +787,7 @@ async function openInvitationPreview(account = invitationAccounts()[0] || null) 
   const downloadButton = document.querySelector('#downloadInvitationPng');
   invitationPreviewAccount = account;
   document.querySelector('#invitationPreviewHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation`;
-  document.querySelector('#invitationPreviewAccount').textContent = account ? `Previewing the QR for ${account.name}. The account name is not printed.` : 'Previewing an explicit sample QR. No account name is printed.';
+  document.querySelector('#invitationPreviewAccount').textContent = invitationQrUrl(account) === generalLoginUrl() ? 'Previewing the general login QR.' : `Previewing the QR for ${account.name}. The account name is not printed.`;
   status.classList.remove('form-error');
   status.textContent = 'Loading invitation preview…';
   canvasWrap.hidden = true;
@@ -815,7 +819,7 @@ async function openInvitationPreview(account = invitationAccounts()[0] || null) 
     document.querySelector('#invitationOverflowWarning').textContent = warnings.length ? `These values exceed their locked safe width: ${warnings.join(', ')}. Shorten them before downloading.` : '';
     status.textContent = '';
     canvasWrap.hidden = false;
-    downloadButton.disabled = !account?.qrToken;
+    downloadButton.disabled = false;
   } catch (caught) {
     invitationPreviewAccount = null;
     status.classList.add('form-error');
@@ -823,18 +827,18 @@ async function openInvitationPreview(account = invitationAccounts()[0] || null) 
   }
 }
 async function downloadInvitation(account) {
-  if (!account?.qrToken) return;
+  if (state.invitationQrMode !== 'general' && !account?.qrToken) return;
   const canvas = document.createElement('canvas');
   await renderInvitation(canvas, account);
   const blob = await canvasBlob(canvas);
-  if (blob) downloadBlob(blob, window.Invitation.filenameFor(account.name, EVENT_DETAILS[viewedEventId].name));
+  if (blob) downloadBlob(blob, window.Invitation.filenameFor(account?.name || 'General Login', EVENT_DETAILS[viewedEventId].name));
 }
 async function invitationFile(account) {
   const canvas = document.createElement('canvas');
   await renderInvitation(canvas, account);
   const blob = await canvasBlob(canvas);
   if (!blob) throw new Error(`Could not create the invitation for ${account.name}.`);
-  return new File([blob], window.Invitation.filenameFor(account.name, EVENT_DETAILS[viewedEventId].name), { type: 'image/png' });
+  return new File([blob], window.Invitation.filenameFor(account?.name || 'General Login', EVENT_DETAILS[viewedEventId].name), { type: 'image/png' });
 }
 function showToast(message) { const toast = document.querySelector('#toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2600); }
 function menuItemSummary(item) {
@@ -1841,6 +1845,7 @@ function renderQuantityUnits() {
 }
 function renderInvitationSettings() {
   document.querySelector('#invitationAdminHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation values`;
+  document.querySelector('#invitationQrMode').value = state.invitationQrMode === 'general' ? 'general' : 'account';
   document.querySelector('#invitationEventDate').value = state.eventDate;
   const invitationFallback = defaultInvitationSettings(state.eventDate);
   document.querySelector('#invitationRsvpDate').value = state.rsvpDate || invitationFallback.rsvpDate;
@@ -1872,7 +1877,7 @@ function openAccountsAdmin() {
     const deleteControl = canDeleteWebsiteAccount(account) ? `<button class="account-delete-button" type="button" aria-label="Delete account for ${escapeAttribute(account.name)}">Delete</button>` : '';
     const plusOnes = plusOneCount(account, viewedEventId);
     const plusOneControl = `<label class="account-plus-ones"><span>Plus ones</span><select aria-label="Plus ones for ${escapeAttribute(account.name)} at ${escapeAttribute(EVENT_DETAILS[viewedEventId].name)}">${Array.from({ length: adultCount + 1 }, (_, count) => `<option value="${count}" ${count === plusOnes ? 'selected' : ''}>${count}</option>`).join('')}</select></label>`;
-    return `<div class="account-row account-row-with-plus-ones" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Give Access</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people">${accountContactsHtml(account)}</div>${plusOneControl}<div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken ? '' : 'disabled title="QR access is required"'}>Inv</button>${deleteControl}</div></div>`;
+    return `<div class="account-row account-row-with-plus-ones" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Give Access</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people">${accountContactsHtml(account)}</div>${plusOneControl}<div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken || state.invitationQrMode === 'general' ? '' : 'disabled title="QR access is required"'}>Inv</button>${deleteControl}</div></div>`;
   }).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
   document.querySelectorAll('.account-row').forEach(row => {
     const access = row.querySelector('.account-access');
@@ -1984,28 +1989,33 @@ function openQrCode(account) {
   const linkWrapper = document.querySelector('#qrSignInLinkWrapper');
   const signInLink = document.querySelector('#qrSignInLink');
   const buttons = [document.querySelector('#downloadQrPng'), document.querySelector('#downloadQrSvg')];
-  preview.innerHTML = account.qrToken ? qrSvg(makeQrCode(accountQrUrl(account))) : '';
-  unavailable.hidden = Boolean(account.qrToken);
-  linkWrapper.hidden = !account.qrToken;
-  signInLink.href = account.qrToken ? accountQrUrl(account) : '';
-  signInLink.textContent = account.qrToken ? accountQrUrl(account) : '';
-  buttons.forEach(button => { button.disabled = !account.qrToken; });
+  preview.innerHTML = (account.generalLogin || account.qrToken) ? qrSvg(makeQrCode(accountQrUrl(account))) : '';
+  unavailable.hidden = Boolean((account.generalLogin || account.qrToken));
+  linkWrapper.hidden = !(account.generalLogin || account.qrToken);
+  signInLink.href = (account.generalLogin || account.qrToken) ? accountQrUrl(account) : '';
+  signInLink.textContent = (account.generalLogin || account.qrToken) ? accountQrUrl(account) : '';
+  buttons.forEach(button => { button.disabled = !(account.generalLogin || account.qrToken); });
   document.querySelector('#qrCodeDialog').showModal();
 }
-document.querySelector('#downloadQrPng').addEventListener('click', () => { if (qrAdminAccount?.qrToken) downloadQrPng(qrAdminAccount); });
-document.querySelector('#downloadQrSvg').addEventListener('click', () => { if (qrAdminAccount?.qrToken) downloadQrSvg(qrAdminAccount); });
+document.querySelector('#downloadQrPng').addEventListener('click', () => { if ((qrAdminAccount?.generalLogin || qrAdminAccount?.qrToken)) downloadQrPng(qrAdminAccount); });
+document.querySelector('#downloadQrSvg').addEventListener('click', () => { if ((qrAdminAccount?.generalLogin || qrAdminAccount?.qrToken)) downloadQrSvg(qrAdminAccount); });
 [['invitationEventDate', 'eventDate'], ['invitationRsvpDate', 'rsvpDate'], ['invitationAddress1', 'addressLine1'], ['invitationAddress2', 'addressLine2']].forEach(([id, key]) => {
   document.querySelector(`#${id}`).addEventListener('change', event => {
     const value = event.target.value.trim(); if (!value) return;
     state[key] = value; saveState(); renderInvitationSettings(); showToast('Invitation setting updated.');
   });
 });
+document.querySelector('#viewGeneralLoginQr').addEventListener('click', () => openQrCode({ name: 'General Login', generalLogin: true }));
+document.querySelector('#invitationQrMode').addEventListener('change', event => {
+  state.invitationQrMode = event.target.value === 'general' ? 'general' : 'account';
+  saveState(); renderInvitationSettings(); showToast('Invitation QR option updated.');
+});
 document.querySelector('#invitationTemplateAssignment').addEventListener('change', event => {
   state.invitationTemplateId = event.target.value; saveState(); showToast('Invitation template assignment updated.');
 });
 document.querySelector('#downloadInvitationPng').addEventListener('click', async () => {
-  if (invitationPreviewAccount) await downloadInvitation(invitationPreviewAccount);
-  else showToast('Choose an invited account to download its invitation.');
+  const blob = await canvasBlob(document.querySelector('#invitationCanvas'));
+  if (blob) downloadBlob(blob, window.Invitation.filenameFor(invitationPreviewAccount?.name || 'General Login', EVENT_DETAILS[viewedEventId].name));
 });
 document.querySelector('#configureInvitationTemplate').addEventListener('click', () => {
   document.querySelector('#invitationPreviewDialog').close();
@@ -2228,7 +2238,7 @@ function openTemplateEditor(id, localFile = null) {
   document.querySelector('#templateEditorName').value = templateDraft.name;
   document.querySelector('#templateFieldToolbox').innerHTML = Object.entries(window.Invitation.FIELD_DEFINITIONS).map(([key, definition]) => `<button type="button" data-field-key="${key}">${definition.label}</button>`).join('');
   document.querySelectorAll('[data-field-key]').forEach(button => button.addEventListener('click', () => { pendingTemplateFieldKey = button.dataset.fieldKey; document.querySelector('#placementHelp').textContent = `Click the invitation to place ${button.textContent}.`; }));
-  document.querySelector('#templatePreviewAccount').innerHTML = '<option value="">Sample QR</option>' + invitationAccounts().map(account => `<option value="${escapeAttribute(account.qrToken)}">${escapeHtml(account.name)}</option>`).join('');
+  document.querySelector('#templatePreviewAccount').innerHTML = '<option value="">General login QR</option>' + invitationAccounts().map(account => `<option value="${escapeAttribute(account.qrToken)}">${escapeHtml(account.name)}</option>`).join('');
   document.querySelector('#invitationTemplatesDialog').close(); document.querySelector('#invitationEditorDialog').showModal();
   if (templateEditorResizeObserver) templateEditorResizeObserver.disconnect();
   templateEditorResizeObserver = new ResizeObserver(sizeEditorStage);
@@ -2281,7 +2291,7 @@ document.querySelector('#previewEditedTemplateButton').addEventListener('click',
   const selectedToken = document.querySelector('#templatePreviewAccount').value;
   const account = appState.accounts.find(item => item.qrToken === selectedToken) || null, canvas = document.querySelector('#invitationCanvas');
   invitationPreviewAccount = account; const model = window.Invitation.invitationModel(templateDraft, state, invitationQrUrl(account));
-  await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl)); document.querySelector('#invitationPreviewHeading').textContent = templateDraft.name; document.querySelector('#invitationPreviewAccount').textContent = account ? `Previewing ${account.name}'s existing account QR. The name is not printed.` : 'Previewing a sample QR.'; document.querySelector('#invitationPreviewStatus').textContent = ''; document.querySelector('#invitationPreviewStatus').classList.remove('form-error'); document.querySelector('#invitationCanvasWrap').hidden = false; document.querySelector('#configureInvitationTemplate').hidden = true; document.querySelector('#downloadInvitationPng').disabled = !account?.qrToken; document.querySelector('#invitationPreviewDialog').showModal();
+  await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl)); document.querySelector('#invitationPreviewHeading').textContent = templateDraft.name; document.querySelector('#invitationPreviewAccount').textContent = invitationQrUrl(account) === generalLoginUrl() ? 'Previewing the general login QR.' : `Previewing ${account.name}'s existing account QR. The name is not printed.`; document.querySelector('#invitationPreviewStatus').textContent = ''; document.querySelector('#invitationPreviewStatus').classList.remove('form-error'); document.querySelector('#invitationCanvasWrap').hidden = false; document.querySelector('#configureInvitationTemplate').hidden = true; document.querySelector('#downloadInvitationPng').disabled = false; document.querySelector('#invitationPreviewDialog').showModal();
 });
 function openEventsAdmin() {
   document.querySelector('#eventChoices').innerHTML = Object.entries(EVENT_DETAILS).map(([id, event]) => {

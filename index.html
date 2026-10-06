@@ -529,10 +529,11 @@
             <label><span>RSVP by</span><input id="invitationRsvpDate" type="date" required /></label>
             <label><span>Address line 1</span><input id="invitationAddress1" maxlength="60" required /></label>
             <label><span>Address line 2</span><input id="invitationAddress2" maxlength="60" required /></label>
+            <label><span>Invitation QR code</span><select id="invitationQrMode"><option value="account">Individual sign-in QR</option><option value="general">General login QR</option></select></label>
             <label><span>Invitation template</span><select id="invitationTemplateAssignment"></select></label>
           </div>
           <p id="invitationOverflowWarning" class="form-error" role="alert"></p>
-          <div class="invitation-actions"><button id="downloadAllInvitations" type="button">Download All Invitations</button><button id="emailAllInvitations" type="button">Email All Invitations</button></div>
+          <div class="invitation-actions"><button id="viewGeneralLoginQr" type="button">General Login QR</button><button id="downloadAllInvitations" type="button">Download All Invitations</button><button id="emailAllInvitations" type="button">Email All Invitations</button></div>
         </section>
         <div class="editor-dialog-footer">
           <button class="primary-button" value="default">Done</button>
