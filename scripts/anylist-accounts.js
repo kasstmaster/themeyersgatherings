@@ -218,7 +218,7 @@ export function addMissingAccounts(state, convertedAccounts) {
   for (const name of convertedAccounts) {
     const normalized = normalizedAccountPeople(name);
     if (!normalized || existing.has(normalized)) continue;
-    state.accounts.push({ name, selected: false }); existing.add(normalized); added.push(name);
+    state.accounts.push({ name, selected: false, source: 'anylist' }); existing.add(normalized); added.push(name);
   }
   return added;
 }

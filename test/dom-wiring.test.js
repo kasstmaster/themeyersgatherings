@@ -40,7 +40,8 @@ test('AnyList accounts are read-only while wedding party editing remains availab
   assert.doesNotMatch(accountsEditor, /adminNewAccount|adminAddAccountButton/);
   assert.match(accountsEditor, /id="syncAnyListButton"/);
   const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
-  assert.doesNotMatch(accountRenderer, /addEventListener\('change', \(\) => renameAccount|account-delete-button/);
+  assert.doesNotMatch(accountRenderer, /addEventListener\('change', \(\) => renameAccount/);
+  assert.match(accountRenderer, /canDeleteWebsiteAccount\(account\)/);
   assert.match(javascript, /id="adminAddWeddingPartyMember"|#adminAddWeddingPartyMember/);
 });
 
@@ -603,7 +604,7 @@ test('wedding party manager creates wedding-enabled accounts for new people', as
   const addHandler = javascript.match(/#adminAddWeddingPartyMember'[\s\S]*?\n}\);/)?.[0] || '';
 
   assert.match(addHandler, /accountNameMatches\(name, item\.name\)/);
-  assert.match(addHandler, /account = \{ name, selected: false, selectedEvents: \{ wedding: true \}, invitedEvents: \{ wedding: true \} \}/);
+  assert.match(addHandler, /account = \{ name, source: 'website', selected: false, selectedEvents: \{ wedding: true \}, invitedEvents: \{ wedding: true \} \}/);
   assert.match(addHandler, /appState\.accounts\.push\(account\)/);
   assert.match(addHandler, /accountCanSignIn\(account, 'wedding'\)/);
   assert.match(addHandler, /state\.weddingPartyMembers\.push\(\{ id: crypto\.randomUUID\(\), name, title: selectedTitle\.value, responsibilities: \'\', pages: \[\] \}\)/);
