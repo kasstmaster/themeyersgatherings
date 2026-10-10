@@ -309,3 +309,5 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .sign-in-card label{font-size:.95rem}
 .sign-in-card [data-sign-in-step][hidden],.sign-in-back[hidden]{display:none}
 .sign-in-back{display:block;margin:14px auto 0;border:0;background:transparent;color:#fff;font:inherit;text-decoration:underline;cursor:pointer;padding:8px 16px}
+
+.account-address{font-size:.85rem;color:var(--muted);margin-bottom:6px;overflow-wrap:anywhere}

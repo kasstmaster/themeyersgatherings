@@ -228,3 +228,20 @@ test('package-size names sync as alternate identities without adding household m
   syncAnyListAccounts(state, [{ ...convertCategory('HALL', [{ name: 'Benjamin Hall IV' }, { name: 'Sherri Hall' }]), id: 'hall' }]);
   assert.deepEqual(state.accounts[0].signInAliases, []);
 });
+
+
+test('category addresses sync above account identity without changing access or QR tokens', () => {
+  const state = { accounts: [], events: {} };
+  const category = (heading) => ({ ...convertCategory(heading, [{ name: 'Steven Meyer' }]), id: 'host' });
+  syncAnyListAccounts(state, [category('HOST - 221 W China Grade Loop Bldg A, Bakersfield CA')]);
+  assert.equal(state.accounts[0].address, '221 W China Grade Loop Bldg A, Bakersfield CA');
+  state.accounts[0].qrToken = 'keep-token';
+  state.accounts[0].selectedEvents = { wedding: true };
+  syncAnyListAccounts(state, [category('HOST - 10 Main St - Unit A')]);
+  assert.equal(state.accounts[0].address, '10 Main St - Unit A');
+  assert.equal(state.accounts[0].name, 'Steven Meyer');
+  assert.equal(state.accounts[0].qrToken, 'keep-token');
+  assert.equal(state.accounts[0].selectedEvents.wedding, true);
+  syncAnyListAccounts(state, [category('HOST')]);
+  assert.equal(state.accounts[0].address, '');
+});

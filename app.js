@@ -664,7 +664,8 @@ function accountContactsHtml(account) {
   const children = (account.children || []).length
     ? `<div class="account-children"><strong>Children:</strong> ${account.children.map(escapeHtml).join(', ')}</div>`
     : '';
-  return adults + children;
+  const address = account.address ? `<div class="account-address">${escapeHtml(account.address)}</div>` : '';
+  return address + adults + children;
 }
 function firstAccountLastName(accountName) {
   const firstPerson = accountSignInNames(accountName)[0] || accountName;
