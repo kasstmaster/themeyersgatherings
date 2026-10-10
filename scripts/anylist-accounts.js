@@ -100,6 +100,7 @@ export function categoryHouseholds(categoryName) {
 }
 
 export function convertCategory(categoryName, items) {
+  const address = clean(categoryName).match(/\s+-\s+(.+)$/)?.[1] || '';
   const householdNames = categoryHouseholds(categoryName);
   const householdOrder = new Map(householdNames.map((lastName, index) => [key(lastName), index]));
   const households = new Map();
@@ -142,7 +143,7 @@ export function convertCategory(categoryName, items) {
     if (people.some(person => person.suffix)) return people.map(person => person.fullName).join(',');
     return `${people.map(person => person.givenNames).join(',')} ${lastName}`;
   }).join('/') : null;
-  return { account, anchor: orderedPeople[0] || null, people: orderedPeople, children, signInAliases, skipped };
+  return { account, address, anchor: orderedPeople[0] || null, people: orderedPeople, children, signInAliases, skipped };
 }
 
 /** Expand both legacy compact households and explicit comma-separated full names. */
@@ -203,7 +204,7 @@ export function syncAnyListAccounts(state, categories) {
       index = best[0]?.candidateIndex ?? -1;
     }
     if (index < 0) {
-      state.accounts.push({ name: category.account, children: category.children || [], signInAliases: category.signInAliases || [], selected: false, anyListCategoryId: categoryId });
+      state.accounts.push({ name: category.account, address: clean(category.address), children: category.children || [], signInAliases: category.signInAliases || [], selected: false, anyListCategoryId: categoryId });
       claimedIndexes.add(state.accounts.length - 1);
       added.push(category.account);
       continue;
@@ -212,6 +213,7 @@ export function syncAnyListAccounts(state, categories) {
     const account = state.accounts[index];
     const oldName = account.name;
     account.name = category.account;
+    account.address = clean(category.address);
     account.children = category.children || [];
     account.signInAliases = category.signInAliases || [];
     account.anyListCategoryId = categoryId;
