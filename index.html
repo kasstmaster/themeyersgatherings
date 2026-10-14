@@ -135,11 +135,13 @@
         <button type="button" role="tab" data-gathering-tab="menu" aria-controls="gatheringMenuSection" aria-selected="true">Menu</button>
         <button type="button" role="tab" data-gathering-tab="details" aria-controls="gatheringDetailsSection" aria-selected="false">Details</button>
       </nav>
-      <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent"></div></section>
+      <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent" class="bride-groom-content"></div></section>
       <section id="gatheringDetailsSection" class="gathering-page" aria-labelledby="gatheringDetailsHeading" hidden>
         <h2 id="gatheringDetailsHeading">Details</h2>
+        <div class="bride-groom-content">
         <h3>Gathering Date</h3><p id="gatheringDetailsDate"></p>
         <h3>The Meyer's Residence</h3><p><a id="gatheringDetailsAddress" target="_blank" rel="noopener noreferrer"></a></p>
+        </div>
       </section>
 
       <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
@@ -258,7 +260,8 @@
         </div>
       </section>
 
-      <section id="gatheringMenuSection" class="menu-section" aria-label="Available dishes">
+      <section id="gatheringMenuSection" class="menu-section gathering-page" aria-label="Available dishes">
+        <h2>Menu</h2>
         <div class="menu-heading">
           <button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button>
         </div>
