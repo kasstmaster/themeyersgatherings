@@ -311,3 +311,9 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .sign-in-back{display:block;margin:14px auto 0;border:0;background:transparent;color:#fff;font:inherit;text-decoration:underline;cursor:pointer;padding:8px 16px}
 
 .account-address{font-size:.85rem;color:var(--muted);margin-bottom:6px;overflow-wrap:anywhere}
+
+#gatheringTabs[hidden],.gathering-page[hidden],#adminHostNotesSection[hidden],.welcome[hidden],.summary-strip[hidden]{display:none}
+.gathering-page{padding:24px 0 36px;overflow-wrap:anywhere;line-height:1.6}
+.gathering-page h2{margin-top:0}
+#adminHostNotes{box-sizing:border-box;width:100%;min-height:220px;resize:vertical}
+#adminHostNotesSection>p{font-size:.85rem;color:var(--muted)}
