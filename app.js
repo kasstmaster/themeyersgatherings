@@ -1139,8 +1139,6 @@ function render() {
   const addressLink = document.querySelector('#gatheringDetailsAddress');
   addressLink.textContent = residence;
   addressLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(residence)}`;
-  document.querySelector('.welcome').hidden = !showingMenu;
-  document.querySelector('.summary-strip').hidden = !showingMenu;
   document.querySelector('.menu-section').hidden = event.hasMenu === false || !showingMenu;
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');

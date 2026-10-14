@@ -115,17 +115,6 @@
     <button id="cancelViewAsButton" class="cancel-view-as" type="button" hidden>Cancel view</button>
 
     <main>
-      <nav id="gatheringTabs" class="wedding-party-tabs" aria-label="Gathering pages" role="tablist" hidden>
-        <button type="button" role="tab" data-gathering-tab="notes" aria-controls="hostNotesSection" aria-selected="false" hidden>Notes</button>
-        <button type="button" role="tab" data-gathering-tab="menu" aria-controls="gatheringMenuSection" aria-selected="true">Menu</button>
-        <button type="button" role="tab" data-gathering-tab="details" aria-controls="gatheringDetailsSection" aria-selected="false">Details</button>
-      </nav>
-      <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent"></div></section>
-      <section id="gatheringDetailsSection" class="gathering-page" aria-labelledby="gatheringDetailsHeading" hidden>
-        <h2 id="gatheringDetailsHeading">Details</h2>
-        <h3>Gathering Date</h3><p id="gatheringDetailsDate"></p>
-        <h3>The Meyer's Residence</h3><p><a id="gatheringDetailsAddress" target="_blank" rel="noopener noreferrer"></a></p>
-      </section>
       <section class="welcome" aria-labelledby="welcome-title">
         <div>
           <p id="welcomeKicker" class="section-kicker">The Meyer's Table</p>
@@ -139,6 +128,18 @@
         <button class="summary-item" id="guestListButton" type="button"><strong id="guestCount">0</strong><span>Guests attending</span></button>
         <button class="summary-item" id="invitedListButton" type="button"><strong id="invitedCount">0</strong><span>Families invited</span></button>
         <div id="remainingSummary" class="summary-stat"><strong id="remainingCount">0</strong><span>Dishes needed</span></div>
+      </section>
+
+      <nav id="gatheringTabs" class="wedding-party-tabs" aria-label="Gathering pages" role="tablist" hidden>
+        <button type="button" role="tab" data-gathering-tab="notes" aria-controls="hostNotesSection" aria-selected="false" hidden>Notes</button>
+        <button type="button" role="tab" data-gathering-tab="menu" aria-controls="gatheringMenuSection" aria-selected="true">Menu</button>
+        <button type="button" role="tab" data-gathering-tab="details" aria-controls="gatheringDetailsSection" aria-selected="false">Details</button>
+      </nav>
+      <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent"></div></section>
+      <section id="gatheringDetailsSection" class="gathering-page" aria-labelledby="gatheringDetailsHeading" hidden>
+        <h2 id="gatheringDetailsHeading">Details</h2>
+        <h3>Gathering Date</h3><p id="gatheringDetailsDate"></p>
+        <h3>The Meyer's Residence</h3><p><a id="gatheringDetailsAddress" target="_blank" rel="noopener noreferrer"></a></p>
       </section>
 
       <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
