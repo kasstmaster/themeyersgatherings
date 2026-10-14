@@ -113,7 +113,7 @@ function defaultInvitationSettings(eventDate) {
   event.setUTCDate(event.getUTCDate() - 14);
   return { rsvpDate: event.toISOString().slice(0, 10), addressLine1: '221 W China Grade Loop', addressLine2: 'Bakersfield CA 93308' };
 }
-function makeEvent(items, eventDate, menuVersion) { return { items, rsvps: [], eventDate, homeAddress: '', ...defaultInvitationSettings(eventDate), accountSelectionResetFor: '', menuVersion, quantityUnits: structuredClone(DEFAULT_QUANTITY_UNITS) }; }
+function makeEvent(items, eventDate, menuVersion) { return { items, rsvps: [], eventDate, homeAddress: '', hostNotes: '', ...defaultInvitationSettings(eventDate), accountSelectionResetFor: '', menuVersion, quantityUnits: structuredClone(DEFAULT_QUANTITY_UNITS) }; }
 function initialAppState() {
   return {
     activeEventId: 'thanksgiving',
@@ -159,6 +159,7 @@ let viewedEventId = appState.activeEventId;
 let state = appState.events[viewedEventId];
 let guestName = '';
 let signedInPersonName = '';
+let selectedGatheringTab = null;
 let selectedWeddingTab = 'guest';
 let selectedGuestTab = 'attire';
 let selectedMatronTab = 'experience';
@@ -254,6 +255,7 @@ function normalizeState(saved) {
             })) : []
           })) : [];
         eventState.eventDate = typeof eventState.eventDate === 'string' ? eventState.eventDate : fallback.eventDate;
+        eventState.hostNotes = typeof eventState.hostNotes === 'string' ? eventState.hostNotes : '';
         eventState.homeAddress = typeof eventState.homeAddress === 'string' ? eventState.homeAddress : '';
         const invitationFallback = defaultInvitationSettings(eventState.eventDate);
         eventState.rsvpDate = typeof eventState.rsvpDate === 'string' ? eventState.rsvpDate : invitationFallback.rsvpDate;
@@ -1042,6 +1044,7 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
     renderEventSelection();
     return;
   }
+  selectedGatheringTab = null;
   viewedEventId = eventId;
   state = nextState;
   if (eventId === 'wedding' && !preserveWeddingView) {
@@ -1100,7 +1103,7 @@ function render() {
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
   renderSyncStatus();
   updateHostToolsPanel();
-  document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Menu';
+  document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Edit Details';
   document.querySelector('#clearClaimButton').hidden = isWedding;
   document.querySelector('#previewWeddingPartyButton').hidden = !isWedding;
   renderEventDock();
@@ -1118,7 +1121,27 @@ function render() {
   document.querySelector('.summary-strip').classList.toggle('wedding-summary', isWedding);
   // Menus belong to every gathering except the Wedding, which intentionally
   // has registry details instead of claimable dishes.
-  document.querySelector('.menu-section').hidden = event.hasMenu === false;
+  if (!hostView && selectedGatheringTab === 'notes') selectedGatheringTab = 'menu';
+  const gatheringTab = selectedGatheringTab || (hostView ? 'notes' : 'menu');
+  const showingMenu = isWedding || gatheringTab === 'menu';
+  document.querySelector('#gatheringTabs').hidden = isWedding;
+  document.querySelectorAll('[data-gathering-tab]').forEach(button => {
+    button.hidden = button.dataset.gatheringTab === 'notes' && !hostView;
+    const selected = button.dataset.gatheringTab === gatheringTab;
+    button.setAttribute('aria-selected', String(selected)); button.tabIndex = selected ? 0 : -1;
+  });
+  document.querySelector('#hostNotesSection').hidden = isWedding || !hostView || gatheringTab !== 'notes';
+  document.querySelector('#hostNotesContent').innerHTML = !isWedding && hostView
+    ? formatEditableText(state.hostNotes || '') || '<p>Edit Details to add your notes.</p>' : '';
+  document.querySelector('#gatheringDetailsSection').hidden = isWedding || gatheringTab !== 'details';
+  document.querySelector('#gatheringDetailsDate').textContent = dateElement.textContent;
+  const residence = state.homeAddress || [state.addressLine1, state.addressLine2].filter(Boolean).join(', ');
+  const addressLink = document.querySelector('#gatheringDetailsAddress');
+  addressLink.textContent = residence;
+  addressLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(residence)}`;
+  document.querySelector('.welcome').hidden = !showingMenu;
+  document.querySelector('.summary-strip').hidden = !showingMenu;
+  document.querySelector('.menu-section').hidden = event.hasMenu === false || !showingMenu;
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');
   const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => weddingPartyPersonMatches(member.name, signedInPersonName));
@@ -1342,6 +1365,7 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
   if (!isAccountQrRoute() && firstName === HOST_PASSWORD) {
     const password = firstName;
     hostAuthenticated = true;
+    selectedGatheringTab = null;
     hostCredential = password;
     guestName = HOST_DISPLAY_NAME;
     signedInPersonName = '';
@@ -1376,6 +1400,7 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
   const account = accountForSignIn(accountName);
   if (!account) { document.querySelector('#accountPasswordError').textContent = 'That name and suffix are not recognized.'; return; }
   if (!availableEventIds(account.name).length) { document.querySelector('#accountPasswordError').textContent = 'Sign-in access has not been enabled for your account yet.'; return; }
+  selectedGatheringTab = null;
   guestName = account.name;
   signedInPersonName = accountPersonName(accountName, account) || accountName;
   selectedWeddingTab = 'guest';
@@ -1680,7 +1705,9 @@ function openAdmin() {
   document.querySelector('#adminDialog .modal-card').classList.toggle('wedding-details-editor', isWedding);
   document.querySelector('#adminEventDate').value = state.eventDate;
   document.querySelector('#adminHomeAddress').value = state.homeAddress || '';
-  document.querySelector('#adminHeading').textContent = isWedding ? 'Edit wedding details' : 'Edit the menu';
+  document.querySelector('#adminHostNotesSection').hidden = isWedding;
+  document.querySelector('#adminHostNotes').value = isWedding ? '' : state.hostNotes || '';
+  document.querySelector('#adminHeading').textContent = isWedding ? 'Edit wedding details' : 'Edit Details';
   document.querySelector('#adminWeddingLocations').hidden = !isWedding;
   document.querySelector('#adminWeddingVariableHelp').classList.toggle('wedding-variables-visible', isWedding);
   document.querySelector('#adminWeddingVariableHeading').hidden = !isWedding;
@@ -2390,6 +2417,23 @@ function openClearClaimDialog() {
   updateClearClaimFamilies();
   document.querySelector('#clearClaimDialog').showModal();
 }
+document.querySelector('#gatheringTabs').addEventListener('click', event => {
+  const button = event.target.closest('[data-gathering-tab]');
+  if (!button || button.hidden || (button.dataset.gatheringTab === 'notes' && !isHostView())) return;
+  selectedGatheringTab = button.dataset.gatheringTab; render();
+});
+document.querySelector('#gatheringTabs').addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  const tabs = [...document.querySelectorAll('[data-gathering-tab]:not([hidden])')];
+  const current = tabs.findIndex(button => button.getAttribute('aria-selected') === 'true');
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+  tabs[next].click(); tabs[next].focus();
+});
+document.querySelector('#adminHostNotes').addEventListener('change', event => {
+  if (!isHostView() || viewedEventId === 'wedding') return;
+  state.hostNotes = event.target.value; saveState(); render();
+});
 document.querySelector('#editItemsButton').addEventListener('click', openAdmin);
 document.querySelector('#clearClaimButton').addEventListener('click', openClearClaimDialog);
 document.querySelector('#editAccountsButton').addEventListener('click', openAccountsAdmin);

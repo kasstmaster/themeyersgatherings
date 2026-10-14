@@ -538,7 +538,7 @@ test('the editor title is its own section without a bottom divider', async () =>
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /<section class="admin-editor-section admin-editor-heading" aria-labelledby="adminHeading">\s*<p class="section-kicker">Host dashboard<\/p>\s*<h2 id="adminHeading">Edit the menu<\/h2>\s*<\/section>\s*<p id="adminWeddingVariableDescription"[\s\S]*?<\/p>\s*<section id="adminWeddingVariableHelp"/);
+  assert.match(html, /<section class="admin-editor-section admin-editor-heading" aria-labelledby="adminHeading">\s*<p class="section-kicker">Host dashboard<\/p>\s*<h2 id="adminHeading">Edit Details<\/h2>\s*<\/section>\s*<section id="adminHostNotesSection"[\s\S]*?<\/section>\s*<p id="adminWeddingVariableDescription"[\s\S]*?<\/p>\s*<section id="adminWeddingVariableHelp"/);
   assert.doesNotMatch(styles, /\.admin-editor-section\{[^}]*border-(?:top|bottom)/);
   assert.doesNotMatch(styles, /\.admin-editor-heading\{[^}]*border-(?:top|bottom)/);
 });
@@ -693,7 +693,7 @@ test('gathering-specific host tools match the current gathering content', async 
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  assert.match(javascript, /#editItemsButton'\)\.textContent = isWedding \? 'Wedding Details' : 'Menu'/);
+  assert.match(javascript, /#editItemsButton'\)\.textContent = isWedding \? 'Wedding Details' : 'Edit Details'/);
   assert.match(javascript, /#clearClaimButton'\)\.hidden = isWedding/);
   assert.match(javascript, /#previewWeddingPartyButton'\)\.hidden = !isWedding/);
   assert.match(styles, /\.host-tools-panel \.host-tool-actions button\[hidden\]\{display:none\}/);
