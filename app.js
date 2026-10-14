@@ -1104,7 +1104,6 @@ function render() {
   renderSyncStatus();
   updateHostToolsPanel();
   document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Edit Details';
-  document.querySelector('#clearClaimButton').hidden = isWedding;
   document.querySelector('#previewWeddingPartyButton').hidden = false;
   renderEventDock();
   updateHeaderImage(event);
@@ -2434,12 +2433,7 @@ document.querySelector('#adminHostNotes').addEventListener('change', event => {
   state.hostNotes = event.target.value; saveState(); render();
 });
 document.querySelector('#editItemsButton').addEventListener('click', openAdmin);
-document.querySelector('#clearClaimButton').addEventListener('click', () => {
-  if (!isHostView() || viewedEventId === 'wedding') return;
-  openAdmin();
-  const section = document.querySelector('#clearClaimSection');
-  section.open = true; section.scrollIntoView({ block: 'center' });
-});
+
 document.querySelector('#editAccountsButton').addEventListener('click', openAccountsAdmin);
 document.querySelector('#previewWeddingPartyButton').addEventListener('click', () => {
   if (!isHostView()) return;
