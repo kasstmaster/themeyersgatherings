@@ -1105,7 +1105,7 @@ function render() {
   updateHostToolsPanel();
   document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Edit Details';
   document.querySelector('#clearClaimButton').hidden = isWedding;
-  document.querySelector('#previewWeddingPartyButton').hidden = !isWedding;
+  document.querySelector('#previewWeddingPartyButton').hidden = false;
   renderEventDock();
   updateHeaderImage(event);
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
@@ -1703,6 +1703,7 @@ function openAdmin() {
   document.querySelector('#adminDialog .modal-card').classList.toggle('wedding-details-editor', isWedding);
   document.querySelector('#adminEventDate').value = state.eventDate;
   document.querySelector('#adminHomeAddress').value = state.homeAddress || '';
+  populateClearClaimControls();
   document.querySelector('#adminHostNotesSection').hidden = isWedding;
   document.querySelector('#adminHostNotes').value = isWedding ? '' : state.hostNotes || '';
   document.querySelector('#adminHeading').textContent = isWedding ? 'Edit wedding details' : 'Edit Details';
@@ -2405,7 +2406,7 @@ function updateClearClaimQuantities() {
     return `<option value="${quantity}">${escapeHtml(formatQuantity(quantity, item))}</option>`;
   }).join('');
 }
-function openClearClaimDialog() {
+function populateClearClaimControls() {
   const claimedItems = state.items.filter(item => item.claims.length);
   const itemSelect = document.querySelector('#clearClaimItem');
   itemSelect.innerHTML = claimedItems.map(item => `<option value="${escapeAttribute(item.id)}">${escapeHtml(item.name)} (${escapeHtml(formatQuantity(item.claims.length, item))} claimed)</option>`).join('');
@@ -2413,7 +2414,7 @@ function openClearClaimDialog() {
   document.querySelector('#clearClaimError').textContent = hasClaims ? '' : 'There are no claimed dishes to clear.';
   document.querySelector('#clearClaimSubmit').disabled = !hasClaims;
   updateClearClaimFamilies();
-  document.querySelector('#clearClaimDialog').showModal();
+
 }
 document.querySelector('#gatheringTabs').addEventListener('click', event => {
   const button = event.target.closest('[data-gathering-tab]');
@@ -2433,14 +2434,22 @@ document.querySelector('#adminHostNotes').addEventListener('change', event => {
   state.hostNotes = event.target.value; saveState(); render();
 });
 document.querySelector('#editItemsButton').addEventListener('click', openAdmin);
-document.querySelector('#clearClaimButton').addEventListener('click', openClearClaimDialog);
+document.querySelector('#clearClaimButton').addEventListener('click', () => {
+  if (!isHostView() || viewedEventId === 'wedding') return;
+  openAdmin();
+  const section = document.querySelector('#clearClaimSection');
+  section.open = true; section.scrollIntoView({ block: 'center' });
+});
 document.querySelector('#editAccountsButton').addEventListener('click', openAccountsAdmin);
 document.querySelector('#previewWeddingPartyButton').addEventListener('click', () => {
-  const members = appState.events.wedding.weddingPartyMembers || [];
+  if (!isHostView()) return;
+  const isWedding = viewedEventId === 'wedding';
+  const members = isWedding ? appState.events.wedding.weddingPartyMembers || [] : appState.accounts.filter(account => accountCanSignIn(account, viewedEventId));
+  document.querySelector('#viewAsDescription').textContent = isWedding ? 'See the wedding as a general guest, or choose a party member to preview their Wedding Party tab.' : 'See this gathering as a general guest, or choose an account to preview its view.';
   const select = document.querySelector('#hostWeddingPartyView');
-  if (hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW && !members.some(member => member.name === hostWeddingPartyViewName)) hostWeddingPartyViewName = GENERAL_GUEST_PREVIEW;
-  select.innerHTML = `<option value="${GENERAL_GUEST_PREVIEW}" ${hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW ? 'selected' : ''}>General guest</option>`
-    + members.map(member => `<option value="${escapeAttribute(member.name)}" ${member.name === hostWeddingPartyViewName ? 'selected' : ''}>${escapeHtml(member.name)} — ${escapeHtml(member.title || 'Wedding Party')}</option>`).join('');
+  const selectedPreview = members.some(member => member.name === hostWeddingPartyViewName) ? hostWeddingPartyViewName : GENERAL_GUEST_PREVIEW;
+  select.innerHTML = `<option value="${GENERAL_GUEST_PREVIEW}" ${selectedPreview === GENERAL_GUEST_PREVIEW ? 'selected' : ''}>General guest</option>`
+    + members.map(member => `<option value="${escapeAttribute(member.name)}" ${member.name === selectedPreview ? 'selected' : ''}>${escapeHtml(member.name)}${isWedding ? ` — ${escapeHtml(member.title || 'Wedding Party')}` : ''}</option>`).join('');
   document.querySelector('#hostWeddingPartyViewError').textContent = '';
   document.querySelector('#openWeddingPartyPreview').disabled = false;
   document.querySelector('#weddingPartyPreviewDialog').showModal();
@@ -2450,10 +2459,12 @@ document.querySelector('#openWeddingPartyPreview').addEventListener('click', () 
   if (!hostWeddingPartyViewName) return;
   document.querySelector('#weddingPartyPreviewDialog').close();
   selectedWeddingTab = hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW ? 'guest' : 'party';
-  enterEvent('wedding', { preserveWeddingView: true });
+  if (viewedEventId === 'wedding') enterEvent('wedding', { preserveWeddingView: true });
+  else { selectedGatheringTab = 'menu'; render(); }
 });
 document.querySelector('#cancelViewAsButton').addEventListener('click', () => {
   hostWeddingPartyViewName = '';
+  selectedGatheringTab = null;
   selectedWeddingTab = 'couple';
   selectedMatronTab = 'experience';
   render();
@@ -2526,7 +2537,8 @@ document.querySelector('#syncAnyListButton').addEventListener('click', async eve
 });
 document.querySelector('#clearClaimItem').addEventListener('change', updateClearClaimFamilies);
 document.querySelector('#clearClaimFamily').addEventListener('change', updateClearClaimQuantities);
-document.querySelector('#clearClaimForm').addEventListener('submit', event => {
+document.querySelector('#clearClaimSubmit').addEventListener('click', event => {
+  if (!isHostView() || viewedEventId === 'wedding') return;
   if (event.submitter?.value === 'cancel') return;
   event.preventDefault();
   const item = state.items.find(entry => entry.id === document.querySelector('#clearClaimItem').value);
@@ -2535,8 +2547,8 @@ document.querySelector('#clearClaimForm').addEventListener('submit', event => {
   if (!item || !family || quantity < 1) return;
   const removed = removeItemClaims(item, family, quantity);
   if (!removed) return;
-  document.querySelector('#clearClaimDialog').close();
   saveState();
+  populateClearClaimControls();
   showToast(`${formatQuantity(removed, item)} of ${item.name} removed from ${contributionDisplayName(family)}.`);
 });
 document.querySelector('#adminAddWeddingPartyMember').addEventListener('click', () => {

@@ -181,7 +181,7 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
   assert.match(javascript, /member\.responsibilities/);
   assert.match(javascript, /formatWeddingPartyDescription\(description\)/);
-  assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Preview Party\/Guest view/);
+  assert.match(html, /id="previewWeddingPartyButton"[\s\S]*View As/);
   assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
 });
 
@@ -367,7 +367,7 @@ test('host can preview the wedding as a general guest without selecting an accou
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /<h2>Preview Party\/Guest view<\/h2>/);
+  assert.match(html, /<h2>View As<\/h2>/);
   assert.match(javascript, /const GENERAL_GUEST_PREVIEW = '__general_guest__'/);
   assert.match(javascript, />General guest<\/option>/);
   assert.match(javascript, /hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
@@ -681,7 +681,7 @@ test('host tools are persistent buttons directly below the signed-in household',
   const toolsIndex = html.indexOf('id="hostToolsPanel"');
   const mainIndex = html.indexOf('<main>');
   assert.ok(accountIndex < toolsIndex && toolsIndex < mainIndex);
-  assert.match(html, /id="hostToolsPanel"[\s\S]*>Wedding Details<\/button>[\s\S]*>Clear a Claim<\/button>[\s\S]*>View As<\/button>[\s\S]*>Accounts<\/button>[\s\S]*>Templates<\/button>/);
+  assert.match(html, /id="hostToolsPanel"[\s\S]*>Wedding Details<\/button>[\s\S]*>View As<\/button>[\s\S]*>Accounts<\/button>[\s\S]*>Templates<\/button>/);
   assert.doesNotMatch(html, /id="manageEventsButton"|>Gatherings<\/button>/);
   assert.doesNotMatch(javascript, /#manageEventsButton/);
   assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
@@ -694,8 +694,8 @@ test('gathering-specific host tools match the current gathering content', async 
   ]);
 
   assert.match(javascript, /#editItemsButton'\)\.textContent = isWedding \? 'Wedding Details' : 'Edit Details'/);
-  assert.match(javascript, /#clearClaimButton'\)\.hidden = isWedding/);
-  assert.match(javascript, /#previewWeddingPartyButton'\)\.hidden = !isWedding/);
+  assert.match(javascript, /function populateClearClaimControls/);
+  assert.match(javascript, /#previewWeddingPartyButton'\)\.hidden = false/);
   assert.match(styles, /\.host-tools-panel \.host-tool-actions button\[hidden\]\{display:none\}/);
 });
 

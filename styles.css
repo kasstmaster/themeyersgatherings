@@ -327,3 +327,7 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 @media(max-width:520px){#gatheringMenuSection .copy-menu-button{padding:10px 8px;font-size:.75rem}}
 .gathering-page .category-card,.gathering-page .other-card{background:var(--registry-inner-background);color:var(--muted);border:1px solid var(--border)}
 .gathering-page .dish{border-bottom-color:var(--border)}
+
+#clearClaimSection{margin-bottom:18px;border:1px solid var(--border);border-radius:5px;padding:12px}
+#clearClaimSection>summary{cursor:pointer;font-weight:700}
+#clearClaimSection[open]>summary{margin-bottom:12px}
