@@ -320,5 +320,8 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 
 @media(max-width:650px){.gathering-page{padding:30px 16px}.gathering-page .bride-groom-content{padding:18px}}
 
-#gatheringMenuSection .menu-heading{justify-content:center;align-items:center;gap:16px;margin-bottom:28px}
-#gatheringMenuSection .menu-heading h2{color:var(--navy);font-size:clamp(2.2rem,5vw,3.5rem)}
+#gatheringMenuSection .menu-heading{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;margin-bottom:28px}
+#gatheringMenuSection .menu-heading h2{grid-column:2;grid-row:1;text-align:center;color:var(--navy);font-size:clamp(2.2rem,5vw,3.5rem)}
+
+#gatheringMenuSection .copy-menu-button{grid-column:3;grid-row:1;justify-self:end}
+@media(max-width:520px){#gatheringMenuSection .copy-menu-button{padding:10px 8px;font-size:.75rem}}
