@@ -461,6 +461,13 @@
           </section>
         </div>
         <div id="menuAdminFields">
+        <details id="clearClaimSection"><summary>Clear a Claim</summary>
+        <label><span>Item</span><select id="clearClaimItem"></select></label>
+        <label><span>Family</span><select id="clearClaimFamily"></select></label>
+        <label><span>Quantity</span><select id="clearClaimQuantity"></select></label>
+        <p class="form-error" id="clearClaimError" role="alert"></p>
+        <button class="primary-button" id="clearClaimSubmit" type="button">Clear claim</button>
+        </details>
         <div id="adminItems" class="admin-items"></div>
         <div class="admin-add">
           <input id="adminNewItem" placeholder="New item" maxlength="60" />
@@ -489,23 +496,11 @@
     <dialog id="weddingPartyPreviewDialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
-        <p class="section-kicker">Host dashboard</p><h2>Preview Party/Guest view</h2>
-        <p>See the wedding as a general guest, or choose a party member to preview their Wedding Party tab.</p>
+        <p class="section-kicker">Host dashboard</p><h2>View As</h2>
+        <p id="viewAsDescription">Preview this gathering as a guest.</p>
         <label><span>View as</span><select id="hostWeddingPartyView" aria-label="Preview party or guest view"></select></label>
         <p id="hostWeddingPartyViewError" class="form-error" role="alert"></p>
         <button id="openWeddingPartyPreview" class="primary-button" type="button">Open preview</button>
-      </form>
-    </dialog>
-
-    <dialog id="clearClaimDialog">
-      <form method="dialog" id="clearClaimForm" class="modal-card">
-        <button class="modal-close" value="cancel" aria-label="Close">×</button>
-        <p class="section-kicker">Host dashboard</p><h2>Clear a claim</h2>
-        <label><span>Item</span><select id="clearClaimItem" required></select></label>
-        <label><span>Family</span><select id="clearClaimFamily" required></select></label>
-        <label><span>Quantity</span><select id="clearClaimQuantity" required></select></label>
-        <p class="form-error" id="clearClaimError" role="alert"></p>
-        <button class="primary-button" id="clearClaimSubmit" value="default">Clear claim</button>
       </form>
     </dialog>
 
