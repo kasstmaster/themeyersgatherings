@@ -220,8 +220,8 @@ Then deploy the Worker manually and push the workflow. No deployment is
 performed by this repository change. Sync logs include counts and outcomes but
 never credentials, cookies, authorization headers, or token values.
 
-### Wedding guest photo and video uploads
+### Wedding photos and videos
 
-Wedding's **Upload Photos** tab has **Upload** and **View Photos & Videos** sub-tabs. Guests can select multiple files or save a photo-sharing link. Each account sees its own submissions; hosts see all submissions, with uploader and account names. Photos support JPEG, PNG, WebP, GIF, AVIF, HEIC, and HEIF (15 MB each). Videos support MP4, MOV, WebM, and Ogg (50 MB each). HEIC preview and MOV playback depend on the device; originals remain available to download.
+Wedding's **Upload Photos** page links to the hosts' Dropbox file request: https://www.dropbox.com/request/o8ybj2uepxwan6rqcod6. Photos and videos upload directly to Dropbox; there is no website file picker or website file-size limit in this flow.
 
-Deploy the updated Worker as well as the website (the existing `deploy-state-worker.yml` workflow handles Worker changes on main when configured). This feature reuses `INVITATION_BACKGROUNDS` under the isolated `wedding-media/` prefix. Media and sharing-link metadata never enter the shared state JSON or Git repository. The Worker verifies the signed-in name against the current wedding-enabled account, using the same primary/alternate-name sign-in model as the website, and issues a private one-hour upload session. Account owners are assigned on the server, every gallery and media read requires that session, and hosts use their existing host credential to create a host session. Stored media supports authenticated byte-range playback and is served with private/no-store caching. View As cannot access private galleries.
+The existing **View Photos & Videos** gallery retains files and sharing links previously submitted to the website, with its account/host access controls. New Dropbox submissions are managed in Dropbox and are not mirrored into the website gallery. Guests can still leave an external photo-sharing link on the website.
