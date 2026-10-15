@@ -1,5 +1,5 @@
 (() => {
-  let current, api, contextKey='',jobs=[],busy=false;
+  let current, api, contextKey='',jobs=[],busy=false,connected=null;
   const node=id=>document.getElementById(id);
   const types={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',avif:'image/avif',heic:'image/heic',heif:'image/heif',mp4:'video/mp4',mov:'video/quicktime',webm:'video/webm',ogg:'video/ogg',ogv:'video/ogg'};
   const type=file=>file.type||types[file.name.split('.').pop().toLowerCase()]||'';
@@ -8,24 +8,36 @@
     const response=await fetch(`${ctx.base}/dropbox/${path}`,{method,headers:{'X-Host-Password':ctx.password},cache:'no-store'});
     const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'Unable to connect to Dropbox. Deploy the updated Worker and check its settings.');return result;
   }
-  async function status() {
-    const ctx=current,ctxKey=key(ctx);node('dropboxConnectionStatus').textContent='Checking Dropbox…';node('dropboxInlineUpload').hidden=true;
+  function updateControls() {
+    node('dropboxHostControls').hidden=!current?.host||current.preview||connected===true;
+    node('dropboxCheckConnection').hidden=!current||current.preview||connected===true;
+  }
+  async function status({silent=false}={}) {
+    if(!current)return;
+    const ctx=current,ctxKey=key(ctx);
+    if(!silent){node('dropboxConnectionStatus').textContent='Checking Dropbox…';node('dropboxInlineUpload').hidden=true;}
     try {
       if(ctx.preview)throw new Error('Return to Host View to connect Dropbox or upload.');
       let result;
       if(ctx.host)result=await hostRequest(ctx,'status');else result=await api(ctx,'/dropbox-upload/status');
       if(key(current)!==ctxKey)return;
+      connected=result.connected;updateControls();
       node('dropboxInlineUpload').hidden=!result.connected;
       node('dropboxConnectionStatus').textContent=result.connected?'Dropbox is connected. Photos and videos uploaded here go directly to the hosts’ Dropbox.':ctx.host?'Connect Dropbox to enable uploads here. Your Dropbox app needs files.content.write permission.':'Website uploads are not connected yet. You can use the Dropbox link below.';
       node('dropboxConnect').textContent=result.connected?'Reconnect Dropbox':'Connect Dropbox';
       if(ctx.host&&!result.configured)node('dropboxConnectionStatus').textContent='Add DROPBOX_APP_KEY and DROPBOX_APP_SECRET in Cloudflare Worker secrets, then choose Connect Dropbox.';
-    }catch(error){if(key(current)===ctxKey)node('dropboxConnectionStatus').textContent=error.message;}
+    }catch(error){if(key(current)===ctxKey){connected=false;updateControls();node('dropboxInlineUpload').hidden=true;node('dropboxConnectionStatus').textContent=error.message;}}
   }
   function show(ctx,apiMethod) {
-    api=apiMethod;current=ctx;node('dropboxHostControls').hidden=!ctx.host||ctx.preview;
-    if(contextKey!==key(ctx)){contextKey=key(ctx);jobs=[];node('dropboxFiles').value='';node('dropboxUploadStatus').textContent='';status();}
+    api=apiMethod;current=ctx;
+    if(contextKey!==key(ctx)){connected=null;contextKey=key(ctx);jobs=[];node('dropboxFiles').value='';node('dropboxUploadStatus').textContent='';status();}
+    updateControls();
   }
-  node('dropboxCheckConnection').addEventListener('click',status);
+  node('dropboxCheckConnection').addEventListener('click',()=>status());
+  function recheck(){if(current&&!busy&&!document.hidden&&node('weddingMediaSection').getClientRects().length>0)status({silent:true});}
+  window.addEventListener('focus',recheck);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)recheck();});
+  setInterval(recheck,60000);
   node('dropboxConnect').addEventListener('click',async()=>{
     if(!current.host||current.preview)return;
     const ctx=current,popup=window.open('about:blank','_blank');if(popup)popup.opener=null;
@@ -53,6 +65,7 @@
       }catch(error){failures.push(`${job.file.name}: ${error.message}`);}
     }
     busy=false;node('dropboxUpload').disabled=false;node('dropboxFiles').disabled=false;
+    if(failures.length && key(current)===ctxKey)status({silent:true});
     if(key(current)===ctxKey){const done=batch.filter(job=>job.done).length;node('dropboxUploadStatus').textContent=`${done} of ${batch.length} uploaded to Dropbox.${failures.length?' '+failures.join(' ')+' Press Upload to retry unfinished files.':''}`;if(!failures.length){jobs=[];node('dropboxFiles').value='';}}
   });
   globalThis.DropboxUpload={show};

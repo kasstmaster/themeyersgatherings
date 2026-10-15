@@ -59,3 +59,13 @@ test('Dropbox reports missing configuration and rejects unsupported input and ov
   f.env.DROPBOX_APP_SECRET='app-secret';await f.connect();const job=await (await f.upload('/start',JSON.stringify({name:'a.mp4',size:20_000_000,contentType:'video/mp4'}))).json();
   assert.equal((await f.upload(`/${job.id}/chunk?offset=0`,'x',f.identity,{'Content-Length':'9000000'})).status,413);
 });
+
+
+test('Dropbox status detects revoked renewal access even when a connection record and cached token exist',async t=>{
+  const f=fixture(t);await f.connect();
+  assert.equal((await (await f.oauth('/dropbox/status',true)).json()).connected,true);
+  const previous=globalThis.fetch;
+  globalThis.fetch=async(url,options)=>url.endsWith('/oauth2/token')?Response.json({error:'invalid_grant'},{status:400}):previous(url,options);
+  assert.equal((await (await f.oauth('/dropbox/status',true)).json()).connected,false);
+  assert.equal((await (await f.upload('/status')).json()).connected,false);
+});

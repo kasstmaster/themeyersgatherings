@@ -11,11 +11,11 @@ async function tokenRequest(env, values) {
   if(!result.ok)throw new Error('Dropbox authorization failed. Reconnect Dropbox from Host View.');
   return body;
 }
-async function accessToken(env) {
+async function accessToken(env, forceRefresh = false) {
   if(!configured(env))throw new Error('Dropbox is not configured.');
   const connection=await read(env.INVITATION_BACKGROUNDS,CONFIG);
   if(!connection?.refreshToken)throw new Error('The host needs to connect Dropbox first.');
-  if(cachedAccess?.refreshToken===connection.refreshToken && cachedAccess.expires>Date.now()+60000)return cachedAccess.token;
+  if(!forceRefresh && cachedAccess?.refreshToken===connection.refreshToken && cachedAccess.expires>Date.now()+60000)return cachedAccess.token;
   const result=await tokenRequest(env,{grant_type:'refresh_token',refresh_token:connection.refreshToken});
   cachedAccess={refreshToken:connection.refreshToken,token:result.access_token,expires:Date.now()+result.expires_in*1000};return result.access_token;
 }
@@ -25,6 +25,12 @@ async function content(env, endpoint, args, bytes = new Uint8Array()) {
   const body=await result.json().catch(()=>({}));
   if(!result.ok){const error=new Error(result.status===429?'Dropbox is busy. Please retry shortly.':'Dropbox could not accept this upload. Please retry or use the Dropbox link.');error.correctOffset=body.error?.correct_offset;throw error;}
   return body;
+}
+async function connectionStatus(env) {
+  if(!configured(env))return {configured:false,connected:false};
+  if(!(await read(env.INVITATION_BACKGROUNDS,CONFIG))?.refreshToken)return {configured:true,connected:false};
+  try { await accessToken(env,true); return {configured:true,connected:true}; }
+  catch { return {configured:true,connected:false}; }
 }
 export async function handleDropboxOAuth(request,env,{response,jsonResponse,requireHost}) {
   const url=new URL(request.url),bucket=env.INVITATION_BACKGROUNDS;
@@ -40,11 +46,11 @@ export async function handleDropboxOAuth(request,env,{response,jsonResponse,requ
       const result=await tokenRequest(env,{grant_type:'authorization_code',code:url.searchParams.get('code'),redirect_uri:record.redirectUri,code_verifier:record.verifier});
       if(!result.refresh_token)throw new Error('Missing renewable access.');
       await write(bucket,CONFIG,{refreshToken:result.refresh_token,connectedAt:new Date().toISOString()});cachedAccess=null;
-      return response(request,env,'<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dropbox connected</title></head><body><h1>Dropbox connected</h1><p>You can close this tab and return to the wedding website. Choose Check connection to enable uploads.</p></body></html>',200,{'Content-Type':'text/html;charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});
+      return response(request,env,'<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dropbox connected</title></head><body><h1>Dropbox connected</h1><p>You can close this tab and return to the wedding website. The website will check the connection when you return.</p></body></html>',200,{'Content-Type':'text/html;charset=utf-8','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});
     }catch{return response(request,env,'Dropbox could not be connected. Verify the app settings and try Connect Dropbox again.',502);}
   }
   if(!requireHost(request,env))return reply({error:'Host authentication required.'},401);
-  if(url.pathname==='/dropbox/status' && request.method==='GET')return reply({configured:configured(env),connected:Boolean((await read(bucket,CONFIG))?.refreshToken),redirectUri});
+  if(url.pathname==='/dropbox/status' && request.method==='GET')return reply({...await connectionStatus(env),redirectUri});
   if(url.pathname==='/dropbox/connect' && request.method==='POST') {
     if(!configured(env))return reply({error:'Add DROPBOX_APP_KEY and DROPBOX_APP_SECRET to the Worker secrets first.'},503);
     const state=crypto.randomUUID(),verifier=encode(crypto.getRandomValues(new Uint8Array(32)));
@@ -60,7 +66,7 @@ export async function handleDropboxUpload(request,env,identity,{jsonResponse}) {
   const reply=(value,status=200)=>jsonResponse(request,env,value,status);
   const url=new URL(request.url),bucket=env.INVITATION_BACKGROUNDS;
   const base=`dropbox-private/uploads/${identity.owner}/`;
-  if(url.pathname==='/wedding-media/dropbox-upload/status' && request.method==='GET')return reply({connected:configured(env)&&Boolean((await read(bucket,CONFIG))?.refreshToken)});
+  if(url.pathname==='/wedding-media/dropbox-upload/status' && request.method==='GET')return reply({connected:(await connectionStatus(env)).connected});
   if(url.pathname==='/wedding-media/dropbox-upload/start' && request.method==='POST') {
     const input=await request.json().catch(()=>null);
     const types=['image/jpeg','image/png','image/webp','image/gif','image/avif','image/heic','image/heif','video/mp4','video/quicktime','video/webm','video/ogg'];
