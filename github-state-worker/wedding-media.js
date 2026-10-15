@@ -1,3 +1,4 @@
+import { handleDropboxUpload } from './dropbox.js';
 import { accountPeople, normalizedPerson } from '../scripts/anylist-accounts.js';
 const PREFIX = 'wedding-media/';
 const TYPES = new Set(['image/jpeg','image/png','image/webp','image/gif','image/avif','image/heic','image/heif','video/mp4','video/quicktime','video/webm','video/ogg']);
@@ -45,6 +46,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
   if (!sessionObject) return fail('Your upload session has expired. Please try again.', 401);
   const identity = JSON.parse(await sessionObject.text());
   if (identity.expires < Date.now()) { await bucket.delete(`${PREFIX}sessions/${token}`); return fail('Your upload session has expired. Please try again.', 401); }
+  if (url.pathname.startsWith('/wedding-media/dropbox-upload/')) return await handleDropboxUpload(request, env, identity, { jsonResponse });
   const prefix = `${PREFIX}uploads/`;
   if (route === '/' && request.method === 'GET') {
     const items = []; let cursor;

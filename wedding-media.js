@@ -34,6 +34,7 @@
     if (!current || key(current) !== key(ctx)) {
       current = ctx; node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();selectTab('upload');
     } else current=ctx;
+    DropboxUpload.show(ctx, api);
     node('weddingMediaPrivacy').textContent = ctx.host ? 'Dropbox submissions go directly to your file-request folder.' : 'Use the Dropbox file request below to send your photos and videos to the hosts.';
   }
   async function loadGallery() {
@@ -49,6 +50,7 @@
         const heading=document.createElement('h3');heading.textContent=item.name;card.append(heading);
         const caption=document.createElement('p');caption.textContent=`${item.uploadedBy} · ${new Date(item.uploadedAt).toLocaleString()}`;card.append(caption);
         if (result.host) {const account=document.createElement('p');account.textContent=`Account: ${item.accountName}`;card.append(account);}
+        if(item.kind==='dropbox'){const receipt=document.createElement('p');receipt.textContent='Uploaded to the hosts’ Dropbox.';card.append(receipt);gallery.append(card);continue;}
         const url=item.kind==='link'?item.url:`${ctx.base}/wedding-media/${item.path}?session=${encodeURIComponent(token)}`;
         if (item.kind==='image' && !['image/heic','image/heif'].includes(item.contentType)) {const img=document.createElement('img');img.src=url;img.alt=item.name;img.loading='lazy';img.referrerPolicy='no-referrer';card.append(img);}
         if (item.kind==='video') {const video=document.createElement('video');video.src=url;video.controls=true;video.playsInline=true;video.preload='metadata';card.append(video);}

@@ -1,3 +1,4 @@
+import { handleDropboxOAuth } from './dropbox.js';
 import { handleWeddingMedia } from './wedding-media.js';
 const GITHUB_API = 'https://api.github.com';
 
@@ -218,6 +219,7 @@ export default {
     }
     try {
       const url = new URL(request.url);
+      if (url.pathname.startsWith('/dropbox/')) return await handleDropboxOAuth(request, env, { response, jsonResponse, requireHost });
       if (url.pathname === '/wedding-media' || url.pathname.startsWith('/wedding-media/')) return await handleWeddingMedia(request, env, { response, jsonResponse, requireHost, readState });
       const videoMatch = /^\/attire-videos\/([a-zA-Z0-9-]+)$/.exec(url.pathname);
       if (videoMatch) {
