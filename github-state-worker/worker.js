@@ -1,3 +1,4 @@
+import { handleWeddingMedia } from './wedding-media.js';
 const GITHUB_API = 'https://api.github.com';
 
 function corsHeaders(request, env) {
@@ -6,7 +7,7 @@ function corsHeaders(request, env) {
   return {
     'Access-Control-Allow-Origin': allowedOrigin === '*' ? '*' : (origin === allowedOrigin ? origin : allowedOrigin),
     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Host-Password',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Host-Password, Authorization, Range',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin'
   };
@@ -217,6 +218,7 @@ export default {
     }
     try {
       const url = new URL(request.url);
+      if (url.pathname === '/wedding-media' || url.pathname.startsWith('/wedding-media/')) return await handleWeddingMedia(request, env, { response, jsonResponse, requireHost, readState });
       const videoMatch = /^\/attire-videos\/([a-zA-Z0-9-]+)$/.exec(url.pathname);
       if (videoMatch) {
         try { return await handleAttireVideo(request, env, `attire-videos/${videoMatch[1]}`); }
