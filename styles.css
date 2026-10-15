@@ -334,3 +334,4 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 /* Attach top-level gathering tabs to their pages and match the summary outline. */
 .wedding-party-tabs{margin-bottom:0;border-bottom:0}
 .wedding-party-tabs button,.wedding-party-tabs button[aria-selected="true"]{border:1px solid rgba(255,255,255,.13);border-bottom:0}
+.wedding-party-tabs button:not([aria-selected="true"]){background:rgba(255,255,255,.06)}
