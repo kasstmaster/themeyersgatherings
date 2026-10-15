@@ -70,7 +70,7 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .theme-thanksgiving .header-art img{width:min(75%,275px)}
 .theme-christmas .header-art img{width:min(85%,420px)}
 .theme-thanksgiving .event-date,.theme-christmas .event-date,.theme-wedding .event-date{margin-top:24px}
-.theme-christmas{--navy:#132841;--navy-2:#0c1e32;--ivory:#f3f0e7;--cream:#fffdf7;--orange:#b3202b;--orange-dark:#7c1520;--gold:#d3aa4c}
+.theme-christmas{--navy:#132841;--navy-2:#0c1e32;--ivory:#f3f0e7;--cream:#fffdf7;--orange:#a31c29;--orange-dark:#7c1520;--gold:#d3aa4c}
 .theme-christmas .site-header{background:linear-gradient(135deg,#f8f5ec,#e6efe9)}
 .theme-christmas .section-kicker{color:#d3aa4c}
 .theme-christmas .summary-strip strong{color:#e7c66c}
