@@ -1156,12 +1156,14 @@ function render() {
   const showingAttirePage = (showingGuestPage && selectedGuestTab === 'attire') || showingPartyAttirePage;
   const showingWhatToExpectPage = showingGuestPage && selectedGuestTab === 'details';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
+  document.querySelector('#weddingMediaSection').hidden = !isWedding || selectedWeddingTab !== 'media';
+  if (isWedding && selectedWeddingTab === 'media') WeddingMedia.show({ base: SHARED_STATE_URL, host: hostView, password: hostView ? hostCredential : '', name: signedInPersonName || guestName, account: guestName, preview: viewingAsGuest });
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     const hostCanViewTab = true;
-    const partyMemberCanViewTab = ['party', 'registry'].includes(button.dataset.weddingTab);
-    const guestCanViewTab = ['guest', 'registry'].includes(button.dataset.weddingTab);
+    const partyMemberCanViewTab = ['party', 'registry', 'media'].includes(button.dataset.weddingTab);
+    const guestCanViewTab = ['guest', 'registry', 'media'].includes(button.dataset.weddingTab);
     button.hidden = !(hostView ? hostCanViewTab : isWeddingPartyMember ? partyMemberCanViewTab : guestCanViewTab);
     const isSelected = button.dataset.weddingTab === selectedWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));

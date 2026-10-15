@@ -149,7 +149,34 @@
         <button type="button" role="tab" data-wedding-tab="guest" aria-controls="guestSection" aria-selected="true">Guest</button>
         <button type="button" role="tab" data-wedding-tab="timeline" aria-controls="weddingTimelineSection" aria-selected="false">Timeline</button>
         <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
+        <button type="button" role="tab" data-wedding-tab="media" aria-controls="weddingMediaSection" aria-selected="false">Upload Photos</button>
       </nav>
+
+      <section id="weddingMediaSection" class="wedding-party-section" aria-labelledby="weddingMediaHeading" hidden>
+        <h2 id="weddingMediaHeading">Upload Photos &amp; Videos</h2>
+        <p id="weddingMediaPrivacy"></p>
+        <nav id="weddingMediaTabs" class="matron-info-tabs" role="tablist" aria-label="Wedding uploads">
+          <button type="button" role="tab" data-media-tab="upload" aria-controls="weddingMediaUpload" aria-selected="true">Upload</button>
+          <button type="button" role="tab" data-media-tab="view" aria-controls="weddingMediaView" aria-selected="false" tabindex="-1">View Photos &amp; Videos</button>
+        </nav>
+        <section id="weddingMediaUpload" class="perfect-experience-panel" aria-label="Upload wedding photos and videos">
+          <label for="weddingMediaFiles">Choose photos and videos (multiple files allowed)</label>
+          <input id="weddingMediaFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.mp4,.mov,.webm,.ogg,.ogv">
+          <p>Photos: up to 15 MB each. Videos: up to 50 MB each. HEIC photos and MOV videos can be uploaded; playback depends on your device.</p>
+          <button id="weddingMediaUploadButton" type="button">Upload selected files</button>
+          <p id="weddingMediaStatus" role="status" aria-live="polite"></p>
+          <h3>Prefer to share a link?</h3>
+          <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
+          <input id="weddingMediaLink" type="url" placeholder="https://…">
+          <button id="weddingMediaSaveLink" type="button">Save sharing link</button>
+          <p id="weddingMediaLinkStatus" role="status" aria-live="polite"></p>
+        </section>
+        <section id="weddingMediaView" class="perfect-experience-panel" aria-label="Your wedding photos and videos" hidden>
+          <button id="weddingMediaRefresh" type="button">Refresh</button>
+          <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
+          <div id="weddingMediaGallery" class="wedding-media-gallery"></div>
+        </section>
+      </section>
 
       <section id="brideGroomSection" class="bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
         <p class="section-kicker">A private space for the couple</p>
@@ -605,6 +632,7 @@
     <script src="wedding-party.js" defer></script>
     <script src="attire-videos.js" defer></script>
     <script src="invitation-zip.js" defer></script>
+    <script src="wedding-media.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>

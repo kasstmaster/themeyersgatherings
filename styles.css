@@ -347,3 +347,17 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .guest-section .what-to-expect-section>.section-kicker,.guest-section .what-to-expect-section>h2{display:none}
 #registryAttireSection{box-sizing:border-box;width:min(900px,100%);margin:0 auto;padding:24px;background:var(--registry-inner-background);border:1px solid var(--border);border-radius:6px;box-shadow:none}
 @media(max-width:1000px){.wedding-page-heading{grid-template-columns:minmax(0,1fr)}.wedding-page-heading>h2{grid-column:1}.wedding-page-heading>.wedding-page-actions{grid-column:1;grid-row:2;justify-self:end}}
+
+#weddingMediaSection[hidden],#weddingMediaUpload[hidden],#weddingMediaView[hidden]{display:none}
+#weddingMediaPrivacy{margin:16px auto 24px;max-width:900px;color:var(--muted)}
+#weddingMediaUpload label{display:block;font-weight:700;margin-bottom:8px}
+#weddingMediaUpload input{box-sizing:border-box;max-width:100%;width:100%;margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink)}
+#weddingMediaSection button:not([role="tab"]){padding:10px 14px;border:1px solid var(--border);border-radius:4px;background:var(--orange);color:#fff;cursor:pointer}
+#weddingMediaSection button:disabled{opacity:.6;cursor:wait}
+#weddingMediaStatus,#weddingMediaLinkStatus{white-space:pre-wrap;overflow-wrap:anywhere}
+.wedding-media-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:16px}
+.wedding-media-card{min-width:0;padding:14px;border:1px solid var(--border);border-radius:6px;overflow-wrap:anywhere}
+.wedding-media-card h3{margin-top:0;font-size:1rem}.wedding-media-card p{font-size:.8rem;color:var(--muted)}
+.wedding-media-card img,.wedding-media-card video{display:block;width:100%;max-height:360px;object-fit:contain;margin-bottom:12px}
+@media(max-width:650px){#weddingMediaSection{padding:30px 16px}#weddingMediaSection .perfect-experience-panel{padding:18px}}
+#weddingPartyTabs button{flex-basis:110px}
