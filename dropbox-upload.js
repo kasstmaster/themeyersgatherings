@@ -11,6 +11,7 @@
   function updateControls() {
     node('dropboxHostControls').hidden=!current?.host||current.preview||connected===true;
     node('dropboxCheckConnection').hidden=!current||current.preview||connected===true;
+    node('dropboxConnectionStatus').hidden=connected===true;
   }
   async function status({silent=false}={}) {
     if(!current)return;
@@ -23,7 +24,7 @@
       if(key(current)!==ctxKey)return;
       connected=result.connected;updateControls();
       node('dropboxInlineUpload').hidden=!result.connected;
-      node('dropboxConnectionStatus').textContent=result.connected?'Dropbox is connected. Photos and videos uploaded here go directly to the hosts’ Dropbox.':ctx.host?'Connect Dropbox to enable uploads here. Your Dropbox app needs files.content.write permission.':'Website uploads are not connected yet. You can use the Dropbox link below.';
+      node('dropboxConnectionStatus').textContent=result.connected?'Dropbox is connected. Photos and videos uploaded here go directly to the hosts’ Dropbox.':ctx.host?'Connect Dropbox to enable uploads here. Your Dropbox app needs files.content.write permission.':'Website uploads are not connected yet. Please try again later.';
       node('dropboxConnect').textContent=result.connected?'Reconnect Dropbox':'Connect Dropbox';
       if(ctx.host&&!result.configured)node('dropboxConnectionStatus').textContent='Add DROPBOX_APP_KEY and DROPBOX_APP_SECRET in Cloudflare Worker secrets, then choose Connect Dropbox.';
     }catch(error){if(key(current)===ctxKey){connected=false;updateControls();node('dropboxInlineUpload').hidden=true;node('dropboxConnectionStatus').textContent=error.message;}}
