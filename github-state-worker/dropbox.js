@@ -23,7 +23,7 @@ async function content(env, endpoint, args, bytes = new Uint8Array()) {
   const token=await accessToken(env);
   const result=await fetch(`https://content.dropboxapi.com/2/files/${endpoint}`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/octet-stream','Dropbox-API-Arg':JSON.stringify(args).replace(/[\u007f-\uffff]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'))},body:bytes});
   const body=await result.json().catch(()=>({}));
-  if(!result.ok){const error=new Error(result.status===429?'Dropbox is busy. Please retry shortly.':'Dropbox could not accept this upload. Please retry or use the Dropbox link.');error.correctOffset=body.error?.correct_offset;throw error;}
+  if(!result.ok){const error=new Error(result.status===429?'Dropbox is busy. Please retry shortly.':'Dropbox could not accept this upload. Please retry.');error.correctOffset=body.error?.correct_offset;throw error;}
   return body;
 }
 async function connectionStatus(env) {

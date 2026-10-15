@@ -166,14 +166,14 @@
           <button id="dropboxCheckConnection" type="button">Check connection</button>
           <div id="dropboxInlineUpload" hidden>
             <label for="dropboxFiles">Choose photos and videos (multiple files allowed)</label>
-            <input id="dropboxFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.heic,.heif,.mov">
+            <div class="dropbox-file-row">
+              <input id="dropboxFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.heic,.heif,.mov">
+              <button id="dropboxUpload" type="button">Upload</button>
+            </div>
             <p>Large files upload in chunks. Keep this page open until uploading finishes. Dropbox storage and service limits apply.</p>
-            <button id="dropboxUpload" type="button">Upload to Dropbox</button>
             <p id="dropboxUploadStatus" role="status" aria-live="polite"></p>
           </div>
-          <h3>Or use our Dropbox file request</h3>
-          <p><a class="registry-button" id="weddingDropboxRequest" href="https://www.dropbox.com/request/o8ybj2uepxwan6rqcod6" target="_blank" rel="noopener noreferrer">Upload Photos &amp; Videos to Dropbox</a></p>
-          <h3>Prefer to share a link?</h3>
+          <h3>OR</h3>
           <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
           <input id="weddingMediaLink" type="url" placeholder="https://…">
           <button id="weddingMediaSaveLink" type="button">Save sharing link</button>
