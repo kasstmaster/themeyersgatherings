@@ -161,6 +161,17 @@
         </nav>
         <section id="weddingMediaUpload" class="perfect-experience-panel" aria-label="Upload wedding photos and videos">
           <p>Share your wedding photos and videos directly with us through Dropbox.</p>
+          <div id="dropboxHostControls" hidden><button id="dropboxConnect" type="button">Connect Dropbox</button></div>
+          <p id="dropboxConnectionStatus" role="status" aria-live="polite"></p>
+          <button id="dropboxCheckConnection" type="button">Check connection</button>
+          <div id="dropboxInlineUpload" hidden>
+            <label for="dropboxFiles">Choose photos and videos (multiple files allowed)</label>
+            <input id="dropboxFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.heic,.heif,.mov">
+            <p>Large files upload in chunks. Keep this page open until uploading finishes. Dropbox storage and service limits apply.</p>
+            <button id="dropboxUpload" type="button">Upload to Dropbox</button>
+            <p id="dropboxUploadStatus" role="status" aria-live="polite"></p>
+          </div>
+          <h3>Or use our Dropbox file request</h3>
           <p><a class="registry-button" id="weddingDropboxRequest" href="https://www.dropbox.com/request/o8ybj2uepxwan6rqcod6" target="_blank" rel="noopener noreferrer">Upload Photos &amp; Videos to Dropbox</a></p>
           <h3>Prefer to share a link?</h3>
           <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
@@ -170,7 +181,7 @@
         </section>
         <section id="weddingMediaView" class="perfect-experience-panel" aria-label="Your wedding photos and videos" hidden>
           <button id="weddingMediaRefresh" type="button">Refresh</button>
-          <p>Photos and videos sent through Dropbox go directly to the hosts. This gallery contains files and links previously shared on this website.</p>
+          <p>Photos and videos sent through Dropbox go directly to the hosts. This gallery shows upload confirmations, sharing links, and files previously shared on this website. New Dropbox uploads are stored in the hosts’ Dropbox.</p>
           <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
           <div id="weddingMediaGallery" class="wedding-media-gallery"></div>
         </section>
@@ -630,6 +641,7 @@
     <script src="wedding-party.js" defer></script>
     <script src="attire-videos.js" defer></script>
     <script src="invitation-zip.js" defer></script>
+    <script src="dropbox-upload.js" defer></script>
     <script src="wedding-media.js" defer></script>
     <script src="app.js" defer></script>
   </body>

@@ -362,3 +362,7 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 @media(max-width:650px){#weddingMediaSection{padding:30px 16px}#weddingMediaSection .perfect-experience-panel{padding:18px}}
 #weddingPartyTabs button{flex-basis:110px}
 .event-switch-buttons button[data-switch-event="wedding"]::before{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21 3.5 12.7C-2 7.3 5.2-.5 10.5 4.8L12 6.3l1.5-1.5C18.8-.5 26 7.3 20.5 12.7L12 21Z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21 3.5 12.7C-2 7.3 5.2-.5 10.5 4.8L12 6.3l1.5-1.5C18.8-.5 26 7.3 20.5 12.7L12 21Z'/%3E%3C/svg%3E")}
+
+#dropboxHostControls[hidden],#dropboxInlineUpload[hidden]{display:none}
+#dropboxConnectionStatus,#dropboxUploadStatus{overflow-wrap:anywhere;white-space:pre-wrap}
+#dropboxInlineUpload{margin:20px 0}
