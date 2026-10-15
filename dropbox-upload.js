@@ -11,6 +11,7 @@
   function updateControls() {
     node('dropboxHostControls').hidden=!current?.host||current.preview||connected===true;
     node('dropboxCheckConnection').hidden=!current||current.preview||connected===true;
+    node('dropboxConnectionStatus').hidden=connected===true;
   }
   async function status({silent=false}={}) {
     if(!current)return;
