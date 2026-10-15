@@ -35,7 +35,6 @@
       current = ctx; node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();selectTab('upload');
     } else current=ctx;
     DropboxUpload.show(ctx, api);
-    node('weddingMediaPrivacy').textContent = ctx.host ? 'Dropbox submissions go directly to your file-request folder.' : 'Use the Dropbox file request below to send your photos and videos to the hosts.';
   }
   async function loadGallery() {
     const ctx=current, attempt=++loadNumber;
