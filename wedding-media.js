@@ -1,15 +1,5 @@
 (() => {
-  const extensions = { jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png', webp:'image/webp', gif:'image/gif', avif:'image/avif', heic:'image/heic', heif:'image/heif', mp4:'video/mp4', mov:'video/quicktime', webm:'video/webm', ogg:'video/ogg', ogv:'video/ogg' };
-  const types = new Set(Object.values(extensions));
-  const fileType = file => file.type || extensions[file.name.split('.').pop().toLowerCase()] || '';
-  function validate(file) {
-    const type = fileType(file);
-    if (!types.has(type)) return 'Unsupported photo or video format.';
-    if (!file.size) return 'This file is empty.';
-    if (file.size > (type.startsWith('video/') ? 50_000_000 : 15_000_000)) return type.startsWith('video/') ? 'Videos must be 50 MB or smaller.' : 'Photos must be 15 MB or smaller.';
-    return '';
-  }
-  let current, pending = [], busy = false, tab = 'upload', loadNumber = 0;
+  let current, tab = 'upload', loadNumber = 0;
   const sessions = new Map();
   const node = id => document.getElementById(id);
   const key = ctx => JSON.stringify([ctx.base, ctx.host ? 'host' : ctx.account, ctx.name, ctx.preview]);
@@ -42,9 +32,9 @@
   function show(ctx) {
     ctx = { ...ctx, base:ctx.base.replace(/\/$/,'') };
     if (!current || key(current) !== key(ctx)) {
-      current = ctx; pending = []; node('weddingMediaFiles').value='';node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();node('weddingMediaStatus').textContent='';selectTab('upload');
+      current = ctx; node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();selectTab('upload');
     } else current=ctx;
-    node('weddingMediaPrivacy').textContent = ctx.host ? 'You can view all uploads and sharing links, with the names of the people who submitted them.' : 'Only your account and the host can view your uploads and sharing links.';
+    node('weddingMediaPrivacy').textContent = ctx.host ? 'Dropbox submissions go directly to your file-request folder.' : 'Use the Dropbox file request below to send your photos and videos to the hosts.';
   }
   async function loadGallery() {
     const ctx=current, attempt=++loadNumber;
@@ -69,20 +59,6 @@
   function initialize() {
     document.querySelectorAll('[data-media-tab]').forEach(button=>button.addEventListener('click',()=>selectTab(button.dataset.mediaTab)));
     node('weddingMediaTabs').addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();selectTab(event.key==='Home'?'upload':event.key==='End'?'view':tab==='upload'?'view':'upload');document.querySelector(`[data-media-tab="${tab}"]`).focus();});
-    node('weddingMediaFiles').addEventListener('change',()=>{pending=[...node('weddingMediaFiles').files];node('weddingMediaStatus').textContent=`${pending.length} file${pending.length===1?'':'s'} selected.`;});
-    node('weddingMediaUploadButton').addEventListener('click',async()=>{
-      if(busy)return;const ctx=current,files=[...pending],failed=[],messages=[];const status=node('weddingMediaStatus');
-      if(!files.length){status.textContent='Choose photos or videos first.';return;}
-      try{available(ctx);}catch(error){status.textContent=error.message;return;}
-      busy=true;node('weddingMediaUploadButton').disabled=true;node('weddingMediaFiles').disabled=true;
-      for(const [index,file] of files.entries()){
-        status.textContent=`Uploading ${index+1} of ${files.length}: ${file.name}`;
-        try{const error=validate(file);if(error)throw new Error(error);await api(ctx,`/upload?name=${encodeURIComponent(file.name)}`,{method:'POST',headers:{'Content-Type':fileType(file)},body:file});}
-        catch(error){failed.push(file);messages.push(`${file.name}: ${error.message}`);}
-      }
-      busy=false;node('weddingMediaUploadButton').disabled=false;node('weddingMediaFiles').disabled=false;
-      if(key(ctx)===key(current)){pending=failed;node('weddingMediaFiles').value='';status.textContent=`${files.length-failed.length} of ${files.length} uploaded. ${messages.join(' ')}${failed.length?' Press Upload to retry failed files.':''}`;if(tab==='view')loadGallery();}
-    });
     node('weddingMediaSaveLink').addEventListener('click',async()=>{
       const ctx=current,button=node('weddingMediaSaveLink'),status=node('weddingMediaLinkStatus');
       let url;try{url=new URL(node('weddingMediaLink').value.trim());if(!['http:','https:'].includes(url.protocol))throw new Error();}catch{status.textContent='Enter a full http or https photo-sharing link.';return;}
@@ -90,6 +66,6 @@
     });
     node('weddingMediaRefresh').addEventListener('click',loadGallery);
   }
-  globalThis.WeddingMedia={show,validate,fileType};
+  globalThis.WeddingMedia={show};
   initialize();
 })();

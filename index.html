@@ -160,11 +160,8 @@
           <button type="button" role="tab" data-media-tab="view" aria-controls="weddingMediaView" aria-selected="false" tabindex="-1">View Photos &amp; Videos</button>
         </nav>
         <section id="weddingMediaUpload" class="perfect-experience-panel" aria-label="Upload wedding photos and videos">
-          <label for="weddingMediaFiles">Choose photos and videos (multiple files allowed)</label>
-          <input id="weddingMediaFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.jpg,.jpeg,.png,.webp,.gif,.avif,.heic,.heif,.mp4,.mov,.webm,.ogg,.ogv">
-          <p>Photos: up to 15 MB each. Videos: up to 50 MB each. HEIC photos and MOV videos can be uploaded; playback depends on your device.</p>
-          <button id="weddingMediaUploadButton" type="button">Upload selected files</button>
-          <p id="weddingMediaStatus" role="status" aria-live="polite"></p>
+          <p>Share your wedding photos and videos directly with us through Dropbox.</p>
+          <p><a class="registry-button" id="weddingDropboxRequest" href="https://www.dropbox.com/request/o8ybj2uepxwan6rqcod6" target="_blank" rel="noopener noreferrer">Upload Photos &amp; Videos to Dropbox</a></p>
           <h3>Prefer to share a link?</h3>
           <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
           <input id="weddingMediaLink" type="url" placeholder="https://…">
@@ -173,6 +170,7 @@
         </section>
         <section id="weddingMediaView" class="perfect-experience-panel" aria-label="Your wedding photos and videos" hidden>
           <button id="weddingMediaRefresh" type="button">Refresh</button>
+          <p>Photos and videos sent through Dropbox go directly to the hosts. This gallery contains files and links previously shared on this website.</p>
           <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
           <div id="weddingMediaGallery" class="wedding-media-gallery"></div>
         </section>
