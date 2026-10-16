@@ -15,3 +15,15 @@ test('guest allowances belong to named adults per gathering and never guess lega
 test('attendance totals include guests only for attending people who named a guest',()=>{
  assert.deepEqual(attendees([{name:'Jane Smith',attending:true,guestChoice:'guest',guestName:' Alex Guest '},{name:'John Smith',attending:false,guestChoice:'guest',guestName:'Not Attending Guest'},{name:'Julie Smith',attending:true,guestChoice:'no-guest',guestName:'Old Guest'}]),['Jane Smith','Alex Guest','Julie Smith']);
 });
+
+test('RSVP totals combine households and meal choices, retaining renamed meals and counting no-meal separately',()=>{
+ const totals=GuestPlanning.rsvpTotals([
+  {adults:2,children:1,menuSelections:[{meal:'Beef'},{meal:'Chicken'},{meal:'none'}]},
+  {adults:1,children:1,menuSelections:[{meal:'Beef'},{meal:'Kids'}]},
+  {adults:1,children:0,menuSelections:[{meal:'Old option'}]},
+  {adults:1,children:0,menuSelections:[{meal:''}]},
+  {adults:0,children:0}
+ ],['Beef','Chicken','Vegetarian','Kids','Beef','']);
+ assert.deepEqual(totals,{adults:5,children:2,meals:[['Beef',2],['Chicken',1],['Vegetarian',0],['Kids',1],['Old option',1]],noMeal:1,unselected:1});
+ assert.deepEqual(GuestPlanning.rsvpTotals([],['Beef']),{adults:0,children:0,meals:[['Beef',0]],noMeal:0,unselected:0});
+});

@@ -1739,6 +1739,15 @@ document.querySelectorAll('.editor-dialog form').forEach(form => {
 });
 document.querySelector('#guestListButton').addEventListener('click', () => {
   if (!hostAuthenticated) return;
+  const totalsSection = document.querySelector('#guestListTotals');
+  totalsSection.hidden = viewedEventId !== 'wedding';
+  if (!totalsSection.hidden) {
+    const totals = GuestPlanning.rsvpTotals(state.rsvps, [...(state.weddingMealOptions || []), state.weddingChildMealOption]);
+    const entries = [['Adults', totals.adults], ['Children', totals.children], ...totals.meals,
+      ...(totals.noMeal ? [['No meal', totals.noMeal]] : []),
+      ...(totals.unselected ? [['No meal selected', totals.unselected]] : [])];
+    totalsSection.innerHTML = `<h3>Totals</h3><dl>${entries.map(([label, count]) => `<div><dt>${escapeHtml(label)}</dt><dd>${count}</dd></div>`).join('')}</dl>`;
+  }
   const list = document.querySelector('#guestList');
   list.innerHTML = state.rsvps.length ? hostFirstRsvps(state.rsvps).map(rsvp => {
     const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml(selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`)}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
