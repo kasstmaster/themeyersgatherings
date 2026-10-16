@@ -397,7 +397,7 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .account-contact-details>[data-legacy-plus-ones]{font-size:.8rem;color:var(--muted)}
 
 .account-row-with-plus-ones{grid-template-columns:minmax(0,1fr);gap:0}
-.account-row-with-plus-ones .account-access{display:grid;align-content:center;gap:7px;grid-column:1;grid-row:1}
+.account-row-with-plus-ones .account-access{display:flex;align-items:center;gap:12px;grid-column:1;grid-row:1}
 .account-row-with-plus-ones .account-people{grid-column:1;grid-row:2}
 .account-contact-details{min-width:0}
 .account-row-with-plus-ones .account-preview-actions{display:grid;grid-template-columns:auto auto auto auto minmax(0,1fr) auto;grid-column:1;grid-row:1;justify-self:stretch;gap:4px;align-items:center}
