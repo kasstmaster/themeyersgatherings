@@ -452,3 +452,19 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 body>.inline-overlay-layer{clip-path:inset(0 0 var(--edit-dock-height, 78px) 0)}
 
 .inline-direct-input{box-sizing:border-box;display:block;border:1px solid var(--border);outline:2px solid var(--accent, #b89968);resize:vertical;white-space:pre-wrap}
+
+/* Per-gathering colors override the palette without changing its layout. */
+.custom-gathering-colors .gathering-page{--registry-container-background:var(--gathering-card-background,linear-gradient(135deg,#fffaf1,#f7e7ce));--registry-inner-background:var(--gathering-inner-background,#fdf8f0)}
+.custom-gathering-colors{--registry-container-background:var(--gathering-card-background,linear-gradient(135deg,#fffaf1,#f7e7ce));--registry-inner-background:var(--gathering-inner-background,#fdf8f0)}
+.custom-gathering-header .site-header{background:var(--ivory)}
+.custom-gathering-colors.theme-wedding .rsvp-button{box-shadow:0 5px 0 var(--orange-dark)}
+#gatheringColorInputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0}
+#gatheringColorInputs input{width:100%;height:44px;padding:3px}
+#newGatheringForm{display:grid;gap:14px}
+#newGatheringForm textarea{font:inherit;padding:12px;border:1px solid var(--border);border-radius:4px}
+#customGatheringHeading{font-family:"Times New Roman",Times,serif;font-size:clamp(2rem,5vw,4rem);margin:0 0 20px}
+#customGatheringHeading[hidden]{display:none}
+.event-dock{overflow-x:auto}
+.event-dock button{flex-shrink:0}
+
+.custom-gathering-borders :is(.summary-strip,.gathering-page,.registry-section,.registry-attire-section,.bride-groom-section,.what-to-expect-section,.wedding-timeline-section,.wedding-party-section,[role="tab"]){border-color:var(--border)}
