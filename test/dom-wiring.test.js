@@ -218,7 +218,7 @@ test('Wedding Details is an editable sub tab immediately after Attire under Gues
   assert.match(javascript, /whatToExpectContent: ''/);
   assert.match(javascript, /hostCanViewTab = true/);
   assert.match(javascript, /guestCanViewTab = \['guest', 'registry', 'media'\]/);
-  assert.match(javascript, /formatEditableText\(state\.whatToExpectContent\)/);
+  assert.match(javascript, /formatEditableText\(weddingDetailsWithoutHeaderAddress\(state\.whatToExpectContent\)\)/);
   assert.match(javascript, /state\.whatToExpectContent = event\.target\.value/);
 });
 

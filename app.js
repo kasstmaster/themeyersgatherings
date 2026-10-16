@@ -1083,6 +1083,15 @@ function renderWeddingPartyAttireImages(canView) {
   });
 }
 
+function gatheringHeaderAddress() {
+  return state.homeAddress || [state.addressLine1, state.addressLine2].filter(Boolean).join(', ');
+}
+function weddingDetailsWithoutHeaderAddress(value) {
+  const normalize = text => text.trim().replace(/^[-*]\s+/, '').replace(/^<|>$/g, '').replace(/[*`]/g, '').replace(/,/g, '').replace(/\s+/g, ' ').toLowerCase();
+  const addressLines = [gatheringHeaderAddress(), ...(state.homeAddress || '').split(/\r?\n/), state.addressLine1, state.addressLine2].filter(Boolean).map(normalize);
+  // Relocate standalone address lines in the displayed page; retain the host's saved copy.
+  return expandEditableTextVariables(value || '').split(/\r?\n/).filter(line => !addressLines.includes(normalize(line))).join('\n');
+}
 function render() {
   const event = EVENT_DETAILS[viewedEventId];
   const isWedding = event.registryOnly === true;
@@ -1111,6 +1120,7 @@ function render() {
   const dateElement = document.querySelector('#eventDate');
   dateElement.dateTime = state.eventDate;
   dateElement.textContent = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', '');
+  document.querySelector('#eventAddress').textContent = gatheringHeaderAddress();
   document.querySelector('#welcomeKicker').hidden = isWedding;
   document.querySelector('#welcome-title').textContent = isWedding ? 'TOGETHER WITH THEIR PARENTS' : "WE'D LOVE FOR YOU TO BRING A DISH TO SHARE";
   document.querySelector('#welcomeNote').innerHTML = isWedding
@@ -1121,6 +1131,7 @@ function render() {
   document.querySelector('.summary-strip').hidden = !hostView;
   // Menus belong to every gathering except the Wedding, which intentionally
   // has registry details instead of claimable dishes.
+  if (selectedGatheringTab === 'details') selectedGatheringTab = null;
   if (!hostView && selectedGatheringTab === 'notes') selectedGatheringTab = 'menu';
   const gatheringTab = selectedGatheringTab || (hostView ? 'notes' : 'menu');
   const showingMenu = isWedding || gatheringTab === 'menu';
@@ -1133,12 +1144,6 @@ function render() {
   document.querySelector('#hostNotesSection').hidden = isWedding || !hostView || gatheringTab !== 'notes';
   document.querySelector('#hostNotesContent').innerHTML = !isWedding && hostView
     ? formatEditableText(state.hostNotes || '') || '<p>Edit Details to add your notes.</p>' : '';
-  document.querySelector('#gatheringDetailsSection').hidden = isWedding || gatheringTab !== 'details';
-  document.querySelector('#gatheringDetailsDate').textContent = dateElement.textContent;
-  const residence = state.homeAddress || [state.addressLine1, state.addressLine2].filter(Boolean).join(', ');
-  const addressLink = document.querySelector('#gatheringDetailsAddress');
-  addressLink.textContent = residence;
-  addressLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(residence)}`;
   document.querySelector('.menu-section').hidden = event.hasMenu === false || !showingMenu;
   document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
   const registrySection = document.querySelector('#registrySection');
@@ -1197,7 +1202,7 @@ function render() {
   }
   document.querySelector('#whatToExpectSection').hidden = !showingWhatToExpectPage;
   if (showingWhatToExpectPage) {
-    document.querySelector('#whatToExpectContent').innerHTML = formatEditableText(state.whatToExpectContent)
+    document.querySelector('#whatToExpectContent').innerHTML = formatEditableText(weddingDetailsWithoutHeaderAddress(state.whatToExpectContent))
       || '<p class="guest-empty">No What to Expect details have been added yet.</p>';
   }
   document.querySelector('#weddingPartySection').hidden = !showingWeddingPartyPage;
