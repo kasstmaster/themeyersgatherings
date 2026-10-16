@@ -8,6 +8,13 @@
     const configured=account?.plusOnePeople?.[eventId];
     return Array.isArray(configured)?names.filter(name=>configured.some(value=>normalize(value)===normalize(name))):[];
   }
+  function setPlusOnePeople(account, eventId, people) {
+    account.plusOnePeople = { ...(account.plusOnePeople || {}), [eventId]: [...new Set(people)] };
+    account.plusOnes = { ...(account.plusOnes || {}), [eventId]: account.plusOnePeople[eventId].length };
+  }
+  function retainedEvent(currentId, events, fallbackId) {
+    return events[currentId] ? currentId : events[fallbackId] ? fallbackId : Object.keys(events)[0];
+  }
   function attendees(people) {
     return people.filter(person=>person.attending===true).flatMap(person=>[person.name,...(person.guestChoice==='guest'&&person.guestName?.trim()?[person.guestName.trim()]:[])]);
   }
@@ -59,5 +66,5 @@
     }
     return { adults, children, meals: [...meals], noMeal, unselected };
   }
-  globalThis.GuestPlanning={invitationCount,plusOnePeople,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
+  globalThis.GuestPlanning={invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();

@@ -107,11 +107,11 @@
       <div id="syncStatus" class="sync-status" role="status" aria-live="polite" hidden></div>
       <div class="host-tool-actions">
         <button id="editItemsButton" type="button">Wedding Details</button>
-        <button id="previewWeddingPartyButton" type="button">View As</button>
+        <button id="previewWeddingPartyButton" type="button">Sign in to account</button>
         <button id="invitationTemplatesButton" type="button">Templates</button>
       </div>
     </nav>
-    <button id="cancelViewAsButton" class="cancel-view-as" type="button" hidden>Cancel view</button>
+    <button id="cancelViewAsButton" class="cancel-view-as" type="button" hidden>Leave account</button>
 
     <main>
       <section class="summary-strip" aria-label="Event summary">
@@ -545,11 +545,12 @@
     <dialog id="weddingPartyPreviewDialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
-        <p class="section-kicker">Host dashboard</p><h2>View As</h2>
-        <p id="viewAsDescription">Preview this gathering as a guest.</p>
-        <label><span>View as</span><select id="hostWeddingPartyView" aria-label="Preview party or guest view"></select></label>
+        <p class="section-kicker">Host dashboard</p><h2>Sign in to account</h2>
+        <p id="viewAsDescription">Choose an account to manage its RSVP and contributions.</p>
+        <label><span>Account</span><select id="hostWeddingPartyView" aria-label="Account to sign in to"></select></label>
+        <label hidden><span>Person</span><select id="hostAccountPerson" aria-label="Person in this account"></select></label>
         <p id="hostWeddingPartyViewError" class="form-error" role="alert"></p>
-        <button id="openWeddingPartyPreview" class="primary-button" type="button">Open preview</button>
+        <button id="openWeddingPartyPreview" class="primary-button" type="button">Sign in</button>
       </form>
     </dialog>
 
