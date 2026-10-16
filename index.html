@@ -319,11 +319,12 @@
 
     <dialog id="rsvpDialog">
       <form method="dialog" id="rsvpForm" class="modal-card">
-        <button class="modal-close" value="cancel" aria-label="Close">×</button>
+        <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
         <p class="section-kicker">Save your seat</p>
         <h2>Who's joining us?</h2>
         <p>We can't wait to celebrate together.</p>
-        <div class="counter-row"><div><strong>Adults</strong><span>Age 18+</span></div><div class="stepper"><button type="button" data-step="-1" data-target="adults">−</button><output id="adults">1</output><button type="button" data-step="1" data-target="adults">+</button></div></div>
+        <div id="rsvpPeople"></div>
+        <div id="rsvpAdultsCounter" class="counter-row" hidden><div><strong>Adults</strong><span>Age 18+</span></div><div class="stepper"><button type="button" data-step="-1" data-target="adults">−</button><output id="adults">1</output><button type="button" data-step="1" data-target="adults">+</button></div></div>
         <div class="counter-row"><div><strong>Children</strong><span>Age 17 and under</span></div><div class="stepper"><button type="button" data-step="-1" data-target="children">−</button><output id="children">0</output><button type="button" data-step="1" data-target="children">+</button></div></div>
         <section id="weddingRsvpMenu" class="wedding-rsvp-menu" aria-labelledby="weddingRsvpMenuHeading" hidden>
           <h3 id="weddingRsvpMenuHeading">Menu</h3>
@@ -624,8 +625,8 @@
     <dialog id="bulkInvitationDialog" aria-labelledby="bulkInvitationHeading">
       <form method="dialog" class="modal-card">
         <h2 id="bulkInvitationHeading">Choose invitation QR codes</h2>
-        <p>Use one invitation with the general login QR, or create an individual sign-in invitation for every invited account.</p>
-        <div class="invitation-actions" id="bulkInvitationChoices"><button type="button" data-bulk-qr="general">General Login QR</button><button type="button" data-bulk-qr="account">Individual Sign-in QRs (ZIP)</button></div>
+        <p>Choose general login or individual sign-in QR codes. Each invited account receives the quantity set in Accounts.</p>
+        <div class="invitation-actions" id="bulkInvitationChoices"><button type="button" data-bulk-qr="general">General Login QRs (ZIP)</button><button type="button" data-bulk-qr="account">Individual Sign-in QRs (ZIP)</button></div>
         <p id="bulkInvitationStatus" role="status" aria-live="polite"></p>
         <div class="invitation-actions"><button id="shareBulkInvitations" type="button" hidden>Open Email / Share</button></div>
         <button class="primary-button" value="cancel">Cancel</button>
@@ -637,6 +638,7 @@
     <script src="invitation-zip.js" defer></script>
     <script src="dropbox-upload.js" defer></script>
     <script src="wedding-media.js" defer></script>
+    <script src="guest-planning.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>

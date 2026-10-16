@@ -69,8 +69,8 @@ test('every gathering can assign its own plus ones and include them in adult inv
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
 
-  assert.match(accountRenderer, />Plus ones<\/span>/);
-  assert.match(accountRenderer, /account\.plusOnes\[viewedEventId\] = Number\(event\.target\.value\)/);
+  assert.match(accountRenderer, />Allow a guest for<\/strong>/);
+  assert.match(accountRenderer, /account\.plusOnePeople\[viewedEventId\]/);
   assert.match(javascript, /plusOneCount\(account, viewedEventId\)/);
   assert.match(javascript, /adults: sum\.adults \+ accountSignInNames\(account\.name\)\.length \+ plusOneCount/);
 });
@@ -709,9 +709,9 @@ test('wedding RSVP menu is configured by the host and collected one guest at a t
   assert.match(html, /id="weddingMenuAdmin"[\s\S]*id="adminWeddingMealOption1"[\s\S]*id="adminWeddingMealOption2"[\s\S]*id="adminWeddingMealOption3"[\s\S]*id="adminWeddingChildMealOption"/);
   assert.match(html, /id="weddingRsvpMenu"[^>]*hidden[\s\S]*id="weddingRsvpGuests"/);
   assert.match(javascript, /function renderWeddingRsvpMenu\(selections = \[\]\)[\s\S]*\['adult', 'child'\]\.flatMap/);
-  assert.match(javascript, />Someone else<\/option>[\s\S]*Please note any dietary restrictions or food allergies\./);
+  assert.match(javascript, /data-rsvp-guest-name[\s\S]*Please note any dietary restrictions or food allergies\./);
   assert.match(javascript, /type === 'child' \? `[\s\S]*value="none"[\s\S]*>My child is too young</);
-  assert.match(javascript, /wrapper\.hidden = event\.target\.value !== 'someone-else'/);
+  assert.match(javascript, /name\.hidden = !attending \|\| choice\.value !== 'guest'/);
   assert.match(styles, /\[data-rsvp-custom-wrapper\]\[hidden\]\{display:none\}/);
   assert.match(javascript, /menuSelections: Array\.isArray\(rsvp\.menuSelections\)/);
 });

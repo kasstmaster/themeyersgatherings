@@ -236,3 +236,11 @@ The existing **View Photos & Videos** gallery retains files and sharing links pr
 5. Test an upload from a phone. Files arrive under **Apps → The Meyers 2027 → Wedding Uploads → account name → uploader name**. This is separate from the existing file-request folder.
 
 The backend requests offline OAuth access with a one-time state and PKCE challenge, stores the renewable connection in the private R2 `dropbox-private/` namespace, and renews short-lived Dropbox access tokens server-side. Only the host can start the connection or inspect connection settings. Guests use their existing website sign-in and never authorize their own Dropbox accounts. Dropbox tokens, upload-session IDs, and destination paths are never returned to guests. Transfers use 8 MiB chunks to avoid the old 15 MB/50 MB website file-size limits; Dropbox storage and service limits still apply. The website gallery shows account-private upload confirmations and host attribution, rather than exposing Dropbox folder access. Download/preview access to new Dropbox file bytes is not requested by the write-only app permission.
+
+### Invitation quantities and person-specific guests
+
+In **Accounts**, select the gathering and set **Invitations to print** for each account (default 1; 0 excludes the account from invitation downloads). **Download All Invitations** and **Email All Invitations** honor those quantities in either QR mode, with uniquely named PNG copies in one ZIP. An individual invitation preview also downloads its account's selected quantity.
+
+Under **Allow a guest for**, check each named adult who may bring one guest to that gathering. Permissions and quantities are independent for each gathering. Older account-wide plus-one totals are flagged for assignment; the website does not guess which adult receives them.
+
+Families RSVP separately for each adult, selecting Attending or Not attending. An attending person with a guest allowance must enter the guest's name or select **NO GUEST**. Children remain a numerical count. Wedding meal cards use the resulting adult/guest names and Child 1, Child 2, etc., and preserve choices by person when attendance changes. Hosts can see individual attendance and guest names in the RSVP list. Existing RSVP totals are retained until a family updates its response.

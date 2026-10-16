@@ -380,3 +380,9 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .signed-in-account{flex-wrap:wrap;text-align:center;overflow-wrap:anywhere}
 /* A single available page does not need a tab bar. */
 [role="tablist"]:not(:has(>[role="tab"]:not([hidden]) ~ [role="tab"]:not([hidden]))){display:none}
+
+#rsvpAdultsCounter[hidden],.rsvp-guest-fields[hidden]{display:none}
+.rsvp-person{margin:16px 0;border:1px solid var(--border);border-radius:5px;padding:14px}.rsvp-person legend{font-weight:700}.rsvp-person input{box-sizing:border-box;width:100%}
+.account-row-with-plus-ones{grid-template-columns:145px minmax(0,1fr) minmax(180px,.8fr) auto}
+.account-person-settings{display:grid;gap:8px;min-width:0}.account-person-settings input[type="number"]{max-width:110px}.account-guest-permission{display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important;margin:0!important}.account-guest-permission input{width:auto;flex-shrink:0}.account-person-settings p{font-size:.8rem;color:var(--muted)}
+@media(max-width:750px){.account-row-with-plus-ones{grid-template-columns:minmax(0,1fr) auto}.account-row-with-plus-ones .account-access{grid-column:1/-1}.account-row-with-plus-ones .account-people{grid-column:1}.account-row-with-plus-ones .account-preview-actions{grid-column:2;grid-row:2}.account-person-settings{grid-column:1/-1}}
