@@ -11,6 +11,67 @@
     if (className) element.className = className;
     return element;
   };
+  const overlays = [];
+  const layers = new Map();
+  let frame = 0;
+  function layerFor(target) {
+    const owner = target.closest('dialog') || document.body;
+    if (!layers.has(owner)) {
+      const layer = node('div', undefined, 'inline-overlay-layer');owner.append(layer);layers.set(owner,layer);
+      cleanup.push(() => { layer.remove();layers.delete(owner); });
+    }
+    return layers.get(owner);
+  }
+  function overlay(element, target, kind = 'after') {
+    layerFor(target).append(element);
+    element.classList.add('inline-overlay-item');element.dataset.inlineAnchor=target.id || '';
+    const entry={element,target,kind};overlays.push(entry);
+    cleanup.push(() => { const index=overlays.indexOf(entry);if(index>=0)overlays.splice(index,1);element.remove(); });
+    positionOverlays();
+    if (!frame) frame=requestAnimationFrame(tick);
+    return element;
+  }
+  function tick() { frame=0;positionOverlays();if(overlays.length)frame=requestAnimationFrame(tick); }
+  function positionOverlays() {
+    const width=document.documentElement.clientWidth,height=innerHeight;
+    for (const {element,target,kind} of overlays) {
+      const rect=target.getBoundingClientRect();
+      let visible=target.isConnected && target.getClientRects().length && !target.closest('[hidden]') && rect.width>0 && rect.height>0;
+      if (visible && kind!=='editor') {
+        visible=rect.bottom>0 && rect.top<height && rect.right>0 && rect.left<width;
+        if(getComputedStyle(target).visibility==='hidden' && !target.closest('.inline-edit-masked'))visible=false;
+        for(let parent=target.parentElement;visible && parent && parent!==document.body;parent=parent.parentElement) {
+          if(/auto|scroll|hidden|clip/.test(getComputedStyle(parent).overflowY)) {
+            const clip=parent.getBoundingClientRect();visible=rect.bottom>clip.top && rect.top<clip.bottom;
+          }
+        }
+      }
+      element.style.visibility=visible?'visible':'hidden';
+      if(!visible || element.hidden) continue;
+      if(kind==='frame') {
+        element.style.width=`${rect.width}px`;element.style.height=`${rect.height}px`;
+        element.style.left=`${rect.left}px`;element.style.top=`${rect.top}px`;element.style.maxHeight=`${rect.height}px`;continue;
+      }
+      if(kind==='editor'||kind==='panel') {
+        element.style.width=`${Math.min(780,width-24)}px`;
+        const top=Math.max(12,Math.min(rect.top,height-180));
+        element.style.left=`${Math.max(12,Math.min(rect.left,width-element.offsetWidth-12))}px`;
+        element.style.top=`${top}px`;element.style.maxHeight=`${Math.max(120,height-top-12)}px`;
+        continue;
+      }
+      let anchor=rect;
+      if(kind==='text') {
+        const range=document.createRange();range.selectNodeContents(target);
+        const text=range.getBoundingClientRect();if(text.width)anchor=text;
+      }
+      let left=anchor.right+6,top=anchor.top;
+      if(kind==='above'){left=rect.left;top=rect.top-element.offsetHeight-3;}
+      if(kind==='page'||kind==='delete'){left=rect.right-element.offsetWidth-8;top=rect.top+8;}
+      if(kind==='plus'){left=rect.right-element.offsetWidth;top=rect.top-element.offsetHeight-3;}
+      element.style.left=`${Math.max(4,Math.min(left,width-element.offsetWidth-4))}px`;
+      element.style.top=`${Math.max(4,Math.min(top,height-element.offsetHeight-4))}px`;
+    }
+  }
   function button(text, action, parent, label = text) {
     const control = node('button', text, 'inline-edit-control');
     control.type = 'button'; control.setAttribute('aria-label', label);
@@ -18,10 +79,13 @@
       event.preventDefault(); event.stopPropagation();
       if (context.host && enabled) action();
     });
-    parent.append(control); cleanup.push(() => control.remove());
+    if (parent.isConnected && !parent.closest('.inline-overlay-layer')) overlay(control,parent,'delete');
+    else parent.append(control);
+    cleanup.push(() => control.remove());
     return control;
   }
   function beforeRender() {
+    cancelAnimationFrame(frame);frame=0;
     while (cleanup.length) cleanup.pop()();
   }
   function render(ctx) {
@@ -30,7 +94,12 @@
     const toggle = document.querySelector('#editItemsButton');
     toggle.textContent = enabled ? 'Done editing' : 'Edit website';
     toggle.setAttribute('aria-pressed', String(enabled));
-    document.querySelector('#invitationTemplatesButton').hidden = !enabled;
+    const templates=document.querySelector('#invitationTemplatesButton');templates.hidden=true;
+    if(enabled) {
+      const anchor=document.createComment('template tool');templates.before(anchor);templates.hidden=false;
+      cleanup.push(()=>{anchor.replaceWith(templates);templates.hidden=true;templates.classList.remove('inline-edit-control','inline-overlay-item');templates.removeAttribute('style');});
+      templates.classList.add('inline-edit-control');overlay(templates,document.querySelector('#previewWeddingPartyButton'),'above');
+    }
     document.body.classList.toggle('site-edit-mode', enabled && ctx.host);
   }
   function field(target, title, fields, commit, options = {}) {
@@ -40,33 +109,15 @@
     if (document.querySelector(`[data-inline-field-key="${CSS.escape(key)}"]`)) return;
     const control = node('span', undefined, 'inline-edit-tools');
     control.dataset.inlineFieldKey = key;
-    control.hidden = target.hidden || Boolean(target.parentElement.closest('[hidden]'));
     const placement = options.placement || (title === 'page' ? 'page' : 'after');
-    if (placement === 'text') {
-      const row = node('div', undefined, 'inline-text-row'); row.hidden = control.hidden;
-      target.before(row); row.append(target, control);
-      cleanup.push(() => { row.replaceWith(target); });
-    } else if (placement === 'page') {
-      const container = target.closest('.bride-groom-content,.what-to-expect-content,.perfect-experience-panel,.gathering-page') || target.closest('section') || target.parentElement;
-      const hadClass = container.classList.contains('inline-page-edit-host');
-      container.classList.add('inline-page-edit-host'); control.classList.add('inline-page-tools');container.append(control);
-      cleanup.push(() => { if (!hadClass) container.classList.remove('inline-page-edit-host'); });
-    } else target.after(control);
-    cleanup.push(() => control.remove());
+    const container=placement==='page' ? target.closest('.bride-groom-content,.what-to-expect-content,.perfect-experience-panel,.gathering-page') || target.closest('section') || target : target;
+    if(placement==='page')control.classList.add('inline-page-tools');
+    overlay(control,container,placement);
     let showing = false;
     const open = () => {
       if (showing) return; showing = true;
       const form = node('div', undefined, 'inline-editor');
       form.setAttribute('role', 'group'); form.setAttribute('aria-label', `Edit ${title}`);
-      const previousHidden = target.hidden;
-      if (options.replace !== false) {
-        if (target.contains(control)) {
-          [...target.children].filter(child => child !== control).forEach(child => {
-            const hidden = child.hidden; child.hidden = true; cleanup.push(() => { child.hidden = hidden; });
-          });
-        } else target.hidden = true;
-      }
-      cleanup.push(() => { target.hidden = previousHidden; form.remove(); });
       const inputs = fields.map((spec, index) => {
         const label = node('label'); label.append(node('span', spec.label));
         const input = node(spec.options ? 'select' : spec.type === 'textarea' ? 'textarea' : 'input');
@@ -94,15 +145,16 @@
           event.preventDefault(); actions.querySelector('button').click();
         }
       });
-      form.append(actions); control.after(form);
+      form.append(actions);overlay(form,target,'editor');
       inputs[0]?.focus();
     };
     button(`Edit ${title}`, open, control);
-    if (drafts.has(key) && !control.hidden) open();
+    if (drafts.has(key) && target.getClientRects().length) open();
   }
   function portal(target, title, sources, prepare, options = {}) {
     if (!target || !enabled || !context.host) return;
-    const control = node('span', undefined, 'inline-edit-tools'); target.append(control);
+    const control = node('span', undefined, 'inline-edit-tools');
+    if(options.automatic)target.append(control);else overlay(control,target);
     cleanup.push(() => control.remove());
     const open = () => {
       prepare();
@@ -113,7 +165,7 @@
         return () => { anchor.replaceWith(source); source.hidden = hidden; };
       });
       if (!options.automatic) button('Done', () => context.refresh(), area, `Done editing ${title}`);
-      control.after(area);
+      if(options.automatic)control.after(area);else overlay(area,target,'editor');
       cleanup.push(() => { anchors.forEach(restore => restore()); area.remove(); });
       control.hidden = true;
     };
@@ -123,7 +175,7 @@
     const data = context.state.siteText || {};
     // Text blocks, headings and captions can be changed without changing links or controls.
     const elements = [...root.querySelectorAll('h1,h2,h3,h4,p,footer address')].filter(element =>
-      !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.inline-editor,.inline-edit-tools,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
+      !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.inline-editor,.inline-edit-tools,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,.inline-edit-masked,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
       !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#signedInAccountName'));
     for (const [element, path] of elements.map(element => [element, selectorPath(element, root)])) {
       if (!originals.has(path)) originals.set(path, element.innerHTML);
@@ -170,9 +222,9 @@
       }
       if (!tab.hidden && tab.getAttribute('aria-selected') === 'true') active = true;
       if (enabled && context.host && !tab.hidden) {
-        const tools = node('span', undefined, 'inline-tab-tools');
-        const wrapper = node('div', undefined, 'inline-edit-tab'); tab.before(wrapper);wrapper.append(tools,tab);
-        cleanup.push(() => wrapper.replaceWith(tab));
+        const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
+        const anchor=tab.getClientRects().length?tab:nav.nextElementSibling;
+        if(anchor)overlay(tools,anchor,'above');
         button('Edit title', () => {
           const title = window.prompt('Page title', tab.textContent);
           if (!title?.trim()) return;
@@ -203,9 +255,8 @@
       nav.append(tab); cleanup.push(() => tab.remove());
       tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh(); });
       if (enabled && context.host) {
-        const tools = node('span', undefined, 'inline-tab-tools');
-        const wrapper = node('div', undefined, 'inline-edit-tab');tab.before(wrapper);wrapper.append(tools,tab);
-        cleanup.push(() => wrapper.replaceWith(tab));
+        const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
+        overlay(tools,tab,'above');
         button('Edit title', () => { const title=window.prompt('Page title',page.title);if(title?.trim()){page.title=title.trim();context.save();} }, tools);
         button('×', () => { if (window.confirm(`Delete the “${page.title}” page?`)) { state.sitePages = state.sitePages.filter(item => item.id !== page.id); context.save(); } }, tools, `Delete ${page.title} page`);
       }
@@ -218,14 +269,16 @@
       }
     });
     if (enabled && context.host) {
-      nav.hidden = false; nav.classList.add('inline-edit-tabs');
-      cleanup.push(() => { nav.hidden = navOriginallyHidden; nav.classList.remove('inline-edit-tabs'); });
+      const addTools=node('span',undefined,'inline-tab-tools');
+      const anchor=nav.getClientRects().length?nav:nav.nextElementSibling;
+      if(anchor)overlay(addTools,anchor,'plus');
+      addTools.dataset.inlineAnchor=nav.id;
       button('+', () => {
         if (config.add) { config.add(); context.save(); return; }
         const title = window.prompt('New page title'); if (!title?.trim()) return;
         const page = { id: crypto.randomUUID(), nav: nav.id, title: title.trim(), content: '', audience: config.audience || 'all' };
         state.sitePages ??= []; state.sitePages.push(page); selectedCustom.set(selectionKey, page.id); context.save();
-      }, nav, 'Add page');
+      }, addTools, 'Add page');
     }
     if (extraPages.length && !nav.parentElement.closest('[hidden]')) { nav.hidden = false; cleanup.push(() => { nav.hidden = navOriginallyHidden; }); }
     if (!active && !selected && buttons.some(tab => !tab.hidden)) {
@@ -234,12 +287,11 @@
     }
   }
   function hide(element) {
-    if (!element) return; const hidden=element.hidden; element.hidden=true;cleanup.push(()=>{element.hidden=hidden;});
+    if (!element) return; element.classList.add('inline-edit-masked');cleanup.push(()=>element.classList.remove('inline-edit-masked'));
   }
-  function mount(target, className) {
+  function mount(target, className, kind = 'panel') {
     if (!enabled || !context.host || !target) return null;
-    const element = node('div', undefined, className); target.append(element);
-    cleanup.push(() => element.remove()); return element;
+    const element = node('div', undefined, className);overlay(element,target,kind);return element;
   }
   const selectedCustom = new Map();
   globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, tabs, button, mount, hide,

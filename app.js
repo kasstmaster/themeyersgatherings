@@ -1372,7 +1372,7 @@ function renderInlineEditing() {
     SiteEditing.hide(document.querySelector('#weddingAttireGuidance'));
     SiteEditing.hide(document.querySelector('#registryAffordableAttire .affordable-attire-closing'));
     SiteEditing.hide(document.querySelector('#registryAttireVideosSection'));
-    const target=SiteEditing.mount(document.querySelector('#registryAffordableAttire'),'inline-attire-edit-area');
+    const target=SiteEditing.mount(document.querySelector('#weddingAttireGuidance'),'inline-attire-edit-area','frame');
     SiteEditing.portal(target,'images and videos',['#weddingPartyAttireAdmin','#guestAttireVideosAdmin'],prepare,{automatic:true});
   } else SiteEditing.portal(document.querySelector('#registryAttireSection'), 'images and videos', ['#weddingPartyAttireAdmin','#guestAttireVideosAdmin'], prepare);
   SiteEditing.portal(document.querySelector('#weddingPartyDetails'), 'party members', ['#weddingPartyAdmin'], prepare);
@@ -1403,8 +1403,10 @@ function renderInlineEditing() {
 function renderRsvpInlineEditing() {
   if (!SiteEditing.enabled || viewedEventId !== 'wedding') return;
   const target = document.querySelector('#weddingRsvpMenu');
-  if (target.hidden || target.querySelector('.inline-meal-editor')) return;
+  if (target.hidden || document.querySelector('#rsvpDialog .inline-meal-editor')) return;
   const area = SiteEditing.mount(target, 'inline-meal-editor');
+  SiteEditing.button('Close meal editor',()=>{area.hidden=true;},area);
+  SiteEditing.button('Edit meals',()=>{area.hidden=false;},document.querySelector('#weddingRsvpMenuHeading'));
   const heading = document.createElement('h4');heading.textContent='Meal options';area.append(heading);
   const meals=GuestPlanning.weddingMeals(state);
   const audiences=['Adults and children','Adults only','Children only'];
@@ -1415,7 +1417,7 @@ function renderRsvpInlineEditing() {
     SiteEditing.field(label,'meal',[{label:'Meal name',value:meal.name,required:true},{label:'Available to',value:meal.audience,options:audiences}],([name,audience])=>{saveMeals(meals.map((entry,i)=>i===index?{...entry,name,audience}:entry));},{key:meal.id});
     SiteEditing.button('×',()=>{if(confirm(`Delete “${meal.name}” from the meal options?`)){saveMeals(meals.filter((_,i)=>i!==index));saveState();}},row,`Delete ${meal.name} meal`);
   });
-  const add=document.createElement('div');area.append(add);
+  const add=document.createElement('div');add.textContent='Add meal option';area.append(add);
   SiteEditing.field(add,'new meal',[{label:'Meal name',value:'',required:true},{label:'Available to',value:audiences[0],options:audiences}],([name,audience])=>{saveMeals([...meals,{id:crypto.randomUUID(),name,audience}]);},{key:'new-meal'});
 }
 
