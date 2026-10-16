@@ -114,6 +114,11 @@
     let showing = false;
     const open = () => {
       if (showing) return; showing = true;
+      if (['text','page','notes'].includes(title)) {
+        control.hidden = true;
+        directFields(target, title, fields, values => { commit(values); drafts.delete(key); context.save(); }, key);
+        return;
+      }
       const form = node('div', undefined, 'inline-editor');
       form.setAttribute('role', 'group'); form.setAttribute('aria-label', `Edit ${title}`);
       const inputs = fields.map((spec, index) => {
@@ -155,21 +160,56 @@
     target.classList.add('inline-edit-replaced');
     cleanup.push(() => { editor.remove(); target.classList.remove('inline-edit-replaced'); });
   }
+  function directFields(target, title, fields, commit, key) {
+    const editors = [];
+    let pageBody = target.matches('section') ? target.querySelector('.bride-groom-content,.what-to-expect-content') || target : target;
+    const heading = target.closest('section')?.querySelector('h2,h3');
+    if (pageBody === target && target.matches('section') && heading && fields.length > 1) {
+      const body = node('div');
+      const children = [...target.childNodes].filter(child => child !== heading);
+      target.append(body); children.forEach(child => body.append(child));
+      cleanup.push(() => { body.replaceWith(...body.childNodes); }); pageBody=body;
+    }
+    fields.forEach((spec, index) => {
+      const isTitle = fields.length > 1 && index === 0 && spec.label === 'Title';
+      const anchor = isTitle && heading ? heading : pageBody;
+      const input = node(spec.type === 'textarea' ? 'textarea' : 'input');
+      input.className = 'inline-direct-input';
+      input.setAttribute('aria-label', spec.label);
+      input.value = drafts.get(key)?.[index] ?? spec.value ?? '';
+      input.required = Boolean(spec.required);
+      const style = getComputedStyle(anchor), rect = anchor.getBoundingClientRect();
+      for (const property of ['font','color','textAlign','lineHeight','letterSpacing','padding','margin','borderRadius','backgroundColor']) input.style[property] = style[property];
+      input.style.width = `${rect.width}px`; input.style.maxWidth = '100%';
+      if (input.tagName === 'TEXTAREA') {
+        input.style.minHeight = `${Math.max(48,rect.height)}px`;
+        const resize = () => { input.style.height='auto'; input.style.height=`${input.scrollHeight+2}px`; };
+        input.addEventListener('input', resize); requestAnimationFrame(resize);
+      }
+      input.addEventListener('input', () => { if (key) drafts.set(key,editors.map(editor=>editor.value)); });
+      replaceInPlace(input,anchor); editors.push(input);
+    });
+    let saved = false;
+    const save = () => {
+      if (saved) return;
+      if (!editors.every(editor => { editor.setCustomValidity(editor.required && !editor.value.trim() ? 'Enter a title.' : ''); return editor.reportValidity(); })) return;
+      saved=true;commit(editors.map(editor=>editor.value));
+    };
+    editors.forEach(editor => {
+      editor.addEventListener('blur', event => { if (!editors.includes(event.relatedTarget)) save(); });
+      editor.addEventListener('keydown', event => {
+        if (event.key==='Enter' && editor.tagName!=='TEXTAREA') { event.preventDefault(); editor.blur(); }
+      });
+    });
+    (editors.find(editor=>editor.tagName==='TEXTAREA') || editors[0])?.focus();
+  }
   function editTitle(tab, anchor, value, commit) {
     if (tab.dataset.editingTitle) return;
     tab.dataset.editingTitle = 'true';
-    const editor = node('div', undefined, 'inline-editor inline-title-editor');
-    const input = node('input'); input.value = value; input.required = true;
-    input.setAttribute('aria-label', 'Page title'); editor.append(input);
-    const save = () => { if (!input.value.trim()) { input.reportValidity(); return; } commit(input.value.trim()); context.save(); };
-    button('Save', save, editor, 'Save title');
-    button('Cancel', () => context.refresh(), editor, 'Cancel editing title');
-    editor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); save(); } });
-    // A single hidden tab is edited at the top of its visible page instead.
-    if (tab.getClientRects().length) replaceInPlace(editor, tab);
-    else { anchor.prepend(editor); cleanup.push(() => editor.remove()); }
+    // Hidden single-tab titles are edited at their visible page heading.
+    const target = tab.getClientRects().length ? tab : anchor.querySelector('h2,h3') || anchor;
+    directFields(target, 'title', [{label:'Page title',value,required:true}], values => { commit(values[0].trim()); context.save(); });
     cleanup.push(() => delete tab.dataset.editingTitle);
-    input.focus(); input.select();
   }
   function portal(target, title, sources, prepare, options = {}) {
     if (!target || !enabled || !context.host) return;
