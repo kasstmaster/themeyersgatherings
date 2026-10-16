@@ -372,5 +372,5 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 
 .wedding-upload-intro{text-align:center}
 
-.event-address{margin:10px auto 0;max-width:720px;font-size:clamp(.75rem,1.7vw,1rem);font-style:italic;font-weight:400;letter-spacing:normal;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere;color:var(--ink)}
+.event-address{font-family:"Times New Roman",Times,serif;margin:10px auto 0;max-width:720px;font-size:clamp(.75rem,1.7vw,1rem);font-style:italic;font-weight:400;letter-spacing:normal;line-height:1.5;white-space:pre-line;overflow-wrap:anywhere;color:var(--ink)}
 .event-address:empty{display:none}
