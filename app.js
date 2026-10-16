@@ -658,13 +658,14 @@ function accountContactGroups(accountName) {
     const givenName = [...words, suffix].filter(Boolean).join(' ');
     if (!surname || !givenName) return;
     const existingGroup = groups.find(group => group.surname.toLocaleLowerCase() === surname.toLocaleLowerCase());
-    if (existingGroup) existingGroup.givenNames.push(givenName);
-    else groups.push({ surname, givenNames: [givenName] });
+    if (existingGroup) existingGroup.people.push({ givenName, fullName });
+    else groups.push({ surname, people: [{ givenName, fullName }] });
   });
   return groups;
 }
 function accountContactsHtml(account) {
-  const adults = accountContactGroups(account.name).map(group => `<div><strong>${escapeHtml(group.surname)}:</strong> ${group.givenNames.map(escapeHtml).join(', ')}</div>`).join('');
+  const granted = GuestPlanning.plusOnePeople(account, viewedEventId, accountSignInNames(account.name));
+  const adults = accountContactGroups(account.name).map(group => `<div class="account-surname-group"><strong>${escapeHtml(group.surname)}:</strong>${group.people.map(person => `<div class="account-person-line"><span>${escapeHtml(person.givenName)}</span><label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(person.fullName)}" aria-label="Allow a guest for ${escapeAttribute(person.fullName)}" ${granted.includes(person.fullName) ? 'checked' : ''}><span>+1</span></label></div>`).join('')}</div>`).join('');
   const children = (account.children || []).length
     ? `<div class="account-children"><strong>Children:</strong> ${account.children.map(escapeHtml).join(', ')}</div>`
     : '';
@@ -1993,13 +1994,10 @@ function openAccountsAdmin() {
     firstAccountLastName(left.account.name).localeCompare(firstAccountLastName(right.account.name), 'en-US', { sensitivity: 'base' })
     || left.account.name.localeCompare(right.account.name, 'en-US', { sensitivity: 'base' }));
   document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => {
-    const adultCount = accountSignInNames(account.name).length;
     const deleteControl = canDeleteWebsiteAccount(account) ? `<button class="account-delete-button" type="button" aria-label="Delete account for ${escapeAttribute(account.name)}">Delete</button>` : '';
-    const names = accountSignInNames(account.name);
-    const granted = GuestPlanning.plusOnePeople(account,viewedEventId,names);
     const legacy = !Array.isArray(account.plusOnePeople?.[viewedEventId]) && plusOneCount(account,viewedEventId)>0;
     const plusOneControl = `<div class="account-person-settings"><input data-invitation-quantity type="number" min="0" step="1" value="${GuestPlanning.invitationCount(account,viewedEventId)}" aria-label="Invitations to print for ${escapeAttribute(account.name)}"></div>`;
-    const guestPermissionControl = `<details class="account-guest-dropdown"><summary><strong>Allow a guest for</strong> <span data-guest-selection-count>${granted.length} selected</span></summary><div class="account-guest-options">${names.map(name=>`<label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(name)}" ${granted.includes(name)?'checked':''}><span>${escapeHtml(name)}</span></label>`).join('')}</div></details>${legacy?`<p data-legacy-plus-ones>Previously ${plusOneCount(account,viewedEventId)} account plus-one(s). Select the people who may bring a guest.</p>`:''}`;
+    const guestPermissionControl = legacy ? `<p data-legacy-plus-ones>Previously ${plusOneCount(account,viewedEventId)} account plus-one(s). Select the people who may bring a guest.</p>` : '';
     return `<div class="account-row account-row-with-plus-ones" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Give Access</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people">${accountContactsHtml(account)}${guestPermissionControl}</div><div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken || state.invitationQrMode === 'general' ? '' : 'disabled title="QR access is required"'}>Inv</button>${plusOneControl}${deleteControl}</div></div>`;
   }).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
   document.querySelectorAll('.account-row').forEach(row => {
@@ -2023,7 +2021,6 @@ function openAccountsAdmin() {
       const account=appState.accounts[Number(row.dataset.accountIndex)];account.plusOnePeople??={};
       account.plusOnePeople[viewedEventId]=[...row.querySelectorAll('[data-plus-one-person]:checked')].map(input=>input.dataset.plusOnePerson);
       account.plusOnes??={};account.plusOnes[viewedEventId]=account.plusOnePeople[viewedEventId].length;
-      row.querySelector('[data-guest-selection-count]').textContent=`${account.plusOnePeople[viewedEventId].length} selected`;
       row.querySelector('[data-legacy-plus-ones]')?.remove();saveState();
     }));
     access.querySelector('.account-invited').addEventListener('change', event => {

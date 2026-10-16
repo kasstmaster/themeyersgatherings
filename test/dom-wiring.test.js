@@ -49,7 +49,7 @@ test('contact accounts are displayed as surname groups with inline children', as
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
   assert.match(javascript, /function accountContactGroups\(accountName\)/);
-  assert.match(javascript, /<strong>\$\{escapeHtml\(group\.surname\)\}:<\/strong> \$\{group\.givenNames\.map\(escapeHtml\)\.join\(', '\)\}/);
+  assert.match(javascript, /group\.people\.map\(person/);
   assert.match(javascript, /<strong>Children:<\/strong> \$\{account\.children\.map\(escapeHtml\)\.join\(', '\)\}/);
   assert.match(javascript, /<div class="account-people">\$\{accountContactsHtml\(account\)\}\$\{guestPermissionControl\}<\/div>/);
 });
@@ -69,7 +69,7 @@ test('every gathering can assign its own plus ones and include them in adult inv
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
 
-  assert.match(accountRenderer, />Allow a guest for<\/strong>/);
+  assert.match(javascript, /data-plus-one-person="\$\{escapeAttribute\(person\.fullName\)\}"/);
   assert.match(accountRenderer, /account\.plusOnePeople\[viewedEventId\]/);
   assert.match(javascript, /plusOneCount\(account, viewedEventId\)/);
   assert.match(javascript, /adults: sum\.adults \+ accountSignInNames\(account\.name\)\.length \+ plusOneCount/);
