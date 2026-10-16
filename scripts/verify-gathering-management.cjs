@@ -21,10 +21,25 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
     hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;viewedEventId='wedding';state=appState.events.wedding;showSignedInDestination();render();
   });
   assert.equal(await page.locator('#gatheringColorsButton').isVisible(),false);
+  for(const width of [1280,390]) {
+    await page.setViewportSize({width,height:900});
+    assert.ok(await page.evaluate(()=>{
+      const rows=new Map();for(const button of document.querySelectorAll('#hostToolsPanel .host-tool-actions button:not([hidden])')){
+        const r=button.getBoundingClientRect(),row=rows.get(r.top)||[];row.push(r);rows.set(r.top,row);
+      }
+      return [...rows.values()].every(row=>Math.abs((Math.min(...row.map(r=>r.left))+Math.max(...row.map(r=>r.right)))/2-innerWidth/2)<1);
+    }),'visible toolbar rows are centered');
+  }
+  await page.setViewportSize({width:1280,height:900});
   await page.locator('#editItemsButton').click();await page.locator('#gatheringColorsButton').click();
   await page.locator('[data-gathering-color="accent"]').fill('#226688');
   await page.getByRole('button',{name:'Save colors',exact:true}).click();
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#rsvpButton')).backgroundColor),'rgb(34, 102, 136)');
+  await page.locator('[data-switch-event="christmas"]').click();await page.locator('#gatheringColorsButton').click();
+  await page.locator('[data-gathering-color="gold"]').fill('#aabb22');await page.locator('[data-gathering-color="secondary"]').fill('#112233');await page.getByRole('button',{name:'Save colors',exact:true}).click();
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.summary-strip strong')).color),'rgb(170, 187, 34)');
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#hostNotesSection')).borderTopColor),'rgb(170, 187, 34)');
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('#hostToolsPanel')).backgroundColor),'rgb(17, 34, 51)');
   await page.locator('[data-switch-event="thanksgiving"]').click();
   assert.notEqual(await page.evaluate(()=>getComputedStyle(document.querySelector('#rsvpButton')).backgroundColor),'rgb(34, 102, 136)');
   await page.locator('#newGatheringButton').click();

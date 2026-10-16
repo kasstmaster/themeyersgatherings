@@ -94,7 +94,8 @@ function syncGatheringDefinitions(events) {
   }
 }
 const GATHERING_COLORS = [
-  ['accent','Buttons and selected tabs','--orange'], ['background','Background and headings','--navy'],
+  ['accent','Buttons and selected tabs','--orange'], ['gold','Gold text and accents','--gold'],
+  ['secondary','Toolbar and footer','--navy-2'], ['background','Background and headings','--navy'],
   ['header','Header','--ivory'], ['page','Page containers','--gathering-card-background'],
   ['inner','Inner containers','--gathering-inner-background'], ['text','Page text','--ink'], ['border','Borders','--border']
 ];
@@ -102,10 +103,17 @@ function applyGatheringColors() {
   for (const [, ,variable] of GATHERING_COLORS) document.body.style.removeProperty(variable);
   document.body.style.removeProperty('--orange-dark');
   document.body.style.removeProperty('--muted');
+  document.body.style.removeProperty('--page-border');
+  document.body.style.removeProperty('--gold-rule');
   for (const [key,,variable] of GATHERING_COLORS) {
     const color=state.gatheringColors?.[key];
     if (/^#[0-9a-f]{6}$/i.test(color || '')) document.body.style.setProperty(variable,color);
   }
+  const gold=state.gatheringColors?.gold;
+  const customGold=/^#[0-9a-f]{6}$/i.test(gold || '');
+  document.body.classList.toggle('custom-gathering-gold',customGold);
+  if(customGold){document.body.style.setProperty('--page-border',gold);document.body.style.setProperty('--gold-rule',gold);}
+  if(/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.border || ''))document.body.style.setProperty('--page-border',state.gatheringColors.border);
   if (/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.text || '')) document.body.style.setProperty('--muted',state.gatheringColors.text);
   document.body.classList.toggle('custom-gathering-borders',/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.border || ''));
   document.body.classList.toggle('custom-gathering-header',/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.header || ''));
@@ -407,11 +415,11 @@ function storeLocalState(nextState) {
     return false;
   }
 }
-function saveState() {
+function saveState({ refresh = !SiteEditing.portalOpen && !SiteEditing.flushing } = {}) {
   appState.events[viewedEventId] = state;
   const storedLocally = storeLocalState(appState);
   localStateRevision += 1;
-  render();
+  if (refresh) render();
   queueSharedStateSave();
   if (!storedLocally) showToast('This change could not be backed up on this device.');
 }
@@ -494,12 +502,21 @@ async function saveSharedState() {
     }
   }
 }
+function stateContentSignature(value) {
+  return JSON.stringify(value, (_key, item) => item && typeof item==='object' && !Array.isArray(item)
+    ? Object.fromEntries(Object.keys(item).sort().map(key=>[key,item[key]])) : item);
+}
+let sharedLoadNumber = 0;
+function hasActiveEditor() {
+  return SiteEditing.enabled || Boolean(document.querySelector('dialog[open]')) || Boolean(document.activeElement?.closest('#eventPage input,#eventPage textarea,#eventPage select,.inline-editor'));
+}
 async function loadSharedState() {
   const stateUrl = SHARED_STATE_URL || REPOSITORY_STATE_URL;
-  if (!stateUrl) return;
+  if (!stateUrl || (!SHARED_STATE_URL && localStateRevision > 0)) return;
   // Never replace a local edit with a stale response while that edit is
   // waiting to be uploaded.
-  if (sharedSavePending || sharedSaveInProgress) return;
+  if (sharedSavePending || sharedSaveInProgress || hasActiveEditor()) return;
+  const attempt=++sharedLoadNumber;
   const revisionBeforeLoad = localStateRevision;
   try {
     const response = await fetchWithTimeout(stateUrl, { cache: 'no-store' });
@@ -509,7 +526,8 @@ async function loadSharedState() {
     }
     if (!response.ok) throw new Error(`Shared state load failed (${response.status})`);
     const saved = normalizeState(await response.json());
-    if (localStateRevision !== revisionBeforeLoad || sharedSavePending || sharedSaveInProgress) return;
+    if (attempt!==sharedLoadNumber || localStateRevision !== revisionBeforeLoad || sharedSavePending || sharedSaveInProgress || hasActiveEditor()) return;
+    if (stateContentSignature(saved) === stateContentSignature(normalizeState(structuredClone(appState)))) return;
     // The checked-in repository file is read-only when no Worker is set up.
     // Use it to seed a browser, but do not let an older/emptier copy erase a
     // richer local state (most visibly, newly added accounts) on refresh or
@@ -1358,14 +1376,34 @@ function render() {
   invitedListButton.title = hostView ? 'View invited families' : 'Invited family details are private to the host';
   invitedListButton.setAttribute('aria-label', hostView ? `${invitedAccounts.length} families invited; view private invitation list` : `${invitedAccounts.length} families invited; details visible only to the host`);
   renderInlineEditing();
-  document.querySelectorAll('[data-gathering-edit-tool]').forEach(button => { button.style.visibility=isHostView() && SiteEditing.enabled ? 'visible':'hidden'; });
+  document.querySelectorAll('[data-gathering-edit-tool]').forEach(button => { button.hidden=!(isHostView() && SiteEditing.enabled); });
   if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
 }
 
 function renderInlineEditing() {
   SiteEditing.render({ host: isHostView(), eventId: viewedEventId, state,
     party: Boolean(state.weddingPartyMembers?.some(member => weddingPartyPersonMatches(member.name, signedInPersonName))),
-    save: saveState, refresh: render, format: value => formatEditableText(expandEditableTextVariables(value)), escape: escapeHtml });
+    save: () => saveState({refresh:!SiteEditing.flushing}), refresh: render,
+    directSaved: () => {
+      syncGatheringDefinitions(appState.events);
+      document.querySelectorAll('[data-switch-event]').forEach(button => {
+        const name=EVENT_DETAILS[button.dataset.switchEvent]?.name;
+        if(name){button.querySelector('span').textContent=name;button.setAttribute('aria-label',`${name}${button.dataset.switchEvent===viewedEventId?', current event':''}`);}
+      });
+      document.querySelectorAll('#brideGroomTabs [data-bride-groom-page]').forEach(tab => {
+        const page=state.brideGroomPages?.find(page=>page.id===tab.dataset.brideGroomPage);
+        if(page)tab.textContent=page.title;
+      });
+      const personalPages=WeddingParty.visiblePages(state.weddingPartyMembers || [],isHostView(),state.weddingPartyMembers?.find(member=>weddingPartyPersonMatches(member.name,signedInPersonName))?.id);
+      document.querySelectorAll('#matronInfoTabs [data-member-page]').forEach(tab => {
+        const page=personalPages.find(page=>page.key===tab.dataset.memberPage);
+        if(page)tab.textContent=isHostView()?`${page.memberName} — ${page.title}`:page.title;
+      });
+      document.querySelectorAll('[role="tab"][aria-controls^="custom-page-"]').forEach(tab => {
+        const page=state.sitePages?.find(page=>`custom-page-${page.id}`===tab.getAttribute('aria-controls'));
+        if(page)tab.textContent=page.title;
+      });
+    }, format: value => formatEditableText(expandEditableTextVariables(value)), escape: escapeHtml });
   if (state.gatheringName) SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
   const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,
     keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date' })),
@@ -1402,7 +1440,10 @@ function renderInlineEditing() {
     const target=SiteEditing.mount(document.querySelector('#weddingAttireGuidance'),'inline-attire-edit-area','frame');
     SiteEditing.portal(target,'images and videos',['#weddingPartyAttireAdmin','#guestAttireVideosAdmin'],prepare,{automatic:true});
   } else SiteEditing.portal(document.querySelector('#registryAttireSection'), 'images and videos', ['#weddingPartyAttireAdmin','#guestAttireVideosAdmin'], prepare);
-  SiteEditing.portal(document.querySelector('#weddingPartyDetails'), 'party members', ['#weddingPartyAdmin'], prepare);
+  if (SiteEditing.enabled && viewedEventId==='wedding' && selectedWeddingTab==='party' && selectedMatronTab==='duties') {
+    const target=SiteEditing.mount(document.querySelector('#weddingPartyDetails'),'inline-members-edit-area','inline');
+    SiteEditing.portal(target,'party members',['#weddingPartyAdmin'],prepare,{automatic:true});
+  } else SiteEditing.portal(document.querySelector('#weddingPartyDetails'), 'party members', ['#weddingPartyAdmin'], prepare);
   if (viewedEventId !== 'wedding') {
     document.querySelectorAll('#menuGrid [data-claim]').forEach(button => {
       const item = state.items.find(item => item.id === button.dataset.claim);
@@ -1823,13 +1864,13 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   const index = state.rsvps.findIndex(entry => entry.name === guestName);
   if (rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(state.rsvps[index], rsvp);
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
-  saveState(); showToast(`RSVP saved — we can't wait to see you!`);
+  saveState({refresh:true}); showToast(`RSVP saved — we can't wait to see you!`);
 });
 const editorInputSaveTimers = new WeakMap();
 function commitPendingEditorControl(control) {
   clearTimeout(editorInputSaveTimers.get(control));
   editorInputSaveTimers.delete(control);
-  if (!control.hasAttribute('data-editor-dirty')) return;
+  if (!control.isConnected || !control.hasAttribute('data-editor-dirty')) return;
   control.removeAttribute('data-editor-dirty');
   control.dispatchEvent(new Event('change', { bubbles: true }));
 }
@@ -1838,27 +1879,32 @@ function commitPendingEditorInputs(form) {
   // title/content pair before committing individual controls because saving a
   // title rebuilds the page editors and can otherwise replace an unsaved
   // textarea before Done finishes processing the form.
-  if (form.closest('#adminDialog')) { commitWeddingPartyEditors(); commitBrideGroomPageEditors(); }
+  if (form.querySelector('#adminWeddingPartyMembers [data-editor-dirty]')) commitWeddingPartyEditors();
+  if (form.querySelector('#adminBrideGroomPages [data-editor-dirty]')) commitBrideGroomPageEditors();
   const dirtyControls = [...form.querySelectorAll('[data-editor-dirty]')];
   dirtyControls.forEach(control => {
     commitPendingEditorControl(control);
   });
 }
 function commitAllPendingEditorInputs() {
-  document.querySelectorAll('.editor-dialog form').forEach(commitPendingEditorInputs);
+  SiteEditing.flush();
+  document.querySelectorAll('.editor-dialog form,.inline-portal-editor').forEach(commitPendingEditorInputs);
 }
+// Inline editors reuse the original controls outside their dialog form.
+// Delegate once so their debounced saves keep working after reparenting.
+document.addEventListener('input', event => {
+  if (!event.target.closest('.editor-dialog form,.inline-portal-editor') || !event.target.matches('input:not([type="file"]), select, textarea')) return;
+  event.target.dataset.editorDirty = 'true';
+  clearTimeout(editorInputSaveTimers.get(event.target));
+  editorInputSaveTimers.set(event.target, setTimeout(() => commitPendingEditorControl(event.target), 300));
+});
+document.addEventListener('change', event => {
+  if (!event.target.closest('.editor-dialog form,.inline-portal-editor')) return;
+  clearTimeout(editorInputSaveTimers.get(event.target));
+  editorInputSaveTimers.delete(event.target);
+  delete event.target.dataset.editorDirty;
+});
 document.querySelectorAll('.editor-dialog form').forEach(form => {
-  form.addEventListener('input', event => {
-    if (!event.target.matches('input:not([type="file"]), select, textarea')) return;
-    event.target.dataset.editorDirty = 'true';
-    clearTimeout(editorInputSaveTimers.get(event.target));
-    editorInputSaveTimers.set(event.target, setTimeout(() => commitPendingEditorControl(event.target), 300));
-  });
-  form.addEventListener('change', event => {
-    clearTimeout(editorInputSaveTimers.get(event.target));
-    editorInputSaveTimers.delete(event.target);
-    delete event.target.dataset.editorDirty;
-  });
   // Closing with Done, the X button, or Escape all means the host is finished
   // editing. Always flush the current value; the old cancel branch silently
   // discarded keystrokes made within the debounce window.
@@ -1918,7 +1964,6 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
   document.querySelector('#invitedListDialog').showModal();
 });
 function openAdmin() {
-  if (!document.querySelector('#adminDialog').open) editedWeddingPartyMembers.clear();
   const isWedding = EVENT_DETAILS[viewedEventId].registryOnly === true;
   document.querySelector('#adminDialog .modal-card').classList.toggle('wedding-details-editor', isWedding);
   document.querySelector('#adminEventDate').value = state.eventDate;
@@ -2198,7 +2243,6 @@ function openAccountsAdmin() {
 }
 
 function renderWeddingPartyAdmin() {
-  commitWeddingPartyEditors();
   state.weddingPartyMembers ??= [];
   document.querySelector('#adminWeddingPartyMembers').innerHTML = state.weddingPartyMembers.length
     ? renderWeddingPartyMemberList(state.weddingPartyMembers)
@@ -2666,7 +2710,11 @@ document.querySelector('#adminHostNotes').addEventListener('change', event => {
   if (!isHostView() || viewedEventId === 'wedding') return;
   state.hostNotes = event.target.value; saveState(); render();
 });
-document.querySelector('#editItemsButton').addEventListener('click', () => { if (isHostView()) SiteEditing.toggle(render); });
+document.querySelector('#editItemsButton').addEventListener('click', () => {
+  if (!isHostView()) return;
+  if (SiteEditing.enabled) commitAllPendingEditorInputs();
+  SiteEditing.toggle(render);
+});
 
 document.querySelector('#editAccountsButton').addEventListener('click', () => { if (isHostView()) openAccountsAdmin(); });
 function populateAccountSessionPeople() {
@@ -3038,7 +3086,7 @@ document.querySelectorAll('.affordable-attire-toggle').forEach(button => {
 render();
 if (sharedSavePending) queueSharedStateSave();
 startApp();
-singleColumnMenu.addEventListener('change', render);
+singleColumnMenu.addEventListener('change', () => { commitAllPendingEditorInputs();render(); });
 window.addEventListener('focus', loadSharedState);
 window.addEventListener('online', () => {
   if (sharedSavePending && !sharedSaveInProgress) {
@@ -3075,7 +3123,7 @@ for (let index = 0; index < 40; index += 1) {
 // Gathering management is available only to hosts while editing the website.
 document.querySelector('#gatheringColorsButton').addEventListener('click', () => {
   if (!isHostView() || !SiteEditing.enabled) return;
-  const defaults={accent:'#c96734',background:'#132841',header:'#f6f0e3',page:'#fffaf1',inner:'#fdf8f0',text:'#17283b',border:'#ded7ca'};
+  const defaults={gold:'#d6a45d',secondary:'#0c1e32',accent:'#c96734',background:'#132841',header:'#f6f0e3',page:'#fffaf1',inner:'#fdf8f0',text:'#17283b',border:'#ded7ca'};
   const style=getComputedStyle(document.body);
   document.querySelector('#gatheringColorsDialog').dataset.eventId=viewedEventId;
   document.querySelector('#gatheringColorInputs').innerHTML=GATHERING_COLORS.map(([key,label,variable])=>{
@@ -3091,11 +3139,11 @@ document.querySelector('#gatheringColorsForm').addEventListener('submit', event 
   if(!isHostView() || !SiteEditing.enabled || document.querySelector('#gatheringColorsDialog').dataset.eventId!==viewedEventId){event.preventDefault();return;}
   state.gatheringColors ??= {};
   document.querySelectorAll('[data-gathering-color][data-changed]').forEach(input=>{state.gatheringColors[input.dataset.gatheringColor]=input.value;});
-  saveState();
+  applyGatheringColors();saveState({refresh:false});
 });
 document.querySelector('#resetGatheringColors').addEventListener('click',()=>{
   if(!isHostView() || !SiteEditing.enabled)return;
-  delete state.gatheringColors; document.querySelector('#gatheringColorsDialog').close();saveState();
+  delete state.gatheringColors; document.querySelector('#gatheringColorsDialog').close();applyGatheringColors();saveState({refresh:false});
 });
 document.querySelector('#newGatheringButton').addEventListener('click',()=>{
   if(!isHostView() || !SiteEditing.enabled)return;

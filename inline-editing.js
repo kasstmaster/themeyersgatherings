@@ -1,6 +1,8 @@
-/* Host-only, contextual editors. Draft text stays local until Save. */
+/* Host-only contextual editors. Direct text saves on blur; structured forms use Save. */
 (() => {
   let enabled = false;
+  let cleaning = false, flushing = false;
+  const savers = new Set();
   const cleanup = [];
   const drafts = new Map();
   let context;
@@ -89,7 +91,8 @@
   }
   function beforeRender() {
     cancelAnimationFrame(frame);frame=0;
-    while (cleanup.length) cleanup.pop()();
+    cleaning = true;
+    try { while (cleanup.length) cleanup.pop()(); } finally { cleaning = false; }
   }
   function render(ctx) {
     context = ctx;
@@ -116,7 +119,7 @@
       if (showing) return; showing = true;
       if (['text','page','notes'].includes(title)) {
         control.hidden = true;
-        directFields(target, title, fields, values => { commit(values); drafts.delete(key); context.save(); }, key);
+        directFields(target, title, fields, values => { commit(values); fields.forEach((spec,index)=>{spec.value=values[index];}); drafts.delete(key); context.save(); showing=false;control.hidden=false; }, key);
         return;
       }
       const form = node('div', undefined, 'inline-editor');
@@ -161,11 +164,12 @@
     cleanup.push(() => { editor.remove(); target.classList.remove('inline-edit-replaced'); });
   }
   function directFields(target, title, fields, commit, key) {
-    const editors = [];
+    const editors = [], anchors = [];
+    let wrappedBody;
     let pageBody = target.matches('section') ? target.querySelector('.bride-groom-content,.what-to-expect-content') || target : target;
     const heading = target.closest('section')?.querySelector('h2,h3');
     if (pageBody === target && target.matches('section') && heading && fields.length > 1) {
-      const body = node('div');
+      const body = node('div');wrappedBody=body;
       const children = [...target.childNodes].filter(child => child !== heading);
       target.append(body); children.forEach(child => body.append(child));
       cleanup.push(() => { body.replaceWith(...body.childNodes); }); pageBody=body;
@@ -187,14 +191,27 @@
         input.addEventListener('input', resize); requestAnimationFrame(resize);
       }
       input.addEventListener('input', () => { if (key) drafts.set(key,editors.map(editor=>editor.value)); });
-      replaceInPlace(input,anchor); editors.push(input);
+      replaceInPlace(input,anchor); editors.push(input); anchors.push(anchor);
     });
     let saved = false;
     const save = () => {
-      if (saved) return;
+      if (saved || cleaning) return;
       if (!editors.every(editor => { editor.setCustomValidity(editor.required && !editor.value.trim() ? 'Enter a title.' : ''); return editor.reportValidity(); })) return;
-      saved=true;commit(editors.map(editor=>editor.value));
+      saved=true;
+      const wasFlushing=flushing;flushing=true;
+      try { commit(editors.map(editor=>editor.value)); } finally { flushing=wasFlushing; }
+      // Restore only the edited content. Rebuilding the whole page here drops
+      // the click that moved focus away and unnecessarily resets other editors.
+      editors.forEach((editor,index) => {
+        const anchor=anchors[index];
+        if(fields[index].type==='textarea') anchor.innerHTML=context.format(editor.value);
+        else anchor.textContent=editor.value;
+        anchor.classList.remove('inline-edit-replaced');editor.remove();
+      });
+      if(wrappedBody?.parentNode)wrappedBody.replaceWith(...wrappedBody.childNodes);
+      savers.delete(save);context.directSaved?.();
     };
+    savers.add(save); cleanup.push(() => savers.delete(save));
     editors.forEach(editor => {
       editor.addEventListener('blur', event => { if (!editors.includes(event.relatedTarget)) save(); });
       editor.addEventListener('keydown', event => {
@@ -208,7 +225,7 @@
     tab.dataset.editingTitle = 'true';
     // Hidden single-tab titles are edited at their visible page heading.
     const target = tab.getClientRects().length ? tab : anchor.querySelector('h2,h3') || anchor;
-    directFields(target, 'title', [{label:'Page title',value,required:true}], values => { commit(values[0].trim()); context.save(); });
+    directFields(target, 'title', [{label:'Page title',value,required:true}], values => { commit(values[0].trim()); delete tab.dataset.editingTitle;context.save(); });
     cleanup.push(() => delete tab.dataset.editingTitle);
   }
   function portal(target, title, sources, prepare, options = {}) {
@@ -218,7 +235,7 @@
     cleanup.push(() => control.remove());
     const open = () => {
       prepare();
-      const area = node('div', undefined, 'inline-editor');
+      const area = node('div', undefined, 'inline-editor inline-portal-editor');
       const anchors = sources.map(selector => {
         const source = document.querySelector(selector), anchor = document.createComment('editor home');
         source.before(anchor); const hidden = source.hidden; source.hidden = false; area.append(source);
@@ -350,11 +367,17 @@
   }
   function mount(target, className, kind = 'panel') {
     if (!enabled || !context.host || !target) return null;
-    const element = node('div', undefined, className);overlay(element,target,kind);return element;
+    const element = node('div', undefined, className);
+    if(kind==='inline') { target.before(element);target.classList.add('inline-edit-replaced');cleanup.push(()=>{element.remove();target.classList.remove('inline-edit-replaced');}); }
+    else overlay(element,target,kind);
+    return element;
   }
   const selectedCustom = new Map();
   globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, tabs, button, mount, hide,
+    flush() { flushing=true;try { [...savers].forEach(save=>save()); } finally { flushing=false; } },
+    get flushing() { return flushing; },
+    get portalOpen() { return Boolean(document.querySelector('.inline-portal-editor')); },
     get enabled() { return enabled && context?.host; },
-    toggle(refresh) { enabled = !enabled; if (!enabled) drafts.clear(); refresh(); }
+    toggle(refresh) { if(enabled)this.flush(); enabled = !enabled; if (!enabled) drafts.clear(); refresh(); }
   };
 })();
