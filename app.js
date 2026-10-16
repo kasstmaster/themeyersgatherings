@@ -1114,7 +1114,13 @@ function weddingDetailsWithoutHeaderAddress(value) {
   const normalize = text => text.trim().replace(/^[-*]\s+/, '').replace(/^<|>$/g, '').replace(/[*`]/g, '').replace(/,/g, '').replace(/\s+/g, ' ').toLowerCase();
   const addressLines = [...gatheringHeaderAddress().split(/\r?\n/).map(line => line.replace(/^(Ceremony|Reception):\s*/, '')), ...(state.homeAddress || '').split(/\r?\n/), state.addressLine1, state.addressLine2, state.churchStreet, state.churchCityStateZip, state.venueStreet, state.venueCityStateZip].filter(Boolean).map(normalize);
   // Relocate standalone address lines in the displayed page; retain the host's saved copy.
-  return expandEditableTextVariables(value || '').split(/\r?\n/).filter(line => !addressLines.includes(normalize(line))).join('\n');
+  const lines = expandEditableTextVariables(value || '').split(/\r?\n/);
+  const heading = line => normalize(line).replace(/^#{1,6}\s*/, '').replace(/:$/, '');
+  return lines.filter((line, index) => {
+    if (addressLines.includes(normalize(line)) || ['ceremony', 'reception', 'what to expect'].includes(heading(line))) return false;
+    if (line.trim() === '---' && heading(lines.slice(index + 1).find(next => next.trim()) || '') === 'what to expect') return false;
+    return true;
+  }).join('\n');
 }
 function render() {
   const event = EVENT_DETAILS[viewedEventId];

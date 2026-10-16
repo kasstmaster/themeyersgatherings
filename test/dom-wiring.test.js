@@ -206,13 +206,13 @@ test('Wedding Details is an editable sub tab immediately after Attire under Gues
   ]);
 
   const guestTabs = html.match(/<nav id="guestInfoTabs"[\s\S]*?<\/nav>/)?.[0] || '';
-  assert.match(guestTabs, /data-guest-tab="attire"[\s\S]*data-guest-tab="details"[^>]*>Wedding Details<\/button>/);
+  assert.match(guestTabs, /data-guest-tab="attire"[\s\S]*data-guest-tab="details"[^>]*>What to Expect<\/button>/);
   const guestSection = html.match(/<section id="guestSection"[\s\S]*?<section id="registrySection"/)?.[0] || '';
   assert.match(guestSection, /class="wedding-party-section guest-section"[\s\S]*id="guestHeading">Guest Information<[\s\S]*id="guestInfoTabs"[\s\S]*id="guestAttireAnchor"[\s\S]*id="registryAttireSection"[\s\S]*id="whatToExpectSection"/);
   assert.match(styles, /\.guest-section \.registry-attire-section,\.guest-section \.what-to-expect-section\{[^}]*margin:0[^}]*background:transparent[^}]*border:0[^}]*box-shadow:none/);
   assert.match(styles, /\.guest-section \.what-to-expect-content\{text-align:left\}/);
   assert.match(html, /id="whatToExpectSection"[^>]*hidden/);
-  assert.match(html, /<h2 id="whatToExpectHeading">Wedding Details<\/h2>/);
+  assert.match(html, /<h2 id="whatToExpectHeading">What to Expect<\/h2>/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
   assert.ok(weddingEditor.indexOf('What to Expect page') < weddingEditor.indexOf('The Perfect Experience page'));
   assert.match(javascript, /whatToExpectContent: ''/);
@@ -681,7 +681,7 @@ test('host tools are persistent buttons directly below the signed-in household',
   const toolsIndex = html.indexOf('id="hostToolsPanel"');
   const mainIndex = html.indexOf('<main>');
   assert.ok(accountIndex < toolsIndex && toolsIndex < mainIndex);
-  assert.match(html, /id="hostToolsPanel"[\s\S]*>Wedding Details<\/button>[\s\S]*>View As<\/button>[\s\S]*>Accounts<\/button>[\s\S]*>Templates<\/button>/);
+  assert.match(html, /id="hostToolsPanel"[\s\S]*>What to Expect<\/button>[\s\S]*>View As<\/button>[\s\S]*>Accounts<\/button>[\s\S]*>Templates<\/button>/);
   assert.doesNotMatch(html, /id="manageEventsButton"|>Gatherings<\/button>/);
   assert.doesNotMatch(javascript, /#manageEventsButton/);
   assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
