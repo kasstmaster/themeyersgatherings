@@ -33,7 +33,8 @@
       const old=previous.find(entry=>entry.id===meal.id);
       if (!old || old.name===meal.name) continue;
       for (const rsvp of [...(event.rsvps||[]),...drafts]) {
-        for (const selection of rsvp.menuSelections||[]) {
+        const responses=[rsvp,...Object.values(rsvp.invitationResponses || {})];
+        for (const selection of responses.flatMap(response=>[...(response.menuSelections || []),...(response.savedMenuSelections || [])])) {
           const audience=selection.type==='child'?'Children only':'Adults only';
           if (selection.meal===old.name && (old.audience==='Adults and children'||old.audience===audience)) selection.meal=meal.name;
         }

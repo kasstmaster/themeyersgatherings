@@ -94,7 +94,7 @@ function syncGatheringDefinitions(events) {
   }
 }
 const GATHERING_COLORS = [
-  ['accent','Buttons and selected tabs','--orange'], ['gold','Gold text and accents','--gold'],
+  ['accent','Buttons and selected tabs','--orange'], ['gold','Text and accents','--gold'],
   ['secondary','Toolbar and footer','--navy-2'], ['background','Background and headings','--navy'],
   ['header','Header','--ivory'], ['page','Page containers','--gathering-card-background'],
   ['inner','Inner containers','--gathering-inner-background'], ['text','Page text','--ink'], ['border','Borders','--border']
@@ -287,6 +287,7 @@ function normalizeState(saved) {
             adults: Math.max(0, Number(rsvp.adults) || 0),
             children: Math.max(0, Number(rsvp.children) || 0),
             menuSelections: Array.isArray(rsvp.menuSelections) ? rsvp.menuSelections.filter(selection => selection && typeof selection === 'object').map(selection => ({
+              ...(Number.isSafeInteger(selection.invitationNumber) ? {invitationNumber:selection.invitationNumber} : {}),
               type: selection.type === 'child' ? 'child' : 'adult',
               index: Math.max(0, Math.floor(Number(selection.index) || 0)),
               name: typeof selection.name === 'string' ? selection.name : '',
@@ -712,9 +713,14 @@ function accountContactGroups(accountName) {
   });
   return groups;
 }
+function invitationAssignmentHtml(account, person, eventId = viewedEventId) {
+  const quantity=Math.max(1,GuestPlanning.invitationCount(account,eventId));
+  const selected=InvitationGroups.number(account,eventId,person);
+  return `<select class="account-person-invitation" data-person-invitation="${escapeAttribute(person)}" aria-label="Invitation for ${escapeAttribute(person)}">${Array.from({length:Math.min(65535,quantity)},(_,i)=>`<option value="${i+1}" ${selected===i+1?'selected':''}>Inv #${i+1}</option>`).join('')}</select>`;
+}
 function accountContactsHtml(account) {
   const granted = GuestPlanning.plusOnePeople(account, viewedEventId, accountSignInNames(account.name));
-  const adults = accountContactGroups(account.name).map(group => `<div class="account-surname-group"><strong>${escapeHtml(group.surname)}</strong>${group.people.map(person => `<div class="account-person-line"><label class="account-guest-permission"><span>+1</span><input type="checkbox" data-plus-one-person="${escapeAttribute(person.fullName)}" aria-label="Allow a guest for ${escapeAttribute(person.fullName)}" ${granted.includes(person.fullName) ? 'checked' : ''}></label><span>${escapeHtml(person.givenName)}</span></div>`).join('')}</div>`).join('');
+  const adults = accountContactGroups(account.name).map(group => `<div class="account-surname-group"><strong>${escapeHtml(group.surname)}</strong>${group.people.map(person => `<div class="account-person-line"><label class="account-guest-permission"><span>+1</span><input type="checkbox" data-plus-one-person="${escapeAttribute(person.fullName)}" aria-label="Allow a guest for ${escapeAttribute(person.fullName)}" ${granted.includes(person.fullName) ? 'checked' : ''}></label><span>${escapeHtml(person.givenName)}</span>${invitationAssignmentHtml(account,person.fullName)}</div>`).join('')}</div>`).join('');
   const children = (account.children || []).length
     ? `<div class="account-children"><strong>Children:</strong> ${account.children.map(escapeHtml).join(', ')}</div>`
     : '';
@@ -981,7 +987,7 @@ document.querySelector('#signInBack').addEventListener('click', () => setSignInS
 function updateSignedInAccountBanner() {
   const signedInAccount = document.querySelector('#signedInAccount');
   signedInAccount.hidden = !guestName || !document.querySelector('#signInPage').hidden;
-  document.querySelector('#signedInAccountName').textContent = guestName === HOST_DISPLAY_NAME ? HOST_DISPLAY_NAME : invitedAccountDisplayName(guestName);
+  document.querySelector('#signedInAccountName').textContent = guestName === HOST_DISPLAY_NAME ? 'Host' : accountContactGroups(signedInPersonName || guestName)[0]?.surname || invitedAccountDisplayName(guestName);
   if (!document.querySelector('#eventSelectionPage').hidden) document.querySelector('#eventSelectionPage').before(signedInAccount);
   else document.querySelector('#eventPage .site-header').after(signedInAccount);
 }
@@ -1376,7 +1382,7 @@ function render() {
   invitedListButton.title = hostView ? 'View invited families' : 'Invited family details are private to the host';
   invitedListButton.setAttribute('aria-label', hostView ? `${invitedAccounts.length} families invited; view private invitation list` : `${invitedAccounts.length} families invited; details visible only to the host`);
   renderInlineEditing();
-  document.querySelectorAll('[data-gathering-edit-tool]').forEach(button => { button.hidden=!(isHostView() && SiteEditing.enabled); });
+  document.querySelectorAll('[data-gathering-tool]').forEach(button => { button.hidden=!isHostView(); });
   if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
 }
 
@@ -1759,7 +1765,11 @@ function captureRsvpMeals() {
 document.querySelector('#rsvpButton').addEventListener('click', () => ensureAccount(() => {
   document.querySelector('#rsvpForm').dataset.eventId = viewedEventId;
   document.querySelector('#rsvpForm').dataset.accountName = guestName;
-  const existing = state.rsvps.find(r => r.name === guestName);
+  const existing = currentInvitationRsvp();
+  document.querySelector('#rsvpForm').dataset.personName=signedInPersonName;
+  document.querySelector('#rsvpForm').dataset.invitation=String(currentInvitationNumber());
+  if (!rsvpNames().length) { showToast('Sign in with your own name to RSVP for your invitation.');return; }
+  const groupHint=document.querySelector('#rsvpInvitationGroup');groupHint.hidden=GuestPlanning.invitationCount(rsvpAccount(),viewedEventId)<=1;groupHint.textContent=`Invitation #${currentInvitationNumber()} — RSVP for the people on your invitation.`;
   rsvpMealDraft = existing?.savedMenuSelections || existing?.menuSelections || [];
   applyRsvpDeadline();
   renderRsvpPeople(existing);
@@ -1782,6 +1792,15 @@ function applyRsvpDeadline() {
 }
 setInterval(() => { if (document.querySelector('#rsvpDialog').open) applyRsvpDeadline(); }, 1000);
 function rsvpAccount() { return findAccount(guestName); }
+function currentInvitationNumber() { return InvitationGroups.number(rsvpAccount(),viewedEventId,signedInPersonName); }
+function rsvpNames() {
+  const account=rsvpAccount();
+  return account ? InvitationGroups.members(account,viewedEventId,accountSignInNames(account.name),signedInPersonName) : [guestName];
+}
+function currentInvitationRsvp() {
+  const existing=state.rsvps.find(rsvp=>rsvp.name===guestName),account=rsvpAccount();
+  return account ? InvitationGroups.response(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),existing) : existing;
+}
 function readRsvpPeople() {
   return [...document.querySelectorAll('[data-rsvp-person]')].map(row => ({
     name: row.dataset.rsvpPerson,
@@ -1805,7 +1824,7 @@ function updateRsvpPeople() {
 }
 function renderRsvpPeople(existing) {
   const account = rsvpAccount();
-  const names = account ? accountSignInNames(account.name) : [guestName];
+  const names = rsvpNames();
   const allowed = GuestPlanning.plusOnePeople(account,viewedEventId,names);
   document.querySelector('#rsvpPeople').innerHTML = names.map(name => {
     const saved = existing?.people?.find(person => normalizeAccountName(person.name) === normalizeAccountName(name));
@@ -1854,15 +1873,19 @@ function renderWeddingRsvpMenu(selections = []) {
 document.querySelector('#rsvpForm').addEventListener('submit', event => {
   if (event.submitter?.value === 'cancel') return;
   const form = document.querySelector('#rsvpForm');
-  if (form.dataset.eventId !== viewedEventId || form.dataset.accountName !== guestName) { event.preventDefault(); form.closest('dialog').close(); showToast('Please reopen RSVP for the current account and gathering.'); return; }
+  if (form.dataset.eventId !== viewedEventId || form.dataset.accountName !== guestName || form.dataset.personName !== signedInPersonName || form.dataset.invitation !== String(currentInvitationNumber())) { event.preventDefault(); form.closest('dialog').close(); showToast('Please reopen RSVP for the current account and gathering.'); return; }
   updateRsvpPeople();
   const people = readRsvpPeople();
+  const names=rsvpNames();
+  if (!names.length || people.length!==names.length || new Set(people.map(person=>person.name)).size!==names.length || people.some(person=>!names.includes(person.name))) { event.preventDefault();showToast('Your invitation has changed. Please reopen RSVP.');return; }
   const allowed = GuestPlanning.plusOnePeople(rsvpAccount(),viewedEventId,people.map(person=>person.name));
   if (!rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
   const menuSelections = viewedEventId === 'wedding' ? readWeddingMenuSelections() : [];
   let rsvp = { name: guestName, people, adults: Number(document.querySelector('#adults').value), children: Number(document.querySelector('#children').value), ...(viewedEventId === 'wedding' ? { menuSelections } : {}) };
   const index = state.rsvps.findIndex(entry => entry.name === guestName);
-  if (rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(state.rsvps[index], rsvp);
+  if (rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
+  const account=rsvpAccount();
+  if(account)rsvp=InvitationGroups.merge(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),state.rsvps[index],rsvp);
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
   saveState({refresh:true}); showToast(`RSVP saved — we can't wait to see you!`);
 });
@@ -1928,7 +1951,7 @@ function renderGuestAttendance() {
   const list = document.querySelector('#guestList');
   const { attending: attendingRsvps, notAttending } = GuestPlanning.attendanceGroups(state.rsvps);
   list.innerHTML = attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
-    const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml(selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`)}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
+    const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml((selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`) + (selection.type==='child' && selection.invitationNumber>1 ? ` (Inv #${selection.invitationNumber})` : ''))}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
     return `<div class="guest-entry"><strong>${escapeHtml(contributionDisplayName(rsvp.name))}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.name === HOST_DISPLAY_NAME ? '<em class="rsvp-attendance">Attending</em>' : rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.filter(person=>person.attending).map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${menu}</div>`;
   }).join('') : '<p class="guest-empty">No guests are attending yet.</p>';
   const declined = notAttending.map(person => person.name === HOST_DISPLAY_NAME ? 'Host' : person.name);
@@ -2204,6 +2227,11 @@ function openAccountsAdmin() {
     const previewActions = row.querySelector('.account-preview-actions');
     const viewQr = previewActions.querySelector('.account-qr-button');
     const viewInvitation = previewActions.querySelector('.account-invitation-button');
+    row.addEventListener('change',event=>{
+      if(!event.target.matches('[data-person-invitation]'))return;
+      const account=appState.accounts.find(account=>account.name===row.dataset.accountName);
+      if(account && InvitationGroups.assign(account,accountEventId,event.target.dataset.personInvitation,event.target.value))saveState();
+    });
     access.querySelector('.account-selected').addEventListener('change', event => {
       const account = appState.accounts.find(account => account.name === row.dataset.accountName);
       if(!account)return;
@@ -2216,7 +2244,9 @@ function openAccountsAdmin() {
       const account=appState.accounts.find(account => account.name === row.dataset.accountName),count=Number(event.target.value);
       if(!account)return;
       if(!Number.isSafeInteger(count)||count<0){event.target.value=GuestPlanning.invitationCount(account,accountEventId);return;}
-      account.invitationQuantities??={};account.invitationQuantities[accountEventId]=count;saveState();
+      account.invitationQuantities??={};account.invitationQuantities[accountEventId]=count;
+      accountSignInNames(account.name).forEach(name=>InvitationGroups.assign(account,accountEventId,name,InvitationGroups.number(account,accountEventId,name)));
+      row.querySelectorAll('[data-person-invitation]').forEach(select=>{const holder=document.createElement('div');holder.innerHTML=invitationAssignmentHtml(account,select.dataset.personInvitation,accountEventId);select.replaceWith(holder.firstElementChild);});saveState();
     });
     row.querySelectorAll('[data-plus-one-person]').forEach(input=>input.addEventListener('change',()=>{
       const account=appState.accounts.find(account => account.name === row.dataset.accountName);if(!account)return;
@@ -3120,9 +3150,9 @@ for (let index = 0; index < 40; index += 1) {
   sparkleField.append(sparkle);
 }
 
-// Gathering management is available only to hosts while editing the website.
+// Gathering management stays available in the host toolbar in both modes.
 document.querySelector('#gatheringColorsButton').addEventListener('click', () => {
-  if (!isHostView() || !SiteEditing.enabled) return;
+  if (!isHostView()) return;
   const defaults={gold:'#d6a45d',secondary:'#0c1e32',accent:'#c96734',background:'#132841',header:'#f6f0e3',page:'#fffaf1',inner:'#fdf8f0',text:'#17283b',border:'#ded7ca'};
   const style=getComputedStyle(document.body);
   document.querySelector('#gatheringColorsDialog').dataset.eventId=viewedEventId;
@@ -3136,24 +3166,24 @@ document.querySelector('#gatheringColorsButton').addEventListener('click', () =>
 document.querySelector('#gatheringColorsForm').addEventListener('input', event => { if(event.target.matches('[data-gathering-color]'))event.target.dataset.changed='true'; });
 document.querySelector('#gatheringColorsForm').addEventListener('submit', event => {
   if(event.submitter?.value==='cancel')return;
-  if(!isHostView() || !SiteEditing.enabled || document.querySelector('#gatheringColorsDialog').dataset.eventId!==viewedEventId){event.preventDefault();return;}
+  if(!isHostView() || document.querySelector('#gatheringColorsDialog').dataset.eventId!==viewedEventId){event.preventDefault();return;}
   state.gatheringColors ??= {};
   document.querySelectorAll('[data-gathering-color][data-changed]').forEach(input=>{state.gatheringColors[input.dataset.gatheringColor]=input.value;});
   applyGatheringColors();saveState({refresh:false});
 });
 document.querySelector('#resetGatheringColors').addEventListener('click',()=>{
-  if(!isHostView() || !SiteEditing.enabled)return;
+  if(!isHostView())return;
   delete state.gatheringColors; document.querySelector('#gatheringColorsDialog').close();applyGatheringColors();saveState({refresh:false});
 });
 document.querySelector('#newGatheringButton').addEventListener('click',()=>{
-  if(!isHostView() || !SiteEditing.enabled)return;
+  if(!isHostView())return;
   document.querySelector('#newGatheringForm').reset();
   document.querySelector('#newGatheringAddress').value=SharedDetails.homeAddress(state);
   document.querySelector('#newGatheringDialog').showModal();
 });
 document.querySelector('#newGatheringForm').addEventListener('submit',event=>{
   if(event.submitter?.value==='cancel')return;
-  if(!isHostView() || !SiteEditing.enabled){event.preventDefault();return;}
+  if(!isHostView()){event.preventDefault();return;}
   const name=document.querySelector('#newGatheringName').value.trim();
   if(!name){event.preventDefault();document.querySelector('#newGatheringName').focus();return;}
   const id=`gathering-${crypto.randomUUID()}`;
