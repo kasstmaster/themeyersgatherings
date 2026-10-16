@@ -394,12 +394,18 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 
 .account-people>[data-legacy-plus-ones]{font-size:.8rem;color:var(--muted)}
 
-.account-row-with-plus-ones{grid-template-columns:145px minmax(0,1fr) auto;column-gap:0}
-.account-row-with-plus-ones .account-access{padding-right:12px}
-.account-row-with-plus-ones .account-preview-actions{display:grid;grid-template-columns:auto auto;gap:5px 0;align-items:center}
-.account-preview-actions .account-qr-button{grid-column:1;grid-row:1}
-.account-preview-actions .account-invitation-button{grid-column:1;grid-row:2}
-.account-preview-actions .account-delete-button{grid-column:1;grid-row:3}
-.account-preview-actions .account-person-settings{grid-column:2;grid-row:2}
+.account-row-with-plus-ones{grid-template-columns:145px minmax(0,1fr);gap:0 12px}
+.account-row-with-plus-ones .account-access{grid-column:1;grid-row:2}
+.account-row-with-plus-ones .account-people{grid-column:2;grid-row:2}
+.account-row-with-plus-ones .account-preview-actions{display:grid;grid-template-columns:auto auto auto;grid-column:2;grid-row:1;justify-self:start;gap:4px;align-items:center}
+.account-preview-actions .account-qr-button{grid-column:1;grid-row:2}
+.account-preview-actions .account-invitation-button{grid-column:2;grid-row:2}
+.account-preview-actions .account-delete-button{grid-column:3;grid-row:2}
+.account-preview-actions .account-person-settings{grid-column:2;grid-row:1}
 .account-preview-actions [data-invitation-quantity]{box-sizing:border-box;width:58px;margin:0;padding:8px 4px;border:1px solid var(--border);border-radius:4px;color:var(--ink);background:#fff}
-@media(max-width:750px){.account-row-with-plus-ones{grid-template-columns:minmax(0,1fr) auto}}
+@media(max-width:750px){
+ .account-row-with-plus-ones{grid-template-columns:minmax(0,1fr)}
+ .account-row-with-plus-ones .account-access{grid-column:1;grid-row:1;padding-bottom:8px}
+ .account-row-with-plus-ones .account-preview-actions{grid-column:1;grid-row:2}
+ .account-row-with-plus-ones .account-people{grid-column:1;grid-row:3}
+}
