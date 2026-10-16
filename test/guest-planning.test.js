@@ -38,3 +38,26 @@ test('attendance sections omit zero-person households and include individually d
  assert.deepEqual(groups.notAttending,[{household:'Mixed Family',name:'John Family'},{household:'Declined Family',name:'Declined Person'},{household:'Legacy Decline',name:'Legacy Decline'}]);
  assert.deepEqual(GuestPlanning.attendanceGroups([]),{attending:[],notAttending:[]});
 });
+test('wedding meal editing preserves legacy child meals and supports unlimited audience-specific choices',()=>{
+ const event={weddingMealOptions:['Beef','Chicken'],weddingChildMealOption:'Kids pasta'};
+ assert.deepEqual(GuestPlanning.weddingMealOptions(event,'adult'),['Beef','Chicken']);
+ assert.deepEqual(GuestPlanning.weddingMealOptions(event,'child'),['Beef','Chicken','Kids pasta']);
+ const meals=GuestPlanning.weddingMeals(event);
+ GuestPlanning.saveWeddingMeals(event,[...meals,{id:'fish',name:'Fish',audience:'Adults only'},{id:'kids',name:'Kids nuggets',audience:'Children only'}]);
+ assert.deepEqual(GuestPlanning.weddingMealOptions(event,'adult'),['Beef','Chicken','Fish']);
+ assert.deepEqual(GuestPlanning.weddingMealOptions(event,'child'),['Beef','Chicken','Kids pasta','Kids nuggets']);
+ assert.deepEqual(GuestPlanning.weddingMealOptions(event),['Beef','Chicken','Kids pasta','Fish','Kids nuggets']);
+ assert.deepEqual(event.weddingChildMealOptions,['Kids pasta','Kids nuggets']);
+ GuestPlanning.saveWeddingMeals(event,[]);
+ assert.deepEqual(GuestPlanning.weddingMealOptions(event,'child'),[]);
+ assert.equal(event.weddingChildMealOption,'');
+});
+test('renaming a meal updates saved choices and an open RSVP draft without dropping deleted historical choices',()=>{
+ const event={weddingMealOptions:['Beef'],weddingChildMealOption:'Kids pasta',rsvps:[{menuSelections:[{type:'adult',meal:'Beef'},{type:'child',meal:'Kids pasta'}]}]};
+ const draft={menuSelections:[{type:'child',meal:'Beef'}]};
+ const meals=GuestPlanning.weddingMeals(event).map(meal=>meal.name==='Beef'?{...meal,name:'Roast beef'}:meal);
+ GuestPlanning.saveWeddingMeals(event,meals,[draft]);
+ assert.equal(event.rsvps[0].menuSelections[0].meal,'Roast beef');assert.equal(draft.menuSelections[0].meal,'Roast beef');
+ GuestPlanning.saveWeddingMeals(event,meals.filter(meal=>meal.audience!=='Children only'));
+ assert.equal(event.rsvps[0].menuSelections[1].meal,'Kids pasta');assert.deepEqual(GuestPlanning.weddingMealOptions(event,'child'),['Roast beef']);
+});
