@@ -378,3 +378,5 @@ main>.summary-strip{margin:32px 0 0}
 main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 
 .signed-in-account{flex-wrap:wrap;text-align:center;overflow-wrap:anywhere}
+/* A single available page does not need a tab bar. */
+[role="tablist"]:not(:has(>[role="tab"]:not([hidden]) ~ [role="tab"]:not([hidden]))){display:none}
