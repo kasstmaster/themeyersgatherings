@@ -33,7 +33,10 @@
   }
   function tick() { frame=0;positionOverlays();if(overlays.length)frame=requestAnimationFrame(tick); }
   function positionOverlays() {
-    const width=document.documentElement.clientWidth,height=innerHeight;
+    const width=document.documentElement.clientWidth;
+    const dock=document.querySelector('.event-dock');
+    const height=dock && !dock.hidden ? Math.min(innerHeight,dock.getBoundingClientRect().top) : innerHeight;
+    document.body.style.setProperty('--edit-dock-height', `${innerHeight-height}px`);
     for (const {element,target,kind} of overlays) {
       const rect=target.getBoundingClientRect();
       let visible=target.isConnected && target.getClientRects().length && !target.closest('[hidden]') && rect.width>0 && rect.height>0;
@@ -94,12 +97,7 @@
     const toggle = document.querySelector('#editItemsButton');
     toggle.textContent = enabled ? 'Done editing' : 'Edit website';
     toggle.setAttribute('aria-pressed', String(enabled));
-    const templates=document.querySelector('#invitationTemplatesButton');templates.hidden=true;
-    if(enabled) {
-      const anchor=document.createComment('template tool');templates.before(anchor);templates.hidden=false;
-      cleanup.push(()=>{anchor.replaceWith(templates);templates.hidden=true;templates.classList.remove('inline-edit-control','inline-overlay-item');templates.removeAttribute('style');});
-      templates.classList.add('inline-edit-control');overlay(templates,document.querySelector('#previewWeddingPartyButton'),'above');
-    }
+    document.querySelector('#invitationTemplatesButton').hidden = !ctx.host;
     document.body.classList.toggle('site-edit-mode', enabled && ctx.host);
   }
   function field(target, title, fields, commit, options = {}) {
@@ -145,11 +143,33 @@
           event.preventDefault(); actions.querySelector('button').click();
         }
       });
-      form.append(actions);overlay(form,target,'editor');
+      form.append(actions);replaceInPlace(form,target);
+      control.hidden = true;
       inputs[0]?.focus();
     };
     button(`Edit ${title}`, open, control);
     if (drafts.has(key) && target.getClientRects().length) open();
+  }
+  function replaceInPlace(editor, target) {
+    target.before(editor);
+    target.classList.add('inline-edit-replaced');
+    cleanup.push(() => { editor.remove(); target.classList.remove('inline-edit-replaced'); });
+  }
+  function editTitle(tab, anchor, value, commit) {
+    if (tab.dataset.editingTitle) return;
+    tab.dataset.editingTitle = 'true';
+    const editor = node('div', undefined, 'inline-editor inline-title-editor');
+    const input = node('input'); input.value = value; input.required = true;
+    input.setAttribute('aria-label', 'Page title'); editor.append(input);
+    const save = () => { if (!input.value.trim()) { input.reportValidity(); return; } commit(input.value.trim()); context.save(); };
+    button('Save', save, editor, 'Save title');
+    button('Cancel', () => context.refresh(), editor, 'Cancel editing title');
+    editor.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); save(); } });
+    // A single hidden tab is edited at the top of its visible page instead.
+    if (tab.getClientRects().length) replaceInPlace(editor, tab);
+    else { anchor.prepend(editor); cleanup.push(() => editor.remove()); }
+    cleanup.push(() => delete tab.dataset.editingTitle);
+    input.focus(); input.select();
   }
   function portal(target, title, sources, prepare, options = {}) {
     if (!target || !enabled || !context.host) return;
@@ -226,11 +246,10 @@
         const anchor=tab.getClientRects().length?tab:nav.nextElementSibling;
         if(anchor)overlay(tools,anchor,'above');
         button('Edit title', () => {
-          const title = window.prompt('Page title', tab.textContent);
-          if (!title?.trim()) return;
-          if (config.rename) config.rename(tab, title.trim());
-          else { state.siteTabTitles ??= {}; state.siteTabTitles[key] = title.trim(); }
-          context.save();
+          editTitle(tab, anchor, tab.textContent, title => {
+            if (config.rename) config.rename(tab, title);
+            else { state.siteTabTitles ??= {}; state.siteTabTitles[key] = title; }
+          });
         }, tools);
         button('×', () => {
           if (!window.confirm(`Delete the “${tab.textContent}” page?`)) return;
@@ -257,7 +276,7 @@
       if (enabled && context.host) {
         const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
         overlay(tools,tab,'above');
-        button('Edit title', () => { const title=window.prompt('Page title',page.title);if(title?.trim()){page.title=title.trim();context.save();} }, tools);
+        button('Edit title', () => editTitle(tab, nav.nextElementSibling, page.title, title => { page.title=title; }), tools);
         button('×', () => { if (window.confirm(`Delete the “${page.title}” page?`)) { state.sitePages = state.sitePages.filter(item => item.id !== page.id); context.save(); } }, tools, `Delete ${page.title} page`);
       }
       if (selected?.id === page.id) {

@@ -446,3 +446,7 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 @media print{.inline-overlay-layer{display:none!important}.inline-edit-masked{visibility:visible!important}}
 #eventHeaderImage[hidden]{display:none!important}
 .theme-wedding .rsvp-button{box-shadow:0 5px 0 #2d1120}
+
+.inline-edit-replaced{display:none!important}
+.inline-title-editor{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+body>.inline-overlay-layer{clip-path:inset(0 0 var(--edit-dock-height, 78px) 0)}
