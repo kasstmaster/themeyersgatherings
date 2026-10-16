@@ -394,11 +394,12 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .account-surname-columns{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 36px}
 .account-surname-group{min-width:0;max-width:100%}
 
-.account-people>[data-legacy-plus-ones]{font-size:.8rem;color:var(--muted)}
+.account-contact-details>[data-legacy-plus-ones]{font-size:.8rem;color:var(--muted)}
 
 .account-row-with-plus-ones{grid-template-columns:minmax(0,1fr);gap:0}
-.account-row-with-plus-ones .account-access{display:flex;flex-wrap:wrap;gap:8px 20px;margin-bottom:10px}
-.account-row-with-plus-ones .account-people{grid-column:1;grid-row:2}
+.account-row-with-plus-ones .account-access{display:grid;align-content:center;gap:7px;grid-column:1;grid-row:1}
+.account-row-with-plus-ones .account-people{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:20px;grid-column:1;grid-row:2}
+.account-contact-details{min-width:0;grid-column:2;grid-row:1}
 .account-row-with-plus-ones .account-preview-actions{display:grid;grid-template-columns:auto auto auto minmax(0,1fr) auto;grid-column:1;grid-row:1;justify-self:stretch;gap:4px;align-items:center}
 .account-preview-actions .account-qr-button{grid-column:1;grid-row:1}
 .account-preview-actions .account-invitation-button{grid-column:2;grid-row:1}
