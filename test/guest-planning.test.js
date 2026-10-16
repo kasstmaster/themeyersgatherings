@@ -73,3 +73,21 @@ test('shared refresh keeps the viewer in their chosen gathering instead of follo
  for(let i=0;i<5;i++)assert.equal(GuestPlanning.retainedEvent('wedding',events,'thanksgiving'),'wedding');
  assert.equal(GuestPlanning.retainedEvent('removed',events,'thanksgiving'),'thanksgiving');
 });
+
+test('RSVP deadlines run through the selected Pacific calendar day', () => {
+ assert.equal(GuestPlanning.rsvpClosed({rsvpDate:'2026-10-16'}, new Date('2026-10-17T06:59:59Z')), false);
+ assert.equal(GuestPlanning.rsvpClosed({rsvpDate:'2026-10-16'}, new Date('2026-10-17T07:00:00Z')), true);
+ assert.equal(GuestPlanning.rsvpClosed({rsvpDate:''}), false);
+ assert.equal(GuestPlanning.rsvpClosed({rsvpDate:'2026-12-16'}, new Date('2026-12-17T07:59:59Z')), false);
+ assert.equal(GuestPlanning.rsvpClosed({rsvpDate:'2026-12-16'}, new Date('2026-12-17T08:00:00Z')), true);
+});
+test('late RSVPs preserve options, allow attendance, and restore original meals on returning', () => {
+ const existing={people:[{name:'Jane Smith',attending:true,guestChoice:'guest',guestName:'Sam'}], menuSelections:[{type:'adult',name:'Jane Smith',meal:'Beef',dietaryRestrictions:'No dairy'},{type:'adult',name:'Sam',meal:'Chicken'}]};
+ const incoming={people:[{name:'Jane Smith',attending:false,guestChoice:'no-guest',guestName:'Changed'}],children:0};
+ const declined=GuestPlanning.lockedRsvp(existing,incoming);
+ assert.equal(declined.adults,0); assert.deepEqual(declined.menuSelections,[]);
+ const returned=GuestPlanning.lockedRsvp(declined,{...incoming,people:[{...incoming.people[0],attending:true}]});
+ assert.equal(returned.adults,2);assert.equal(returned.people[0].guestName,'Sam');assert.deepEqual(returned.menuSelections,existing.menuSelections);
+ const late=GuestPlanning.lockedRsvp(undefined,{...incoming,people:[{...incoming.people[0],attending:true,guestChoice:'guest',guestName:'New'}]});
+ assert.equal(late.adults,1);assert.equal(late.people[0].guestChoice,'no-guest');
+});

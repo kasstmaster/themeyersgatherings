@@ -196,7 +196,7 @@
     // Text blocks, headings and captions can be changed without changing links or controls.
     const elements = [...root.querySelectorAll('h1,h2,h3,h4,p,footer address')].filter(element =>
       !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.inline-editor,.inline-edit-tools,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,.inline-edit-masked,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
-      !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#signedInAccountName'));
+      !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#rsvpDeadline,#signedInAccountName'));
     for (const [element, path] of elements.map(element => [element, selectorPath(element, root)])) {
       if (!originals.has(path)) originals.set(path, element.innerHTML);
       const initial = element.innerHTML;

@@ -44,6 +44,22 @@
     event.weddingChildMealOptions = meals.filter(meal=>meal.audience==='Children only').map(meal=>meal.name);
     event.weddingChildMealOption = event.weddingChildMealOptions[0] || '';
   }
+  function rsvpClosed(event, now = new Date()) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(event.rsvpDate || '')) return false;
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(now);
+    const value = type => parts.find(part => part.type === type).value;
+    return `${value('year')}-${value('month')}-${value('day')}` > event.rsvpDate;
+  }
+  function lockedRsvp(existing, incoming) {
+    const people = incoming.people.map(person => {
+      const saved = existing?.people?.find(saved => normalize(saved.name) === normalize(person.name));
+      return { ...person, guestChoice: saved?.guestChoice || 'no-guest', guestName: saved?.guestName || '' };
+    });
+    const names = attendees(people);
+    const savedMenuSelections = existing?.savedMenuSelections || existing?.menuSelections || [];
+    return { ...incoming, people, adults: names.length, savedMenuSelections,
+      menuSelections: savedMenuSelections.filter(selection => selection.type === 'child' ? selection.index < incoming.children : names.includes(selection.name)) };
+  }
   function attendanceGroups(rsvps) {
     const attending = rsvps.filter(rsvp => Number(rsvp.adults) + Number(rsvp.children) > 0);
     const notAttending = rsvps.flatMap(rsvp => {
@@ -66,5 +82,5 @@
     }
     return { adults, children, meals: [...meals], noMeal, unselected };
   }
-  globalThis.GuestPlanning={invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
+  globalThis.GuestPlanning={rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();
