@@ -1,3 +1,5 @@
+import '../guest-planning.js';
+import '../gathering-history.js';
 import { handleDropboxOAuth } from './dropbox.js';
 import { handleWeddingMedia } from './wedding-media.js';
 const GITHUB_API = 'https://api.github.com';
@@ -186,13 +188,19 @@ async function readState(env) {
   return { status: 200, sha: file.sha, text: base64ToText(file.content) };
 }
 
-async function writeState(env, text) {
+async function writeState(env, text, {historyOnly=false} = {}) {
   const { url, branch } = repositoryConfig(env);
-  const content = `${text}\n`;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const current = await readState(env);
     if (current.status !== 200 && current.status !== 404) return current;
-    if (current.text === content) return { status: 200 };
+    if(historyOnly && current.status===404)return {status:200};
+    const stored=current.status===200?JSON.parse(current.text):{events:{},accounts:[]};
+    GatheringHistory.archiveDue(stored);
+    const next=historyOnly?stored:JSON.parse(text);
+    GatheringHistory.preserve(next,stored);GatheringHistory.archiveDue(next);
+    const content=`${JSON.stringify(next,null,2)}\n`;
+    if(content.length>1_000_000)return {status:413,error:'State is too large.'};
+    if (current.text === content) return { status: 200, text:content };
     const body = {
       message: 'Update shared family event state',
       content: bytesToBase64(new TextEncoder().encode(content)),
@@ -204,13 +212,17 @@ async function writeState(env, text) {
       headers: { ...githubHeaders(env), 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (result.ok) return { status: 200 };
+    if (result.ok) return { status: 200, text:content };
     if (result.status !== 409) return { status: 502, error: `GitHub write failed (${result.status}).` };
   }
   return { status: 409, error: 'The state changed at the same time. Please try again.' };
 }
 
 export default {
+  async scheduled(_event,env) {
+    const result=await writeState(env,null,{historyOnly:true});
+    if(result.status!==200)throw new Error(result.error || 'Could not save gathering history.');
+  },
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return response(request, env, null, 204);
     const origin = request.headers.get('Origin');
@@ -257,6 +269,12 @@ export default {
         const result = await readState(env);
         if (result.status === 404) return response(request, env, null, 404);
         if (result.status !== 200) return response(request, env, result.error, result.status);
+        const state=JSON.parse(result.text);
+        if(GatheringHistory.archiveDue(state)){
+          const archived=await writeState(env,null,{historyOnly:true});
+          if(archived.status!==200)return response(request,env,archived.error,archived.status);
+          return response(request,env,archived.text,200,{'Content-Type':'application/json','Cache-Control':'no-store'});
+        }
         return response(request, env, result.text, 200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       }
       if (request.method === 'PUT') {

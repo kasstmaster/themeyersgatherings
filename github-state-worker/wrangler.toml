@@ -17,3 +17,7 @@ GITHUB_WORKFLOW_BRANCH = "main"
 [[r2_buckets]]
 binding = "INVITATION_BACKGROUNDS"
 bucket_name = "meyers-invitation-backgrounds"
+
+# Capture completed gatherings even when nobody opens the website.
+[triggers]
+crons = ["5 * * * *"]

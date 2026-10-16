@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - github-state-worker/**
+      - gathering-history.js
+      - guest-planning.js
       - .github/workflows/deploy-state-worker.yml
   workflow_dispatch:
 

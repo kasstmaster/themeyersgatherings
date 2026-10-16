@@ -21,9 +21,10 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
     hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;viewedEventId='wedding';state=appState.events.wedding;state.weddingMealOptions=['Beef','Chicken'];state.rsvpDate='2030-01-01';showSignedInDestination();render();
   });
   await page.locator('#editAccountsButton').click();
-  await page.locator('[data-invitation-quantity]').fill('2');await page.locator('[data-invitation-quantity]').dispatchEvent('change');
-  await page.locator('[data-person-invitation="Michael Jones"]').selectOption('2');await page.locator('[data-person-invitation="Sally Jones"]').selectOption('2');
+  assert.equal(await page.locator('[data-invitation-quantity]').count(),0);
+  await page.locator('[data-person-invitation="Michael Jones"]').fill('2');await page.locator('[data-person-invitation="Michael Jones"]').dispatchEvent('change');await page.locator('[data-person-invitation="Sally Jones"]').fill('2');await page.locator('[data-person-invitation="Sally Jones"]').dispatchEvent('change');
   assert.equal(await page.locator('[data-person-invitation="John Smith"]').inputValue(),'1');
+  assert.equal(await page.evaluate(()=>GuestPlanning.invitationCount(appState.accounts[0],'wedding')),2);
   assert.equal(await page.evaluate(()=>loadState().accounts[0].invitationPeople.wedding['Sally Jones']),2);
   await page.setViewportSize({width:390,height:900});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'account assignments fit mobile');
