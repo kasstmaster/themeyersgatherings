@@ -665,7 +665,7 @@ function accountContactGroups(accountName) {
 }
 function accountContactsHtml(account) {
   const granted = GuestPlanning.plusOnePeople(account, viewedEventId, accountSignInNames(account.name));
-  const adults = accountContactGroups(account.name).map(group => `<div class="account-surname-group"><strong>${escapeHtml(group.surname)}:</strong>${group.people.map(person => `<div class="account-person-line"><span>${escapeHtml(person.givenName)}</span><label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(person.fullName)}" aria-label="Allow a guest for ${escapeAttribute(person.fullName)}" ${granted.includes(person.fullName) ? 'checked' : ''}><span>+1</span></label></div>`).join('')}</div>`).join('');
+  const adults = accountContactGroups(account.name).map(group => `<div class="account-surname-group"><strong>${escapeHtml(group.surname)}</strong>${group.people.map(person => `<div class="account-person-line"><label class="account-guest-permission"><span>+1</span><input type="checkbox" data-plus-one-person="${escapeAttribute(person.fullName)}" aria-label="Allow a guest for ${escapeAttribute(person.fullName)}" ${granted.includes(person.fullName) ? 'checked' : ''}></label><span>${escapeHtml(person.givenName)}</span></div>`).join('')}</div>`).join('');
   const children = (account.children || []).length
     ? `<div class="account-children"><strong>Children:</strong> ${account.children.map(escapeHtml).join(', ')}</div>`
     : '';
