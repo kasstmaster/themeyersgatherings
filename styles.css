@@ -401,7 +401,7 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .account-row-with-plus-ones .account-people{grid-column:1;grid-row:2}
 .account-contact-details{min-width:0}
 .account-row-with-plus-ones .account-preview-actions{display:grid;grid-template-columns:auto auto auto auto minmax(0,1fr) auto;grid-column:1;grid-row:1;justify-self:stretch;gap:4px;align-items:center}
-.account-preview-actions .account-qr-button{grid-column:2;grid-row:1}
+.account-preview-actions .account-qr-button{grid-column:2;grid-row:1;margin-right:6px}
 .account-preview-actions .account-invitation-button{grid-column:3;grid-row:1}
 .account-preview-actions .account-delete-button{grid-column:6;grid-row:1}
 .account-preview-actions .account-person-settings{grid-column:4;grid-row:1}
