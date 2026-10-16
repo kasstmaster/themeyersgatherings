@@ -70,5 +70,18 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('yes'); await page.locator('[data-rsvp-person="John Smith"] [data-person-attending]').selectOption('no'); await page.locator('[data-target="children"][data-step="1"]').click();
   await page.locator('[data-guest-type="adult"] [data-rsvp-meal][value="Beef"]').check(); await page.locator('[data-guest-type="child"] [data-rsvp-meal][value="Kids pasta"]').check(); await page.locator('#rsvpForm>.primary-button').click();
   assert.deepEqual(await page.evaluate(() => state.rsvps.find(rsvp => rsvp.name === 'Jane,John Smith').people.map(person => [person.name, person.attending])), [['Jane Smith', true], ['John Smith', false]]);
+  await page.evaluate(() => { state.rsvpDate='2000-01-01'; render(); });
+  await page.locator('#rsvpButton').click();
+  assert.equal(await page.locator('#rsvpDeadlineNotice').isVisible(), true);
+  assert.equal(await page.locator('[data-rsvp-dietary]').first().isDisabled(), true);
+  assert.equal(await page.locator('[data-rsvp-meal]').first().isDisabled(), true);
+  assert.equal(await page.locator('[data-person-attending]').first().isEnabled(), true);
+  await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('no');
+  await page.locator('#rsvpForm>.primary-button').click();
+  assert.equal(await page.evaluate(() => state.rsvps.find(rsvp=>rsvp.name==='Jane,John Smith').adults), 0);
+  await page.locator('#rsvpButton').click();
+  await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('yes');
+  await page.locator('#rsvpForm>.primary-button').click();
+  assert.equal(await page.evaluate(() => state.rsvps.find(rsvp=>rsvp.name==='Jane,John Smith').menuSelections.find(meal=>meal.name==='Jane Smith').meal), 'Beef');
   assert.deepEqual(errors, []); console.log('Inline editors, saving, tabs, RSVP meals, shared details, individual attendance and host gating passed.'); await browser.close();
 })().catch(error => { console.error(error); process.exit(1); });

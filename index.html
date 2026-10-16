@@ -95,6 +95,7 @@
       <div class="header-art">
         <img id="eventHeaderImage" alt="" decoding="async" fetchpriority="high" hidden />
         <time id="eventDate" class="event-date"></time>
+        <p id="rsvpDeadline" class="rsvp-deadline"></p>
         <p id="eventAddress" class="event-address"></p>
       </div>
     </header>
@@ -324,6 +325,7 @@
         <p class="section-kicker">Save your seat</p>
         <h2>Who's joining us?</h2>
         <p>We can't wait to celebrate together.</p>
+        <p id="rsvpDeadlineNotice" role="status" hidden></p>
         <fieldset id="rsvpAttendance" class="rsvp-attendance-box"><legend>Attending</legend>
         <div id="rsvpPeople"></div>
         <div id="rsvpAdultsCounter" class="counter-row" hidden><div><strong>Adults</strong><span>Age 18+</span></div><div class="stepper"><button type="button" data-step="-1" data-target="adults">−</button><output id="adults">1</output><button type="button" data-step="1" data-target="adults">+</button></div></div>
