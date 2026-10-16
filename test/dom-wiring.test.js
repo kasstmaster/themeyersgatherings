@@ -487,7 +487,7 @@ test('gathering details include labeled locations and editable text variables', 
   assert.match(javascript, /adminWeddingVariableHeading'\)\.hidden = !isWedding/);
   assert.match(javascript, /eventState\.homeAddress = typeof eventState\.homeAddress === 'string'/);
   assert.match(javascript, /replace\(\/\\\{\(date\|home\|church\|venue\|registry\|monetary\)\\\}\/g/);
-  assert.match(javascript, /home: state\.homeAddress \|\| ''/);
+  assert.match(javascript, /home: SharedDetails\.homeAddress\(state\)/);
   assert.match(javascript, /church: locationLines\(\['churchWeekDay', 'churchYear', 'churchTime', 'churchStreet', 'churchCityStateZip'\]\)/);
   assert.match(javascript, /venue: locationLines\(\['venueTime', 'venueStreet', 'venueCityStateZip'\]\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\) \{\s+value = expandEditableTextVariables\(value\)/);

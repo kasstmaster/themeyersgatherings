@@ -27,3 +27,14 @@ test('RSVP totals combine households and meal choices, retaining renamed meals a
  assert.deepEqual(totals,{adults:5,children:2,meals:[['Beef',2],['Chicken',1],['Vegetarian',0],['Kids',1],['Old option',1]],noMeal:1,unselected:1});
  assert.deepEqual(GuestPlanning.rsvpTotals([],['Beef']),{adults:0,children:0,meals:[['Beef',0]],noMeal:0,unselected:0});
 });
+
+test('attendance sections omit zero-person households and include individually declined members of attending families',()=>{
+ const rsvps=[{name:'Host',adults:1,children:1,people:[{name:'Host',attending:true}]},
+ {name:'Mixed Family',adults:1,children:0,people:[{name:'Jane Family',attending:true},{name:'John Family',attending:false}]},
+ {name:'Declined Family',adults:0,children:0,people:[{name:'Declined Person',attending:false}]},
+ {name:'Legacy Decline',adults:0,children:0},{name:'Children Only',adults:0,children:2}];
+ const groups=GuestPlanning.attendanceGroups(rsvps);
+ assert.deepEqual(groups.attending.map(rsvp=>rsvp.name),['Host','Mixed Family','Children Only']);
+ assert.deepEqual(groups.notAttending,[{household:'Mixed Family',name:'John Family'},{household:'Declined Family',name:'Declined Person'},{household:'Legacy Decline',name:'Legacy Decline'}]);
+ assert.deepEqual(GuestPlanning.attendanceGroups([]),{attending:[],notAttending:[]});
+});

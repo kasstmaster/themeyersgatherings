@@ -11,6 +11,14 @@
   function attendees(people) {
     return people.filter(person=>person.attending===true).flatMap(person=>[person.name,...(person.guestChoice==='guest'&&person.guestName?.trim()?[person.guestName.trim()]:[])]);
   }
+  function attendanceGroups(rsvps) {
+    const attending = rsvps.filter(rsvp => Number(rsvp.adults) + Number(rsvp.children) > 0);
+    const notAttending = rsvps.flatMap(rsvp => {
+      const declined = (rsvp.people || []).filter(person => !person.attending).map(person => ({ household: rsvp.name, name: person.name }));
+      return declined.length ? declined : Number(rsvp.adults) + Number(rsvp.children) === 0 ? [{ household: rsvp.name, name: rsvp.name }] : [];
+    });
+    return { attending, notAttending };
+  }
   function rsvpTotals(rsvps, mealOptions = []) {
     const meals = new Map(mealOptions.filter(Boolean).map(meal => [meal, 0]));
     let adults = 0, children = 0, noMeal = 0, unselected = 0;
@@ -25,5 +33,5 @@
     }
     return { adults, children, meals: [...meals], noMeal, unselected };
   }
-  globalThis.GuestPlanning={invitationCount,plusOnePeople,attendees,rsvpTotals};
+  globalThis.GuestPlanning={invitationCount,plusOnePeople,attendees,rsvpTotals,attendanceGroups};
 })();

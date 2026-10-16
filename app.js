@@ -277,9 +277,9 @@ function normalizeState(saved) {
         const assignedEventId = Object.keys(loaded.events).find(eventId => loaded.events[eventId].invitationTemplateId === template.id);
         return { ...template, eventId: assignedEventId || loaded.activeEventId };
       });
-      loaded.events.wedding.registryUrl = loaded.events.wedding.registryUrl || DEFAULT_REGISTRY_URL;
+      loaded.events.wedding.registryUrl = typeof loaded.events.wedding.registryUrl === 'string' ? loaded.events.wedding.registryUrl : DEFAULT_REGISTRY_URL;
       const wedding = loaded.events.wedding;
-      wedding.weddingMealOptions = Array.from({ length: 3 }, (_, index) => typeof wedding.weddingMealOptions?.[index] === 'string' ? wedding.weddingMealOptions[index] : '');
+      wedding.weddingMealOptions = Array.isArray(wedding.weddingMealOptions) ? wedding.weddingMealOptions.filter(meal => typeof meal === 'string') : ['', '', ''];
       wedding.weddingChildMealOption = typeof wedding.weddingChildMealOption === 'string' ? wedding.weddingChildMealOption : '';
       const locationFields = ['churchWeekDay', 'churchYear', 'churchTime', 'churchStreet', 'churchCityStateZip', 'venueTime', 'venueStreet', 'venueCityStateZip'];
       locationFields.forEach(key => { wedding[key] = typeof wedding[key] === 'string' ? wedding[key] : ''; });
@@ -560,7 +560,7 @@ function editableTextVariables() {
   const locationLines = keys => keys.map(key => state[key] || '').join('\n');
   return {
     date: Number.isNaN(eventDate.getTime()) ? '' : new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', ''),
-    home: state.homeAddress || '',
+    home: SharedDetails.homeAddress(state),
     church: locationLines(['churchWeekDay', 'churchYear', 'churchTime', 'churchStreet', 'churchCityStateZip']),
     venue: locationLines(['venueTime', 'venueStreet', 'venueCityStateZip']),
     registry: state.registryUrl || '',
@@ -891,7 +891,7 @@ async function copyMenu() {
 }
 function updateHeaderImage(event) {
   const headerImage = document.querySelector('#eventHeaderImage');
-  const nextSource = event.header || '';
+  const nextSource = state.siteHeaderImage ?? event.header ?? '';
   headerImage.alt = `${event.name} celebration header`;
   if (headerImage.getAttribute('src') === nextSource) return;
 
@@ -1126,6 +1126,7 @@ function weddingDetailsWithoutHeaderAddress(value) {
   }).join('\n');
 }
 function render() {
+  SiteEditing.beforeRender();
   const event = EVENT_DETAILS[viewedEventId];
   const isWedding = event.registryOnly === true;
   const hostView = isHostView();
@@ -1145,6 +1146,7 @@ function render() {
   dateElement.dateTime = state.eventDate;
   dateElement.textContent = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', '');
   document.querySelector('#eventAddress').textContent = gatheringHeaderAddress();
+  document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${escapeHtml(SharedDetails.homeAddress(state)).replaceAll('\n','<br>')}`;
   document.querySelector('#welcomeKicker').hidden = isWedding;
   document.querySelector('#welcome-title').textContent = isWedding ? 'TOGETHER WITH THEIR PARENTS' : "WE'D LOVE FOR YOU TO BRING A DISH TO SHARE";
   document.querySelector('#welcomeNote').innerHTML = isWedding
@@ -1329,6 +1331,83 @@ function render() {
   invitedListButton.disabled = !hostView;
   invitedListButton.title = hostView ? 'View invited families' : 'Invited family details are private to the host';
   invitedListButton.setAttribute('aria-label', hostView ? `${invitedAccounts.length} families invited; view private invitation list` : `${invitedAccounts.length} families invited; details visible only to the host`);
+  renderInlineEditing();
+  if (document.querySelector('#guestListDialog').open) renderGuestAttendance();
+}
+
+function renderInlineEditing() {
+  SiteEditing.render({ host: isHostView(), eventId: viewedEventId, state,
+    party: Boolean(state.weddingPartyMembers?.some(member => weddingPartyPersonMatches(member.name, signedInPersonName))),
+    save: saveState, refresh: render, format: value => formatEditableText(expandEditableTextVariables(value)), escape: escapeHtml });
+  const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,
+    keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date' })),
+    values => keys.forEach(([key], index) => { SharedDetails.setDetail(appState.events, viewedEventId, key, values[index]); }));
+  field('#eventDate', 'date', [['eventDate', 'Gathering date']], { eventDate: 'date' });
+  field('#eventAddress', 'address', viewedEventId === 'wedding'
+    ? [['churchWeekDay','Ceremony day'], ['churchYear','Ceremony year'], ['churchTime','Ceremony time'], ['churchStreet','Ceremony street'], ['churchCityStateZip','Ceremony city, state, ZIP'], ['venueTime','Reception time'], ['venueStreet','Reception street'], ['venueCityStateZip','Reception city, state, ZIP']]
+    : [['homeAddress','Home address']]);
+  SiteEditing.field(document.querySelector('#eventPage footer address'), 'footer', [
+    {label:'Name',value:appState.sharedSite?.footerName || 'The Meyers'},
+    {label:'Home address (shared with the header and invitations)',value:SharedDetails.homeAddress(state),type:'textarea'}
+  ], ([name,address]) => {appState.sharedSite??={};appState.sharedSite.footerName=name;SharedDetails.setDetail(appState.events,viewedEventId,'homeAddress',address);});
+  field('#hostNotesContent', 'notes' , [['hostNotes','Notes']]);
+  field('#perfectExperienceContent', 'page', [['perfectExperienceContent','The Perfect Experience']]);
+  field('#whatToExpectContent', 'page', [['whatToExpectContent','What to Expect']]);
+  field('#weddingTimelineSection', 'timeline', [['timelineAboveContent','Text above timeline'], ['timelineContent','Timeline rows (time, event, notes separated by tabs)'], ['timelineBelowContent','Text below timeline']]);
+  field('#registrySection .registry-actions', 'links', [['registryUrl','Registry URL'], ['monetaryGiftUrl','Monetary gift URL']], { registryUrl:'url', monetaryGiftUrl:'url' });
+  const page = state.brideGroomPages?.find(page => page.id === selectedBrideGroomPage);
+  if (page) SiteEditing.field(document.querySelector('#brideGroomContent'), 'page', [{label:'Title',value:page.title,required:true},{label:'Content',value:page.content,type:'textarea'}], ([title,content]) => { page.title=title;page.content=content; });
+  state.weddingPartyMembers?.forEach(member => {
+    const card = document.querySelector(`[data-responsibilities-member="${CSS.escape(member.id)}"]`);
+    if (card) SiteEditing.field(card, member.name, [{label:'Name',value:member.name,required:true},{label:'Role',value:member.title,options:['',...WEDDING_PARTY_TITLES.map(role=>role.value)]},{label:'Responsibilities',value:member.responsibilities,type:'textarea'}], ([name,title,responsibilities]) => { Object.assign(member,{name,title,responsibilities}); });
+    member.pages?.forEach(page => {
+      if (selectedMatronTab !== `member-page:${JSON.stringify([member.id,page.id])}`) return;
+      SiteEditing.field(document.querySelector('#weddingPartyPersonalPage'), 'page', [{label:'Title',value:page.title,required:true},{label:'Content',value:page.content,type:'textarea'}], ([title,content]) => { Object.assign(page,{title,content}); });
+    });
+  });
+  const prepare = () => { openAdmin(); document.querySelector('#adminDialog').close(); };
+  SiteEditing.portal(document.querySelector('#registryAttireSection'), 'images and videos', ['#weddingPartyAttireAdmin','#guestAttireVideosAdmin'], prepare);
+  SiteEditing.portal(document.querySelector('#weddingPartyDetails'), 'party members', ['#weddingPartyAdmin'], prepare);
+  if (viewedEventId !== 'wedding') {
+    document.querySelectorAll('#menuGrid [data-claim]').forEach(button => {
+      const item = state.items.find(item => item.id === button.dataset.claim);
+      const dish = button.closest('.dish');
+      SiteEditing.field(dish, item.name, [{label:'Name',value:item.name,required:true},{label:'Category',value:item.category,options:['Appetizers','Main Table','Sides','Desserts','Drinks']},{label:'Amount',value:item.needed,type:'number',min:1},{label:'Unit',value:item.unit,options:(state.quantityUnits || ['item','dozen']).map(unit=>typeof unit==='string'?unit:unit.id)}], ([name,category,needed,unit]) => { Object.assign(item,{name,category,needed:Number(needed),unit}); });
+      if (SiteEditing.enabled) SiteEditing.button('×', () => { if (confirm(`Delete “${item.name}”?`)) { state.items=state.items.filter(entry=>entry.id!==item.id); saveState(); } }, dish, `Delete ${item.name}`);
+    });
+    SiteEditing.portal(document.querySelector('#gatheringMenuSection'), 'menu items and claims', ['#menuAdminFields'], prepare);
+  }
+  SiteEditing.field(document.querySelector('#eventPage .header-art'), 'header image', [{label:'Header image URL (empty to remove)',value:state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header,type:'url'}], ([value])=>{state.siteHeaderImage=value;}, {replace:false});
+  SiteEditing.staticText(document.querySelector('#eventPage'));
+  SiteEditing.staticText(document.querySelector('#rsvpDialog'));
+  document.querySelectorAll('#eventPage [role="tablist"]').forEach(nav => {
+    const config = { available: nav.id==='brideGroomTabs' && selectedWeddingTab==='couple' && viewedEventId==='wedding' };
+    if (nav.id==='brideGroomTabs') Object.assign(config, { audience:'host',
+      add: () => { state.brideGroomPages.push({id:crypto.randomUUID(),title:'New page',content:''});selectedBrideGroomPage=state.brideGroomPages.at(-1).id; },
+      rename: (tab,title) => { state.brideGroomPages.find(page=>page.id===tab.dataset.brideGroomPage).title=title; },
+      remove: tab => { state.brideGroomPages=state.brideGroomPages.filter(page=>page.id!==tab.dataset.brideGroomPage); }
+    });
+    if (nav.id==='matronInfoTabs') config.audience='party';
+    SiteEditing.tabs(nav,config);
+  });
+  renderRsvpInlineEditing();
+}
+function renderRsvpInlineEditing() {
+  if (!SiteEditing.enabled || viewedEventId !== 'wedding') return;
+  const target = document.querySelector('#weddingRsvpMenu');
+  if (target.querySelector('.inline-meal-editor')) return;
+  const area = SiteEditing.mount(target, 'inline-meal-editor');
+  const heading = document.createElement('h4');heading.textContent='Meal options';area.append(heading);
+  const refreshMeals = () => { const selections=captureRsvpMeals(); saveState(); renderWeddingRsvpMenu(selections); };
+  (state.weddingMealOptions||[]).forEach((meal,index) => {
+    const row=document.createElement('div');row.className='inline-meal-row';
+    const label=document.createElement('span');label.textContent=meal || 'Empty meal option';row.append(label);area.append(row);
+    SiteEditing.field(label,'meal',[{label:'Meal name',value:meal,required:true}],([value])=>{state.weddingMealOptions[index]=value;renderWeddingRsvpMenu(captureRsvpMeals());},{key:`meal-${index}`});
+    SiteEditing.button('×',()=>{if(confirm(`Delete “${meal}” from the meal options?`)){state.weddingMealOptions.splice(index,1);refreshMeals();}},row,`Delete ${meal} meal`);
+  });
+  const add=document.createElement('div');area.append(add);
+  SiteEditing.field(add,'new meal',[{label:'Meal name',value:'',required:true}],([value])=>{state.weddingMealOptions??=[];state.weddingMealOptions.push(value);renderWeddingRsvpMenu(captureRsvpMeals());},{key:'new-meal'});
+  SiteEditing.field(area,'child meal',[{label:'Additional child meal (leave empty to remove)',value:state.weddingChildMealOption||''}],([value])=>{state.weddingChildMealOption=value.trim();renderWeddingRsvpMenu(captureRsvpMeals());},{key:'child-meal',replace:false});
 }
 
 function renderEventDock() {
@@ -1683,6 +1762,7 @@ function renderWeddingRsvpMenu(selections = []) {
     return `<fieldset class="wedding-rsvp-guest" data-guest-type="${type}" data-guest-index="${index}"><legend>${escapeHtml(personName)}</legend><input type="hidden" data-rsvp-guest-name value="${escapeAttribute(personName)}"><input type="hidden" data-rsvp-custom-name value=""><div class="wedding-meal-options">${radios}${none || (!mealOptions.length ? '<p class="form-error">Meal options have not been added yet.</p>' : '')}</div><label><span>Please note any dietary restrictions or food allergies.</span><textarea data-rsvp-dietary maxlength="500" placeholder="Optional">${escapeHtml(saved.dietaryRestrictions || '')}</textarea></label></fieldset>`;
   }));
   document.querySelector('#weddingRsvpGuests').innerHTML = cards.join('');
+  renderRsvpInlineEditing();
 }
 document.querySelector('#rsvpForm').addEventListener('submit', event => {
   if (event.submitter?.value === 'cancel') return;
@@ -1737,7 +1817,7 @@ document.querySelectorAll('.editor-dialog form').forEach(form => {
   form.closest('dialog').addEventListener('cancel', () => commitPendingEditorInputs(form));
   form.closest('dialog').addEventListener('close', () => commitPendingEditorInputs(form));
 });
-document.querySelector('#guestListButton').addEventListener('click', () => {
+function renderGuestAttendance() {
   if (!hostAuthenticated) return;
   const totalsSection = document.querySelector('#guestListTotals');
   totalsSection.hidden = viewedEventId !== 'wedding';
@@ -1749,10 +1829,17 @@ document.querySelector('#guestListButton').addEventListener('click', () => {
     totalsSection.innerHTML = `<h3>Totals</h3><dl>${entries.map(([label, count]) => `<div><dt>${escapeHtml(label)}</dt><dd>${count}</dd></div>`).join('')}</dl>`;
   }
   const list = document.querySelector('#guestList');
-  list.innerHTML = state.rsvps.length ? hostFirstRsvps(state.rsvps).map(rsvp => {
+  const { attending: attendingRsvps, notAttending } = GuestPlanning.attendanceGroups(state.rsvps);
+  list.innerHTML = attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
     const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml(selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`)}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
-    return `<div class="guest-entry"><strong>${escapeHtml(contributionDisplayName(rsvp.name))}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${menu}</div>`;
-  }).join('') : '<p class="guest-empty">No guests have RSVP’d yet.</p>';
+    return `<div class="guest-entry"><strong>${escapeHtml(contributionDisplayName(rsvp.name))}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.name === HOST_DISPLAY_NAME ? '<em class="rsvp-attendance">Attending</em>' : rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.filter(person=>person.attending).map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${menu}</div>`;
+  }).join('') : '<p class="guest-empty">No guests are attending yet.</p>';
+  const declined = notAttending.map(person => person.name === HOST_DISPLAY_NAME ? 'Host' : person.name);
+  document.querySelector('#notAttendingList').innerHTML = declined.length ? declined.map(name => `<div class="guest-entry"><strong>${escapeHtml(name)}</strong><em class="rsvp-attendance">Not attending</em></div>`).join('') : '<p class="guest-empty">No declined RSVPs yet.</p>';
+}
+document.querySelector('#guestListButton').addEventListener('click', () => {
+  if (!isHostView()) return;
+  renderGuestAttendance();
   document.querySelector('#guestListDialog').showModal();
 });
 document.querySelector('#invitedListButton').addEventListener('click', () => {
@@ -1827,7 +1914,7 @@ function openAdmin() {
     const remove = actions.querySelector('.admin-delete');
     remove.addEventListener('click', () => { state.items = state.items.filter(i => i.id !== row.dataset.adminId); saveState(); openAdmin(); });
   });
-  const dialog = document.querySelector('#adminDialog'); if (!dialog.open) dialog.showModal();
+  const dialog = document.querySelector('#adminDialog'); if (!dialog.open && !SiteEditing.enabled) dialog.showModal();
 }
 function renderBrideGroomPageAdmin() {
   const pages = state.brideGroomPages || [];
@@ -1839,6 +1926,7 @@ function renderBrideGroomPageAdmin() {
     [heading, content].forEach(control => control.addEventListener('change', commitBrideGroomPageEditors));
     editor.querySelector('.admin-delete').addEventListener('click', () => {
       if (!hostAuthenticated || viewedEventId !== 'wedding') return;
+      if (!confirm(`Delete the “${page.title}” page?`)) return;
       commitBrideGroomPageEditors();
       state.brideGroomPages = pages.filter(item => item.id !== page.id);
       if (selectedBrideGroomPage === page.id) selectedBrideGroomPage = 'main';
@@ -1908,6 +1996,7 @@ function renderWeddingPartyDescriptionAdmin() {
       if (!hostAuthenticated || viewedEventId !== 'wedding') return;
       commitWeddingPartyEditors();
       const id = button.closest('[data-member-page-editor]').dataset.memberPageEditor;
+      if (!confirm(`Delete the “${member.pages.find(page => page.id === id)?.title || 'personal'}” page?`)) return;
       member.pages = member.pages.filter(page => page.id !== id);
       saveState(); renderWeddingPartyAdmin();
     }));
@@ -2137,7 +2226,7 @@ document.querySelector('#downloadQrSvg').addEventListener('click', () => { if ((
 [['invitationEventDate', 'eventDate'], ['invitationRsvpDate', 'rsvpDate'], ['invitationAddress1', 'addressLine1'], ['invitationAddress2', 'addressLine2']].forEach(([id, key]) => {
   document.querySelector(`#${id}`).addEventListener('change', event => {
     const value = event.target.value.trim(); if (!value) return;
-    state[key] = value; saveState(); renderInvitationSettings(); showToast('Invitation setting updated.');
+    SharedDetails.setDetail(appState.events, viewedEventId, key, value); saveState(); renderInvitationSettings(); showToast('Invitation setting updated.');
   });
 });
 document.querySelector('#viewGeneralLoginQr').addEventListener('click', () => openQrCode({ name: 'General Login', generalLogin: true }));
@@ -2519,7 +2608,7 @@ document.querySelector('#adminHostNotes').addEventListener('change', event => {
   if (!isHostView() || viewedEventId === 'wedding') return;
   state.hostNotes = event.target.value; saveState(); render();
 });
-document.querySelector('#editItemsButton').addEventListener('click', openAdmin);
+document.querySelector('#editItemsButton').addEventListener('click', () => { if (isHostView()) SiteEditing.toggle(render); });
 
 document.querySelector('#editAccountsButton').addEventListener('click', openAccountsAdmin);
 document.querySelector('#previewWeddingPartyButton').addEventListener('click', () => {
@@ -2711,7 +2800,7 @@ document.querySelector('#adminWeddingPartyAttireImages').addEventListener('chang
 });
 document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value) return; state.eventDate = event.target.value; state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
 document.querySelector('#adminHomeAddress').addEventListener('change', event => {
-  state.homeAddress = event.target.value.trim();
+  SharedDetails.setDetail(appState.events, viewedEventId, 'homeAddress', event.target.value.trim());
   saveState(); showToast('Home address updated.');
 });
 [

@@ -410,3 +410,19 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .account-preview-actions [data-invitation-quantity]::-webkit-inner-spin-button,.account-preview-actions [data-invitation-quantity]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 
 .guest-list-totals{margin:16px 0;padding:14px;border:1px solid var(--border);border-radius:4px}.guest-list-totals[hidden]{display:none}.guest-list-totals h3{margin:0 0 10px}.guest-list-totals dl{display:flex;flex-wrap:wrap;gap:12px 28px;margin:0}.guest-list-totals dl>div{display:flex;gap:8px}.guest-list-totals dd{margin:0;font-weight:800}
+
+/* Editing controls are created only for hosts while edit mode is active. */
+.inline-edit-control{font:700 .75rem Arial,sans-serif;padding:6px 10px;border:1px solid var(--border);border-radius:4px;background:var(--cream,#fffaf2);color:var(--navy);cursor:pointer}
+.inline-edit-tools{display:inline-flex;gap:6px;margin:6px 0;vertical-align:middle}
+.inline-editor{box-sizing:border-box;max-width:100%;padding:16px;margin:10px 0;border:1px solid var(--border);border-radius:6px;background:var(--cream,#fffaf2);color:var(--navy);text-align:left}
+.inline-editor label{display:grid;gap:4px;margin:8px 0;font:600 .85rem Arial,sans-serif}
+.inline-editor input,.inline-editor select,.inline-editor textarea{box-sizing:border-box;width:100%;min-width:0;padding:10px;border:1px solid var(--border);border-radius:4px;background:white;color:var(--navy);font:400 1rem Arial,sans-serif}
+.inline-editor textarea{resize:vertical;line-height:1.5}
+.inline-editor-actions{display:flex;gap:8px;margin-top:10px}
+.inline-tab-tools{display:inline-flex;align-items:center;gap:3px}
+.inline-tab-tools .inline-edit-control{padding:5px;font-size:.65rem}
+body.site-edit-mode .inline-edit-tabs{display:flex!important;flex-wrap:wrap}
+.inline-edit-tabs>.inline-edit-control{flex:0 0 auto!important}
+.inline-editor .admin-editor-section{margin:0;padding:0}
+.rsvp-attendance{display:block;font-family:"Times New Roman",Times,serif;font-weight:700;font-style:italic}
+@media print{.inline-edit-control,.inline-edit-tools,.inline-tab-tools,.inline-editor{display:none!important}}
