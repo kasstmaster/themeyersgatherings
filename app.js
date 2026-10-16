@@ -86,6 +86,36 @@ const EVENT_DETAILS = {
   wedding: { name: 'Wedding', theme: 'wedding', header: 'https://i.ibb.co/KjtXKDRn/Wedding-Header-Website-No-Border.png', registryOnly: true, hasMenu: false }
 };
 
+function syncGatheringDefinitions(events) {
+  for (const id of Object.keys(EVENT_DETAILS)) if (!['thanksgiving','christmas','wedding'].includes(id)) delete EVENT_DETAILS[id];
+  for (const [id,event] of Object.entries(events || {})) {
+    if (['thanksgiving','christmas','wedding'].includes(id) || !event?.gatheringName) continue;
+    EVENT_DETAILS[id] = { name: String(event.gatheringName), theme:'thanksgiving', header:'' };
+  }
+}
+const GATHERING_COLORS = [
+  ['accent','Buttons and selected tabs','--orange'], ['background','Background and headings','--navy'],
+  ['header','Header','--ivory'], ['page','Page containers','--gathering-card-background'],
+  ['inner','Inner containers','--gathering-inner-background'], ['text','Page text','--ink'], ['border','Borders','--border']
+];
+function applyGatheringColors() {
+  for (const [, ,variable] of GATHERING_COLORS) document.body.style.removeProperty(variable);
+  document.body.style.removeProperty('--orange-dark');
+  document.body.style.removeProperty('--muted');
+  for (const [key,,variable] of GATHERING_COLORS) {
+    const color=state.gatheringColors?.[key];
+    if (/^#[0-9a-f]{6}$/i.test(color || '')) document.body.style.setProperty(variable,color);
+  }
+  if (/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.text || '')) document.body.style.setProperty('--muted',state.gatheringColors.text);
+  document.body.classList.toggle('custom-gathering-borders',/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.border || ''));
+  document.body.classList.toggle('custom-gathering-header',/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.header || ''));
+  if (state.gatheringColors?.accent) {
+    const color=state.gatheringColors.accent;
+    if (/^#[0-9a-f]{6}$/i.test(color)) document.body.style.setProperty('--orange-dark',`#${[1,3,5].map(i=>Math.round(parseInt(color.slice(i,i+2),16)*.65).toString(16).padStart(2,'0')).join('')}`);
+  }
+  document.body.classList.toggle('custom-gathering-colors',Boolean(state.gatheringColors && Object.keys(state.gatheringColors).length));
+}
+
 function christmasItems() {
   return [
     { id: 'cocktail-meatballs', name: 'Cocktail Meatballs', category: 'Appetizers', needed: 1, claims: [] },
@@ -145,6 +175,7 @@ function plusOneCount(account, eventId) {
 }
 
 function availableEventIds(accountName = guestName) {
+  syncGatheringDefinitions(appState.events);
   const ids = Object.keys(EVENT_DETAILS).filter(id => appState.events?.[id]);
   if (isViewingAsGuest()) {
     const previewAccount = findAccount(guestName);
@@ -181,6 +212,7 @@ function normalizeState(saved) {
   try {
     if (!saved) return initialAppState();
     if (saved.events) {
+      syncGatheringDefinitions(saved.events);
       const fresh = initialAppState();
       const loaded = {
         ...fresh,
@@ -199,7 +231,7 @@ function normalizeState(saved) {
               eventId,
               typeof account.selectedEvents?.[eventId] === 'boolean'
                 ? account.selectedEvents[eventId]
-                : legacySelection
+                : ['thanksgiving','christmas','wedding'].includes(eventId) && legacySelection
             ])),
             invitedEvents: Object.fromEntries(Object.keys(EVENT_DETAILS).map(eventId => [
               eventId,
@@ -207,7 +239,7 @@ function normalizeState(saved) {
                 ? account.invitedEvents[eventId]
                 : typeof account.selectedEvents?.[eventId] === 'boolean'
                   ? account.selectedEvents[eventId]
-                  : legacySelection
+                  : ['thanksgiving','christmas','wedding'].includes(eventId) && legacySelection
             ]))
           };
         }),
@@ -891,6 +923,7 @@ async function copyMenu() {
 function updateHeaderImage(event) {
   const headerImage = document.querySelector('#eventHeaderImage');
   const nextSource = state.siteHeaderImage ?? event.header ?? '';
+  const heading=document.querySelector('#customGatheringHeading'); heading.hidden=!state.gatheringName; heading.textContent=state.gatheringName || '';
   headerImage.alt = `${event.name} celebration header`;
   if (headerImage.getAttribute('src') === nextSource) return;
 
@@ -1117,11 +1150,13 @@ function weddingDetailsWithoutHeaderAddress(value) {
 }
 function render() {
   SiteEditing.beforeRender();
+  syncGatheringDefinitions(appState.events);
   const event = EVENT_DETAILS[viewedEventId];
   const isWedding = event.registryOnly === true;
   const hostView = isHostView();
   updateSignedInAccountBanner();
   document.body.className = `theme-${event.theme}`;
+  applyGatheringColors();
   document.title = `The Meyers ${event.name}`;
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
   renderSyncStatus();
@@ -1323,6 +1358,7 @@ function render() {
   invitedListButton.title = hostView ? 'View invited families' : 'Invited family details are private to the host';
   invitedListButton.setAttribute('aria-label', hostView ? `${invitedAccounts.length} families invited; view private invitation list` : `${invitedAccounts.length} families invited; details visible only to the host`);
   renderInlineEditing();
+  document.querySelectorAll('[data-gathering-edit-tool]').forEach(button => { button.style.visibility=isHostView() && SiteEditing.enabled ? 'visible':'hidden'; });
   if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
 }
 
@@ -1330,6 +1366,7 @@ function renderInlineEditing() {
   SiteEditing.render({ host: isHostView(), eventId: viewedEventId, state,
     party: Boolean(state.weddingPartyMembers?.some(member => weddingPartyPersonMatches(member.name, signedInPersonName))),
     save: saveState, refresh: render, format: value => formatEditableText(expandEditableTextVariables(value)), escape: escapeHtml });
+  if (state.gatheringName) SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
   const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,
     keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date' })),
     values => keys.forEach(([key], index) => { SharedDetails.setDetail(appState.events, viewedEventId, key, values[index]); }));
@@ -2575,7 +2612,7 @@ function openEventsAdmin() {
     const date = new Date(`${appState.events[id].eventDate}T12:00:00`);
     const formatted = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(date).replaceAll(',', '');
     const previewing = id === viewedEventId;
-    return `<div class="event-choice"><div><strong>${event.name}</strong><span>${formatted}</span></div><div class="event-choice-actions"><button class="preview-event" type="button" data-preview-event="${id}" ${previewing ? 'disabled' : ''}>${previewing ? 'Previewing' : 'Preview'}</button></div></div>`;
+    return `<div class="event-choice"><div><strong>${escapeHtml(event.name)}</strong><span>${formatted}</span></div><div class="event-choice-actions"><button class="preview-event" type="button" data-preview-event="${id}" ${previewing ? 'disabled' : ''}>${previewing ? 'Previewing' : 'Preview'}</button></div></div>`;
   }).join('');
   document.querySelectorAll('[data-preview-event]').forEach(button => button.addEventListener('click', () => {
     const eventId = button.dataset.previewEvent;
@@ -3034,3 +3071,50 @@ for (let index = 0; index < 40; index += 1) {
   sparkle.style.setProperty('--sparkle-delay', `${Math.random() * -4}s`);
   sparkleField.append(sparkle);
 }
+
+// Gathering management is available only to hosts while editing the website.
+document.querySelector('#gatheringColorsButton').addEventListener('click', () => {
+  if (!isHostView() || !SiteEditing.enabled) return;
+  const defaults={accent:'#c96734',background:'#132841',header:'#f6f0e3',page:'#fffaf1',inner:'#fdf8f0',text:'#17283b',border:'#ded7ca'};
+  const style=getComputedStyle(document.body);
+  document.querySelector('#gatheringColorsDialog').dataset.eventId=viewedEventId;
+  document.querySelector('#gatheringColorInputs').innerHTML=GATHERING_COLORS.map(([key,label,variable])=>{
+    const current=style.getPropertyValue(variable).trim();
+    const color=/^#[0-9a-f]{6}$/i.test(current)?current:defaults[key];
+    return `<label>${label}<input type="color" data-gathering-color="${key}" value="${color}"></label>`;
+  }).join('');
+  document.querySelector('#gatheringColorsDialog').showModal();
+});
+document.querySelector('#gatheringColorsForm').addEventListener('input', event => { if(event.target.matches('[data-gathering-color]'))event.target.dataset.changed='true'; });
+document.querySelector('#gatheringColorsForm').addEventListener('submit', event => {
+  if(event.submitter?.value==='cancel')return;
+  if(!isHostView() || !SiteEditing.enabled || document.querySelector('#gatheringColorsDialog').dataset.eventId!==viewedEventId){event.preventDefault();return;}
+  state.gatheringColors ??= {};
+  document.querySelectorAll('[data-gathering-color][data-changed]').forEach(input=>{state.gatheringColors[input.dataset.gatheringColor]=input.value;});
+  saveState();
+});
+document.querySelector('#resetGatheringColors').addEventListener('click',()=>{
+  if(!isHostView() || !SiteEditing.enabled)return;
+  delete state.gatheringColors; document.querySelector('#gatheringColorsDialog').close();saveState();
+});
+document.querySelector('#newGatheringButton').addEventListener('click',()=>{
+  if(!isHostView() || !SiteEditing.enabled)return;
+  document.querySelector('#newGatheringForm').reset();
+  document.querySelector('#newGatheringAddress').value=SharedDetails.homeAddress(state);
+  document.querySelector('#newGatheringDialog').showModal();
+});
+document.querySelector('#newGatheringForm').addEventListener('submit',event=>{
+  if(event.submitter?.value==='cancel')return;
+  if(!isHostView() || !SiteEditing.enabled){event.preventDefault();return;}
+  const name=document.querySelector('#newGatheringName').value.trim();
+  if(!name){event.preventDefault();document.querySelector('#newGatheringName').focus();return;}
+  const id=`gathering-${crypto.randomUUID()}`;
+  appState.events[id]={...makeEvent([],document.querySelector('#newGatheringDate').value),gatheringName:name,homeAddress:document.querySelector('#newGatheringAddress').value.trim()};
+  for(const account of appState.accounts){
+    account.selectedEvents={...account.selectedEvents,[id]:false};
+    account.invitedEvents={...account.invitedEvents,[id]:false};
+  }
+  syncGatheringDefinitions(appState.events);
+  document.querySelector('#newGatheringDialog').close();
+  enterEvent(id);saveState();showToast('Gathering created. Add menu items and choose accounts to invite.');
+});

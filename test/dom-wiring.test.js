@@ -99,9 +99,9 @@ test('saved gathering access overrides retired account-wide access flags', async
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const normalizer = javascript.match(/function normalizeState\(saved\)[\s\S]*?\nfunction loadState\(\)/)?.[0] || '';
 
-  assert.match(normalizer, /typeof account\.selectedEvents\?\.\[eventId\] === 'boolean'\s*\? account\.selectedEvents\[eventId\]\s*: legacySelection/);
+  assert.match(normalizer, /typeof account\.selectedEvents\?\.\[eventId\] === 'boolean'\s*\? account\.selectedEvents\[eventId\]\s*: \['thanksgiving','christmas','wedding'\]\.includes\(eventId\) && legacySelection/);
   assert.doesNotMatch(normalizer, /account\.alwaysInvite === true \|\| \(typeof account\.selectedEvents/);
-  assert.match(normalizer, /typeof account\.invitedEvents\?\.\[eventId\] === 'boolean'[\s\S]*?: typeof account\.selectedEvents\?\.\[eventId\] === 'boolean'[\s\S]*?\? account\.selectedEvents\[eventId\][\s\S]*?: legacySelection/);
+  assert.match(normalizer, /typeof account\.invitedEvents\?\.\[eventId\] === 'boolean'[\s\S]*?: typeof account\.selectedEvents\?\.\[eventId\] === 'boolean'[\s\S]*?\? account\.selectedEvents\[eventId\][\s\S]*?: \['thanksgiving','christmas','wedding'\]\.includes\(eventId\) && legacySelection/);
 });
 
 test('editor inputs autosave while typing and every exit commits anything still pending', async () => {

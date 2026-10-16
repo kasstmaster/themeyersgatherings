@@ -94,6 +94,7 @@
       <div class="wedding-sparkles" aria-hidden="true"></div>
       <div class="header-art">
         <img id="eventHeaderImage" alt="" decoding="async" fetchpriority="high" hidden />
+        <h1 id="customGatheringHeading" hidden></h1>
         <time id="eventDate" class="event-date"></time>
         <p id="rsvpDeadline" class="rsvp-deadline"></p>
         <p id="eventAddress" class="event-address"></p>
@@ -110,6 +111,8 @@
         <button id="editItemsButton" type="button">Wedding Details</button>
         <button id="previewWeddingPartyButton" type="button">Sign in to account</button>
         <button id="invitationTemplatesButton" type="button">Templates</button>
+        <button id="gatheringColorsButton" data-gathering-edit-tool type="button" style="visibility:hidden">Colors</button>
+        <button id="newGatheringButton" data-gathering-edit-tool type="button" style="visibility:hidden">+ New gathering</button>
       </div>
     </nav>
     <button id="cancelViewAsButton" class="cancel-view-as" type="button" hidden>Leave account</button>
@@ -318,6 +321,22 @@
     <nav id="eventDock" class="event-dock" aria-label="Event navigation" hidden>
       <div id="eventSwitchButtons" class="event-switch-buttons"></div>
     </nav>
+
+    <dialog id="gatheringColorsDialog"><form method="dialog" class="modal-card" id="gatheringColorsForm">
+      <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
+      <h2>Gathering colors</h2><div id="gatheringColorInputs"></div>
+      <button type="button" id="resetGatheringColors">Reset colors</button>
+      <button class="primary-button" value="save">Save colors</button>
+    </form></dialog>
+    <dialog id="newGatheringDialog"><form method="dialog" class="modal-card" id="newGatheringForm">
+      <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
+      <h2>New gathering</h2>
+      <p>Uses the standard gathering layout with Notes, Menu, RSVP, and accounts. Wedding stays separate.</p>
+      <label>Name<input id="newGatheringName" required maxlength="100"></label>
+      <label>Gathering date<input id="newGatheringDate" type="date" required></label>
+      <label>Home address<textarea id="newGatheringAddress" rows="3"></textarea></label>
+      <button class="primary-button" value="create">Create gathering</button>
+    </form></dialog>
 
     <dialog id="rsvpDialog">
       <form method="dialog" id="rsvpForm" class="modal-card">
