@@ -925,11 +925,27 @@ function setSignInStep(step) {
   document.querySelector(`[data-sign-in-step="${step}"] input`).focus({ preventScroll: true });
 }
 document.querySelector('#signInBack').addEventListener('click', () => setSignInStep(Math.max(0, signInStep - 1)));
+function updateSignedInAccountBanner() {
+  const viewingAsGuest = isViewingAsGuest();
+  const signedInAccount = document.querySelector('#signedInAccount');
+  const previewAccount = viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW
+    ? findAccount(hostWeddingPartyViewName)
+    : null;
+  signedInAccount.hidden = !guestName || !document.querySelector('#signInPage').hidden;
+  document.querySelector('#signedInAccountName').textContent = previewAccount
+    ? invitedAccountDisplayName(previewAccount.name)
+    : guestName === HOST_DISPLAY_NAME
+      ? HOST_DISPLAY_NAME
+      : invitedAccountDisplayName(guestName);
+  if (!document.querySelector('#eventSelectionPage').hidden) document.querySelector('#eventSelectionPage').before(signedInAccount);
+  else document.querySelector('#eventPage .site-header').after(signedInAccount);
+}
 function showSignInPage() {
   document.querySelector('#signInPage').hidden = false;
   document.querySelector('#eventSelectionPage').hidden = true;
   document.querySelector('#attirePage').hidden = true;
   document.querySelector('#eventPage').hidden = true;
+  updateSignedInAccountBanner();
   if (!document.querySelector('#guestSignInFields').hidden) setSignInStep(0);
 }
 function renderEventSelection() {
@@ -950,6 +966,7 @@ function showEventSelection() {
   document.querySelector('#eventPage').hidden = true;
   document.querySelector('#eventSelectionPage').hidden = false;
   document.body.className = 'theme-wedding';
+  updateSignedInAccountBanner();
 }
 // Export only the selected subpage, using the same content and access as its on-screen view.
 function weddingPageExport(scope) {
@@ -1035,6 +1052,7 @@ function showSignedInDestination() {
   document.querySelector('#eventSelectionPage').hidden = true;
   document.querySelector('#attirePage').hidden = true;
   document.querySelector('#eventPage').hidden = false;
+  updateSignedInAccountBanner();
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 }
 function enterEvent(eventId, { preserveWeddingView = false } = {}) {
@@ -1097,16 +1115,7 @@ function render() {
   const isWedding = event.registryOnly === true;
   const hostView = isHostView();
   const viewingAsGuest = isViewingAsGuest();
-  const signedInAccount = document.querySelector('#signedInAccount');
-  const previewAccount = viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW
-    ? findAccount(hostWeddingPartyViewName)
-    : null;
-  signedInAccount.hidden = viewingAsGuest ? !previewAccount : !guestName;
-  document.querySelector('#signedInAccountName').textContent = previewAccount
-    ? invitedAccountDisplayName(previewAccount.name)
-    : guestName === HOST_DISPLAY_NAME
-      ? HOST_DISPLAY_NAME
-      : invitedAccountDisplayName(guestName);
+  updateSignedInAccountBanner();
   document.body.className = `theme-${event.theme}`;
   document.title = `The Meyers ${event.name}`;
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;

@@ -376,3 +376,5 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .event-address:empty{display:none}
 main>.summary-strip{margin:32px 0 0}
 main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
+
+.signed-in-account{flex-wrap:wrap;text-align:center;overflow-wrap:anywhere}
