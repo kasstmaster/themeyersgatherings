@@ -42,14 +42,31 @@
     const control = node('span', undefined, 'inline-edit-tools');
     control.dataset.inlineFieldKey = key;
     control.hidden = target.hidden || Boolean(target.parentElement.closest('[hidden]'));
-    target.after(control); cleanup.push(() => control.remove());
+    const placement = options.placement || (title === 'page' ? 'page' : 'after');
+    if (placement === 'text') {
+      const row = node('div', undefined, 'inline-text-row'); row.hidden = control.hidden;
+      target.before(row); row.append(target, control);
+      cleanup.push(() => { row.replaceWith(target); });
+    } else if (placement === 'page') {
+      const container = target.closest('.bride-groom-content,.what-to-expect-content,.perfect-experience-panel,.gathering-page') || target.closest('section') || target.parentElement;
+      const hadClass = container.classList.contains('inline-page-edit-host');
+      container.classList.add('inline-page-edit-host'); control.classList.add('inline-page-tools');container.append(control);
+      cleanup.push(() => { if (!hadClass) container.classList.remove('inline-page-edit-host'); });
+    } else target.after(control);
+    cleanup.push(() => control.remove());
     let showing = false;
     const open = () => {
       if (showing) return; showing = true;
       const form = node('div', undefined, 'inline-editor');
       form.setAttribute('role', 'group'); form.setAttribute('aria-label', `Edit ${title}`);
       const previousHidden = target.hidden;
-      if (options.replace !== false) target.hidden = true;
+      if (options.replace !== false) {
+        if (target.contains(control)) {
+          [...target.children].filter(child => child !== control).forEach(child => {
+            const hidden = child.hidden; child.hidden = true; cleanup.push(() => { child.hidden = hidden; });
+          });
+        } else target.hidden = true;
+      }
       cleanup.push(() => { target.hidden = previousHidden; form.remove(); });
       const inputs = fields.map((spec, index) => {
         const label = node('label'); label.append(node('span', spec.label));
@@ -84,11 +101,11 @@
     button(`Edit ${title}`, open, control);
     if (drafts.has(key) && !control.hidden) open();
   }
-  function portal(target, title, sources, prepare) {
+  function portal(target, title, sources, prepare, options = {}) {
     if (!target || !enabled || !context.host) return;
     const control = node('span', undefined, 'inline-edit-tools'); target.append(control);
     cleanup.push(() => control.remove());
-    button(`Edit ${title}`, () => {
+    const open = () => {
       prepare();
       const area = node('div', undefined, 'inline-editor');
       const anchors = sources.map(selector => {
@@ -96,11 +113,12 @@
         source.before(anchor); const hidden = source.hidden; source.hidden = false; area.append(source);
         return () => { anchor.replaceWith(source); source.hidden = hidden; };
       });
-      button('Done', () => context.refresh(), area, `Done editing ${title}`);
+      if (!options.automatic) button('Done', () => context.refresh(), area, `Done editing ${title}`);
       control.after(area);
       cleanup.push(() => { anchors.forEach(restore => restore()); area.remove(); });
       control.hidden = true;
-    }, control);
+    };
+    if (options.automatic) open(); else button(`Edit ${title}`, open, control);
   }
   function staticText(root) {
     const data = context.state.siteText || {};
@@ -108,8 +126,7 @@
     const elements = [...root.querySelectorAll('h1,h2,h3,h4,p,footer address')].filter(element =>
       !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.inline-editor,.inline-edit-tools,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
       !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#signedInAccountName'));
-    for (const element of elements) {
-      const path = selectorPath(element, root);
+    for (const [element, path] of elements.map(element => [element, selectorPath(element, root)])) {
       if (!originals.has(path)) originals.set(path, element.innerHTML);
       const initial = element.innerHTML;
       if (Object.hasOwn(data, path)) element.innerHTML = context.format(data[path]);
@@ -117,7 +134,7 @@
       cleanup.push(() => { element.innerHTML = initial; });
       field(element, element.tagName === 'ADDRESS' ? 'footer' : 'text', [{ label: 'Text (Markdown supported)', type: 'textarea', value: data[path] ?? element.innerText }], ([value]) => {
         context.state.siteText ??= {}; context.state.siteText[path] = value;
-      }, { key: path });
+      }, { key: path, placement: 'text' });
     }
   }
   function selectorPath(element, root) {
@@ -154,7 +171,9 @@
       }
       if (!tab.hidden && tab.getAttribute('aria-selected') === 'true') active = true;
       if (enabled && context.host && !tab.hidden) {
-        const tools = node('span', undefined, 'inline-tab-tools'); tab.after(tools); cleanup.push(() => tools.remove());
+        const tools = node('span', undefined, 'inline-tab-tools');
+        const wrapper = node('div', undefined, 'inline-edit-tab'); tab.before(wrapper);wrapper.append(tools,tab);
+        cleanup.push(() => wrapper.replaceWith(tab));
         button('Edit title', () => {
           const title = window.prompt('Page title', tab.textContent);
           if (!title?.trim()) return;
@@ -185,7 +204,10 @@
       nav.append(tab); cleanup.push(() => tab.remove());
       tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh(); });
       if (enabled && context.host) {
-        const tools = node('span', undefined, 'inline-tab-tools'); nav.append(tools); cleanup.push(() => tools.remove());
+        const tools = node('span', undefined, 'inline-tab-tools');
+        const wrapper = node('div', undefined, 'inline-edit-tab');tab.before(wrapper);wrapper.append(tools,tab);
+        cleanup.push(() => wrapper.replaceWith(tab));
+        button('Edit title', () => { const title=window.prompt('Page title',page.title);if(title?.trim()){page.title=title.trim();context.save();} }, tools);
         button('×', () => { if (window.confirm(`Delete the “${page.title}” page?`)) { state.sitePages = state.sitePages.filter(item => item.id !== page.id); context.save(); } }, tools, `Delete ${page.title} page`);
       }
       if (selected?.id === page.id) {
@@ -212,13 +234,16 @@
       if (first.getAttribute('aria-selected') !== 'true') queueMicrotask(() => { if (first.isConnected) first.click(); });
     }
   }
+  function hide(element) {
+    if (!element) return; const hidden=element.hidden; element.hidden=true;cleanup.push(()=>{element.hidden=hidden;});
+  }
   function mount(target, className) {
     if (!enabled || !context.host || !target) return null;
     const element = node('div', undefined, className); target.append(element);
     cleanup.push(() => element.remove()); return element;
   }
   const selectedCustom = new Map();
-  globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, tabs, button, mount,
+  globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, tabs, button, mount, hide,
     get enabled() { return enabled && context?.host; },
     toggle(refresh) { enabled = !enabled; if (!enabled) drafts.clear(); refresh(); }
   };

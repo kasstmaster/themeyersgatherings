@@ -426,3 +426,20 @@ body.site-edit-mode .inline-edit-tabs{display:flex!important;flex-wrap:wrap}
 .inline-editor .admin-editor-section{margin:0;padding:0}
 .rsvp-attendance{display:block;font-family:"Times New Roman",Times,serif;font-weight:700;font-style:italic}
 @media print{.inline-edit-control,.inline-edit-tools,.inline-tab-tools,.inline-editor{display:none!important}}
+
+.inline-edit-tab{display:flex;flex-direction:column;justify-content:flex-end;flex:1 1 130px;min-width:0}
+.inline-edit-tab>.inline-tab-tools{justify-content:center;flex-wrap:wrap;margin-bottom:4px}
+.inline-edit-tab>[role="tab"]{flex:none!important;width:100%;box-sizing:border-box}
+.inline-text-row{display:flex;align-items:baseline;gap:8px;max-width:100%;width:fit-content;margin:8px 0}
+.inline-text-row>:first-child{margin:0;min-width:0}
+.inline-text-row>.inline-edit-tools{flex-shrink:0;margin:0}
+.inline-page-edit-host{position:relative}
+.inline-page-tools{position:absolute;right:10px;top:10px;z-index:2;margin:0}
+.inline-meal-editor{margin:14px 0;padding:14px;border:1px solid var(--border);border-radius:4px}
+.inline-meal-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:8px 0}
+.rsvp-attendance-box{min-width:0;margin:16px 0;padding:14px;border:1px solid var(--border);border-radius:5px}
+.rsvp-attendance-box>legend{font-weight:700}
+.inline-attire-edit-area>.inline-editor{margin:0}
+.site-edit-mode [hidden]{display:none!important}
+.wedding-page-heading>.inline-text-row{grid-column:2;justify-self:center}
+@media(max-width:1000px){.wedding-page-heading>.inline-text-row{grid-column:1}}

@@ -4,9 +4,9 @@ Sign in as the host and choose **Edit website**. Only the host sees editing cont
 
 - Edit controls appear beside dates, addresses, the header image, footer, page text, notes, responsibilities, and menu items.
 - Use **+** beside a tab group to add a page. Bride & Groom pages remain private to the host, and Wedding Party pages remain limited to the party audience. Other new pages are shared with the audience for that tab group.
-- Use **Edit title** to rename a tab and **×** to delete it. Deletion asks for confirmation. Removing a built-in tab hides its page while retaining its underlying data; removing a created Bride & Groom or custom page removes that page.
-- Images, videos, party member management, menu additions, and claim tools open inside the relevant page. These use the existing upload/storage handlers.
-- Open RSVP while editing to add, rename, or delete meal options directly in that page. Saved RSVPs retain their previous meal selections if an option is renamed or removed.
+- Use **Edit title** above a tab to rename it and **×** above the tab to delete it. Text-edit buttons sit directly to the right of the text, and page-edit buttons sit in the page container’s top-right corner. Deletion asks for confirmation. Removing a built-in tab hides its page while retaining its underlying data; removing a created Bride & Groom or custom page removes that page.
+- Images, videos, party member management, menu additions, and claim tools open inside the relevant page. On Wedding Party → Attire, edit mode automatically replaces the normal content below the introductory text with the images and videos editor. These use the existing upload/storage handlers.
+- Open RSVP while editing to see, add, rename, or delete all meal options directly in that page. Each option can be available to adults and children, adults only, or children only, with no fixed number of options. The child count is inside the Attending box; each named person has their own attendance selection. Renaming an option updates its saved RSVP selections too. Removing an option keeps existing RSVP selections for the host’s historical counts, while removing it from new meal choices.
 - Accounts and invitation templates keep their dedicated management tools.
 
 Text editors support the existing Markdown formatting and variables: `{date}`, `{home}`, `{church}`, `{venue}`, `{registry}`, and `{monetary}`.

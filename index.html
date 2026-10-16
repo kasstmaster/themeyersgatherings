@@ -244,7 +244,7 @@
           <p class="affordable-attire-lead"><em>Formal attire does not have to mean an expensive outfit.</em></p>
           <p>We want everyone to dress up and enjoy the occasion, but we absolutely do not expect our guests to spend a fortune to do so. There are wonderful options for affordable, discounted, vintage, and pre-loved formalwear.</p>
           <p>We've gathered a few of our favorite places to help make finding something easy.</p>
-          <div class="affordable-attire-guidance">
+          <div id="weddingAttireGuidance" class="affordable-attire-guidance">
             <article>
               <h4>For the Ladies</h4>
               <ul class="guest-attire-requirements"><li>Ankle-length or floor-length dresses, formal skirts, or elegant jumpsuits are requested.</li><li>Evening fabrics such as satin, silk, velvet, chiffon, crepe, and similar materials are encouraged.</li><li>Cutouts, slits, and lower or more dramatic necklines are perfectly welcome when styled tastefully.</li><li>Please avoid casual attire and bold or overly busy patterns. Subtle patterns, texture, and elegant detailing are welcome.</li></ul>
@@ -323,9 +323,11 @@
         <p class="section-kicker">Save your seat</p>
         <h2>Who's joining us?</h2>
         <p>We can't wait to celebrate together.</p>
+        <fieldset id="rsvpAttendance" class="rsvp-attendance-box"><legend>Attending</legend>
         <div id="rsvpPeople"></div>
         <div id="rsvpAdultsCounter" class="counter-row" hidden><div><strong>Adults</strong><span>Age 18+</span></div><div class="stepper"><button type="button" data-step="-1" data-target="adults">−</button><output id="adults">1</output><button type="button" data-step="1" data-target="adults">+</button></div></div>
-        <div class="counter-row"><div><strong>Children</strong><span>Age 17 and under</span></div><div class="stepper"><button type="button" data-step="-1" data-target="children">−</button><output id="children">0</output><button type="button" data-step="1" data-target="children">+</button></div></div>
+        <div id="rsvpChildrenCounter" class="counter-row"><div><strong>Children</strong><span>Age 17 and under</span></div><div class="stepper"><button type="button" data-step="-1" data-target="children">−</button><output id="children">0</output><button type="button" data-step="1" data-target="children">+</button></div></div>
+        </fieldset>
         <section id="weddingRsvpMenu" class="wedding-rsvp-menu" aria-labelledby="weddingRsvpMenuHeading" hidden>
           <h3 id="weddingRsvpMenuHeading">Menu</h3>
           <p>Choose a meal for each guest.</p>

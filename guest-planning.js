@@ -11,6 +11,32 @@
   function attendees(people) {
     return people.filter(person=>person.attending===true).flatMap(person=>[person.name,...(person.guestChoice==='guest'&&person.guestName?.trim()?[person.guestName.trim()]:[])]);
   }
+  function weddingMeals(event) {
+    if (Array.isArray(event.weddingMealChoices)) return event.weddingMealChoices.filter(meal => meal && typeof meal.name === 'string' && meal.name.trim() && ['Adults and children','Adults only','Children only'].includes(meal.audience));
+    const common = (event.weddingMealOptions || []).filter(Boolean).map((name,index) => ({id:`meal-${index}`,name,audience:'Adults and children'}));
+    const children = Array.isArray(event.weddingChildMealOptions) ? event.weddingChildMealOptions : [event.weddingChildMealOption];
+    return [...common,...children.filter(Boolean).map((name,index)=>({id:`child-meal-${index}`,name,audience:'Children only'}))];
+  }
+  function weddingMealOptions(event, type) {
+    return [...new Set(weddingMeals(event).filter(meal => !type || meal.audience === 'Adults and children' || meal.audience === (type === 'child' ? 'Children only' : 'Adults only')).map(meal => meal.name))];
+  }
+  function saveWeddingMeals(event, meals, drafts = []) {
+    const previous=weddingMeals(event);
+    for (const meal of meals) {
+      const old=previous.find(entry=>entry.id===meal.id);
+      if (!old || old.name===meal.name) continue;
+      for (const rsvp of [...(event.rsvps||[]),...drafts]) {
+        for (const selection of rsvp.menuSelections||[]) {
+          const audience=selection.type==='child'?'Children only':'Adults only';
+          if (selection.meal===old.name && (old.audience==='Adults and children'||old.audience===audience)) selection.meal=meal.name;
+        }
+      }
+    }
+    event.weddingMealChoices = meals;
+    event.weddingMealOptions = meals.filter(meal=>meal.audience!=='Children only').map(meal=>meal.name);
+    event.weddingChildMealOptions = meals.filter(meal=>meal.audience==='Children only').map(meal=>meal.name);
+    event.weddingChildMealOption = event.weddingChildMealOptions[0] || '';
+  }
   function attendanceGroups(rsvps) {
     const attending = rsvps.filter(rsvp => Number(rsvp.adults) + Number(rsvp.children) > 0);
     const notAttending = rsvps.flatMap(rsvp => {
@@ -33,5 +59,5 @@
     }
     return { adults, children, meals: [...meals], noMeal, unselected };
   }
-  globalThis.GuestPlanning={invitationCount,plusOnePeople,attendees,rsvpTotals,attendanceGroups};
+  globalThis.GuestPlanning={invitationCount,plusOnePeople,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();
