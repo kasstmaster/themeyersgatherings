@@ -397,14 +397,14 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .account-contact-details>[data-legacy-plus-ones]{font-size:.8rem;color:var(--muted)}
 
 .account-row-with-plus-ones{grid-template-columns:minmax(0,1fr);gap:0}
-.account-row-with-plus-ones .account-access{display:flex;align-items:center;gap:12px;margin-right:20px;grid-column:1;grid-row:1}
+.account-row-with-plus-ones .account-access{display:flex;align-items:center;gap:12px;margin-right:24px;grid-column:1;grid-row:1}
 .account-row-with-plus-ones .account-people{grid-column:1;grid-row:2}
 .account-contact-details{min-width:0}
-.account-row-with-plus-ones .account-preview-actions{display:grid;grid-template-columns:auto auto auto auto minmax(0,1fr) auto;grid-column:1;grid-row:1;justify-self:stretch;gap:4px;align-items:center}
-.account-preview-actions .account-qr-button{grid-column:2;grid-row:1;margin-right:6px}
+.account-row-with-plus-ones .account-preview-actions{display:grid;grid-template-columns:auto auto 40px 40px minmax(0,1fr) auto;grid-column:1;grid-row:1;justify-self:stretch;gap:0;align-items:center}
+.account-preview-actions .account-qr-button{grid-column:2;grid-row:1;margin-right:10px}
 .account-preview-actions .account-invitation-button{grid-column:3;grid-row:1}
 .account-preview-actions .account-delete-button{grid-column:6;grid-row:1}
 .account-preview-actions .account-person-settings{grid-column:4;grid-row:1}
-.account-preview-actions [data-invitation-quantity]{box-sizing:content-box;width:1ch;appearance:textfield;margin:0;padding:8px 4px;border:1px solid var(--border);border-radius:4px;color:var(--ink);background:#fff}
+.account-preview-actions [data-invitation-quantity]{box-sizing:border-box;width:100%;appearance:textfield;margin:0;padding:8px 4px;border:1px solid var(--border);border-radius:4px;color:var(--ink);background:#fff}
 
 .account-preview-actions [data-invitation-quantity]::-webkit-inner-spin-button,.account-preview-actions [data-invitation-quantity]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
