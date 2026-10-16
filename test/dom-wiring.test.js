@@ -51,7 +51,7 @@ test('contact accounts are displayed as surname groups with inline children', as
   assert.match(javascript, /function accountContactGroups\(accountName\)/);
   assert.match(javascript, /<strong>\$\{escapeHtml\(group\.surname\)\}:<\/strong> \$\{group\.givenNames\.map\(escapeHtml\)\.join\(', '\)\}/);
   assert.match(javascript, /<strong>Children:<\/strong> \$\{account\.children\.map\(escapeHtml\)\.join\(', '\)\}/);
-  assert.match(javascript, /<div class="account-people">\$\{accountContactsHtml\(account\)\}<\/div>/);
+  assert.match(javascript, /<div class="account-people">\$\{accountContactsHtml\(account\)\}\$\{guestPermissionControl\}<\/div>/);
 });
 
 test('invited families show household and overall adult and child totals', async () => {
