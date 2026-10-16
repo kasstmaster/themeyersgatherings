@@ -1118,6 +1118,7 @@ function render() {
     : '<em>Choose something delicious to bring. If bringing something isn\'t practical, simply come and enjoy the evening with us.</em>';
   document.querySelector('#remainingSummary').hidden = isWedding;
   document.querySelector('.summary-strip').classList.toggle('wedding-summary', isWedding);
+  document.querySelector('.summary-strip').hidden = !hostView;
   // Menus belong to every gathering except the Wedding, which intentionally
   // has registry details instead of claimable dishes.
   if (!hostView && selectedGatheringTab === 'notes') selectedGatheringTab = 'menu';
