@@ -1322,6 +1322,8 @@ function render() {
   const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
   document.querySelector('#guestCount').textContent = guests;
   document.querySelector('#invitedCount').textContent = invitedAccounts.length;
+  document.querySelector('#notAttendingCount').textContent = GuestPlanning.attendanceGroups(state.rsvps).notAttending.length;
+  document.querySelector('#accountCount').textContent = appState.accounts.length;
   document.querySelector('#remainingCount').textContent = needed;
   const guestListButton = document.querySelector('#guestListButton');
   guestListButton.disabled = !hostView;
@@ -1332,7 +1334,7 @@ function render() {
   invitedListButton.title = hostView ? 'View invited families' : 'Invited family details are private to the host';
   invitedListButton.setAttribute('aria-label', hostView ? `${invitedAccounts.length} families invited; view private invitation list` : `${invitedAccounts.length} families invited; details visible only to the host`);
   renderInlineEditing();
-  if (document.querySelector('#guestListDialog').open) renderGuestAttendance();
+  if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
 }
 
 function renderInlineEditing() {
@@ -1828,10 +1830,12 @@ function renderGuestAttendance() {
   totalsSection.hidden = viewedEventId !== 'wedding';
   if (!totalsSection.hidden) {
     const totals = GuestPlanning.rsvpTotals(state.rsvps, GuestPlanning.weddingMealOptions(state));
-    const entries = [['Adults', totals.adults], ['Children', totals.children], ...totals.meals,
+    const attendance = [['Adults', totals.adults], ['Children', totals.children]];
+    const meals = [...totals.meals,
       ...(totals.noMeal ? [['No meal', totals.noMeal]] : []),
       ...(totals.unselected ? [['No meal selected', totals.unselected]] : [])];
-    totalsSection.innerHTML = `<h3>Totals</h3><dl>${entries.map(([label, count]) => `<div><dt>${escapeHtml(label)}</dt><dd>${count}</dd></div>`).join('')}</dl>`;
+    const row = entries => entries.map(([label, count]) => `<div><dt>${escapeHtml(label)}</dt><dd>${count}</dd></div>`).join('');
+    totalsSection.innerHTML = `<h3>Totals</h3><dl class="attendance-totals">${row(attendance)}</dl><dl class="meal-totals">${row(meals)}</dl>`;
   }
   const list = document.querySelector('#guestList');
   const { attending: attendingRsvps, notAttending } = GuestPlanning.attendanceGroups(state.rsvps);
@@ -1846,6 +1850,10 @@ document.querySelector('#guestListButton').addEventListener('click', () => {
   if (!isHostView()) return;
   renderGuestAttendance();
   document.querySelector('#guestListDialog').showModal();
+});
+document.querySelector('#notAttendingButton').addEventListener('click', () => {
+  if (!isHostView()) return;
+  renderGuestAttendance(); document.querySelector('#notAttendingDialog').showModal();
 });
 document.querySelector('#invitedListButton').addEventListener('click', () => {
   if (!hostAuthenticated) return;
@@ -2615,7 +2623,7 @@ document.querySelector('#adminHostNotes').addEventListener('change', event => {
 });
 document.querySelector('#editItemsButton').addEventListener('click', () => { if (isHostView()) SiteEditing.toggle(render); });
 
-document.querySelector('#editAccountsButton').addEventListener('click', openAccountsAdmin);
+document.querySelector('#editAccountsButton').addEventListener('click', () => { if (isHostView()) openAccountsAdmin(); });
 document.querySelector('#previewWeddingPartyButton').addEventListener('click', () => {
   if (!isHostView()) return;
   const isWedding = viewedEventId === 'wedding';

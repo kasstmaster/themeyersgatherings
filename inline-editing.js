@@ -30,7 +30,6 @@
     const toggle = document.querySelector('#editItemsButton');
     toggle.textContent = enabled ? 'Done editing' : 'Edit website';
     toggle.setAttribute('aria-pressed', String(enabled));
-    document.querySelector('#editAccountsButton').hidden = !enabled;
     document.querySelector('#invitationTemplatesButton').hidden = !enabled;
     document.body.classList.toggle('site-edit-mode', enabled && ctx.host);
   }

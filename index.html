@@ -108,7 +108,6 @@
       <div class="host-tool-actions">
         <button id="editItemsButton" type="button">Wedding Details</button>
         <button id="previewWeddingPartyButton" type="button">View As</button>
-        <button id="editAccountsButton" type="button">Accounts</button>
         <button id="invitationTemplatesButton" type="button">Templates</button>
       </div>
     </nav>
@@ -117,8 +116,10 @@
     <main>
       <section class="summary-strip" aria-label="Event summary">
         <button class="summary-item" id="guestListButton" type="button"><strong id="guestCount">0</strong><span>Guests attending</span></button>
+        <button class="summary-item" id="notAttendingButton" type="button"><strong id="notAttendingCount">0</strong><span>Not attending</span></button>
         <button class="summary-item" id="invitedListButton" type="button"><strong id="invitedCount">0</strong><span>Families invited</span></button>
         <div id="remainingSummary" class="summary-stat"><strong id="remainingCount">0</strong><span>Dishes needed</span></div>
+        <button class="summary-item" id="editAccountsButton" type="button"><strong id="accountCount">0</strong><span>Accounts</span></button>
       </section>
 
       <section class="welcome" aria-labelledby="welcome-title">
@@ -362,7 +363,15 @@
         <p class="section-kicker">Our family table</p><h2>Guests attending</h2>
         <div id="guestListTotals" class="guest-list-totals" hidden></div>
         <div id="guestList" class="guest-list"></div>
-        <h3>Not attending</h3><div id="notAttendingList" class="guest-list"></div>
+        <button class="primary-button" value="default">Close</button>
+      </form>
+    </dialog>
+
+    <dialog id="notAttendingDialog">
+      <form method="dialog" class="modal-card">
+        <button class="modal-close" value="cancel" aria-label="Close">×</button>
+        <p class="section-kicker">RSVP responses</p><h2>Not attending</h2>
+        <div id="notAttendingList" class="guest-list"></div>
         <button class="primary-button" value="default">Close</button>
       </form>
     </dialog>
