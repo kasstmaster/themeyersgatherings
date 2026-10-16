@@ -387,10 +387,10 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .account-person-settings{display:grid;gap:8px;min-width:0}.account-person-settings input[type="number"]{max-width:110px}.account-guest-permission{display:flex!important;flex-direction:row!important;align-items:center;gap:8px!important;margin:0!important}.account-guest-permission input{width:auto;flex-shrink:0}.account-person-settings p{font-size:.8rem;color:var(--muted)}
 @media(max-width:750px){.account-row-with-plus-ones{grid-template-columns:minmax(0,1fr) auto}.account-row-with-plus-ones .account-access{grid-column:1/-1}.account-row-with-plus-ones .account-people{grid-column:1}.account-row-with-plus-ones .account-preview-actions{grid-column:2;grid-row:2}.account-person-settings{grid-column:1/-1}}
 
-.account-person-line{display:grid;grid-template-columns:50px minmax(0,1fr);align-items:center;gap:10px}
-.account-person-line .account-guest-permission{display:grid!important;grid-template-columns:24px 18px;gap:8px!important}
+.account-person-line{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:center;gap:10px}
+.account-person-line .account-guest-permission{display:grid!important;grid-template-columns:24px 18px;gap:0!important}
 .account-person-line .account-guest-permission input{box-sizing:border-box;width:18px;height:18px;margin:0}
-.account-surname-group>strong{display:block;margin-left:60px}
+.account-surname-group>strong{display:block;margin-left:52px}
 .account-surname-columns{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 36px}
 .account-surname-group{min-width:0;max-width:100%}
 
