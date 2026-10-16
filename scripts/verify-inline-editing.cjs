@@ -37,14 +37,14 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   assert.ok(await page.evaluate(() => { const dock=document.querySelector('.event-dock').getBoundingClientRect(); return [...document.querySelectorAll('body>.inline-overlay-layer .inline-edit-control')].filter(el=>getComputedStyle(el).visibility!=='hidden' && !el.closest('[hidden]')).every(el=>el.getBoundingClientRect().bottom<=dock.top); }));
   await edit('#eventDate', 'Edit date'); assert.equal(await page.locator('.inline-editor[aria-label="Edit date"]').evaluate(el => !!el.closest('.inline-overlay-layer')), false); await page.locator('[aria-label="Edit date"] input').fill('2027-09-12'); await action('Save date').click(); assert.equal(await page.evaluate(() => state.eventDate), '2027-09-12');
   await page.locator('[data-wedding-tab="couple"]').click();
-  await edit('#brideGroomContent', 'Edit page'); await page.locator('[aria-label="Edit page"] textarea').fill('**Updated** page'); await action('Save page').click(); assert.equal(await page.locator('#brideGroomContent strong').textContent(), 'Updated');
+  await edit('#brideGroomContent', 'Edit page'); await page.getByRole('textbox', {name:'Content',exact:true}).fill('**Updated** page'); await page.getByRole('textbox', {name:'Content',exact:true}).blur(); assert.equal(await page.locator('#brideGroomContent strong').textContent(), 'Updated');
   await show('#brideGroomContent'); await page.locator('[data-inline-anchor="brideGroomTabs"] [aria-label="Add page"]').click(); assert.equal(await page.locator('#brideGroomTabs [role="tab"]').count(), 2);
   await show('#brideGroomTabs');
   await page.locator('[data-inline-tab-group="brideGroomTabs"] [aria-label="Edit title"]').last().click();
-  await page.getByRole('textbox', {name:'Page title', exact:true}).fill('Renamed page'); await action('Save title').click();
+  await page.getByRole('textbox', {name:'Page title', exact:true}).fill('Renamed page'); await page.getByRole('textbox', {name:'Page title',exact:true}).blur();
   assert.equal(await page.locator('#brideGroomTabs').getByRole('tab', {name:'Renamed page',exact:true}).count(), 1);
   await show('#brideGroomTabs'); await page.locator('[data-inline-tab-group="brideGroomTabs"] [aria-label="Edit title"]').last().click();
-  await page.getByRole('textbox', {name:'Page title',exact:true}).fill('New page'); await action('Save title').click();
+  await page.getByRole('textbox', {name:'Page title',exact:true}).fill('New page'); await page.getByRole('textbox', {name:'Page title',exact:true}).blur();
   await show('#brideGroomTabs'); page.once('dialog', dialog => dialog.dismiss()); await action('Delete New page page').click(); assert.equal(await page.locator('#brideGroomTabs [role="tab"]').count(), 2);
   page.once('dialog', dialog => dialog.accept()); await action('Delete New page page').click(); assert.equal(await page.locator('#brideGroomTabs [role="tab"]').count(), 1);
   await page.locator('#rsvpButton').click(); assert.equal(await page.locator('#rsvpAttendance #rsvpChildrenCounter').count(), 1); await show('#weddingRsvpMenu');
@@ -59,7 +59,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   assert.equal(await page.locator('#weddingAttireGuidance').isVisible(), false); assert.equal(await page.locator('#adminAddWeddingPartyAttireImage').isVisible(), true);
   await page.locator('#editItemsButton').click(); assert.equal(await page.locator('#weddingAttireGuidance').isVisible(), true); assert.equal(await page.locator('#adminAddAttireVideo').isVisible(), false);
   await page.locator('#editItemsButton').click(); await page.evaluate(() => enterEvent('thanksgiving'));
-  await edit('#hostNotesContent', 'Edit notes'); await page.locator('[aria-label="Edit notes"] textarea').fill('Home: {home} Date: {date}'); await action('Save notes').click();
+  await edit('#hostNotesContent', 'Edit notes'); await page.getByRole('textbox', {name:'Notes',exact:true}).fill('Home: {home} Date: {date}'); await page.getByRole('textbox', {name:'Notes',exact:true}).blur();
   await edit('#eventPage footer address', 'Edit footer'); await page.locator('[aria-label="Edit footer"] textarea').fill('456 Oak Street\nNew Town CA'); await action('Save footer').click();
   assert.ok((await page.locator('#eventAddress').textContent()).includes('456 Oak Street')); assert.ok((await page.locator('#hostNotesContent').textContent()).includes('456 Oak Street')); assert.equal(await page.evaluate(() => state.addressLine1), '456 Oak Street');
   const saved = await page.evaluate(() => loadState().events.thanksgiving.homeAddress); assert.equal(saved, '456 Oak Street\nNew Town CA');
