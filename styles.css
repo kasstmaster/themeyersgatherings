@@ -388,7 +388,8 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 @media(max-width:750px){.account-row-with-plus-ones{grid-template-columns:minmax(0,1fr) auto}.account-row-with-plus-ones .account-access{grid-column:1/-1}.account-row-with-plus-ones .account-people{grid-column:1}.account-row-with-plus-ones .account-preview-actions{grid-column:2;grid-row:2}.account-person-settings{grid-column:1/-1}}
 
 .account-person-line{display:flex;align-items:center;gap:10px}
-.account-surname-group+.account-surname-group{margin-top:6px}
+.account-surname-columns{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 36px}
+.account-surname-group{min-width:0;max-width:100%}
 
 .account-people>[data-legacy-plus-ones]{font-size:.8rem;color:var(--muted)}
 
