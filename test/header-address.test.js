@@ -18,3 +18,11 @@ test('other gathering headers retain their own configured home or invitation add
   assert.equal(address({homeAddress:'123 Home St',churchStreet:'Not this'},'christmas'),'123 Home St');
   assert.equal(address({addressLine1:'456 Home Rd',addressLine2:'Town CA 12345'},'thanksgiving'),'456 Home Rd, Town CA 12345');
 });
+
+
+test('Wedding Details omits old location headings and the divider before What to Expect, preserving other content',()=>{
+  const context=vm.createContext({state:{churchStreet:'123 Church St',venueStreet:'456 Venue Rd'},viewedEventId:'wedding',expandEditableTextVariables:value=>value});
+  vm.runInContext(source.slice(source.indexOf('function gatheringHeaderAddress()'),source.indexOf('function render()')),context);
+  const original='***Ceremony***\n123 Church St\n\n***Reception***\n456 Venue Rd\n\n---\n\n**WHAT TO EXPECT**\nEnjoy the evening.\n---\nBring dancing shoes.';
+  assert.equal(context.weddingDetailsWithoutHeaderAddress(original).trim(),'Enjoy the evening.\n---\nBring dancing shoes.');
+});
