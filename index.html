@@ -102,7 +102,7 @@
     </header>
 
     <div id="signedInAccount" class="signed-in-account" role="status" aria-live="polite" hidden>
-      <span>Signed in to household</span>
+      <span>Signed in as:</span>
       <strong id="signedInAccountName"></strong>
     </div>
     <nav id="hostToolsPanel" class="host-tools-panel" aria-label="Host tools" hidden>
@@ -111,8 +111,8 @@
         <button id="editItemsButton" type="button">Wedding Details</button>
         <button id="previewWeddingPartyButton" type="button">Sign in to account</button>
         <button id="invitationTemplatesButton" type="button">Templates</button>
-        <button id="gatheringColorsButton" data-gathering-edit-tool type="button" hidden>Colors</button>
-        <button id="newGatheringButton" data-gathering-edit-tool type="button" hidden>+ New gathering</button>
+        <button id="gatheringColorsButton" data-gathering-tool type="button">Colors</button>
+        <button id="newGatheringButton" data-gathering-tool type="button">New Gathering</button>
       </div>
     </nav>
     <button id="cancelViewAsButton" class="cancel-view-as" type="button" hidden>Leave account</button>
@@ -346,6 +346,7 @@
         <p>We can't wait to celebrate together.</p>
         <p id="rsvpDeadlineNotice" role="status" hidden></p>
         <fieldset id="rsvpAttendance" class="rsvp-attendance-box"><legend>Attending</legend>
+        <p id="rsvpInvitationGroup" hidden></p>
         <div id="rsvpPeople"></div>
         <div id="rsvpAdultsCounter" class="counter-row" hidden><div><strong>Adults</strong><span>Age 18+</span></div><div class="stepper"><button type="button" data-step="-1" data-target="adults">−</button><output id="adults">1</output><button type="button" data-step="1" data-target="adults">+</button></div></div>
         <div id="rsvpChildrenCounter" class="counter-row"><div><strong>Children</strong><span>Age 17 and under</span></div><div class="stepper"><button type="button" data-step="-1" data-target="children">−</button><output id="children">0</output><button type="button" data-step="1" data-target="children">+</button></div></div>
@@ -674,6 +675,7 @@
     <script src="dropbox-upload.js" defer></script>
     <script src="wedding-media.js" defer></script>
     <script src="guest-planning.js" defer></script>
+    <script src="invitation-groups.js" defer></script>
     <script src="shared-details.js" defer></script>
     <script src="inline-editing.js" defer></script>
     <script src="app.js" defer></script>
