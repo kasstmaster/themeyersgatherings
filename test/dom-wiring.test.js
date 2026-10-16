@@ -70,7 +70,7 @@ test('every gathering can assign its own plus ones and include them in adult inv
   const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
 
   assert.match(javascript, /data-plus-one-person="\$\{escapeAttribute\(person\.fullName\)\}"/);
-  assert.match(accountRenderer, /account\.plusOnePeople\[viewedEventId\]/);
+  assert.match(accountRenderer, /GuestPlanning\.setPlusOnePeople\(account,accountEventId/);
   assert.match(javascript, /plusOneCount\(account, viewedEventId\)/);
   assert.match(javascript, /adults: sum\.adults \+ accountSignInNames\(account\.name\)\.length \+ plusOneCount/);
 });
@@ -83,8 +83,8 @@ test('gathering access and invitations are independent per-account settings', as
   assert.match(accountRenderer, />Give Access<\/span>/);
   assert.doesNotMatch(accountRenderer, />Can sign in<\/span>/);
   assert.match(accountRenderer, />Invite<\/span>/);
-  assert.match(accountRenderer, /account\.selectedEvents\[viewedEventId\] = event\.target\.checked/);
-  assert.match(accountRenderer, /account\.invitedEvents\[viewedEventId\] = event\.target\.checked/);
+  assert.match(accountRenderer, /account\.selectedEvents\[accountEventId\] = event\.target\.checked/);
+  assert.match(accountRenderer, /account\.invitedEvents\[accountEventId\] = event\.target\.checked/);
   assert.doesNotMatch(accountRenderer, /Always Invite|account-always-invite/);
   assert.doesNotMatch(gatheringRenderer, /Activate|Deactivate|data-toggle-event/);
 });
@@ -175,14 +175,14 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(html, /id="weddingPartyTabs"[\s\S]*>Wedding Party<[\s\S]*>Guest<[\s\S]*>Timeline<[\s\S]*>Registry</);
   assert.match(javascript, /signedInPersonName = accountPersonName\(accountName, account\)/);
   assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => weddingPartyPersonMatches\(member\.name, signedInPersonName\)\)/);
-  assert.match(javascript, /viewingAsGuest && hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
+  assert.match(javascript, /const isWeddingPartyMember = isWedding && !hostView && Boolean\(signedInWeddingPartyMember\)/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWedding/);
   assert.match(javascript, /visibleWeddingPartyMembers = hostView\s*\? WeddingParty\.sortByRole\(weddingPartyMembers, WEDDING_PARTY_TITLES\.map\(role => role\.value\)\)\s*:\s*\[viewedWeddingPartyMember\]\.filter\(Boolean\)/);
   assert.match(javascript, /function formatWeddingPartyDescription\(value\)[\s\S]*<strong>[\s\S]*<li>/);
   assert.match(javascript, /member\.responsibilities/);
   assert.match(javascript, /formatWeddingPartyDescription\(description\)/);
-  assert.match(html, /id="previewWeddingPartyButton"[\s\S]*View As/);
-  assert.match(javascript, /#openWeddingPartyPreview'[\s\S]*hostWeddingPartyViewName = document\.querySelector\('#hostWeddingPartyView'\)\.value[\s\S]*enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
+  assert.match(html, /id="previewWeddingPartyButton"[\s\S]*Sign in to account/);
+  assert.match(javascript, /hostReturnSession=\{eventId:viewedEventId[\s\S]*guestName=account\.name[\s\S]*enterEvent\(events\.includes/);
 });
 
 test('Guest and Registry are separate main tabs with Attire selected under Guest by default', async () => {
@@ -361,31 +361,30 @@ test('Bachelorette page and legacy role responsibilities are removed', async () 
   assert.match(javascript, /delete loaded\.events\.wedding\.weddingPartyDescriptions/);
 });
 
-test('host can preview the wedding as a general guest without selecting an account', async () => {
+test('host account sessions choose a household and person while preserving return context', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
-
-  assert.match(html, /<h2>View As<\/h2>/);
-  assert.match(javascript, /const GENERAL_GUEST_PREVIEW = '__general_guest__'/);
-  assert.match(javascript, />General guest<\/option>/);
-  assert.match(javascript, /hostWeddingPartyViewName !== GENERAL_GUEST_PREVIEW/);
-  assert.match(javascript, /hostWeddingPartyViewName === GENERAL_GUEST_PREVIEW \? 'guest' : 'party'/);
+  assert.match(html, /<h2>Sign in to account<\/h2>/);
+  assert.match(html, /id="hostAccountPerson"/);
+  assert.match(javascript, /hostReturnSession=\{eventId:viewedEventId/);
+  assert.match(javascript, /hostWeddingPartyViewName=account\.name;guestName=account\.name/);
+  assert.match(javascript, /preview: false/);
 });
 
-test('View As removes host-only UI and provides a persistent return to Host View', async () => {
+test('account sessions hide host-only UI and provide Leave account', async () => {
   const [html, javascript, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8'),
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /id="cancelViewAsButton"[^>]*hidden>Cancel view<\/button>/);
+  assert.match(html, /id="cancelViewAsButton"[^>]*hidden>Leave account<\/button>/);
   assert.match(javascript, /function isHostView\(\) \{ return hostAuthenticated && !isViewingAsGuest\(\); \}/);
   assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated \|\| viewingAsGuest/);
   assert.match(javascript, /cancelViewAsButton'\)\.hidden = !viewingAsGuest/);
-  assert.match(javascript, /#cancelViewAsButton'[\s\S]*hostWeddingPartyViewName = '';[\s\S]*selectedWeddingTab = 'couple'/);
+  assert.match(javascript, /hostReturnSession=null;hostWeddingPartyViewName=''[\s\S]*guestName=previous\?\.guestName/);
   assert.match(styles, /\.cancel-view-as\{[^}]*position:fixed;[^}]*top:16px;right:16px;[^}]*z-index:30/);
 });
 
@@ -657,9 +656,9 @@ test('personal wedding party pages use member-scoped visibility and formatted co
 test('wedding defaults match each signed-in audience', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
-  assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*hostAuthenticated \? 'couple' : partyMember \? 'party' : 'guest'/);
+  assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*isHostView\(\) \? 'couple' : partyMember \? 'party' : 'guest'/);
   assert.match(javascript, /selectedMatronTab = 'experience'/);
-  assert.match(javascript, /enterEvent\('wedding', \{ preserveWeddingView: true \}\)/);
+  assert.match(javascript, /enterEvent\(events\.includes\(viewedEventId\)\?viewedEventId:events\[0\]\)/);
 });
 
 test('choosing Wedding from Gatherings restores the host Bride & Groom tab', async () => {
@@ -669,7 +668,7 @@ test('choosing Wedding from Gatherings restores the host Bride & Groom tab', asy
   assert.match(eventPreviewHandler, /const eventId = button\.dataset\.previewEvent/);
   assert.match(eventPreviewHandler, /enterEvent\(eventId\)/);
   assert.doesNotMatch(eventPreviewHandler, /viewedEventId = button\.dataset\.previewEvent[\s\S]*render\(\)/);
-  assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*selectedWeddingTab = hostAuthenticated \? 'couple'/);
+  assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*selectedWeddingTab = isHostView\(\) \? 'couple'/);
 });
 
 test('host tools are persistent buttons directly below the signed-in household', async () => {
@@ -681,7 +680,7 @@ test('host tools are persistent buttons directly below the signed-in household',
   const toolsIndex = html.indexOf('id="hostToolsPanel"');
   const mainIndex = html.indexOf('<main>');
   assert.ok(accountIndex < toolsIndex && toolsIndex < mainIndex);
-  assert.match(html, /id="hostToolsPanel"[\s\S]*>Wedding Details<\/button>[\s\S]*>View As<\/button>[\s\S]*>Templates<\/button>/);
+  assert.match(html, /id="hostToolsPanel"[\s\S]*>Wedding Details<\/button>[\s\S]*>Sign in to account<\/button>[\s\S]*>Templates<\/button>/);
   assert.doesNotMatch(html, /id="manageEventsButton"|>Gatherings<\/button>/);
   assert.doesNotMatch(javascript, /#manageEventsButton/);
   assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);

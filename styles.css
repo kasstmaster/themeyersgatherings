@@ -445,3 +445,4 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 @media(max-width:650px){#editItemsButton{width:auto}}
 @media print{.inline-overlay-layer{display:none!important}.inline-edit-masked{visibility:visible!important}}
 #eventHeaderImage[hidden]{display:none!important}
+.theme-wedding .rsvp-button{box-shadow:0 5px 0 #2d1120}

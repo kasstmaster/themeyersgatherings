@@ -61,3 +61,15 @@ test('renaming a meal updates saved choices and an open RSVP draft without dropp
  GuestPlanning.saveWeddingMeals(event,meals.filter(meal=>meal.audience!=='Children only'));
  assert.equal(event.rsvps[0].menuSelections[1].meal,'Kids pasta');assert.deepEqual(GuestPlanning.weddingMealOptions(event,'child'),['Roast beef']);
 });
+test('plus-one changes replace only the edited gathering and do not share mutable arrays',()=>{
+ const original=['Jane Smith'];const account={plusOnePeople:{thanksgiving:original,christmas:['John Smith']},plusOnes:{thanksgiving:1,christmas:1}};
+ GuestPlanning.setPlusOnePeople(account,'wedding',['Jane Smith','Jane Smith']);
+ assert.deepEqual(account.plusOnePeople,{thanksgiving:['Jane Smith'],christmas:['John Smith'],wedding:['Jane Smith']});
+ GuestPlanning.setPlusOnePeople(account,'wedding',[]);
+ assert.deepEqual(account.plusOnes,{thanksgiving:1,christmas:1,wedding:0});assert.deepEqual(original,['Jane Smith']);
+});
+test('shared refresh keeps the viewer in their chosen gathering instead of following the shared default',()=>{
+ const events={thanksgiving:{},wedding:{}};
+ for(let i=0;i<5;i++)assert.equal(GuestPlanning.retainedEvent('wedding',events,'thanksgiving'),'wedding');
+ assert.equal(GuestPlanning.retainedEvent('removed',events,'thanksgiving'),'thanksgiving');
+});

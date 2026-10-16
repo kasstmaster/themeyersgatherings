@@ -33,3 +33,9 @@ NODE_PATH=/path/to/playwright/node_modules node scripts/verify-inline-editing.cj
 `BROWSER_TEST_URL` and `CHROMIUM_PATH` can override the local URL and Chromium executable. The check blocks all external requests and strips the live shared-state URL before using isolated test data. It covers saving edits, tab deletion confirmation, RSVP meal changes, shared-address propagation, persistence, private host controls, and desktop/mobile layout.
 
 Run `node scripts/verify-edit-layout.cjs` with the same Playwright setup for exact before/during/after layout comparisons across wedding pages, notes, menus, and RSVP at desktop and mobile widths.
+
+## Sign in to an account as host
+
+Choose **Sign in to account**, select a household, and choose a person when the household has multiple adults. You retain your host session while using the selected account's normal gathering access, party pages, RSVP, contributions, and upload tools. Changes are saved under that account. **Leave account** restores your original host gathering and page.
+
+Plus-one permissions are saved only for the gathering shown when Accounts was opened. Refreshing shared data preserves each viewer's current gathering, including while an RSVP is open. RSVP forms are bound to the account and gathering where they opened; a stale form cannot save into another gathering.
