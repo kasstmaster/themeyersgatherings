@@ -7,7 +7,7 @@ Sign in as the host and choose **Edit website**. Only the host sees editing cont
 - Use **Edit title** above a tab to rename it and **×** above the tab to delete it. Text-edit buttons sit directly to the right of the text, and page-edit buttons sit in the page container’s top-right corner. Deletion asks for confirmation. Removing a built-in tab hides its page while retaining its underlying data; removing a created Bride & Groom or custom page removes that page.
 - Images, videos, party member management, menu additions, and claim tools open inside the relevant page. On Wedding Party → Attire, edit mode automatically replaces the normal content below the introductory text with the images and videos editor. These use the existing upload/storage handlers.
 - Open RSVP while editing to see, add, rename, or delete all meal options directly in that page. Each option can be available to adults and children, adults only, or children only, with no fixed number of options. The child count is inside the Attending box; each named person has their own attendance selection. Renaming an option updates its saved RSVP selections too. Removing an option keeps existing RSVP selections for the host’s historical counts, while removing it from new meal choices.
-- Accounts and invitation templates keep their dedicated management tools.
+- Accounts is available to the host at the end of the event summary row, including outside edit mode. Invitation templates keep their dedicated management tool in edit mode.
 
 Text editors support the existing Markdown formatting and variables: `{date}`, `{home}`, `{church}`, `{venue}`, `{registry}`, and `{monetary}`.
 
@@ -19,7 +19,7 @@ The home address is shared by the footer, gathering header, invitation address f
 
 ## RSVP lists
 
-Guests attending excludes households with zero adults and zero children. A separate Not attending section includes declined individuals, including declined members of households that have other people attending. The host's own entry shows **Host**, counts, and a bold italic Times New Roman attendance status without repeating “The Host”.
+Meal totals appear on a separate row below the adult and child totals. Guests attending excludes households with zero adults and zero children. The Not attending summary section opens its own list between Guests attending and Families invited and includes declined individuals, including declined members of households that have other people attending. The host's own entry shows **Host**, counts, and a bold italic Times New Roman attendance status without repeating “The Host”.
 
 ## Verification
 
