@@ -1102,11 +1102,17 @@ function renderWeddingPartyAttireImages(canView) {
 }
 
 function gatheringHeaderAddress() {
-  return state.homeAddress || [state.addressLine1, state.addressLine2].filter(Boolean).join(', ');
+  if (viewedEventId !== 'wedding') return state.homeAddress || [state.addressLine1, state.addressLine2].filter(Boolean).join(', ');
+  const address = fields => fields.map(value => (value || '').trim().replace(/^at\s+/i, '')).filter(Boolean).join(', ');
+  const ceremony = address([state.churchStreet, state.churchCityStateZip]);
+  const reception = address([state.venueStreet, state.venueCityStateZip]);
+  const normalize = value => value.toLowerCase().replace(/[.,]/g, '').replace(/\s+/g, ' ').trim();
+  if (!ceremony || !reception || normalize(ceremony) === normalize(reception)) return ceremony || reception;
+  return `Ceremony: ${ceremony}\nReception: ${reception}`;
 }
 function weddingDetailsWithoutHeaderAddress(value) {
   const normalize = text => text.trim().replace(/^[-*]\s+/, '').replace(/^<|>$/g, '').replace(/[*`]/g, '').replace(/,/g, '').replace(/\s+/g, ' ').toLowerCase();
-  const addressLines = [gatheringHeaderAddress(), ...(state.homeAddress || '').split(/\r?\n/), state.addressLine1, state.addressLine2].filter(Boolean).map(normalize);
+  const addressLines = [...gatheringHeaderAddress().split(/\r?\n/).map(line => line.replace(/^(Ceremony|Reception):\s*/, '')), ...(state.homeAddress || '').split(/\r?\n/), state.addressLine1, state.addressLine2, state.churchStreet, state.churchCityStateZip, state.venueStreet, state.venueCityStateZip].filter(Boolean).map(normalize);
   // Relocate standalone address lines in the displayed page; retain the host's saved copy.
   return expandEditableTextVariables(value || '').split(/\r?\n/).filter(line => !addressLines.includes(normalize(line))).join('\n');
 }
