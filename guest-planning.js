@@ -11,5 +11,19 @@
   function attendees(people) {
     return people.filter(person=>person.attending===true).flatMap(person=>[person.name,...(person.guestChoice==='guest'&&person.guestName?.trim()?[person.guestName.trim()]:[])]);
   }
-  globalThis.GuestPlanning={invitationCount,plusOnePeople,attendees};
+  function rsvpTotals(rsvps, mealOptions = []) {
+    const meals = new Map(mealOptions.filter(Boolean).map(meal => [meal, 0]));
+    let adults = 0, children = 0, noMeal = 0, unselected = 0;
+    for (const rsvp of rsvps) {
+      adults += Number(rsvp.adults) || 0;
+      children += Number(rsvp.children) || 0;
+      for (const selection of rsvp.menuSelections || []) {
+        if (selection.meal === 'none') noMeal += 1;
+        else if (!selection.meal) unselected += 1;
+        else meals.set(selection.meal, (meals.get(selection.meal) || 0) + 1);
+      }
+    }
+    return { adults, children, meals: [...meals], noMeal, unselected };
+  }
+  globalThis.GuestPlanning={invitationCount,plusOnePeople,attendees,rsvpTotals};
 })();
