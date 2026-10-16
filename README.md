@@ -2,6 +2,10 @@
 
 A warm, responsive Thanksgiving and Christmas potluck and RSVP page that can be hosted for free with GitHub Pages.
 
+## Edit the website
+
+Sign in as the host and choose **Edit website** to edit content in place. See [the editing guide](docs/inline-editing.md) for tabs, media, RSVP meals, and linked details.
+
 ## Publish on GitHub Pages
 
 1. Push this repository to GitHub.
