@@ -397,11 +397,11 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .account-row-with-plus-ones{grid-template-columns:145px minmax(0,1fr);gap:0 12px}
 .account-row-with-plus-ones .account-access{grid-column:1;grid-row:2}
 .account-row-with-plus-ones .account-people{grid-column:2;grid-row:2}
-.account-row-with-plus-ones .account-preview-actions{display:grid;grid-template-columns:auto auto auto;grid-column:2;grid-row:1;justify-self:start;gap:4px;align-items:center}
-.account-preview-actions .account-qr-button{grid-column:1;grid-row:2}
-.account-preview-actions .account-invitation-button{grid-column:2;grid-row:2}
-.account-preview-actions .account-delete-button{grid-column:3;grid-row:2}
-.account-preview-actions .account-person-settings{grid-column:2;grid-row:1}
+.account-row-with-plus-ones .account-preview-actions{display:grid;grid-template-columns:auto auto auto minmax(0,1fr) auto;grid-column:2;grid-row:1;justify-self:stretch;gap:4px;align-items:center}
+.account-preview-actions .account-qr-button{grid-column:1;grid-row:1}
+.account-preview-actions .account-invitation-button{grid-column:2;grid-row:1}
+.account-preview-actions .account-delete-button{grid-column:5;grid-row:1}
+.account-preview-actions .account-person-settings{grid-column:3;grid-row:1}
 .account-preview-actions [data-invitation-quantity]{box-sizing:border-box;width:58px;margin:0;padding:8px 4px;border:1px solid var(--border);border-radius:4px;color:var(--ink);background:#fff}
 @media(max-width:750px){
  .account-row-with-plus-ones{grid-template-columns:minmax(0,1fr)}
