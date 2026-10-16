@@ -138,7 +138,9 @@ function accountIsInvited(account, eventId) {
 }
 
 function plusOneCount(account, eventId) {
-  const adults = accountSignInNames(account.name).length;
+  const names = accountSignInNames(account.name);
+  if (Array.isArray(account.plusOnePeople?.[eventId])) return GuestPlanning.plusOnePeople(account,eventId,names).length;
+  const adults = names.length;
   return Math.min(adults, Math.max(0, Math.floor(Number(account.plusOnes?.[eventId]) || 0)));
 }
 
@@ -1591,22 +1593,67 @@ document.querySelector('#claimQuantityForm').addEventListener('submit', event =>
   showToast(`Thanks, ${householdDisplayName(guestName)}! You're bringing ${formatQuantity(quantity, item)} of ${item.name}.`);
 });
 document.querySelector('#claimQuantityDialog').addEventListener('close', () => { pendingClaimItemId = null; });
+let rsvpMealDraft = [];
+function captureRsvpMeals() {
+  for (const selection of readWeddingMenuSelections()) {
+    rsvpMealDraft = rsvpMealDraft.filter(saved => !(saved.type === selection.type && (selection.type === 'child' ? saved.index === selection.index : saved.name === selection.name)));
+    rsvpMealDraft.push(selection);
+  }
+  return rsvpMealDraft;
+}
 document.querySelector('#rsvpButton').addEventListener('click', () => ensureAccount(() => {
   const existing = state.rsvps.find(r => r.name === guestName);
-  document.querySelector('#adults').value = existing?.adults ?? 1;
+  rsvpMealDraft = existing?.menuSelections || [];
+  renderRsvpPeople(existing);
   document.querySelector('#children').value = existing?.children ?? 0;
-  renderWeddingRsvpMenu(existing?.menuSelections || []);
+  renderWeddingRsvpMenu(rsvpMealDraft);
   document.querySelector('#rsvpDialog').showModal();
 }));
 document.querySelectorAll('.stepper button').forEach(button => button.addEventListener('click', () => {
   const output = document.querySelector(`#${button.dataset.target}`);
   output.value = Math.max(0, Math.min(20, Number(output.value) + Number(button.dataset.step)));
-  if (viewedEventId === 'wedding') renderWeddingRsvpMenu(readWeddingMenuSelections());
+  if (viewedEventId === 'wedding') renderWeddingRsvpMenu(captureRsvpMeals());
 }));
-function weddingRsvpNameOptions() {
-  const account = findAccount(guestName);
-  return [...new Set([...(account ? accountSignInNames(account.name) : []), ...(account?.children || [])])];
+function rsvpAccount() { return findAccount(guestName); }
+function readRsvpPeople() {
+  return [...document.querySelectorAll('[data-rsvp-person]')].map(row => ({
+    name: row.dataset.rsvpPerson,
+    attending: row.querySelector('[data-person-attending]').value === 'yes',
+    guestChoice: row.querySelector('[data-person-guest]') ? row.querySelector('[data-person-guest]').value : 'no-guest',
+    guestName: row.querySelector('[data-person-attending]').value === 'yes' && row.querySelector('[data-person-guest]')?.value === 'guest' ? row.querySelector('[data-person-guest-name]').value.trim() : ''
+  }));
 }
+function updateRsvpPeople() {
+  document.querySelectorAll('[data-rsvp-person]').forEach(row => {
+    const attending = row.querySelector('[data-person-attending]').value === 'yes';
+    const fields = row.querySelector('.rsvp-guest-fields');
+    if (!fields) return;
+    fields.hidden = !attending;
+    const choice = fields.querySelector('[data-person-guest]'); choice.required = attending;
+    const name = fields.querySelector('[data-person-guest-name]');
+    name.hidden = !attending || choice.value !== 'guest'; name.required = attending && choice.value === 'guest';
+  });
+  document.querySelector('#adults').value = GuestPlanning.attendees(readRsvpPeople()).length;
+}
+function renderRsvpPeople(existing) {
+  const account = rsvpAccount();
+  const names = account ? accountSignInNames(account.name) : [guestName];
+  const allowed = GuestPlanning.plusOnePeople(account,viewedEventId,names);
+  document.querySelector('#rsvpPeople').innerHTML = names.map(name => {
+    const saved = existing?.people?.find(person => normalizeAccountName(person.name) === normalizeAccountName(name));
+    const attending = saved ? (saved.attending ? 'yes' : 'no') : '';
+    const guest = allowed.includes(name) ? `<div class="rsvp-guest-fields" hidden><label><span>Guest for ${escapeHtml(name)}</span><select data-person-guest><option value="">Choose a guest option</option><option value="no-guest" ${saved?.guestChoice === 'no-guest' ? 'selected' : ''}>NO GUEST</option><option value="guest" ${saved?.guestChoice === 'guest' ? 'selected' : ''}>Bringing a guest</option></select></label><input data-person-guest-name aria-label="Guest name for ${escapeAttribute(name)}" value="${escapeAttribute(saved?.guestName || '')}" placeholder="Guest’s full name" hidden></div>` : '';
+    return `<fieldset class="rsvp-person" data-rsvp-person="${escapeAttribute(name)}"><legend>${escapeHtml(name)}</legend><label><span>Will ${escapeHtml(name)} attend?</span><select data-person-attending required><option value="">Choose attendance</option><option value="yes" ${attending === 'yes' ? 'selected' : ''}>Attending</option><option value="no" ${attending === 'no' ? 'selected' : ''}>Not attending</option></select></label>${guest}</fieldset>`;
+  }).join('');
+  updateRsvpPeople();
+}
+document.querySelector('#rsvpPeople').addEventListener('change', () => {
+  const selections = captureRsvpMeals(); updateRsvpPeople(); renderWeddingRsvpMenu(selections);
+});
+document.querySelector('#rsvpPeople').addEventListener('input', event => {
+  if (!event.target.matches('[data-person-guest-name]')) return;
+  const selections = captureRsvpMeals(); updateRsvpPeople(); renderWeddingRsvpMenu(selections);
+});
 function readWeddingMenuSelections() {
   return [...document.querySelectorAll('.wedding-rsvp-guest')].map(card => ({
     type: card.dataset.guestType,
@@ -1622,35 +1669,28 @@ function renderWeddingRsvpMenu(selections = []) {
   const isWedding = viewedEventId === 'wedding';
   section.hidden = !isWedding;
   if (!isWedding) return;
-  const names = weddingRsvpNameOptions();
   const counts = { adult: Number(document.querySelector('#adults').value), child: Number(document.querySelector('#children').value) };
   const meals = (state.weddingMealOptions || []).filter(Boolean);
   const childMeal = state.weddingChildMealOption || '';
   const cards = ['adult', 'child'].flatMap(type => Array.from({ length: counts[type] }, (_, index) => {
-    const saved = selections.find(selection => selection.type === type && Number(selection.index) === index) || {};
-    const personOptions = names.map(name => `<option value="${escapeAttribute(name)}" ${saved.name === name ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('');
+    const personName = type === 'adult' ? GuestPlanning.attendees(readRsvpPeople())[index] : `Child ${index + 1}`;
+    const saved = selections.find(selection => selection.type === type && selection.name === personName) || selections.find(selection => selection.type === type && Number(selection.index) === index && (type === 'child' || !selection.name)) || {};
     const mealOptions = [...meals, ...(type === 'child' && childMeal ? [childMeal] : [])];
     const radioName = `wedding-meal-${type}-${index}`;
     const radios = mealOptions.map(meal => `<label class="wedding-meal-choice"><input type="radio" data-rsvp-meal name="${radioName}" value="${escapeAttribute(meal)}" ${saved.meal === meal ? 'checked' : ''} required><span>${escapeHtml(meal)}</span></label>`).join('');
     const none = type === 'child' ? `<label class="wedding-meal-choice"><input type="radio" data-rsvp-meal name="${radioName}" value="none" ${saved.meal === 'none' ? 'checked' : ''} required><span>My child is too young</span></label>` : '';
-    return `<fieldset class="wedding-rsvp-guest" data-guest-type="${type}" data-guest-index="${index}"><legend>${type === 'adult' ? 'Adult' : 'Child'} ${index + 1}</legend><label><span>Who is this meal for?</span><select data-rsvp-guest-name required><option value="">Choose a person</option>${personOptions}<option value="someone-else" ${saved.name === 'someone-else' ? 'selected' : ''}>Someone else</option></select></label><label data-rsvp-custom-wrapper ${saved.name === 'someone-else' ? '' : 'hidden'}><span>Name</span><input data-rsvp-custom-name maxlength="100" value="${escapeAttribute(saved.customName || '')}" placeholder="Guest name" ${saved.name === 'someone-else' ? 'required' : ''}></label><div class="wedding-meal-options">${radios}${none || (!mealOptions.length ? '<p class="form-error">Meal options have not been added yet.</p>' : '')}</div><label><span>Please note any dietary restrictions or food allergies.</span><textarea data-rsvp-dietary maxlength="500" placeholder="Optional">${escapeHtml(saved.dietaryRestrictions || '')}</textarea></label></fieldset>`;
+    return `<fieldset class="wedding-rsvp-guest" data-guest-type="${type}" data-guest-index="${index}"><legend>${escapeHtml(personName)}</legend><input type="hidden" data-rsvp-guest-name value="${escapeAttribute(personName)}"><input type="hidden" data-rsvp-custom-name value=""><div class="wedding-meal-options">${radios}${none || (!mealOptions.length ? '<p class="form-error">Meal options have not been added yet.</p>' : '')}</div><label><span>Please note any dietary restrictions or food allergies.</span><textarea data-rsvp-dietary maxlength="500" placeholder="Optional">${escapeHtml(saved.dietaryRestrictions || '')}</textarea></label></fieldset>`;
   }));
   document.querySelector('#weddingRsvpGuests').innerHTML = cards.join('');
 }
-document.querySelector('#weddingRsvpGuests').addEventListener('change', event => {
-  if (!event.target.matches('[data-rsvp-guest-name]')) return;
-  const wrapper = event.target.closest('.wedding-rsvp-guest').querySelector('[data-rsvp-custom-wrapper]');
-  wrapper.hidden = event.target.value !== 'someone-else';
-  wrapper.querySelector('input').required = event.target.value === 'someone-else';
-});
 document.querySelector('#rsvpForm').addEventListener('submit', event => {
+  if (event.submitter?.value === 'cancel') return;
+  updateRsvpPeople();
+  const people = readRsvpPeople();
+  const allowed = GuestPlanning.plusOnePeople(rsvpAccount(),viewedEventId,people.map(person=>person.name));
+  if (people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
   const menuSelections = viewedEventId === 'wedding' ? readWeddingMenuSelections() : [];
-  if (viewedEventId === 'wedding' && menuSelections.some(selection => selection.name === 'someone-else' && !selection.customName)) {
-    event.preventDefault();
-    showToast('Enter a name for each “Someone else” guest.');
-    return;
-  }
-  const rsvp = { name: guestName, adults: Number(document.querySelector('#adults').value), children: Number(document.querySelector('#children').value), ...(viewedEventId === 'wedding' ? { menuSelections } : {}) };
+  const rsvp = { name: guestName, people, adults: Number(document.querySelector('#adults').value), children: Number(document.querySelector('#children').value), ...(viewedEventId === 'wedding' ? { menuSelections } : {}) };
   const index = state.rsvps.findIndex(entry => entry.name === guestName);
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
   saveState(); showToast(`RSVP saved — we can't wait to see you!`);
@@ -1701,7 +1741,7 @@ document.querySelector('#guestListButton').addEventListener('click', () => {
   const list = document.querySelector('#guestList');
   list.innerHTML = state.rsvps.length ? hostFirstRsvps(state.rsvps).map(rsvp => {
     const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml(selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`)}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
-    return `<div class="guest-entry"><strong>${escapeHtml(contributionDisplayName(rsvp.name))}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${menu}</div>`;
+    return `<div class="guest-entry"><strong>${escapeHtml(contributionDisplayName(rsvp.name))}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${menu}</div>`;
   }).join('') : '<p class="guest-empty">No guests have RSVP’d yet.</p>';
   document.querySelector('#guestListDialog').showModal();
 });
@@ -1955,8 +1995,10 @@ function openAccountsAdmin() {
   document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => {
     const adultCount = accountSignInNames(account.name).length;
     const deleteControl = canDeleteWebsiteAccount(account) ? `<button class="account-delete-button" type="button" aria-label="Delete account for ${escapeAttribute(account.name)}">Delete</button>` : '';
-    const plusOnes = plusOneCount(account, viewedEventId);
-    const plusOneControl = `<label class="account-plus-ones"><span>Plus ones</span><select aria-label="Plus ones for ${escapeAttribute(account.name)} at ${escapeAttribute(EVENT_DETAILS[viewedEventId].name)}">${Array.from({ length: adultCount + 1 }, (_, count) => `<option value="${count}" ${count === plusOnes ? 'selected' : ''}>${count}</option>`).join('')}</select></label>`;
+    const names = accountSignInNames(account.name);
+    const granted = GuestPlanning.plusOnePeople(account,viewedEventId,names);
+    const legacy = !Array.isArray(account.plusOnePeople?.[viewedEventId]) && plusOneCount(account,viewedEventId)>0;
+    const plusOneControl = `<div class="account-person-settings"><label><span>Invitations to print</span><input data-invitation-quantity type="number" min="0" step="1" value="${GuestPlanning.invitationCount(account,viewedEventId)}" aria-label="Invitations to print for ${escapeAttribute(account.name)}"></label><strong>Allow a guest for</strong>${names.map(name=>`<label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(name)}" ${granted.includes(name)?'checked':''}><span>${escapeHtml(name)}</span></label>`).join('')}${legacy?`<p data-legacy-plus-ones>Previously ${plusOneCount(account,viewedEventId)} account plus-one(s). Select the people who may bring a guest.</p>`:''}</div>`;
     return `<div class="account-row account-row-with-plus-ones" data-account-index="${index}"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, viewedEventId) ? 'checked' : ''}><span>Give Access</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, viewedEventId) ? 'checked' : ''}><span>Invite</span></label></div><div class="account-people">${accountContactsHtml(account)}</div>${plusOneControl}<div class="account-preview-actions"><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken || state.invitationQrMode === 'general' ? '' : 'disabled title="QR access is required"'}>Inv</button>${deleteControl}</div></div>`;
   }).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
   document.querySelectorAll('.account-row').forEach(row => {
@@ -1971,12 +2013,17 @@ function openAccountsAdmin() {
       if (!event.target.checked && guestName === account.name) guestName = '';
       saveState();
     });
-    row.querySelector('.account-plus-ones select')?.addEventListener('change', event => {
-      const account = appState.accounts[Number(row.dataset.accountIndex)];
-      account.plusOnes ??= {};
-      account.plusOnes[viewedEventId] = Number(event.target.value);
-      saveState();
+    row.querySelector('[data-invitation-quantity]').addEventListener('change', event => {
+      const account=appState.accounts[Number(row.dataset.accountIndex)],count=Number(event.target.value);
+      if(!Number.isSafeInteger(count)||count<0){event.target.value=GuestPlanning.invitationCount(account,viewedEventId);return;}
+      account.invitationQuantities??={};account.invitationQuantities[viewedEventId]=count;saveState();
     });
+    row.querySelectorAll('[data-plus-one-person]').forEach(input=>input.addEventListener('change',()=>{
+      const account=appState.accounts[Number(row.dataset.accountIndex)];account.plusOnePeople??={};
+      account.plusOnePeople[viewedEventId]=[...row.querySelectorAll('[data-plus-one-person]:checked')].map(input=>input.dataset.plusOnePerson);
+      account.plusOnes??={};account.plusOnes[viewedEventId]=account.plusOnePeople[viewedEventId].length;
+      row.querySelector('[data-legacy-plus-ones]')?.remove();saveState();
+    }));
     access.querySelector('.account-invited').addEventListener('change', event => {
       const account = appState.accounts[Number(row.dataset.accountIndex)];
       account.invitedEvents ??= {};
@@ -2094,8 +2141,13 @@ document.querySelector('#invitationTemplateAssignment').addEventListener('change
   state.invitationTemplateId = event.target.value; saveState(); showToast('Invitation template assignment updated.');
 });
 document.querySelector('#downloadInvitationPng').addEventListener('click', async () => {
-  const blob = await canvasBlob(document.querySelector('#invitationCanvas'));
-  if (blob) downloadBlob(blob, window.Invitation.filenameFor(invitationPreviewAccount?.name || 'General Login', EVENT_DETAILS[viewedEventId].name));
+  const account=invitationPreviewAccount,count=account?GuestPlanning.invitationCount(account,viewedEventId):1;
+  if(!count){showToast('This account has zero invitations selected.');return;}
+  if(count>65535){showToast('A ZIP can contain at most 65,535 invitations.');return;}
+  const blob=await canvasBlob(document.querySelector('#invitationCanvas'));if(!blob)return;
+  if(count===1){downloadBlob(blob,window.Invitation.filenameFor(account?.name||'General Login',EVENT_DETAILS[viewedEventId].name));return;}
+  const files=Array.from({length:count},(_,index)=>new File([blob],window.Invitation.filenameFor(`${account.name}-copy-${index+1}`,EVENT_DETAILS[viewedEventId].name),{type:'image/png'}));
+  downloadBlob(await InvitationZip.zipFiles(files),`${safeQrFilename(account.name)}-invitations.zip`);
 });
 document.querySelector('#configureInvitationTemplate').addEventListener('click', () => {
   document.querySelector('#invitationPreviewDialog').close();
@@ -2127,19 +2179,17 @@ document.querySelector('#bulkInvitationChoices').addEventListener('click', async
   bulkInvitationBusy = true; buttons.forEach(button => { button.disabled = true; });
   status.textContent = 'Preparing invitations…';
   try {
-    let file;
-    if (mode === 'general') file = await invitationFile(null, 'general');
-    else {
-      const accounts = invitationAccounts('account');
-      if (!accounts.length) throw new Error('There are no invited accounts with individual QR access.');
-      const files = [];
-      for (const [index, account] of accounts.entries()) {
-        status.textContent = `Preparing invitation ${index + 1} of ${accounts.length}…`;
-        files.push(await invitationFile(account, 'account'));
-      }
-      const zip = await InvitationZip.zipFiles(files);
-      file = new File([zip], `${viewedEventId}-individual-invitations.zip`, { type: 'application/zip' });
+    const accounts=invitationAccounts(mode).filter(account=>GuestPlanning.invitationCount(account,viewedEventId)>0);
+    if(!accounts.length)throw new Error('There are no invited accounts with a nonzero invitation quantity for this QR option.');
+    const files=[],total=accounts.reduce((sum,account)=>sum+GuestPlanning.invitationCount(account,viewedEventId),0);
+    if(total>65535)throw new Error('A ZIP can contain at most 65,535 invitations. Reduce the selected quantities.');
+    for(const account of accounts)for(let copy=0;copy<GuestPlanning.invitationCount(account,viewedEventId);copy++){
+      status.textContent=`Preparing invitation ${files.length+1} of ${total}…`;
+      const image=await invitationFile(account,mode);
+      files.push(new File([image],window.Invitation.filenameFor(`${account.name}-copy-${copy+1}`,EVENT_DETAILS[viewedEventId].name),{type:'image/png'}));
     }
+    const zip=await InvitationZip.zipFiles(files);
+    const file=new File([zip],`${viewedEventId}-${mode==='general'?'general':'individual'}-invitations.zip`,{type:'application/zip'});
     if (bulkInvitationAction === 'download') { downloadBlob(file, file.name); dialog.close(); }
     else {
       bulkInvitationFiles = [file];
