@@ -82,10 +82,10 @@
       menuSelections: savedMenuSelections.filter(selection => selection.type === 'child' ? selection.index < incoming.children : names.includes(selection.name)) };
   }
   function attendanceGroups(rsvps) {
-    const attending = rsvps.filter(rsvp => Number(rsvp.adults) + Number(rsvp.children) > 0);
+    const attending = rsvps.filter(rsvp => (rsvp.people?.length ? attendees(rsvp.people).length : Number(rsvp.adults)) + Number(rsvp.children || 0) > 0);
     const notAttending = rsvps.flatMap(rsvp => {
-      const declined = (rsvp.people || []).filter(person => !person.attending).map(person => ({ household: rsvp.name, name: person.name }));
-      return declined.length ? declined : Number(rsvp.adults) + Number(rsvp.children) === 0 ? [{ household: rsvp.name, name: rsvp.name }] : [];
+      const declined = (rsvp.people || []).filter(person => person.attending === false).map(person => ({ household: rsvp.name, name: person.name }));
+      return rsvp.people?.length ? declined : Number(rsvp.adults) + Number(rsvp.children) === 0 ? [{ household: rsvp.name, name: rsvp.name }] : [];
     });
     return { attending, notAttending };
   }
