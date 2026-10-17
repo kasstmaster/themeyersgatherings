@@ -41,6 +41,15 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
     await page.locator('[aria-controls="custom-page-extra"]').click();
     assert.equal(await page.locator('#custom-page-extra h2').textContent(),'Extra');
     await page.locator('#custom-page-extra').scrollIntoViewIfNeeded();
+    async function assertUpperTextMatches(){
+      const styles=await page.evaluate(()=>['#custom-page-extra>.section-kicker','#brideGroomSection>.section-kicker'].map(selector=>{const style=getComputedStyle(document.querySelector(selector));return ['color','fontFamily','fontSize','fontWeight','letterSpacing','textTransform','textAlign','marginTop','marginBottom'].map(key=>style[key]);}));
+      assert.deepEqual(styles[0],styles[1]);
+    }
+    await assertUpperTextMatches();
+    await page.evaluate(()=>{document.body.classList.add('custom-gathering-gold');document.body.style.setProperty('--gold','#123456');});
+    await assertUpperTextMatches();
+    assert.equal(await page.locator('#custom-page-extra>.section-kicker').evaluate(el=>getComputedStyle(el).color),'rgb(18, 52, 86)');
+    await page.evaluate(()=>{document.body.classList.remove('custom-gathering-gold');document.body.style.removeProperty('--gold');});
     await page.locator('[data-inline-field-key="wedding:extra:intro"] [aria-label="Edit text"]').click();
     await page.getByRole('textbox',{name:'Text above title',exact:true}).fill('A little introduction');
     await page.getByRole('textbox',{name:'Text above title',exact:true}).blur();
