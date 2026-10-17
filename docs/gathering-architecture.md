@@ -55,3 +55,10 @@ remain separate. The sign-in and RSVP screens share `fullscreen-flow` and
 `full-page-form` styles. `scripts/verify-rsvp-flow.cjs` exercises the journey on
 desktop and mobile, including custom gatherings, invitation scope, validation,
 deadlines, and contribution updates.
+
+The RSVP page heading follows the current question; attendance keeps “Who's
+joining us?”. Body text uses a simple sans-serif font and shared question-title
+sizes. The standard-gathering dish question uses Yes/No actions that advance or
+save directly, with the normal Next button hidden on that question.
+The welcome kicker and introduction appear only on attendance questions. Later
+steps keep the question and the instructions relevant to that answer.

@@ -535,7 +535,7 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 /* RSVP uses the same full-page shell as sign-in, with one question per step. */
 #rsvpDialog{position:fixed;inset:0;margin:0;width:100%;height:100dvh;max-width:none;max-height:none;padding:24px;overflow-y:auto;overscroll-behavior:contain}
 #rsvpDialog[open]{display:block}
-#rsvpDialog #rsvpForm{position:relative;max-height:none;overflow:visible;width:min(440px,100%);padding:38px 0;margin:24px auto 0;background:transparent;color:#fff;box-shadow:none;border:0;border-radius:0}
+#rsvpDialog #rsvpForm{position:relative;max-height:none;overflow:visible;width:min(440px,100%);padding:38px 0;margin:24px auto 0;background:transparent;color:#fff;box-shadow:none;border:0;border-radius:0;font-family:Arial,Helvetica,sans-serif;font-size:1rem;line-height:1.5}
 #rsvpDialog .modal-close{position:absolute;right:0;top:0;color:#fff}
 #rsvpDialog h2{font-family:"Times New Roman",Times,serif;font-size:clamp(1.8rem,6vw,2.25rem);line-height:1.1;color:#fff;margin:0 30px 16px 0}
 #rsvpDialog .modal-dialog-footer{position:sticky;bottom:0;box-shadow:none;background:rgba(11,31,58,.98);margin:24px 0 0;padding:14px 0}
@@ -543,9 +543,9 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #rsvpDialog .sign-in-back{display:block;margin:16px auto 0;color:#fff}
 #rsvpDialog [hidden],#rsvpDialog [data-rsvp-flow-hidden]{display:none!important}
 #rsvpDialog :is(input:not([type="radio"]):not([type="checkbox"]),select,textarea){box-sizing:border-box;width:100%;padding:14px;font:inherit;background:#fff;color:var(--ink);border:1px solid var(--border);border-radius:4px}
-#rsvpDialog label{color:#fff;font-size:1rem}
+#rsvpDialog label{color:#fff;font-size:1rem;font-weight:400}
 #rsvpDialog :is(.rsvp-person,.wedding-rsvp-guest,.rsvp-attendance-box){color:#fff;background:transparent;border:0;padding:0;margin:0}
-#rsvpDialog :is(.rsvp-person,.wedding-rsvp-guest)>legend{font-family:"Times New Roman",Times,serif;color:#fff;font-size:1.4rem;margin:0 0 14px}
+#rsvpDialog :is(.rsvp-person,.wedding-rsvp-guest)>legend{font-family:inherit;color:#fff;font-size:1.125rem;font-weight:600;margin:0 0 14px}
 #rsvpDialog .rsvp-attendance-box>legend{display:none}
 #rsvpDialog .counter-row{border:0;margin:0;padding:12px 0}
 #rsvpDialog .counter-row span{color:#c1cad5}
@@ -569,3 +569,16 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #rsvpDialog #rsvpDishOptions h4{margin:24px 0 12px;font-size:1.05rem}
 
 #rsvpDialog .inline-meal-editor label{color:var(--ink)}
+
+/* Calm, consistent question typography beneath the RSVP page heading. */
+#rsvpDialog :is(h3,h4,.counter-row strong,label>span){font-family:Arial,Helvetica,sans-serif;font-size:1.125rem;font-weight:600;line-height:1.5}
+#rsvpDialog :is(h3,h4){margin:0 0 16px}
+#rsvpDialog :is(.wedding-meal-choice,.wedding-meal-choice>span,.rsvp-custom-dish-choice>span){font-size:1rem!important;font-weight:400}
+#rsvpDialog .counter-row span,#rsvpDialog .rsvp-dish-choice small{font-size:.875rem;font-weight:400;line-height:1.5}
+#rsvpDialog #rsvpDishOptions h4{font-size:1.125rem}
+#rsvpDialog .rsvp-answer-buttons{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}
+#rsvpDialog .rsvp-answer-buttons button{min-height:48px;font:600 1rem Arial,Helvetica,sans-serif}
+
+#rsvpDialog .rsvp-guided :is(#rsvpDishQuestion,#rsvpDishOptions,#rsvpReview)>h3{display:none}
+
+#rsvpDialog .rsvp-direct-choice .modal-dialog-footer{background:transparent;margin-top:12px;padding-top:0}
