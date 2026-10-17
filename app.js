@@ -1867,16 +1867,16 @@ function rsvpFlowSteps() {
       if(choice){add(`guest-${index}`,choice.closest('label'),'Bringing a guest?');if(choice.value==='guest')add(`guest-name-${index}`,row.querySelector('[data-person-guest-name]'),'Your guest’s name');}
     }
   });
-  add('children',document.querySelector('#rsvpChildrenCounter'),'Children joining us');
+  add('children',document.querySelector('#rsvpChildrenCounter'),'Any children joining us?');
   if(GatheringFeatures.rsvp(viewedEventId).childNames)document.querySelectorAll('.rsvp-child-name').forEach((element,index)=>add(`child-${index}`,element,'Your child’s name'));
-  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Guests joining us');
+  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Are you bringing guests?');
   if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest').forEach(card=>{
     const id=`${card.dataset.guestType}-${card.dataset.guestIndex}`;
     add(`meal-${id}`,card.querySelector('.wedding-meal-options'),'Choose a meal');
     add(`dietary-${id}`,card.querySelector('[data-rsvp-dietary]').closest('label'),'Dietary needs');
   });
   if(rsvpDishesEnabled()){
-    add('bringing-dish',document.querySelector('#rsvpDishQuestion'),'Bringing a dish?');
+    add('bringing-dish',document.querySelector('#rsvpDishQuestion'),'Will you be bringing a dish?');
     if(document.querySelector('#rsvpBringingDish').value==='yes'){
       add('dishes',document.querySelector('#rsvpDishOptions'),'Choose your dish');
       if(document.querySelector('#rsvpCustomDish').checked){
