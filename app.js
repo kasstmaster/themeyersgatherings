@@ -286,6 +286,7 @@ function normalizeState(saved) {
             ...rsvp,
             adults: Math.max(0, Number(rsvp.adults) || 0),
             children: Math.max(0, Number(rsvp.children) || 0),
+            childNames: Array.isArray(rsvp.childNames) ? rsvp.childNames.map(name=>typeof name==='string'?name.trim():'') : [],
             menuSelections: Array.isArray(rsvp.menuSelections) ? rsvp.menuSelections.filter(selection => selection && typeof selection === 'object').map(selection => ({
               ...(Number.isSafeInteger(selection.invitationNumber) ? {invitationNumber:selection.invitationNumber} : {}),
               type: selection.type === 'child' ? 'child' : 'adult',
@@ -1777,6 +1778,16 @@ document.querySelector('#claimQuantityForm').addEventListener('submit', event =>
   showToast(`Thanks, ${householdDisplayName(guestName)}! You're bringing ${formatQuantity(quantity, item)} of ${item.name}.`);
 });
 document.querySelector('#claimQuantityDialog').addEventListener('close', () => { pendingClaimItemId = null; });
+let rsvpChildNameDraft=[];
+function readRsvpChildNames(){return Array.from({length:Number(document.querySelector('#children').value)},(_,index)=>String(rsvpChildNameDraft[index] || '').trim());}
+function renderRsvpChildNames(){
+  document.querySelector('#rsvpChildNames').innerHTML=readRsvpChildNames().map((name,index)=>`<label class="rsvp-child-name"><span>Child ${index+1} -</span><input data-rsvp-child-name="${index}" aria-label="Child ${index+1} name" placeholder="Name" value="${escapeAttribute(name)}" required></label>`).join('');
+}
+document.querySelector('#rsvpChildNames').addEventListener('input',event=>{
+  if(!event.target.matches('[data-rsvp-child-name]'))return;
+  const meals=captureRsvpMeals();rsvpChildNameDraft[Number(event.target.dataset.rsvpChildName)]=event.target.value;
+  renderWeddingRsvpMenu(meals);
+});
 let rsvpMealDraft = [];
 function captureRsvpMeals() {
   for (const selection of readWeddingMenuSelections()) {
@@ -1797,12 +1808,15 @@ document.querySelector('#rsvpButton').addEventListener('click', () => ensureAcco
   applyRsvpDeadline();
   renderRsvpPeople(existing);
   document.querySelector('#children').value = existing?.children ?? 0;
+  rsvpChildNameDraft=[...(existing?.childNames || [])];
+  renderRsvpChildNames();
   renderWeddingRsvpMenu(rsvpMealDraft);
   document.querySelector('#rsvpDialog').showModal();
 }));
 document.querySelectorAll('.stepper button').forEach(button => button.addEventListener('click', () => {
   const output = document.querySelector(`#${button.dataset.target}`);
   output.value = Math.max(0, Math.min(20, Number(output.value) + Number(button.dataset.step)));
+  renderRsvpChildNames();
   if (viewedEventId === 'wedding') renderWeddingRsvpMenu(captureRsvpMeals());
 }));
 function rsvpOptionsLocked() { return !isHostView() && GuestPlanning.rsvpClosed(state); }
@@ -1881,7 +1895,7 @@ function renderWeddingRsvpMenu(selections = []) {
   if (!isWedding) return;
   const counts = { adult: Number(document.querySelector('#adults').value), child: Number(document.querySelector('#children').value) };
   const cards = ['adult', 'child'].flatMap(type => Array.from({ length: counts[type] }, (_, index) => {
-    const personName = type === 'adult' ? GuestPlanning.attendees(readRsvpPeople())[index] : `Child ${index + 1}`;
+    const personName = type === 'adult' ? GuestPlanning.attendees(readRsvpPeople())[index] : GuestPlanning.childLabel(index,readRsvpChildNames()[index]);
     const saved = selections.find(selection => selection.type === type && selection.name === personName) || selections.find(selection => selection.type === type && Number(selection.index) === index && (type === 'child' || !selection.name)) || {};
     const mealOptions = GuestPlanning.weddingMealOptions(state,type);
     const radioName = `wedding-meal-${type}-${index}`;
@@ -1900,12 +1914,14 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   updateRsvpPeople();
   const people = readRsvpPeople();
   if(people.some(person=>person.attending!==true && person.attending!==false)){event.preventDefault();showToast('Please choose attendance for each person.');return;}
+  const childNames=readRsvpChildNames();
+  if(childNames.some(name=>!name)){event.preventDefault();showToast('Please enter a name for each child.');return;}
   const names=rsvpNames();
   if (!names.length || people.length!==names.length || new Set(people.map(person=>person.name)).size!==names.length || people.some(person=>!names.includes(person.name))) { event.preventDefault();showToast('Your invitation has changed. Please reopen RSVP.');return; }
   const allowed = GuestPlanning.plusOnePeople(rsvpAccount(),viewedEventId,people.map(person=>person.name));
   if (!rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
   const menuSelections = viewedEventId === 'wedding' ? readWeddingMenuSelections() : [];
-  let rsvp = { name: guestName, people, adults: Number(document.querySelector('#adults').value), children: Number(document.querySelector('#children').value), ...(viewedEventId === 'wedding' ? { menuSelections } : {}) };
+  let rsvp = { name: guestName, people, childNames, adults: Number(document.querySelector('#adults').value), children: Number(document.querySelector('#children').value), ...(viewedEventId === 'wedding' ? { menuSelections } : {}) };
   const index = state.rsvps.findIndex(entry => entry.name === guestName);
   if (rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
   const account=rsvpAccount();
@@ -1987,7 +2003,7 @@ function renderGuestAttendance() {
   const { attending: attendingRsvps } = GuestPlanning.attendanceGroups(groupedRsvps);
   list.innerHTML = attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
     const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml((selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`))}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
-    return `<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.name === HOST_DISPLAY_NAME ? '<em class="rsvp-attendance">Attending</em>' : rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.filter(person=>person.attending).map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${menu}</div>`;
+    return `<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.name === HOST_DISPLAY_NAME ? '<em class="rsvp-attendance">Attending</em>' : rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.filter(person=>person.attending).map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${GuestPlanning.childLabels(rsvp).map(label=>`<div>${escapeHtml(label)}</div>`).join('')}${menu}</div>`;
   }).join('') : '<p class="guest-empty">No guests are attending yet.</p>';
   const declined=groupedRsvps.map(rsvp=>({rsvp,people:GuestPlanning.attendanceGroups([rsvp]).notAttending})).filter(group=>group.people.length);
   document.querySelector('#notAttendingList').innerHTML=declined.length ? declined.map(({rsvp,people})=>`<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong>${people.map(person=>`<div>${escapeHtml(person.name)}</div>`).join('')}<em class="rsvp-attendance">Declines with regret</em></div>`).join('') : '<p class="guest-empty">No declined RSVPs yet.</p>';
@@ -3258,7 +3274,7 @@ function renderGatheringHistory() {
   area.innerHTML=`<h3>${escapeHtml(snapshot.name)} · ${escapeHtml(snapshot.date)}</h3><p>Read-only snapshot · ${totals.adults} adults · ${totals.children} children. Attendance reflects saved RSVPs.</p>`
     +section('Location',`<p>${escapeHtml(snapshot.eventId==='wedding'?[event.churchStreet,event.churchCityStateZip,event.venueStreet,event.venueCityStateZip].filter(Boolean).join(' · '):SharedDetails.homeAddress(event))}</p>`)
     +section('Invited',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]).map(accountHtml).join(''))
-    +section('Attending',peopleHtml(true))+section('Declined',peopleHtml(false))
+    +section('Attending',peopleHtml(true)+rsvps.flatMap(rsvp=>GuestPlanning.childLabels(rsvp)).map(name=>`<p>${escapeHtml(name)}</p>`).join(''))+section('Declined',peopleHtml(false))
     +section('No RSVP',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]&&missing(account).length).map(account=>`<article><strong>${escapeHtml(account.name)}</strong><p>${missing(account).map(escapeHtml).join(', ')}</p></article>`).join(''))
     +section('Contributions and menu requests',(event.items || []).map(item=>{const counts=new Map();for(const name of item.claims || [])counts.set(name,(counts.get(name)||0)+1);return `<article><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.category || '')} · ${item.needed} ${escapeHtml(item.unit || 'item')}(s) requested</p>${[...counts].map(([name,quantity])=>`<p>${escapeHtml(label(name))}: ${quantity}</p>`).join('') || '<p>No claims recorded.</p>'}</article>`;}).join(''))
     +section('Meals and dietary requests',rsvps.flatMap(rsvp=>(rsvp.menuSelections || []).map(meal=>`<p>${escapeHtml(meal.name || rsvp.name)}: ${escapeHtml(meal.meal || 'No meal selected')}${meal.dietaryRestrictions?` · ${escapeHtml(meal.dietaryRestrictions)}`:''}</p>`)).join(''))
