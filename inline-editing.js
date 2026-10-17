@@ -344,9 +344,11 @@
         button('×', () => { if (window.confirm(`Delete the “${page.title}” page?`)) { state.sitePages = state.sitePages.filter(item => item.id !== page.id); context.save(); } }, tools, `Delete ${page.title} page`);
       }
       if (selected?.id === page.id) {
-        const panel = node('section', undefined, 'gathering-page inline-custom-page');
+        const isSubpage = nav.classList.contains('matron-info-tabs');
+        const panel = node('section', undefined, `gathering-page inline-custom-page${isSubpage ? ' gathering-subpage' : ''}`);
         panel.id = `custom-page-${page.id}`; panel.setAttribute('role','tabpanel');
-        panel.innerHTML = `<h2>${context.escape(page.title)}</h2><div class="bride-groom-content">${context.format(page.content)}</div>`;
+        const heading = isSubpage ? 'h3' : 'h2';
+        panel.innerHTML = `<${heading}>${context.escape(page.title)}</${heading}><div class="bride-groom-content">${context.format(page.content)}</div>`;
         nav.after(panel); cleanup.push(() => panel.remove());
         field(panel, 'page', [{ label: 'Title', value: page.title, required: true }, { label: 'Content', type: 'textarea', value: page.content }], ([title, content]) => { page.title = title; page.content = content; }, { key: page.id });
       }

@@ -496,3 +496,21 @@ body>.inline-overlay-layer{clip-path:inset(0 0 var(--edit-dock-height, 78px) 0)}
 .account-toolbar-buttons .account-qr-button,.account-toolbar-buttons .account-invitation-button{width:40px;margin:0}
 
 .account-surname-group+.account-surname-group{padding-left:18px;border-left:1px solid rgba(19,40,65,.14)}
+
+/* Shared page geometry: headings lead into tabs, and tabs touch their panels. */
+#eventPage{--page-heading-gap:28px;--page-padding:50px 30px;--panel-padding:24px}
+#eventPage main>:is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section){padding:var(--page-padding)}
+#eventPage main>:is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section)>h2,
+#eventPage .wedding-page-heading,
+#eventPage #gatheringMenuSection .menu-heading{margin-bottom:var(--page-heading-gap)}
+#eventPage main>section>h2,#eventPage .wedding-page-heading>h2,#eventPage #gatheringMenuSection .menu-heading h2{font-family:"Times New Roman",Times,serif;font-size:clamp(2.2rem,5vw,3.5rem);text-align:center;color:var(--navy)}
+#eventPage .wedding-page-heading>h2{margin:0}
+#eventPage :is(.wedding-party-tabs,.matron-info-tabs){gap:0;margin-bottom:0;border-bottom:0}
+#eventPage .wedding-party-tabs button{flex:1 1 140px;padding:15px 12px;font-size:1rem;font-weight:700}
+#eventPage .matron-info-tabs button{flex:1 1 0;min-width:0;padding:14px 20px;font-size:1rem;font-weight:700}
+#eventPage :is(.bride-groom-content,.perfect-experience-panel,.what-to-expect-content,#registryAttireSection,.gathering-subpage){box-sizing:border-box;width:min(900px,100%);padding:var(--panel-padding)}
+#eventPage .gathering-subpage{min-height:120px;margin:0 auto;color:var(--muted);background:var(--registry-inner-background);border:1px solid var(--border);border-radius:6px;box-shadow:none;text-align:left}
+#eventPage .gathering-subpage>h3{margin:0 0 12px;color:var(--navy);font-family:"Times New Roman",Times,serif;font-size:1.6rem}
+#eventPage .gathering-subpage>.bride-groom-content{width:100%;min-height:0;margin:0;padding:0;border:0;background:transparent}
+@media(max-width:650px){#eventPage{--page-padding:30px 16px;--panel-padding:18px}}
+@media(max-width:600px){#eventPage .matron-info-tabs button{padding:12px 8px;font-size:.82rem}}
