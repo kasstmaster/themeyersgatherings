@@ -1960,12 +1960,12 @@ document.querySelectorAll('.editor-dialog form').forEach(form => {
   form.closest('dialog').addEventListener('close', () => commitPendingEditorInputs(form));
 });
 function invitationGroupTitle(group) {
-  return `Inv #${group.invitation} · ${[...new Set(group.names.map(name=>firstAccountLastName(name)))].join(' / ')}`;
+  return [...new Set(group.names.map(name=>firstAccountLastName(name)))].join(' / ');
 }
 function invitationAttendanceRsvps() {
   return GuestPlanning.guestResponses(state.rsvps).flatMap(rsvp=>{
     const account=appState.accounts.find(account=>account.name===rsvp.name);
-    if(!account)return [{...rsvp,invitationTitle:`Inv #1 · ${rsvp.name}`}];
+    if(!account)return [{...rsvp,invitationTitle:rsvp.name}];
     return InvitationGroups.groups(account,viewedEventId,accountSignInNames(account.name),rsvp).map(group=>({...group.rsvp,invitationTitle:invitationGroupTitle(group)}));
   });
 }
@@ -1986,7 +1986,7 @@ function renderGuestAttendance() {
   const groupedRsvps=invitationAttendanceRsvps();
   const { attending: attendingRsvps } = GuestPlanning.attendanceGroups(groupedRsvps);
   list.innerHTML = attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
-    const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml((selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`) + (selection.type==='child' && selection.invitationNumber>1 ? ` (Inv #${selection.invitationNumber})` : ''))}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
+    const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml((selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`))}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
     return `<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.name === HOST_DISPLAY_NAME ? '<em class="rsvp-attendance">Attending</em>' : rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.filter(person=>person.attending).map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${menu}</div>`;
   }).join('') : '<p class="guest-empty">No guests are attending yet.</p>';
   const declined=groupedRsvps.map(rsvp=>({rsvp,people:GuestPlanning.attendanceGroups([rsvp]).notAttending})).filter(group=>group.people.length);

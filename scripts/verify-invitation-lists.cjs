@@ -13,9 +13,9 @@ await page.evaluate(()=>{
 assert.equal(await page.locator('#invitedCount').textContent(),'7');
 for(const selector of ['#guestList','#notAttendingList']){
  assert.equal(await page.locator(selector+' .guest-entry').count(),2);
- const rows=await page.locator(selector+' .guest-entry').allTextContents();assert.ok(rows[0].includes('Inv #1'));assert.ok(rows[1].includes('Inv #2'));
+ const rows=await page.locator(selector+' .guest-entry').allTextContents();assert.ok(rows[0].includes('Smith'));assert.ok(rows[1].includes('Jones'));assert.ok(rows.every(row=>!row.includes('Inv #')));
  if(selector==='#notAttendingList'){assert.ok(rows[0].includes('Jane Smith'));assert.ok(rows[1].includes('Sally Jones'));assert.ok(!rows.join('').includes('Joe Smith:'))}
 }
 await page.locator('#invitedListButton').click();assert.equal(await page.locator('#invitedList .guest-entry').count(),2);
-const invited=await page.locator('#invitedList .guest-entry').allTextContents();assert.ok(invited[0].includes('4 adults (1 plus one)'));assert.ok(invited[1].includes('3 adults (1 plus one)'));
+const invited=await page.locator('#invitedList .guest-entry').allTextContents();assert.ok(invited.every(row=>!row.includes('Inv #')));assert.ok(invited[0].includes('4 adults (1 plus one)'));assert.ok(invited[1].includes('3 adults (1 plus one)'));
 assert.deepEqual(errors,[]);await browser.close();console.log('Adults invited includes plus ones; invited, attending and declined lists use invitation groups');})().catch(e=>{console.error(e);process.exit(1)});
