@@ -1379,7 +1379,8 @@ function render() {
   const guests = GuestPlanning.guestResponses(state.rsvps).reduce((sum, rsvp) => sum + rsvp.adults + rsvp.children, 0);
   const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
   document.querySelector('#guestCount').textContent = guests;
-  document.querySelector('#invitedCount').textContent = invitedAccounts.length;
+  const invitedAdults=invitedAccounts.reduce((sum,account)=>sum+accountSignInNames(account.name).length+plusOneCount(account,viewedEventId),0);
+  document.querySelector('#invitedCount').textContent = invitedAdults;
   document.querySelector('#notAttendingCount').textContent = GuestPlanning.attendanceGroups(state.rsvps).notAttending.length;
   document.querySelector('#accountCount').textContent = appState.accounts.length;
   document.querySelector('#remainingCount').textContent = needed;
@@ -1389,8 +1390,8 @@ function render() {
   guestListButton.setAttribute('aria-label', hostView ? `${guests} guests attending; view private guest list` : `${guests} guests attending; details visible only to the host`);
   const invitedListButton = document.querySelector('#invitedListButton');
   invitedListButton.disabled = !hostView;
-  invitedListButton.title = hostView ? 'View invited families' : 'Invited family details are private to the host';
-  invitedListButton.setAttribute('aria-label', hostView ? `${invitedAccounts.length} families invited; view private invitation list` : `${invitedAccounts.length} families invited; details visible only to the host`);
+  invitedListButton.title = hostView ? 'View invited adults by invitation' : 'Invitation details are private to the host';
+  invitedListButton.setAttribute('aria-label', hostView ? `${invitedAdults} adults invited; view private invitation list` : `${invitedAdults} adults invited; details visible only to the host`);
   renderInlineEditing();
   document.querySelectorAll('[data-gathering-tool]').forEach(button => { button.hidden=!isHostView(); });
   if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
@@ -1958,6 +1959,16 @@ document.querySelectorAll('.editor-dialog form').forEach(form => {
   form.closest('dialog').addEventListener('cancel', () => commitPendingEditorInputs(form));
   form.closest('dialog').addEventListener('close', () => commitPendingEditorInputs(form));
 });
+function invitationGroupTitle(group) {
+  return `Inv #${group.invitation} · ${[...new Set(group.names.map(name=>firstAccountLastName(name)))].join(' / ')}`;
+}
+function invitationAttendanceRsvps() {
+  return GuestPlanning.guestResponses(state.rsvps).flatMap(rsvp=>{
+    const account=appState.accounts.find(account=>account.name===rsvp.name);
+    if(!account)return [{...rsvp,invitationTitle:`Inv #1 · ${rsvp.name}`}];
+    return InvitationGroups.groups(account,viewedEventId,accountSignInNames(account.name),rsvp).map(group=>({...group.rsvp,invitationTitle:invitationGroupTitle(group)}));
+  });
+}
 function renderGuestAttendance() {
   if (!hostAuthenticated) return;
   const totalsSection = document.querySelector('#guestListTotals');
@@ -1972,13 +1983,14 @@ function renderGuestAttendance() {
     totalsSection.innerHTML = `<h3>Totals</h3><dl class="attendance-totals">${row(attendance)}</dl><dl class="meal-totals">${row(meals)}</dl>`;
   }
   const list = document.querySelector('#guestList');
-  const { attending: attendingRsvps, notAttending } = GuestPlanning.attendanceGroups(state.rsvps);
+  const groupedRsvps=invitationAttendanceRsvps();
+  const { attending: attendingRsvps } = GuestPlanning.attendanceGroups(groupedRsvps);
   list.innerHTML = attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
     const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml((selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`) + (selection.type==='child' && selection.invitationNumber>1 ? ` (Inv #${selection.invitationNumber})` : ''))}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
-    return `<div class="guest-entry"><strong>${escapeHtml(contributionDisplayName(rsvp.name))}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.name === HOST_DISPLAY_NAME ? '<em class="rsvp-attendance">Attending</em>' : rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.filter(person=>person.attending).map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${menu}</div>`;
+    return `<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.name === HOST_DISPLAY_NAME ? '<em class="rsvp-attendance">Attending</em>' : rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.filter(person=>person.attending).map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${menu}</div>`;
   }).join('') : '<p class="guest-empty">No guests are attending yet.</p>';
-  const declined = notAttending.map(person => person.name === HOST_DISPLAY_NAME ? 'Host' : person.name);
-  document.querySelector('#notAttendingList').innerHTML = declined.length ? declined.map(name => `<div class="guest-entry"><strong>${escapeHtml(name)}</strong><em class="rsvp-attendance">Not attending</em></div>`).join('') : '<p class="guest-empty">No declined RSVPs yet.</p>';
+  const declined=groupedRsvps.map(rsvp=>({rsvp,people:GuestPlanning.attendanceGroups([rsvp]).notAttending})).filter(group=>group.people.length);
+  document.querySelector('#notAttendingList').innerHTML=declined.length ? declined.map(({rsvp,people})=>`<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong>${people.map(person=>`<div>${escapeHtml(person.name)}</div>`).join('')}<em class="rsvp-attendance">Declines with regret</em></div>`).join('') : '<p class="guest-empty">No declined RSVPs yet.</p>';
 }
 document.querySelector('#guestListButton').addEventListener('click', () => {
   if (!isHostView()) return;
@@ -1990,7 +2002,7 @@ document.querySelector('#notAttendingButton').addEventListener('click', () => {
   renderGuestAttendance(); document.querySelector('#notAttendingDialog').showModal();
 });
 document.querySelector('#invitedListButton').addEventListener('click', () => {
-  if (!hostAuthenticated) return;
+  if (!isHostView()) return;
   const invitedAccounts = appState.accounts
     .filter(account => accountIsInvited(account, viewedEventId))
     .sort((left, right) => left.name.localeCompare(right.name));
@@ -2000,13 +2012,17 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
   }), { adults: 0, children: 0 });
   document.querySelector('#invitedPeopleTotal').textContent = `${totals.adults} adult${totals.adults === 1 ? '' : 's'} · ${totals.children} child${totals.children === 1 ? '' : 'ren'} total`;
   document.querySelector('#invitedList').innerHTML = invitedAccounts.length
-    ? invitedAccounts.map(account => {
-      const plusOnes = plusOneCount(account, viewedEventId);
-      const adults = accountSignInNames(account.name).length + plusOnes;
-      const children = (account.children || []).length;
-      return `<div class="guest-entry"><strong>${escapeHtml(invitedAccountDisplayName(account.name))}</strong><span>${adults} adult${adults === 1 ? '' : 's'}${plusOnes ? ` (${plusOnes} plus one${plusOnes === 1 ? '' : 's'})` : ''} · ${children} child${children === 1 ? '' : 'ren'}</span></div>`;
+    ? invitedAccounts.flatMap(account=>{
+      const names=accountSignInNames(account.name);
+      const allowed=GuestPlanning.plusOnePeople(account,viewedEventId,names);
+      const legacy=Math.max(0,plusOneCount(account,viewedEventId)-allowed.length);
+      return InvitationGroups.groups(account,viewedEventId,names).map((group,index)=>{
+        const plusOnes=group.names.filter(name=>allowed.includes(name)).length+(index===0?legacy:0);
+        const adults=group.names.length+plusOnes;
+        return `<div class="guest-entry"><strong>${escapeHtml(invitationGroupTitle(group))}</strong><div>${group.names.map(escapeHtml).join(', ')}</div><span>${adults} adult${adults===1?'':'s'}${plusOnes?` (${plusOnes} plus one${plusOnes===1?'':'s'})`:''}</span></div>`;
+      });
     }).join('')
-    : '<p class="guest-empty">No families are currently invited.</p>';
+    : '<p class="guest-empty">No adults are currently invited.</p>';
   document.querySelector('#invitedListDialog').showModal();
 });
 function openAdmin() {

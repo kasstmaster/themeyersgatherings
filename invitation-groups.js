@@ -67,5 +67,17 @@
       menuSelections: [...others(existing.menuSelections), ...adultSelections, ...childrenFor('menuSelections')],
       savedMenuSelections: [...others(existing.savedMenuSelections || existing.menuSelections), ...adultArchive, ...childrenFor('savedMenuSelections')] };
   }
-  globalThis.InvitationGroups = { number, members, assign, response, merge };
+  function groups(account,eventId,names,rsvp) {
+    return GuestPlanning.invitationNumbers(account,eventId).map((invitation,index)=>{
+      const ownNames=names.filter(name=>number(account,eventId,name)===invitation);
+      // Old household-only responses have no per-invitation attribution.
+      // Keep their totals once rather than duplicating them across invitations.
+      const projected=rsvp ? rsvp.people?.length || rsvp.invitationResponses
+        ? response(account,eventId,names,invitation,rsvp)
+        : index===0 ? {...rsvp} : {...rsvp,adults:0,children:0,menuSelections:[],savedMenuSelections:[],attending:null}
+        : null;
+      return {invitation,names:ownNames,rsvp:projected};
+    });
+  }
+  globalThis.InvitationGroups = { groups, number, members, assign, response, merge };
 })();

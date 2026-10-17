@@ -61,3 +61,16 @@ test('merging cannot change people or adult meals outside the current invitation
  assert.equal(result.menuSelections.find(m=>m.name==='Sally Jones').meal,'Beef');
  assert.equal(result.menuSelections.filter(m=>m.name==='Sally Jones').length,1);
 });
+
+test('host lists split household responses into invitations without duplicating children or meals',()=>{
+ const a=account();
+ const rsvp={name:a.name,adults:3,children:3,people:[person(names[0]),{...person(names[1]),attending:false},{...person(names[2]),attending:null},person(names[3]),{...person(names[4]),attending:false}],invitationResponses:{1:{children:1,menuSelections:[meal('Child 1','child')]},2:{children:2,menuSelections:[meal('Child 1','child'),meal('Child 2','child',1)]}},menuSelections:[meal(names[0]),meal(names[3])]};
+ const groups=InvitationGroups.groups(a,'wedding',names,rsvp);
+ assert.deepEqual(groups.map(group=>group.names),[names.slice(0,3),names.slice(3)]);
+ assert.deepEqual(groups.map(group=>group.rsvp.children),[1,2]);
+ assert.deepEqual(groups.map(group=>group.rsvp.adults),[1,1]);
+ assert.deepEqual(groups.map(group=>GuestPlanning.attendanceGroups([group.rsvp]).notAttending.map(person=>person.name)),[[names[1]],[names[4]]]);
+ assert.equal(groups.flatMap(group=>group.rsvp.menuSelections).filter(selection=>selection.type==='child').length,3);
+ const legacy=InvitationGroups.groups(a,'wedding',names,{name:a.name,adults:4,children:2});
+ assert.equal(legacy.reduce((sum,group)=>sum+group.rsvp.adults+group.rsvp.children,0),6);
+});

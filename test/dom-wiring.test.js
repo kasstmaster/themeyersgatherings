@@ -54,12 +54,12 @@ test('contact accounts are displayed as surname groups with inline children', as
   assert.match(javascript, /<div class="account-contact-details">\$\{accountContactsHtml\(account\)\}\$\{guestPermissionControl\}<\/div>/);
 });
 
-test('invited families show household and overall adult and child totals', async () => {
+test('invited adults show invitation and overall adult and child totals', async () => {
   const [html, javascript] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
-  assert.match(html, /Families invited<\/h2>[\s\S]*id="invitedPeopleTotal"/);
+  assert.match(html, /Adults invited<\/h2>[\s\S]*id="invitedPeopleTotal"/);
   assert.match(javascript, /accountSignInNames\(account\.name\)\.length/);
   assert.match(javascript, /\(account\.children \|\| \[\]\)\.length/);
   assert.match(javascript, /const invitedAccounts = appState\.accounts\.filter\(account => accountIsInvited\(account, viewedEventId\)\)/);
