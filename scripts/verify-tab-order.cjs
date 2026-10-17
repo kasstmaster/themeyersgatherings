@@ -31,6 +31,11 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
       hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;showSignedInDestination();render();
     });
     if(await page.locator('#editItemsButton').getAttribute('aria-pressed')!=='true')await page.locator('#editItemsButton').click();
+    async function assertTabFormatting(navId,customId){
+      const styles=await page.evaluate(([navId,customId])=>{const nav=document.getElementById(navId),custom=nav.querySelector(`[aria-controls="custom-page-${customId}"]`),builtIn=[...nav.querySelectorAll('[role="tab"]')].find(tab=>!tab.hidden&&!tab.getAttribute('aria-controls')?.startsWith('custom-page-'));const snapshot=tab=>{const style=getComputedStyle(tab);return ['fontFamily','fontSize','fontWeight','lineHeight','padding','borderRadius','borderTopWidth','borderTopColor'].map(key=>style[key]);};return [snapshot(custom),snapshot(builtIn)];},[navId,customId]);
+      assert.deepEqual(styles[0],styles[1]);
+    }
+    await assertTabFormatting('weddingPartyTabs','extra');
     const original=await order('weddingPartyTabs'),last=original.at(-1);
     assert.equal(last,'Extra');
     assert.equal(await page.locator(`[data-inline-tab-group="weddingPartyTabs"] [aria-label="Move ${last} right"]`).isDisabled(),true);
@@ -40,6 +45,14 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
     await page.evaluate(()=>render());assert.deepEqual(await order('weddingPartyTabs'),expected);
     await page.locator('[aria-controls="custom-page-extra"]').click();
     assert.equal(await page.locator('#custom-page-extra h2').textContent(),'Extra');
+    const formatting=await page.evaluate(()=>{
+      const snapshot=(selector,keys)=>{const style=getComputedStyle(document.querySelector(selector));return keys.map(key=>style[key]);};
+      const page=['fontFamily','fontSize','lineHeight','padding','borderRadius','borderTopColor','borderTopWidth','backgroundImage'];
+      const title=['fontFamily','fontSize','fontWeight','lineHeight','textAlign','color'];
+      const copy=['fontFamily','fontSize','lineHeight','padding','borderRadius','borderTopColor','backgroundColor','color'];
+      return {newPage:snapshot('#custom-page-extra',page),existingPage:snapshot('#brideGroomSection',page),newTitle:snapshot('#custom-page-extra>h2',title),existingTitle:snapshot('#brideGroomHeading',title),newCopy:snapshot('#custom-page-extra>.bride-groom-content',copy),existingCopy:snapshot('#brideGroomContent',copy),titleGap:getComputedStyle(document.querySelector('#custom-page-extra>h2')).marginBottom,existingGap:getComputedStyle(document.querySelector('#brideGroomSection>.wedding-page-heading')).marginBottom};
+    });
+    assert.deepEqual(formatting.newPage,formatting.existingPage);assert.deepEqual(formatting.newTitle,formatting.existingTitle);assert.deepEqual(formatting.newCopy,formatting.existingCopy);assert.equal(formatting.titleGap,formatting.existingGap);
     await page.locator('#custom-page-extra').scrollIntoViewIfNeeded();
     async function assertUpperTextMatches(){
       const styles=await page.evaluate(()=>['#custom-page-extra>.section-kicker','#brideGroomSection>.section-kicker'].map(selector=>{const style=getComputedStyle(document.querySelector(selector));return ['color','fontFamily','fontSize','fontWeight','letterSpacing','textTransform','textAlign','marginTop','marginBottom'].map(key=>style[key]);}));
@@ -55,6 +68,17 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
     await page.getByRole('textbox',{name:'Text above title',exact:true}).blur();
     assert.equal(await page.locator('#custom-page-extra>.section-kicker').textContent(),'A little introduction');
     await page.evaluate(()=>render());assert.equal(await page.locator('#custom-page-extra>.section-kicker').textContent(),'A little introduction');
+    await page.evaluate(()=>{state.sitePages.push({id:'subextra',nav:'guestInfoTabs',title:'New sub-page',intro:'Intro',content:'First paragraph\n\nSecond paragraph',audience:'all'});render();});
+    await page.locator('[data-wedding-tab="guest"]').click();
+    await assertTabFormatting('guestInfoTabs','subextra');
+    await page.locator('[aria-controls="custom-page-subextra"]').click();
+    const subFormatting=await page.evaluate(()=>{
+      const snapshot=(selector,keys)=>{const style=getComputedStyle(document.querySelector(selector));return keys.map(key=>style[key]);};
+      const surface=['padding','borderRadius','borderTopColor','borderTopWidth','backgroundColor','minHeight'];
+      const copy=['fontFamily','fontSize','lineHeight','textAlign','color'];
+      return {newPanel:snapshot('#custom-page-subextra',surface),existingPanel:snapshot('#perfectExperiencePanel',surface),newCopy:snapshot('#custom-page-subextra>.bride-groom-content',copy),existingCopy:snapshot('#perfectExperienceContent',copy)};
+    });
+    assert.deepEqual(subFormatting.newPanel,subFormatting.existingPanel);assert.deepEqual(subFormatting.newCopy,subFormatting.existingCopy);
     await page.locator('[data-wedding-tab="couple"]').click();
     await move('brideGroomTabs','Venue','left');assert.deepEqual(await order('brideGroomTabs'),['Venue','Bride & Groom']);
     await page.locator('#editItemsButton').click();assert.equal(await page.locator('[aria-label^="Move "]').count(),0);
