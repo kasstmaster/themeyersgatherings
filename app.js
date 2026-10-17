@@ -921,13 +921,6 @@ async function openInvitationPreview(account = invitationAccounts()[0] || null) 
     status.textContent = `Unable to preview the invitation. ${caught.message}`;
   }
 }
-async function downloadInvitation(account) {
-  if (state.invitationQrMode !== 'general' && !account?.qrToken) return;
-  const canvas = document.createElement('canvas');
-  await renderInvitation(canvas, account);
-  const blob = await canvasBlob(canvas);
-  if (blob) downloadBlob(blob, window.Invitation.filenameFor(account?.name || 'General Login', EVENT_DETAILS[viewedEventId].name));
-}
 async function invitationFile(account, mode = state.invitationQrMode) {
   const canvas = document.createElement('canvas');
   await renderInvitation(canvas, account, mode);
@@ -1357,7 +1350,7 @@ function renderGatheringPages(features,hostView) {
   });
   document.querySelector('#hostNotesSection').hidden=!features.notes || !hostView || tab!=='notes';
   document.querySelector('#hostNotesContent').innerHTML=features.notes && hostView
-    ? formatEditableText(state.hostNotes || '') || '<p>Edit Details to add your notes.</p>' : '';
+    ? formatEditableText(state.hostNotes || '') || '<p>Edit Website to add your notes.</p>' : '';
   document.querySelector('.menu-section').hidden=!features.menu || tab!=='menu';
   document.querySelector('#copyMenuButton').hidden=state.items.length===0;
 }
@@ -2775,22 +2768,6 @@ document.querySelector('#previewEditedTemplateButton').addEventListener('click',
   invitationPreviewAccount = account; const model = window.Invitation.invitationModel(templateDraft, state, invitationQrUrl(account));
   await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl)); document.querySelector('#invitationPreviewHeading').textContent = templateDraft.name; document.querySelector('#invitationPreviewAccount').textContent = invitationQrUrl(account) === generalLoginUrl() ? 'Previewing the general login QR.' : `Previewing ${account.name}'s existing account QR. The name is not printed.`; document.querySelector('#invitationPreviewStatus').textContent = ''; document.querySelector('#invitationPreviewStatus').classList.remove('form-error'); document.querySelector('#invitationCanvasWrap').hidden = false; document.querySelector('#configureInvitationTemplate').hidden = true; document.querySelector('#downloadInvitationPng').disabled = false; document.querySelector('#invitationPreviewDialog').showModal();
 });
-function openEventsAdmin() {
-  document.querySelector('#eventChoices').innerHTML = Object.entries(EVENT_DETAILS).map(([id, event]) => {
-    const date = new Date(`${appState.events[id].eventDate}T12:00:00`);
-    const formatted = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(date).replaceAll(',', '');
-    const previewing = id === viewedEventId;
-    return `<div class="event-choice"><div><strong>${escapeHtml(event.name)}</strong><span>${formatted}</span></div><div class="event-choice-actions"><button class="preview-event" type="button" data-preview-event="${id}" ${previewing ? 'disabled' : ''}>${previewing ? 'Previewing' : 'Preview'}</button></div></div>`;
-  }).join('');
-  document.querySelectorAll('[data-preview-event]').forEach(button => button.addEventListener('click', () => {
-    const eventId = button.dataset.previewEvent;
-    document.querySelector('#eventsDialog').close();
-    enterEvent(eventId);
-    showToast(`Previewing ${EVENT_DETAILS[eventId].name}.`);
-  }));
-  const dialog = document.querySelector('#eventsDialog');
-  if (!dialog.open) dialog.showModal();
-}
 function updateClearClaimFamilies() {
   const item = state.items.find(entry => entry.id === document.querySelector('#clearClaimItem').value);
   const familySelect = document.querySelector('#clearClaimFamily');

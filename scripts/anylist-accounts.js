@@ -162,10 +162,6 @@ export function accountPeople(accountName) {
   });
 }
 
-export function normalizedAccountPeople(accountName) {
-  return [...new Set(accountPeople(accountName).map(normalizedPerson).filter(Boolean))].sort().join('|');
-}
-
 function migrateAccountReferences(state, oldName, newName) {
   if (oldName === newName) return;
   Object.values(state.events || {}).forEach(event => {
@@ -252,16 +248,4 @@ export function syncAnyListAccounts(state, categories) {
     updated.push(account.name);
   }
   return { added, updated, skipped };
-}
-
-// Kept for callers that only have names; new sync code uses syncAnyListAccounts.
-export function addMissingAccounts(state, convertedAccounts) {
-  const existing = new Set(state.accounts.map(account => normalizedAccountPeople(account.name)));
-  const added = [];
-  for (const name of convertedAccounts) {
-    const normalized = normalizedAccountPeople(name);
-    if (!normalized || existing.has(normalized)) continue;
-    state.accounts.push({ name, selected: false, source: 'anylist' }); existing.add(normalized); added.push(name);
-  }
-  return added;
 }
