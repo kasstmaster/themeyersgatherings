@@ -77,9 +77,14 @@
       return { ...person, guestChoice: saved?.guestChoice || 'no-guest', guestName: saved?.guestName || '' };
     });
     const names = attendees(people);
-    const savedMenuSelections = existing?.savedMenuSelections || existing?.menuSelections || [];
+    const savedMenuSelections = (existing?.savedMenuSelections || existing?.menuSelections || []).map(selection=>selection.type==='child' && incoming.childNames?.[selection.index] ? {...selection,name:childLabel(Number(selection.index),incoming.childNames[selection.index])} : selection);
     return { ...incoming, people, adults: names.length, savedMenuSelections,
       menuSelections: savedMenuSelections.filter(selection => selection.type === 'child' ? selection.index < incoming.children : names.includes(selection.name)) };
+  }
+  const childLabel=(index,name)=>`Child ${index+1}${String(name || '').trim()?` - ${String(name).trim()}`:''}`;
+  function childLabels(rsvp) {
+    const responses=rsvp.invitationResponses ? Object.values(rsvp.invitationResponses) : [rsvp];
+    return responses.flatMap(response=>Array.from({length:Number(response.children)||0},(_,index)=>childLabel(index,response.childNames?.[index])));
   }
   const guestResponses = rsvps => rsvps.filter(rsvp => rsvp.name !== 'The Host');
   function attendanceGroups(rsvps) {
@@ -107,5 +112,5 @@
     }
     return { adults, children, meals: [...meals], noMeal, unselected };
   }
-  globalThis.GuestPlanning={guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
+  globalThis.GuestPlanning={childLabel,childLabels,guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();

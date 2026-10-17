@@ -74,3 +74,16 @@ test('host lists split household responses into invitations without duplicating 
  const legacy=InvitationGroups.groups(a,'wedding',names,{name:a.name,adults:4,children:2});
  assert.equal(legacy.reduce((sum,group)=>sum+group.rsvp.adults+group.rsvp.children,0),6);
 });
+
+test('child names stay scoped to their invitation through updates and grouping',()=>{
+ const a=account();
+ let rsvp=InvitationGroups.merge(a,'wedding',names,1,undefined,{name:a.name,people:[person(names[0])],children:1,childNames:['Tyson'],menuSelections:[{...meal('Child 1 - Tyson','child'),meal:'Chicken'}]});
+ rsvp=InvitationGroups.merge(a,'wedding',names,2,rsvp,{name:a.name,people:[person(names[3])],children:2,childNames:['Avery','Sam'],menuSelections:[]});
+ assert.deepEqual(InvitationGroups.response(a,'wedding',names,1,rsvp).childNames,['Tyson']);
+ assert.deepEqual(InvitationGroups.response(a,'wedding',names,2,rsvp).childNames,['Avery','Sam']);
+ assert.deepEqual(GuestPlanning.childLabels(rsvp),['Child 1 - Tyson','Child 1 - Avery','Child 2 - Sam']);
+ rsvp=InvitationGroups.merge(a,'wedding',names,2,rsvp,{name:a.name,people:[person(names[3])],children:1,childNames:['Avery'],menuSelections:[]});
+ assert.deepEqual(rsvp.childNames,['Tyson','Avery']);
+ assert.deepEqual(InvitationGroups.groups(a,'wedding',names,rsvp).map(group=>GuestPlanning.childLabels(group.rsvp)),[['Child 1 - Tyson'],['Child 1 - Avery']]);
+ assert.equal(rsvp.menuSelections.find(selection=>selection.type==='child').name,'Child 1 - Tyson');
+});

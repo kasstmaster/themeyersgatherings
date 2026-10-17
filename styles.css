@@ -528,3 +528,7 @@ body>.inline-overlay-layer{position:absolute;inset:0 0 auto;height:0}
 .invited-entry-heading>span{flex-shrink:0;text-align:right}
 .invited-entry-names{margin-top:8px;line-height:1.6}
 @media(max-width:520px){.invited-entry-heading{gap:8px}.invited-entry-heading>span{max-width:55%;flex-shrink:1}}
+
+#rsvpChildNames .rsvp-child-name{display:flex;align-items:center;gap:8px;margin:10px 0}
+.rsvp-child-name>span{flex-shrink:0}
+.rsvp-child-name>input{box-sizing:border-box;min-width:0;flex:1;padding:10px;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);font:inherit}
