@@ -1895,7 +1895,9 @@ function renderRsvpDishes(){
   const choice=document.querySelector('#rsvpBringingDish');
   choice.value=state.items.some(item=>item.claims.includes(guestName))?'yes':'';
   const categories=[...new Set(state.items.map(item=>item.category))];
-  document.querySelector('#rsvpDishChoices').innerHTML=enabled?categories.map(category=>{
+  const anythingElse=document.querySelector('#rsvpAnythingElse');
+  const choices=document.querySelector('#rsvpDishChoices');
+  choices.innerHTML=enabled?categories.map(category=>{
     const items=state.items.filter(item=>item.category===category).flatMap(item=>{
       const saved=item.claims.filter(name=>name===guestName).length;
       const available=Math.max(0,item.needed-item.claims.filter(name=>name!==guestName).length);
@@ -1903,9 +1905,11 @@ function renderRsvpDishes(){
       const limit=Math.max(available,saved);
       const quantity=limit>1?`<label class="rsvp-dish-quantity" ${saved?'':'hidden'}><span>How many?</span><select data-rsvp-dish-quantity aria-label="Quantity of ${escapeAttribute(item.name)}" ${saved?'required':''}><option value="">Choose</option>${Array.from({length:limit},(_,index)=>{const quantity=index+1;return `<option value="${quantity}" ${quantity===saved?'selected':''}>${escapeHtml(formatQuantity(quantity,item))}</option>`;}).join('')}</select></label>`:'<input type="hidden" data-rsvp-dish-quantity value="1">';
       return [`<div class="rsvp-dish-option"><label class="rsvp-dish-choice"><input type="checkbox" data-rsvp-dish="${escapeAttribute(item.id)}" ${saved?'checked':''}><span>${escapeHtml(item.name)}<small>${available?`${formatQuantity(available,item)} available`:'Already claimed'}</small></span></label>${quantity}</div>`];
-    }).join('');return items?`<section class="rsvp-dish-category"><h4>${escapeHtml(category)}</h4><div class="rsvp-dish-grid">${items}</div></section>`:'';
+    }).join('');return items?`<section class="rsvp-dish-category" data-rsvp-dish-category="${escapeAttribute(category)}"><h4>${escapeHtml(category)}</h4><div class="rsvp-dish-grid">${items}</div></section>`:'';
   }).join(''):'';
   if(enabled&&!document.querySelector('#rsvpDishChoices').textContent.trim())document.querySelector('#rsvpDishChoices').textContent='The listed dishes are covered. You can bring something else or go back and choose No.';
+  const drinks=[...choices.querySelectorAll('[data-rsvp-dish-category]')].find(section=>section.dataset.rsvpDishCategory.toLowerCase()==='drinks');
+  if(drinks)drinks.after(anythingElse);else choices.append(anythingElse);
   document.querySelector('#rsvpCustomDish').checked=false;document.querySelector('#rsvpCustomDishName').value='';document.querySelector('#rsvpCustomDishQuantity').value=1;
   document.querySelector('#rsvpCustomDishUnit').innerHTML=unitOptions();
   document.querySelector('#rsvpCustomDishCategory').innerHTML=[...new Set([...categories,'Appetizers','Main Table','Sides','Desserts','Drinks'])].map(category=>`<option>${escapeHtml(category)}</option>`).join('');

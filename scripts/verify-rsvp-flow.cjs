@@ -33,12 +33,13 @@ for(const width of [1280,390]){
  }
  // Dish choices and RSVP save together; closing the journey never claims a dish.
  await seed('thanksgiving');
- await page.evaluate(()=>{document.querySelector('#rsvpDialog').close();state.items=[{id:'side',name:'Potatoes',category:'Sides',needed:3,claims:['Other Family']},{id:'full',name:'Turkey',category:'Main Table',needed:1,claims:['Other Family']},{id:'bread',name:'Bread',category:'Sides',needed:1,claims:[]},{id:'fruit',name:'Fruit',category:'Desserts',needed:2,claims:[]}];});
+ await page.evaluate(()=>{document.querySelector('#rsvpDialog').close();state.items=[{id:'side',name:'Potatoes',category:'Drinks',needed:3,claims:['Other Family']},{id:'full',name:'Turkey',category:'Main Table',needed:1,claims:['Other Family']},{id:'bread',name:'Bread',category:'Drinks',needed:1,claims:[]},{id:'fruit',name:'Fruit',category:'Desserts',needed:2,claims:[]}];});
  await page.locator('#rsvpButton').click();
  await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('yes');await next();
  await page.locator('[data-rsvp-person="John Smith"] [data-person-attending]').selectOption('no');await next();await next();await next();
  await on('#rsvpDishQuestion');assert.equal(await page.locator('#rsvpHeading').textContent(),'Will you be bringing a dish?');assert.equal(await page.locator('#rsvpNext').isVisible(),false);await page.locator('[data-rsvp-dish-answer="yes"]').click();await on('#rsvpDishOptions');
  assert.equal(await page.locator('[data-rsvp-dish="full"]').count(),0);assert.equal(await page.locator('[data-rsvp-dish="side"]').getAttribute('type'),'checkbox');
+ assert.equal(await page.locator('#rsvpAnythingElse h4').textContent(),'Anything else?');assert.equal(await page.locator('#rsvpAnythingElse').evaluate(el=>el.previousElementSibling.dataset.rsvpDishCategory),'Drinks');
  const side=page.locator('.rsvp-dish-option').filter({has:page.locator('[data-rsvp-dish="side"]')});
  const bread=page.locator('.rsvp-dish-option').filter({has:page.locator('[data-rsvp-dish="bread"]')});
  assert.equal(await side.locator('.rsvp-dish-quantity').isVisible(),false);
@@ -46,8 +47,8 @@ for(const width of [1280,390]){
  const layout=await page.locator('#rsvpDishChoices').evaluate(root=>{
   const choices=[...root.querySelectorAll('.rsvp-dish-category:first-child .rsvp-dish-option')].map(e=>e.getBoundingClientRect());
   const categories=[...root.querySelectorAll('.rsvp-dish-category')].map(e=>e.getBoundingClientRect());
-  return {sameRow:Math.abs(choices[0].top-choices[1].top)<2,separateColumns:choices[1].left>choices[0].left,categoryRows:categories[1].top>=categories[0].bottom,titleSize:getComputedStyle(root.querySelector('h4')).fontSize,itemSize:getComputedStyle(root.querySelector('.rsvp-dish-choice>span')).fontSize};
- });assert.equal(layout.sameRow,width>600);assert.equal(layout.separateColumns,width>600);assert.ok(layout.categoryRows);assert.equal(layout.titleSize,'22px');assert.equal(layout.itemSize,'20px');
+  return {sameRow:Math.abs(choices[0].top-choices[1].top)<2,separateColumns:choices[1].left>choices[0].left,categoryRows:categories[1].top>=categories[0].bottom,titleSize:getComputedStyle(root.querySelector('h4')).fontSize,itemSize:getComputedStyle(root.querySelector('.rsvp-dish-choice>span')).fontSize,itemWeight:getComputedStyle(root.querySelector('.rsvp-dish-choice>span')).fontWeight};
+ });assert.equal(layout.sameRow,width>600);assert.equal(layout.separateColumns,width>600);assert.ok(layout.categoryRows);assert.equal(layout.titleSize,'22px');assert.equal(layout.itemSize,'20px');assert.equal(layout.itemWeight,'400');
 
  await next();await on('#rsvpDishOptions');await page.locator('[data-rsvp-dish="side"]').check();assert.equal(await side.locator('.rsvp-dish-quantity').isVisible(),true);await next();await on('#rsvpDishOptions');await side.locator('[data-rsvp-dish-quantity]').selectOption('2');await page.locator('[data-rsvp-dish="side"]').uncheck();assert.equal(await side.locator('.rsvp-dish-quantity').isVisible(),false);await page.locator('[data-rsvp-dish="side"]').check();await side.locator('[data-rsvp-dish-quantity]').selectOption('1');await page.locator('#rsvpCustomDish').check();await next();
  await on('#rsvpCustomDishName');await next();await on('#rsvpCustomDishName');await page.locator('#rsvpCustomDishName').fill('Cookies');await next();
