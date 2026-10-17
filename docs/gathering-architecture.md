@@ -31,3 +31,11 @@ and permissions), `verify-gathering-consistency.cjs` (shared layouts and feature
 `verify-rsvp-child-names.cjs`, `verify-extra-guests.cjs`, `verify-edit-layout.cjs`,
 and `verify-popup-footers.cjs`. Browser checks block live writes and external
 requests. Run Node tests with `node --test --test-isolation=none`.
+
+
+Editable content owns its Markdown formatting. Do not force a host-edited
+paragraph to regain its default emphasis or change its saved Markdown to make
+gatherings look alike. Shared layout, controls, and component styles are separate
+from those intentional content choices. Invitation/account list headings and
+adult counts share `invitedInvitationGroups`, `invitedAdultCount`,
+`adultCountLabel`, and `invitationHeadingHtml` in `app.js`.

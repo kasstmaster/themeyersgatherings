@@ -38,6 +38,13 @@ for(const width of [1280,390]){
  }
  console.log('Shared standard layouts and common Wedding page styling passed',width);
 }
+// Shared rendering must not override intentional formatting in saved editable copy.
+for(const id of ['thanksgiving','christmas','gathering-test','wedding']){
+ const edited=id==='wedding'?'Introduction without emphasis':'*Introduction with emphasis*';
+ await page.evaluate(([id,edited])=>{viewedEventId=id;state=appState.events[id];state.siteText={...state.siteText,'#welcomeNote':edited};render();},[id,edited]);
+ assert.equal(await page.locator('#welcomeNote em').count(),id==='wedding'?0:1);
+ assert.equal(await page.evaluate(()=>state.siteText['#welcomeNote']),edited);
+}
 // A custom gathering uses the same RSVP path, with counts and no Wedding inputs.
 await page.evaluate(()=>{const id='gathering-test';appState.accounts=[{name:'Jane Smith',selectedEvents:{[id]:true}}];guestName='Jane Smith';signedInPersonName='Jane Smith';viewedEventId=id;state=appState.events[id];state.rsvpDate='2028-01-01';render();});
 await page.locator('#rsvpButton').click();await page.locator('[data-person-attending]').selectOption('yes');await page.locator('[data-target="children"][data-step="1"]').click();await page.locator('[data-target="extraGuests"][data-step="1"]').click();

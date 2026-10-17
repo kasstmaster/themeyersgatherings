@@ -729,15 +729,25 @@ function accountContactGroups(accountName) {
 function invitationAssignmentHtml(account, person, eventId = viewedEventId) {
   return `<input class="account-person-invitation" data-person-invitation="${escapeAttribute(person)}" type="number" min="1" step="1" value="${InvitationGroups.number(account,eventId,person)}" aria-label="Invitation for ${escapeAttribute(person)}">`;
 }
-function accountContactsHtml(account) {
-  const granted = GuestPlanning.plusOnePeople(account, viewedEventId, accountSignInNames(account.name));
+// The account manager and invitation list use the same grouping, counts,
+// and heading component. Their only difference is the editable member controls.
+function invitedInvitationGroups(account,eventId=viewedEventId) {
   const names=accountSignInNames(account.name);
-  const legacy=Math.max(0,plusOneCount(account,viewedEventId)-granted.length);
-  const adults=InvitationGroups.groups(account,viewedEventId,names).map((group,index)=>{
-    const plusOnes=group.names.filter(name=>granted.includes(name)).length+(index===0?legacy:0);
-    const count=group.names.length+plusOnes;
-    const rows=group.names.map(name=>`<div class="account-person-line"><span class="account-person-name">${escapeHtml(name)}</span>${invitationAssignmentHtml(account,name)}<label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(name)}" aria-label="Allow a guest for ${escapeAttribute(name)}" ${granted.includes(name)?'checked':''}></label></div>`).join('');
-    return `<div class="guest-entry invited-entry account-invitation-group"><div class="invited-entry-heading"><strong>${escapeHtml(invitationGroupTitle(group))}</strong><span>${count} adult${count===1?'':'s'}${plusOnes?` (${plusOnes} plus one${plusOnes===1?'':'s'})`:''}</span></div><div class="account-person-headings"><span></span><span>Inv #</span><span>+1</span></div>${rows}</div>`;
+  const granted=GuestPlanning.plusOnePeople(account,eventId,names);
+  const legacy=Math.max(0,plusOneCount(account,eventId)-granted.length);
+  return InvitationGroups.groups(account,eventId,names).map((group,index)=>{
+    const guestPeople=group.names.filter(name=>granted.includes(name));
+    const plusOnes=guestPeople.length+(index===0?legacy:0);
+    return {...group,guestPeople,plusOnes,adults:group.names.length+plusOnes};
+  });
+}
+function invitedAdultCount(account){return invitedInvitationGroups(account).reduce((total,group)=>total+group.adults,0);}
+function adultCountLabel(adults,plusOnes=0){return `${adults} adult${adults===1?'':'s'}${plusOnes?` (${plusOnes} plus one${plusOnes===1?'':'s'})`:''}`;}
+function invitationHeadingHtml(group){return `<div class="invited-entry-heading"><strong>${escapeHtml(invitationGroupTitle(group))}</strong><span>${adultCountLabel(group.adults,group.plusOnes)}</span></div>`;}
+function accountContactsHtml(account) {
+  const adults=invitedInvitationGroups(account).map(group=>{
+    const rows=group.names.map(name=>`<div class="account-person-line"><span class="account-person-name">${escapeHtml(name)}</span>${invitationAssignmentHtml(account,name)}<label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(name)}" aria-label="Allow a guest for ${escapeAttribute(name)}" ${group.guestPeople.includes(name)?'checked':''}></label></div>`).join('');
+    return `<div class="guest-entry invited-entry account-invitation-group">${invitationHeadingHtml(group)}<div class="account-person-headings"><span></span><span>Inv #</span><span>+1</span></div>${rows}</div>`;
   }).join('');
   const children = (account.children || []).length
     ? `<div class="account-children"><strong>Children:</strong> ${account.children.map(escapeHtml).join(', ')}</div>`
@@ -1397,7 +1407,7 @@ function render() {
   const guests = GuestPlanning.guestResponses(state.rsvps).reduce((sum, rsvp) => sum + rsvp.adults + rsvp.children, 0);
   const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
   document.querySelector('#guestCount').textContent = guests;
-  const invitedAdults=invitedAccounts.reduce((sum,account)=>sum+accountSignInNames(account.name).length+plusOneCount(account,viewedEventId),0);
+  const invitedAdults=invitedAccounts.reduce((sum,account)=>sum+invitedAdultCount(account),0);
   document.querySelector('#invitedCount').textContent = invitedAdults;
   document.querySelector('#notAttendingCount').textContent = GuestPlanning.attendanceGroups(state.rsvps).notAttending.length;
   document.querySelector('#accountCount').textContent = appState.accounts.length;
@@ -2060,21 +2070,12 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
     .filter(account => accountIsInvited(account, viewedEventId))
     .sort((left, right) => left.name.localeCompare(right.name));
   const totals = invitedAccounts.reduce((sum, account) => ({
-    adults: sum.adults + accountSignInNames(account.name).length + plusOneCount(account, viewedEventId),
+    adults: sum.adults + invitedAdultCount(account),
     children: sum.children + (account.children || []).length
   }), { adults: 0, children: 0 });
   document.querySelector('#invitedPeopleTotal').textContent = `${totals.adults} adult${totals.adults === 1 ? '' : 's'} · ${totals.children} child${totals.children === 1 ? '' : 'ren'} total`;
   document.querySelector('#invitedList').innerHTML = invitedAccounts.length
-    ? invitedAccounts.flatMap(account=>{
-      const names=accountSignInNames(account.name);
-      const allowed=GuestPlanning.plusOnePeople(account,viewedEventId,names);
-      const legacy=Math.max(0,plusOneCount(account,viewedEventId)-allowed.length);
-      return InvitationGroups.groups(account,viewedEventId,names).map((group,index)=>{
-        const plusOnes=group.names.filter(name=>allowed.includes(name)).length+(index===0?legacy:0);
-        const adults=group.names.length+plusOnes;
-        return `<div class="guest-entry invited-entry"><div class="invited-entry-heading"><strong>${escapeHtml(invitationGroupTitle(group))}</strong><span>${adults} adult${adults===1?'':'s'}${plusOnes?` (${plusOnes} plus one${plusOnes===1?'':'s'})`:''}</span></div><div class="invited-entry-names">${group.names.map(name=>`<div>${escapeHtml(name)}</div>`).join('')}</div></div>`;
-      });
-    }).join('')
+    ? invitedAccounts.flatMap(account=>invitedInvitationGroups(account).map(group=>`<div class="guest-entry invited-entry">${invitationHeadingHtml(group)}<div class="invited-entry-names">${group.names.map(name=>`<div>${escapeHtml(name)}</div>`).join('')}</div></div>`)).join('')
     : '<p class="guest-empty">No adults are currently invited.</p>';
   document.querySelector('#invitedListDialog').showModal();
 });
@@ -2340,7 +2341,7 @@ function openAccountsAdmin() {
       row.querySelector('[data-legacy-plus-ones]')?.remove();
       row.querySelectorAll('.account-invitation-group').forEach(group=>{
         const people=group.querySelectorAll('[data-plus-one-person]').length,plusOnes=group.querySelectorAll('[data-plus-one-person]:checked').length;
-        group.querySelector('.invited-entry-heading>span').textContent=`${people+plusOnes} adult${people+plusOnes===1?'':'s'}${plusOnes?` (${plusOnes} plus one${plusOnes===1?'':'s'})`:''}`;
+        group.querySelector('.invited-entry-heading>span').textContent=adultCountLabel(people+plusOnes,plusOnes);
       });saveState();
     }));
     access.querySelector('.account-invited').addEventListener('change', event => {

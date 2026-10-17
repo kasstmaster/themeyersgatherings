@@ -60,7 +60,7 @@ test('invited adults show invitation and overall adult and child totals', async 
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
   assert.match(html, /Adults invited<\/h2>[\s\S]*id="invitedPeopleTotal"/);
-  assert.match(javascript, /accountSignInNames\(account\.name\)\.length/);
+  assert.match(javascript, /const names=accountSignInNames\(account\.name\)/);
   assert.match(javascript, /\(account\.children \|\| \[\]\)\.length/);
   assert.match(javascript, /const invitedAccounts = appState\.accounts\.filter\(account => accountIsInvited\(account, viewedEventId\)\)/);
 });
@@ -71,8 +71,8 @@ test('every gathering can assign its own plus ones and include them in adult inv
 
   assert.match(javascript, /data-plus-one-person="\$\{escapeAttribute\(name\)\}"/);
   assert.match(accountRenderer, /GuestPlanning\.setPlusOnePeople\(account,accountEventId/);
-  assert.match(javascript, /plusOneCount\(account, viewedEventId\)/);
-  assert.match(javascript, /adults: sum\.adults \+ accountSignInNames\(account\.name\)\.length \+ plusOneCount/);
+  assert.match(javascript, /plusOneCount\(account,eventId\)/);
+  assert.match(javascript, /adults: sum\.adults \+ invitedAdultCount\(account\)/);
 });
 
 test('gathering access and invitations are independent per-account settings', async () => {
