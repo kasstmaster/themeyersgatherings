@@ -78,6 +78,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   assert.equal(await page.locator('#newGatheringButton').isVisible(),false);
   assert.equal(await page.locator('#gatheringColorsButton').isVisible(),false);
   assert.equal(await page.locator('#hostNotesContent').isVisible(),false);
-  assert.equal(await page.locator('#gatheringMenuSection').isVisible(),true);
+  assert.equal(await page.locator('#gatheringMenuSection').isVisible(),false);
+  assert.equal(await page.locator('#gatheringTabs').isVisible(),false);
   assert.deepEqual(errors,[]);console.log('Gathering creation, independent colors, reload persistence, standard layout and account access passed.');await browser.close();
 })().catch(error=>{console.error(error);process.exit(1);});

@@ -1,0 +1,81 @@
+// Compare page geometry and typography before, during, and after edit mode.
+const {chromium}=require('playwright');const assert=require('node:assert/strict');
+const base=(process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/\/$/,'')+'/';
+(async()=>{const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',args:['--no-sandbox']});const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.route('**/*',async route=>{if(!route.request().url().startsWith(base))return route.abort();if(new URL(route.request().url()).pathname==='/'){const response=await route.fetch();return route.fulfill({response,body:(await response.text()).replace(/(<meta name="shared-state-url" content=")[^"]*/,'$1')});}return route.continue();});await page.goto(base);await page.waitForFunction(()=>typeof startApp==='function'&&!document.querySelector('#signInPage').hidden);
+async function seed(eventId,locked=false){
+ await page.evaluate(([eventId,locked])=>{
+  document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
+  appState=initialAppState();if(eventId==='gathering-test')appState.events[eventId]={...makeEvent([], '2027-08-01'),gatheringName:'Test Gathering'};appState.accounts=[{name:'Jane Smith,John Smith,Michael Jones',selectedEvents:{[eventId]:true},invitedEvents:{[eventId]:true},invitationPeople:{[eventId]:{'Michael Jones':2}},plusOnePeople:{wedding:['Jane Smith']}}];
+  hostAuthenticated=false;guestName=appState.accounts[0].name;signedInPersonName='Jane Smith';viewedEventId=eventId;state=appState.events[eventId];state.rsvpDate=locked?'2000-01-01':'2099-01-01';
+  state.weddingMealChoices=[{id:'beef',name:'Beef',audience:'Adults only'},{id:'chicken',name:'Chicken',audience:'Adults and children'}];showSignedInDestination();render();
+ },[eventId,locked]);await page.locator('#rsvpButton').click();
+}
+const next=()=>page.locator('#rsvpNext').click();
+const back=()=>page.locator('#rsvpBack').click();
+async function on(selector){assert.equal(await page.locator(selector).isVisible(),true,selector+' should be the current question');}
+async function assertFullscreen(width){const rect=await page.locator('#rsvpDialog').boundingBox();assert.equal(rect.x,0);assert.equal(rect.y,0);assert.equal(rect.width,width);assert.equal(rect.height,800);assert.ok(await page.locator('#rsvpDialog').evaluate(el=>el.scrollWidth<=el.clientWidth));}
+for(const width of [1280,390]){
+ await page.setViewportSize({width,height:800});
+ for(const eventId of ['thanksgiving','christmas','gathering-test']){
+  await seed(eventId);await assertFullscreen(width);assert.equal(await page.locator('#gatheringMenuSection').isVisible(),false);
+  assert.equal(await page.locator('[data-rsvp-person="Michael Jones"]').count(),0);
+  await next();await on('[data-rsvp-person="Jane Smith"] [data-person-attending]');assert.equal(await page.evaluate(()=>state.rsvps.length),0);
+  await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('yes');await next();
+  await on('[data-rsvp-person="John Smith"] [data-person-attending]');await page.locator('[data-rsvp-person="John Smith"] [data-person-attending]').selectOption('no');
+  await back();assert.equal(await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').inputValue(),'yes');await next();await next();
+  await on('#rsvpChildrenCounter');await page.locator('[data-target="children"][data-step="1"]').click();await next();
+  await on('#rsvpGuestsCounter');assert.equal(await page.locator('[data-rsvp-child-name]').count(),0);await page.locator('[data-target="extraGuests"][data-step="1"]').click();await next();
+  await on('#rsvpBringingDish');assert.equal(await page.evaluate(()=>state.rsvps.length),0);await page.locator('#rsvpBringingDish').selectOption('no');await next();
+  assert.equal(await page.locator('#rsvpDialog').isVisible(),false);
+  assert.deepEqual(await page.evaluate(()=>{const r=state.rsvps[0];return [r.adults,r.children,r.extraGuests,r.people.map(p=>p.attending)]}),[2,1,1,[true,false]]);
+  await page.locator('#rsvpButton').click();assert.equal(await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').inputValue(),'yes');await page.locator('#rsvpDialog .modal-close').click();
+ }
+ // Dish choices and RSVP save together; closing the journey never claims a dish.
+ await seed('thanksgiving');
+ await page.evaluate(()=>{document.querySelector('#rsvpDialog').close();state.items=[{id:'side',name:'Potatoes',category:'Sides',needed:2,claims:['Other Family']},{id:'full',name:'Turkey',category:'Main Table',needed:1,claims:['Other Family']}];});
+ await page.locator('#rsvpButton').click();
+ await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('yes');await next();
+ await page.locator('[data-rsvp-person="John Smith"] [data-person-attending]').selectOption('no');await next();await next();await next();
+ await on('#rsvpBringingDish');await page.locator('#rsvpBringingDish').selectOption('yes');await next();await on('#rsvpDishOptions');
+ assert.equal(await page.locator('[data-rsvp-dish="full"]').count(),0);assert.equal(await page.locator('[data-rsvp-dish="side"] option').count(),2);
+ await next();await on('#rsvpDishOptions');await page.locator('[data-rsvp-dish="side"]').selectOption('1');await page.locator('#rsvpCustomDish').check();await next();
+ await on('#rsvpCustomDishName');await next();await on('#rsvpCustomDishName');await page.locator('#rsvpCustomDishName').fill('Cookies');await next();
+ await on('#rsvpCustomDishQuantity');await page.locator('#rsvpCustomDishQuantity').fill('2');await page.locator('#rsvpCustomDishUnit').selectOption('dozen');await next();
+ await on('#rsvpCustomDishCategory');await page.locator('#rsvpCustomDishCategory').selectOption('Desserts');await next();await on('#rsvpReview');
+ assert.deepEqual(await page.evaluate(()=>state.items[0].claims),['Other Family']);await page.locator('#rsvpDialog .modal-close').click();
+ assert.equal(await page.evaluate(()=>state.items.length),2);assert.equal(await page.evaluate(()=>state.rsvps.length),0);
+ // Resume with an existing commitment and select No to release only this account's dishes.
+ await page.evaluate(()=>{state.items[0].claims.push(guestName)});await page.locator('#rsvpButton').click();
+ await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('yes');await next();await page.locator('[data-rsvp-person="John Smith"] [data-person-attending]').selectOption('no');await next();await next();await next();
+ assert.equal(await page.locator('#rsvpBringingDish').inputValue(),'yes');await next();assert.equal(await page.locator('[data-rsvp-dish="side"]').inputValue(),'1');
+ await page.locator('#rsvpCustomDish').check();await next();await page.locator('#rsvpCustomDishName').fill('Cookies');await next();await page.locator('#rsvpCustomDishQuantity').fill('2');await page.locator('#rsvpCustomDishUnit').selectOption('dozen');await next();await page.locator('#rsvpCustomDishCategory').selectOption('Desserts');await next();await next();
+ assert.equal(await page.locator('#rsvpDialog').isVisible(),false);assert.deepEqual(await page.evaluate(()=>state.items[0].claims),['Other Family','Jane Smith,John Smith,Michael Jones']);assert.equal(await page.evaluate(()=>state.items[2].claims.length),2);
+ await page.locator('#rsvpButton').click();await next();await next();await next();await next();await page.locator('#rsvpBringingDish').selectOption('no');await next();
+ assert.equal(await page.locator('#rsvpDialog').isVisible(),false);assert.deepEqual(await page.evaluate(()=>state.items.map(item=>item.claims)),[['Other Family'],['Other Family'],[]]);
+ await page.evaluate(()=>{state.items[0].claims.push(guestName);state.rsvpDate='2000-01-01';render()});await page.locator('#rsvpButton').click();await next();await next();await next();await next();await on('#rsvpReview');await next();assert.equal(await page.evaluate(()=>state.items[0].claims.length),2);
+ await seed('wedding');await assertFullscreen(width);
+ await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('yes');await next();await on('[data-person-guest]');
+ await next();await on('[data-person-guest]');await page.locator('[data-person-guest]').selectOption('guest');await next();await on('[data-person-guest-name]');
+ await next();await on('[data-person-guest-name]');await page.locator('[data-person-guest-name]').fill('Alex Doe');await page.locator('[data-person-guest-name]').press('Enter');
+ await on('[data-rsvp-person="John Smith"] [data-person-attending]');await page.locator('[data-rsvp-person="John Smith"] [data-person-attending]').selectOption('no');await next();
+ await on('#rsvpChildrenCounter');await page.locator('[data-target="children"][data-step="1"]').click();await next();await on('[data-rsvp-child-name="0"]');
+ await next();await on('[data-rsvp-child-name="0"]');await page.locator('[data-rsvp-child-name="0"]').fill('Tyson');await next();
+ for(const [type,index,meal] of [['adult',0,'Beef'],['adult',1,'Chicken'],['child',0,'none']]){
+  const card=page.locator(`.wedding-rsvp-guest[data-guest-type="${type}"][data-guest-index="${index}"]`);
+  await on(`.wedding-rsvp-guest[data-guest-type="${type}"][data-guest-index="${index}"] .wedding-meal-options`);
+  assert.equal(await card.locator('[data-rsvp-dietary]').isVisible(),false);
+  await card.locator(`[data-rsvp-meal][value="${meal}"]`).check();await next();assert.equal(await card.locator('[data-rsvp-dietary]').isVisible(),true);
+  if(type==='adult'&&index===0)await card.locator('[data-rsvp-dietary]').fill('Gluten free');await next();
+ }
+ await on('#rsvpReview');assert.ok((await page.locator('#rsvpReview').textContent()).includes('Tyson'));assert.ok((await page.locator('#rsvpReview').textContent()).includes('Alex Doe'));
+ await back();await back();assert.equal(await page.locator('[data-guest-type="child"] [data-rsvp-meal][value="none"]').isChecked(),true);await next();await next();await next();
+ assert.equal(await page.locator('#rsvpDialog').isVisible(),false);
+ assert.deepEqual(await page.evaluate(()=>{const r=state.rsvps[0];return [r.adults,r.children,r.childNames,r.menuSelections.map(m=>m.meal)]}),[2,1,['Tyson'],['Beef','Chicken','none']]);
+ await page.evaluate(()=>{state.rsvpDate='2000-01-01';render()});await page.locator('#rsvpButton').click();
+ await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('no');await next();await on('[data-rsvp-person="John Smith"] [data-person-attending]');await next();await on('#rsvpChildrenCounter');await next();await on('[data-rsvp-child-name="0"]');await next();await on('#rsvpReview');await next();
+ assert.deepEqual(await page.evaluate(()=>state.rsvps[0].menuSelections.map(m=>m.meal)),['none']);
+ await page.locator('#rsvpButton').click();await page.evaluate(()=>{viewedEventId='christmas';state=appState.events.christmas});await next();assert.equal(await page.locator('#rsvpDialog').isVisible(),false);
+ console.log('Full-page RSVP journey, validation, Back, invitation scope, saved responses and deadlines passed',width);
+}
+assert.deepEqual(errors,[]);await browser.close();})().catch(e=>{console.error(e);process.exit(1)});

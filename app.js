@@ -1342,16 +1342,16 @@ function renderGatheringPages(features,hostView) {
   if(selectedGatheringTab==='details')selectedGatheringTab=null;
   if(!hostView && selectedGatheringTab==='notes')selectedGatheringTab='menu';
   const tab=selectedGatheringTab || (hostView?'notes':'menu');
-  document.querySelector('#gatheringTabs').hidden=!features.menu && !features.notes;
+  document.querySelector('#gatheringTabs').hidden=!hostView || (!features.menu && !features.notes);
   document.querySelectorAll('[data-gathering-tab]').forEach(button=>{
-    button.hidden=button.dataset.gatheringTab==='notes' && (!features.notes || !hostView);
+    button.hidden=!hostView || (button.dataset.gatheringTab==='notes' && !features.notes);
     const selected=button.dataset.gatheringTab===tab;
     button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
   });
   document.querySelector('#hostNotesSection').hidden=!features.notes || !hostView || tab!=='notes';
   document.querySelector('#hostNotesContent').innerHTML=features.notes && hostView
     ? formatEditableText(state.hostNotes || '') || '<p>Edit Website to add your notes.</p>' : '';
-  document.querySelector('.menu-section').hidden=!features.menu || tab!=='menu';
+  document.querySelector('.menu-section').hidden=!hostView || !features.menu || tab!=='menu';
   document.querySelector('#copyMenuButton').hidden=state.items.length===0;
 }
 function render() {
@@ -1846,21 +1846,126 @@ document.querySelector('#rsvpButton').addEventListener('click', () => ensureAcco
   rsvpChildNameDraft=[...(existing?.childNames || [])];
   renderRsvpChildNames();
   renderWeddingRsvpMenu(rsvpMealDraft);
+  renderRsvpDishes();
   document.querySelector('#rsvpDialog').showModal();
+  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',editing:SiteEditing.enabled});
 }));
 document.querySelectorAll('.stepper button').forEach(button => button.addEventListener('click', () => {
   const output = document.querySelector(`#${button.dataset.target}`);
   output.value = Math.max(0, Math.min(20, Number(output.value) + Number(button.dataset.step)));
   renderRsvpChildNames();
   if (GatheringFeatures.rsvp(viewedEventId).meals) renderWeddingRsvpMenu(captureRsvpMeals());
+  else RsvpFlow.refresh();
 }));
+function rsvpFlowSteps() {
+  const steps=[];
+  const add=(key,element)=>{if(element)steps.push({key,element});};
+  document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>{
+    add(`person-${index}`,row.querySelector('[data-person-attending]').closest('label'));
+    if(row.querySelector('[data-person-attending]').value==='yes' && !rsvpOptionsLocked()) {
+      const choice=row.querySelector('[data-person-guest]');
+      if(choice){add(`guest-${index}`,choice.closest('label'));if(choice.value==='guest')add(`guest-name-${index}`,row.querySelector('[data-person-guest-name]'));}
+    }
+  });
+  add('children',document.querySelector('#rsvpChildrenCounter'));
+  if(GatheringFeatures.rsvp(viewedEventId).childNames)document.querySelectorAll('.rsvp-child-name').forEach((element,index)=>add(`child-${index}`,element));
+  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'));
+  if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest').forEach(card=>{
+    const id=`${card.dataset.guestType}-${card.dataset.guestIndex}`;
+    add(`meal-${id}`,card.querySelector('.wedding-meal-options'));
+    add(`dietary-${id}`,card.querySelector('[data-rsvp-dietary]').closest('label'));
+  });
+  if(rsvpDishesEnabled()){
+    add('bringing-dish',document.querySelector('#rsvpDishQuestion'));
+    if(document.querySelector('#rsvpBringingDish').value==='yes'){
+      add('dishes',document.querySelector('#rsvpDishOptions'));
+      if(document.querySelector('#rsvpCustomDish').checked){
+        add('custom-dish-name',document.querySelector('#rsvpCustomDishNameQuestion'));
+        add('custom-dish-quantity',document.querySelector('#rsvpCustomDishQuantityQuestion'));
+        add('custom-dish-category',document.querySelector('#rsvpCustomDishCategoryQuestion'));
+      }
+    }
+  }
+  return steps;
+}
+function rsvpDishesEnabled(){return GatheringFeatures.rsvp(viewedEventId).contributions && !SiteEditing.enabled && !rsvpOptionsLocked();}
+function renderRsvpDishes(){
+  const enabled=rsvpDishesEnabled();
+  document.querySelectorAll('[data-rsvp-question]').forEach(section=>{section.hidden=!enabled;section.querySelectorAll('input,select').forEach(input=>{input.disabled=!enabled;input.required=false;input.setCustomValidity('');});});
+  const choice=document.querySelector('#rsvpBringingDish');choice.required=enabled;
+  choice.value=state.items.some(item=>item.claims.includes(guestName))?'yes':'';
+  const categories=[...new Set(state.items.map(item=>item.category))];
+  document.querySelector('#rsvpDishChoices').innerHTML=enabled?categories.map(category=>{
+    const items=state.items.filter(item=>item.category===category).flatMap(item=>{
+      const saved=item.claims.filter(name=>name===guestName).length;
+      const available=Math.max(0,item.needed-item.claims.filter(name=>name!==guestName).length);
+      if(!available&&!saved)return [];
+      const limit=Math.max(available,saved);
+      return [`<label class="rsvp-dish-choice"><span>${escapeHtml(item.name)}<small>${available?`${formatQuantity(available,item)} available`:'Already claimed'}</small></span><select data-rsvp-dish="${escapeAttribute(item.id)}" aria-label="Quantity of ${escapeAttribute(item.name)}">${Array.from({length:limit+1},(_,quantity)=>`<option value="${quantity}" ${quantity===saved?'selected':''}>${quantity?escapeHtml(formatQuantity(quantity,item)):'0'}</option>`).join('')}</select></label>`];
+    }).join('');return items?`<h4>${escapeHtml(category)}</h4>${items}`:'';
+  }).join(''):'';
+  if(enabled&&!document.querySelector('#rsvpDishChoices').textContent.trim())document.querySelector('#rsvpDishChoices').textContent='The listed dishes are covered. You can bring something else or go back and choose No.';
+  document.querySelector('#rsvpCustomDish').checked=false;document.querySelector('#rsvpCustomDishName').value='';document.querySelector('#rsvpCustomDishQuantity').value=1;
+  document.querySelector('#rsvpCustomDishUnit').innerHTML=unitOptions();
+  document.querySelector('#rsvpCustomDishCategory').innerHTML=[...new Set([...categories,'Appetizers','Main Table','Sides','Desserts','Drinks'])].map(category=>`<option>${escapeHtml(category)}</option>`).join('');
+}
+function rsvpDishDraft(){
+  if(!rsvpDishesEnabled())return null;
+  const yes=document.querySelector('#rsvpBringingDish').value==='yes';
+  const quantities=new Map([...document.querySelectorAll('[data-rsvp-dish]')].map(select=>[select.dataset.rsvpDish,yes?Number(select.value):0]));
+  const custom=yes&&document.querySelector('#rsvpCustomDish').checked?{name:document.querySelector('#rsvpCustomDishName').value.trim(),quantity:Number(document.querySelector('#rsvpCustomDishQuantity').value),unit:document.querySelector('#rsvpCustomDishUnit').value,category:document.querySelector('#rsvpCustomDishCategory').value}:null;
+  return {quantities,custom};
+}
+function validateRsvpQuestion(key){
+  const custom=rsvpDishesEnabled()&&document.querySelector('#rsvpBringingDish').value==='yes'&&document.querySelector('#rsvpCustomDish').checked;
+  document.querySelector('#rsvpCustomDishName').required=custom;
+  document.querySelector('#rsvpCustomDishName').setCustomValidity(custom&&!document.querySelector('#rsvpCustomDishName').value.trim()?'Enter a dish name.':'');
+  document.querySelector('#rsvpCustomDishQuantity').required=custom;
+  const draft=rsvpDishDraft();
+  const choice=document.querySelector('#rsvpCustomDish');choice.setCustomValidity('');
+  if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.custom&&![...draft.quantities.values()].some(quantity=>quantity>0)){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
+  return true;
+}
+function applyRsvpDishes(draft){
+  if(!draft)return true;
+  for(const [id,quantity] of draft.quantities){const item=state.items.find(item=>item.id===id);if(quantity>0&&(!item||!Number.isInteger(quantity)||quantity>Math.max(0,item.needed-item.claims.filter(name=>name!==guestName).length)))return false;}
+  for(const item of state.items){const quantity=draft.quantities.get(item.id)||0;item.claims=[...item.claims.filter(name=>name!==guestName),...Array(quantity).fill(guestName)];}
+  if(draft.custom){const item=draft.custom;state.items.push({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:Array(item.quantity).fill(guestName)});}
+  return true;
+}
+['rsvpBringingDish','rsvpCustomDish'].forEach(id=>document.querySelector(`#${id}`).addEventListener('change',()=>{validateRsvpQuestion('');RsvpFlow.refresh();}));
+function renderRsvpReview(container) {
+  container.replaceChildren();
+  const title=document.createElement('h3');title.textContent='Review your RSVP';container.append(title);
+  const line=(label,value)=>{const row=document.createElement('p'),name=document.createElement('strong');name.textContent=`${label}: `;row.append(name,document.createTextNode(value));container.append(row);};
+  readRsvpPeople().forEach(person=>{
+    line(person.name,person.attending?'Accepts with pleasure':person.attending===false?'Declines with regret':'Choose attendance');
+    if(person.attending && person.guestChoice==='guest' && person.guestName)line('Guest',person.guestName);
+  });
+  line('Children',String(document.querySelector('#children').value));
+  readRsvpChildNames().filter(Boolean).forEach((name,index)=>line(`Child ${index+1}`,name));
+  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)line('Guests',String(document.querySelector('#extraGuests').value));
+  if(GatheringFeatures.rsvp(viewedEventId).contributions){
+    const draft=rsvpDishDraft();
+    const dishes=draft?[...draft.quantities].flatMap(([id,quantity])=>{const item=state.items.find(item=>item.id===id);return quantity&&item?[`${item.name} (${formatQuantity(quantity,item)})`]:[];}):state.items.flatMap(item=>{const quantity=item.claims.filter(name=>name===guestName).length;return quantity?[`${item.name} (${formatQuantity(quantity,item)})`]:[];});
+    if(draft?.custom)dishes.push(`${draft.custom.name} (${draft.custom.quantity})`);
+    line('Bringing',dishes.join(', ')||'No dish');
+  }
+  if(GatheringFeatures.rsvp(viewedEventId).meals)readWeddingMenuSelections().forEach(selection=>{
+    line(selection.name,selection.meal==='none'?'My child is too young':selection.meal || 'No meal selected');
+    if(selection.dietaryRestrictions)line('Dietary restrictions',selection.dietaryRestrictions);
+  });
+}
 function rsvpOptionsLocked() { return !isHostView() && GuestPlanning.rsvpClosed(state); }
 function applyRsvpDeadline() {
   const locked = rsvpOptionsLocked();
   const notice = document.querySelector('#rsvpDeadlineNotice');
+  const changed=notice.hidden!==!locked;
   notice.hidden = !locked;
   notice.textContent = GatheringFeatures.rsvp(viewedEventId).namedGuests?'The RSVP deadline has passed. You can still change who is attending and the number of children attending. Guest names, meals, and dietary notes are locked. Contact the hosts for other changes.':'The RSVP deadline has passed. You can still change who is attending and the number of children and guests attending.';
   document.querySelectorAll('#rsvpForm [data-person-guest], #rsvpForm [data-person-guest-name], #rsvpForm [data-rsvp-meal], #rsvpForm [data-rsvp-dietary]').forEach(input => { input.disabled=locked; });
+  document.querySelectorAll('[data-rsvp-question] input,[data-rsvp-question] select').forEach(input=>{input.disabled=locked || !GatheringFeatures.rsvp(viewedEventId).contributions || SiteEditing.enabled;});
+  if(changed)RsvpFlow.refresh();
 }
 setInterval(() => { if (document.querySelector('#rsvpDialog').open) applyRsvpDeadline(); }, 1000);
 function rsvpAccount() { return findAccount(guestName); }
@@ -1927,7 +2032,7 @@ function renderWeddingRsvpMenu(selections = []) {
   const section = document.querySelector('#weddingRsvpMenu');
   const hasMeals=GatheringFeatures.rsvp(viewedEventId).meals;
   section.hidden=!hasMeals;
-  if(!hasMeals){document.querySelector('#weddingRsvpGuests').replaceChildren();return;}
+  if(!hasMeals){document.querySelector('#weddingRsvpGuests').replaceChildren();RsvpFlow.refresh();return;}
   const counts = { adult: Number(document.querySelector('#adults').value), child: Number(document.querySelector('#children').value) };
   const cards = ['adult', 'child'].flatMap(type => Array.from({ length: counts[type] }, (_, index) => {
     const personName = type === 'adult' ? GuestPlanning.attendees(readRsvpPeople())[index] : GuestPlanning.childLabel(index,readRsvpChildNames()[index]);
@@ -1941,11 +2046,13 @@ function renderWeddingRsvpMenu(selections = []) {
   document.querySelector('#weddingRsvpGuests').innerHTML = cards.join('');
   applyRsvpDeadline();
   renderRsvpInlineEditing();
+  RsvpFlow.refresh();
 }
 document.querySelector('#rsvpForm').addEventListener('submit', event => {
   if (event.submitter?.value === 'cancel') return;
   const form = document.querySelector('#rsvpForm');
   if (form.dataset.eventId !== viewedEventId || form.dataset.accountName !== guestName || form.dataset.personName !== signedInPersonName || form.dataset.invitation !== String(currentInvitationNumber())) { event.preventDefault(); form.closest('dialog').close(); showToast('Please reopen RSVP for the current account and gathering.'); return; }
+  if(!RsvpFlow.submit(event)){event.preventDefault();return;}
   updateRsvpPeople();
   const people = readRsvpPeople();
   if(people.some(person=>person.attending!==true && person.attending!==false)){event.preventDefault();showToast('Please choose attendance for each person.');return;}
@@ -1962,8 +2069,9 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   if (GatheringFeatures.rsvp(viewedEventId).namedGuests && rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
   const account=rsvpAccount();
   if(account)rsvp=InvitationGroups.merge(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),state.rsvps[index],rsvp);
+  if(!applyRsvpDishes(rsvpDishDraft())){event.preventDefault();showToast('A dish is no longer available. Please reopen RSVP and choose again.');return;}
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
-  saveState({refresh:true}); showToast(`RSVP saved — we can't wait to see you!`);
+  saveState({refresh:true}); showToast('Your RSVP has been saved.');
 });
 const editorInputSaveTimers = new WeakMap();
 function commitPendingEditorControl(control) {
