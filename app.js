@@ -1863,15 +1863,15 @@ function rsvpFlowSteps() {
   const steps=[];
   const add=(key,element,title)=>{if(element)steps.push({key,element,title});};
   document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>{
-    add(`person-${index}`,row.querySelector('.rsvp-attendance-options'),`Is ${row.dataset.rsvpPerson} joining us?`);
+    add(`person-${index}`,row.querySelector('.rsvp-attendance-options'),row.dataset.rsvpPerson);
     if(rsvpAttendanceValue(row)==='yes' && !rsvpOptionsLocked()) {
       const choice=row.querySelector('[data-person-guest]');
       if(choice){add(`guest-${index}`,choice.closest('label'),'Bringing a guest?');if(choice.value==='guest')add(`guest-name-${index}`,row.querySelector('[data-person-guest-name]'),'Your guest’s name');}
     }
   });
-  add('children',document.querySelector('#rsvpChildrenCounter'),'Are you bringing children?');
+  add('children',document.querySelector('#rsvpChildrenCounter'),'Any children?');
   if(GatheringFeatures.rsvp(viewedEventId).childNames && document.querySelector('[data-rsvp-child-name]'))add('child-names',document.querySelector('#rsvpChildNames'),'Your children’s names');
-  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Are you bringing guests?');
+  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Any guests?');
   if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest').forEach(card=>{
     const id=`${card.dataset.guestType}-${card.dataset.guestIndex}`;
     const name=card.dataset.rsvpDisplayName || card.querySelector('[data-rsvp-guest-name]').value;
