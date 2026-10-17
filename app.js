@@ -1396,6 +1396,14 @@ function render() {
 }
 
 function renderInlineEditing() {
+  // Preserve edited copy when relocating the upload introduction out of its panel.
+  if(viewedEventId==='wedding' && state.siteText) {
+    for(const [oldKey,newKey] of [['#weddingMediaUpload>p:nth-of-type(1)','#weddingMediaIntro'],['#weddingMediaUpload>p:nth-of-type(2)','#weddingMediaUploadNotice']]) {
+      if(Object.hasOwn(state.siteText,oldKey)) {
+        state.siteText[newKey] ??= state.siteText[oldKey];delete state.siteText[oldKey];
+      }
+    }
+  }
   SiteEditing.render({ host: isHostView(), eventId: viewedEventId, state,
     party: Boolean(state.weddingPartyMembers?.some(member => weddingPartyPersonMatches(member.name, signedInPersonName))),
     save: () => saveState({refresh:!SiteEditing.flushing}), refresh: render,
