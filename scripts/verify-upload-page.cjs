@@ -1,0 +1,53 @@
+// Optional Chromium integration check. External requests and live state writes are blocked.
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/\/$/, '') + '/';
+(async () => {
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', args: ['--no-sandbox'] });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/*', async route => {
+    if (!route.request().url().startsWith(base)) return route.abort();
+    if (new URL(route.request().url()).pathname === '/') {
+      const response = await route.fetch();
+      return route.fulfill({ response, body: (await response.text()).replace(/(<meta name="shared-state-url" content=")[^"]*/, '$1') });
+    }
+    return route.continue();
+  });
+  await page.goto(base);
+  await page.waitForFunction(() => typeof startApp === 'function' && !document.querySelector('#signInPage').hidden);
+
+
+
+  for(const width of [1280,390]){
+    await page.setViewportSize({width,height:900});
+    for(const role of ['host','guest','party']){
+      await page.evaluate(role=>{
+        appState=initialAppState();viewedEventId='wedding';state=appState.events.wedding;
+        appState.accounts=[{name:'Jane Smith',selectedEvents:{wedding:true}}];
+        state.weddingPartyMembers=role==='party'?[{id:'jane',name:'Jane Smith',title:'Bridesmaid',responsibilities:'Help',pages:[]}]:[];
+        hostAuthenticated=role==='host';guestName=hostAuthenticated?HOST_DISPLAY_NAME:'Jane Smith';signedInPersonName=hostAuthenticated?'':'Jane Smith';
+        DropboxUpload.show=ctx=>{window.lastUploadContext=ctx;document.querySelector('#dropboxInlineUpload').hidden=false;};
+        showSignedInDestination();render();
+      },role);
+      assert.equal(await page.locator('[data-wedding-tab="media"]').count(),0);
+      const rsvp=await page.locator('#rsvpButton').boundingBox(),upload=await page.locator('#uploadPhotosButton').boundingBox();
+      assert.ok(upload.y>rsvp.y+rsvp.height);assert.equal(upload.x,rsvp.x);
+      await page.locator('#uploadPhotosButton').click();
+      const rect=await page.locator('#weddingMediaDialog').boundingBox();assert.equal(rect.x,0);assert.equal(rect.y,0);assert.equal(rect.width,width);assert.equal(rect.height,900);
+      assert.equal(await page.locator('#weddingMediaUpload').isVisible(),true);
+      assert.equal(await page.locator('#dropboxFiles').getAttribute('multiple'),'');
+      assert.equal(await page.evaluate(()=>lastUploadContext.host),role==='host');
+      assert.equal(await page.evaluate(()=>lastUploadContext.account),role==='host'?'The Host':'Jane Smith');
+      assert.ok(await page.locator('#weddingMediaDialog').evaluate(el=>el.scrollWidth<=el.clientWidth));
+      await page.locator('[data-media-tab="view"]').click();assert.equal(await page.locator('#weddingMediaView').isVisible(),true);
+      await page.locator('[data-media-tab="upload"]').click();assert.equal(await page.locator('#weddingMediaUpload').isVisible(),true);
+      await page.locator('#weddingMediaDialog [data-close-wedding-media]').last().click();assert.equal(await page.locator('#weddingMediaDialog').isVisible(),false);
+      await page.locator('#uploadPhotosButton').click();await page.keyboard.press('Escape');assert.equal(await page.locator('#weddingMediaDialog').isVisible(),false);
+      assert.equal(await page.locator('#eventPage').isVisible(),true);
+    }
+    await page.evaluate(()=>{viewedEventId='thanksgiving';state=appState.events.thanksgiving;render();});assert.equal(await page.locator('#uploadPhotosButton').isVisible(),false);
+    console.log('Full-page upload shell, button placement, gallery tabs and account context passed',width);
+  }
+  assert.deepEqual(errors,[]);await browser.close();
+})().catch(error=>{console.error(error);process.exit(1);});
