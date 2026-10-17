@@ -19,10 +19,16 @@ for(const eventId of ['thanksgiving','christmas','wedding']){
  assert.deepEqual(await page.evaluate(()=>state.rsvps[0].childNames),['Tyson','Avery']);
  await page.locator('#rsvpButton').click();assert.equal(await page.locator('[data-rsvp-child-name="0"]').inputValue(),'Tyson');await page.locator('#rsvpDialog .modal-close').click();
  await page.evaluate(()=>{guestName=HOST_DISPLAY_NAME;signedInPersonName='';render();renderGuestAttendance();});
- const list=await page.locator('#guestList').textContent();assert.ok(list.includes('Child 1 - Tyson'));assert.ok(list.includes('Child 2 - Avery'));
- assert.equal(list.split('Child 1 - Tyson').length-1,1);assert.equal(list.split('Child 2 - Avery').length-1,1);assert.ok(!list.includes(': Attending'));
- assert.equal(await page.locator('#guestList .guest-menu-summary>div').count(),3);
- assert.equal(await page.locator('#guestList .guest-menu-summary').evaluate(element=>getComputedStyle(element).borderTopWidth),'0px');
+ const list=await page.locator('#guestList').textContent();
+ if(eventId==='wedding'){
+  assert.ok(list.includes('Child 1 - Tyson'));assert.ok(list.includes('Child 2 - Avery'));
+  assert.equal(list.split('Child 1 - Tyson').length-1,1);assert.equal(list.split('Child 2 - Avery').length-1,1);assert.ok(!list.includes(': Attending'));
+  assert.equal(await page.locator('#guestList .guest-menu-summary>div').count(),3);
+  assert.equal(await page.locator('#guestList .guest-menu-summary').evaluate(element=>getComputedStyle(element).borderTopWidth),'0px');
+ } else {
+  assert.ok(!list.includes('Child 1'));assert.ok(!list.includes('Tyson'));assert.ok(!list.includes('Jane Smith'));
+  assert.ok(list.includes('1 adult · 2 children'));assert.equal(await page.locator('#guestList .guest-menu-summary').count(),0);
+ }
  console.log('Named children save, reopen and display',eventId);
 }
 assert.deepEqual(errors,[]);await browser.close();})().catch(e=>{console.error(e);process.exit(1)});

@@ -2020,7 +2020,7 @@ function renderGuestAttendance() {
       const selection=selections.find(selection=>normalizeAccountName(selectionName(selection))===normalizeAccountName(name));
       return `<div><strong>${escapeHtml(name)}</strong>${wedding?`: ${escapeHtml(selection?.meal==='none'?'No meal':selection?.meal || 'No meal selected')}`:''}${selection?.dietaryRestrictions?`<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>`:''}</div>`;
     }).join('');
-    return `<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong><span>${rsvp.adults} adult${rsvp.adults===1?'':'s'} · ${rsvp.children} child${rsvp.children===1?'':'ren'}</span><div class="guest-menu-summary">${rows}</div></div>`;
+    return `<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong><span>${rsvp.adults} adult${rsvp.adults===1?'':'s'} · ${rsvp.children} child${rsvp.children===1?'':'ren'}</span>${wedding?`<div class="guest-menu-summary">${rows}</div>`:''}</div>`;
   }).join('') : '<p class="guest-empty">No guests are attending yet.</p>';
   const declined=groupedRsvps.map(rsvp=>({rsvp,people:GuestPlanning.attendanceGroups([rsvp]).notAttending})).filter(group=>group.people.length);
   document.querySelector('#notAttendingList').innerHTML=declined.length ? declined.map(({rsvp,people})=>`<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong>${people.map(person=>`<div>${escapeHtml(person.name)}</div>`).join('')}<em class="rsvp-attendance">Declines with regret</em></div>`).join('') : '<p class="guest-empty">No declined RSVPs yet.</p>';
