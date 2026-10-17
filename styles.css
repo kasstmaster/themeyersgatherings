@@ -546,3 +546,16 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #adminAccounts .account-person-name{font-size:1rem;color:var(--ink)}
 #adminAccounts .invited-entry-heading>strong{font-weight:700}
 .counter-row[hidden]{display:none}
+
+/* Account lists use the guest-list shell; only their member controls differ. */
+#accountsDialog .modal-card{width:min(440px,90vw)}
+#adminAccounts{max-height:none;overflow:visible;margin:5px 0 24px}
+#adminAccounts .account-row{display:block;margin:0 0 14px}
+#adminAccounts .account-preview-actions{flex-direction:row;align-items:center}
+#adminAccounts .account-access{gap:12px}
+#adminAccounts .account-contact-details{margin-top:8px}
+#adminAccounts .account-person-headings{margin:0 0 4px}
+#adminAccounts .account-person-line{margin:0;min-height:28px}
+#adminAccounts .account-person-invitation{width:28px;min-width:28px;max-width:28px;height:28px}
+#adminAccounts :is(.account-person-headings,.account-person-line){grid-template-columns:minmax(0,1fr) 28px 24px;gap:8px}
+.invitation-member-row{min-height:28px;line-height:28px}
