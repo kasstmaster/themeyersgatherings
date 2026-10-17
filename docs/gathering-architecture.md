@@ -56,8 +56,8 @@ remain separate. The sign-in and RSVP screens share `fullscreen-flow` and
 desktop and mobile, including custom gatherings, invitation scope, validation,
 deadlines, and contribution updates.
 
-The RSVP page heading follows the current question; attendance asks “Is [name]
-joining us?” without repeating the name below. Body text uses a simple sans-serif font and shared question-title
+The RSVP page heading follows the current question; attendance shows the person’s name
+without repeating it below. Body text uses a simple sans-serif font and shared question-title
 sizes. The standard-gathering dish question uses Yes/No actions that advance or
 save directly, with the normal Next button hidden on that question.
 The welcome kicker appears only on attendance questions. RSVP omits the generic
