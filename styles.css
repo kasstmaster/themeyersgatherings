@@ -387,7 +387,7 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .inline-editor input,.inline-editor select,.inline-editor textarea{box-sizing:border-box;width:100%;min-width:0;padding:10px;border:1px solid var(--border);border-radius:4px;background:white;color:var(--navy);font:400 1rem Arial,sans-serif}
 .inline-editor textarea{resize:vertical;line-height:1.5}
 .inline-editor-actions{display:flex;gap:8px;margin-top:10px}
-.inline-tab-tools{display:inline-flex;align-items:center;gap:3px}
+.inline-tab-tools{display:inline-flex;flex-wrap:wrap;align-items:center;gap:3px}
 .inline-tab-tools .inline-edit-control{padding:5px;font-size:.65rem}
 .inline-editor .admin-editor-section{margin:0;padding:0}
 .rsvp-attendance{display:block;font-family:"Times New Roman",Times,serif;font-weight:700;font-style:italic}
@@ -621,3 +621,7 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 
 .affordable-attire>.section-kicker,#rsvpDialog .rsvp-attire-step>.section-kicker{margin:14px auto;line-height:1.7;text-align:center;text-transform:uppercase;letter-spacing:.2em;font-size:.72rem;font-weight:700}
 #rsvpDialog .rsvp-attire-step>.section-kicker{color:#fff}
+
+.inline-tab-tools .inline-edit-control:disabled{opacity:.4;cursor:default}
+
+.inline-custom-page>.section-kicker{text-align:center}

@@ -44,7 +44,8 @@
       const layerRect=element.parentElement.getBoundingClientRect();
       const offsetX=-layerRect.left,offsetY=-layerRect.top;
       const place=(left,top)=>{element.style.left=`${left+offsetX}px`;element.style.top=`${top+offsetY}px`;};
-      let visible=target.isConnected && target.getClientRects().length && !target.closest('[hidden]') && rect.width>0 && rect.height>0;
+      const emptyText = !target.textContent.trim() && !target.querySelector('img,video,input,select,textarea');
+      let visible=target.isConnected && target.getClientRects().length && !target.closest('[hidden]') && (emptyText || rect.width>0 && rect.height>0);
       if (visible && kind!=='editor') {
         if(!documentLayer)visible=rect.bottom>0 && rect.top<height && rect.right>0 && rect.left<width;
         if(getComputedStyle(target).visibility==='hidden' && !target.closest('.inline-edit-masked'))visible=false;
@@ -71,8 +72,16 @@
         const range=document.createRange();range.selectNodeContents(target);
         const text=range.getBoundingClientRect();if(text.width)anchor=text;
       }
-      let left=anchor.right+6,top=anchor.top;
-      if(kind==='above'){left=rect.left;top=rect.top-element.offsetHeight-3;}
+      let left=emptyText ? anchor.left : anchor.right+6,top=anchor.top;
+      if(kind==='above'){
+        element.style.maxWidth=`${rect.width}px`;left=rect.left;top=rect.top-element.offsetHeight-3;
+        const nav=target.closest('[role="tablist"]');
+        if(nav){
+          const rows=[...new Set([...nav.querySelectorAll(':scope > [role="tab"]')].filter(tab=>!tab.hidden).map(tab=>tab.getBoundingClientRect().top))].sort((a,b)=>a-b);
+          const row=rows.indexOf(rect.top);
+          if(row>0)top=rows[0]-(row+1)*(element.offsetHeight+3);
+        }
+      }
       if(kind==='page'||kind==='delete'){left=rect.right-element.offsetWidth-8;top=rect.top+8;}
       if(kind==='plus'){left=rect.right-element.offsetWidth;top=rect.top-element.offsetHeight-3;}
       place(Math.max(4,Math.min(left,width-element.offsetWidth-4)),top);
@@ -289,6 +298,26 @@
     if (!nav || !nav.id) return;
     const state = context.state;
     const buttons = [...nav.querySelectorAll(':scope > [role="tab"]')];
+    const tabKeys = new Map();
+    const moveControls = [];
+    const visibleTabs = () => [...nav.querySelectorAll(':scope > [role="tab"]')].filter(tab => !tab.hidden);
+    function moveControlsFor(tab, tools) {
+      for (const [direction, arrow, label] of [[-1, '←', 'left'], [1, '→', 'right']]) {
+        const control = button(arrow, () => {
+          const current = visibleTabs();
+          const index = current.indexOf(tab), neighbor = current[index + direction];
+          if (!neighbor) return;
+          if (direction < 0) nav.insertBefore(tab, neighbor);
+          else nav.insertBefore(neighbor, tab);
+          state.siteTabOrder ??= {};
+          state.siteTabOrder[nav.id] = [...nav.querySelectorAll(':scope > [role="tab"]')].map(item => tabKeys.get(item));
+          context.save();
+        }, tools, `Move ${tab.textContent} ${label}`);
+        moveControls.push({ tab, direction, control });
+      }
+    }
+    // Restore built-in DOM order before the next render so positional tab keys stay stable.
+    cleanup.push(() => buttons.forEach(tab => nav.append(tab)));
     const hiddenTabs = state.siteHiddenTabs || [];
     const panelIds = buttons.map(tab => tab.getAttribute('aria-controls')).filter(Boolean);
     let active = false;
@@ -298,6 +327,7 @@
     const extraPages = (state.sitePages || []).filter(page => page.nav === nav.id && (context.host || page.audience === 'all' || page.audience === 'party' && context.party));
     buttons.forEach((tab, index) => {
       const key = `${nav.id}:${Object.entries(tab.dataset).map(([key, value]) => `${key}=${value}`).join('|') || index}`;
+      tabKeys.set(tab, key);
       const originalHidden = tab.hidden;
       const originalText = tab.textContent;
       if (state.siteTabTitles?.[key]) tab.textContent = state.siteTabTitles[key];
@@ -313,6 +343,7 @@
         const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
         const anchor=tab.getClientRects().length?tab:nav.nextElementSibling;
         if(anchor)overlay(tools,anchor,'above');
+        moveControlsFor(tab, tools);
         button('Edit title', () => {
           editTitle(tab, anchor, tab.textContent, title => {
             if (config.rename) config.rename(tab, title);
@@ -339,11 +370,13 @@
     extraPages.forEach(page => {
       const tab = node('button', page.title); tab.type = 'button'; tab.setAttribute('role', 'tab'); tab.setAttribute('aria-selected', String(selected?.id === page.id));
       tab.setAttribute('aria-controls', `custom-page-${page.id}`);
+      tabKeys.set(tab, `custom:${page.id}`);
       nav.append(tab); cleanup.push(() => tab.remove());
       tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh(); });
       if (enabled && context.host) {
         const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
         overlay(tools,tab,'above');
+        moveControlsFor(tab, tools);
         button('Edit title', () => editTitle(tab, nav.nextElementSibling, page.title, title => { page.title=title; }), tools);
         button('×', () => { if (window.confirm(`Delete the “${page.title}” page?`)) { state.sitePages = state.sitePages.filter(item => item.id !== page.id); context.save(); } }, tools, `Delete ${page.title} page`);
       }
@@ -352,11 +385,21 @@
         const panel = node('section', undefined, `gathering-page inline-custom-page${isSubpage ? ' gathering-subpage' : ''}`);
         panel.id = `custom-page-${page.id}`; panel.setAttribute('role','tabpanel');
         const heading = isSubpage ? 'h3' : 'h2';
-        panel.innerHTML = `<${heading}>${context.escape(page.title)}</${heading}><div class="bride-groom-content">${context.format(page.content)}</div>`;
+        panel.innerHTML = `<p class="section-kicker"></p><${heading}>${context.escape(page.title)}</${heading}><div class="bride-groom-content">${context.format(page.content)}</div>`;
+        const intro=panel.querySelector('.section-kicker');
+        intro.innerHTML=formatTextForTarget(intro,page.intro || '');
         nav.after(panel); cleanup.push(() => panel.remove());
+        field(intro, 'text', [{label:'Text above title',type:'textarea',value:page.intro || ''}], ([value]) => { page.intro=value; }, {key:`${page.id}:intro`,placement:'text'});
         field(panel, 'page', [{ label: 'Title', value: page.title, required: true }, { label: 'Content', type: 'textarea', value: page.content }], ([title, content]) => { page.title = title; page.content = content; }, { key: page.id });
       }
     });
+    const order = state.siteTabOrder?.[nav.id] || [];
+    const orderedTabs = [...nav.querySelectorAll(':scope > [role="tab"]')];
+    const rank = tab => { const index = order.indexOf(tabKeys.get(tab)); return index < 0 ? order.length : index; };
+    orderedTabs.sort((a, b) => rank(a) - rank(b)).forEach(tab => nav.append(tab));
+    const displayedTabs = visibleTabs();
+    moveControls.forEach(({tab, direction, control}) => { control.disabled = !displayedTabs[displayedTabs.indexOf(tab) + direction]; });
+    positionOverlays();
     if (enabled && context.host) {
       const addTools=node('span',undefined,'inline-tab-tools');
       const anchor=nav.getClientRects().length?nav:nav.nextElementSibling;
@@ -365,13 +408,13 @@
       button('+', () => {
         if (config.add) { config.add(); context.save(); return; }
         const title = window.prompt('New page title'); if (!title?.trim()) return;
-        const page = { id: crypto.randomUUID(), nav: nav.id, title: title.trim(), content: '', audience: config.audience || 'all' };
+        const page = { id: crypto.randomUUID(), nav: nav.id, title: title.trim(), intro: '', content: '', audience: config.audience || 'all' };
         state.sitePages ??= []; state.sitePages.push(page); selectedCustom.set(selectionKey, page.id); context.save();
       }, addTools, 'Add page');
     }
     if (extraPages.length && !nav.parentElement.closest('[hidden]')) { nav.hidden = false; cleanup.push(() => { nav.hidden = navOriginallyHidden; }); }
     if (!active && !selected && buttons.some(tab => !tab.hidden)) {
-      const first = buttons.find(tab => !tab.hidden);
+      const first = visibleTabs().find(tab => buttons.includes(tab));
       if (first.getAttribute('aria-selected') !== 'true') queueMicrotask(() => { if (first.isConnected) first.click(); });
     }
   }
