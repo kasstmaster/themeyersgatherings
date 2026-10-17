@@ -43,7 +43,7 @@ test('domain bundle contains relative frontend assets and fallback state, retain
 });
 
 test('Cloudflare serves only the gathering prefix with relative assets and no copied credentials', async () => {
-  const {handleGatheringSite}=await import('../github-state-worker/gathering-site.js');
+  const {handleGatheringSite}=await import('../domain-site-worker/gathering-site.js');
   const requests=[];
   const env={GATHERING_SITE:{async fetch(request){requests.push(request);return new Response('asset',{headers:{'Content-Type':request.url.endsWith('.css')?'text/css':'text/html'}});}}};
   for(const pathname of ['/','/app.js','/api/plex-library','/themeyers-other']) {
@@ -61,9 +61,20 @@ test('Cloudflare serves only the gathering prefix with relative assets and no co
 });
 
 test('Cloudflare redirects retain queries and canonicalize aliases without taking over unrelated paths', async () => {
-  const {handleGatheringSite}=await import('../github-state-worker/gathering-site.js');
+  const {handleGatheringSite}=await import('../domain-site-worker/gathering-site.js');
   for(const url of ['https://ilymmd.com/themeyers?event=wedding','https://ilymmd.com/themeyersgatherings/?event=wedding','https://www.ilymmd.com/themeyers/?event=wedding']){
     const response=await handleGatheringSite(new Request(url),{});
     assert.equal(response.status,308);assert.equal(response.headers.get('Location'),'https://ilymmd.com/themeyers/?event=wedding');
   }
+});
+
+test('standalone domain Worker needs no service-account bindings and returns 404 outside its routes', async () => {
+  const siteWorker=(await import('../domain-site-worker/worker.js')).default;
+  let calls=0;
+  const env={GATHERING_SITE:{async fetch(){calls++;return new Response('Gathering page');}}};
+  const page=await siteWorker.fetch(new Request('https://ilymmd.com/themeyers/'),env);
+  assert.equal(await page.text(),'Gathering page');assert.equal(calls,1);
+  assert.equal((await siteWorker.fetch(new Request('https://ilymmd.com/'),env)).status,404);
+  assert.equal((await siteWorker.fetch(new Request('https://ilymmd.com/wedding-media'),env)).status,404);
+  assert.equal(calls,1);
 });
