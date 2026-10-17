@@ -10,7 +10,7 @@ GITHUB_BRANCH = "main"
 GITHUB_STATE_PATH = "data/app-state.json"
 # Keep printed invitation links working at the existing origin.
 ALLOWED_ORIGIN = "https://kasstmaster.github.io"
-ALLOWED_ORIGINS = "https://ilymmd.com,https://www.ilymmd.com"
+ALLOWED_ORIGINS = "https://ilymmd.com,https://www.ilymmd.com,https://themeyers.ilymmd.com"
 # Repository containing this website and sync-anylist.yml.
 GITHUB_WORKFLOW_REPOSITORY = "kasstmaster/thanksgiving"
 GITHUB_WORKFLOW_BRANCH = "main"
