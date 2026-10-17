@@ -74,7 +74,11 @@
       if(kind==='page'||kind==='delete'){left=rect.right-element.offsetWidth-8;top=rect.top+8;}
       if(kind==='plus'){left=rect.right-element.offsetWidth;top=rect.top-element.offsetHeight-3;}
       element.style.left=`${Math.max(4,Math.min(left,width-element.offsetWidth-4))}px`;
-      element.style.top=`${Math.max(4,Math.min(top,height-element.offsetHeight-4))}px`;
+      // Keep controls attached to the item. Clamping to the viewport made them
+      // stick to its edges while their item continued scrolling.
+      element.style.top=`${top}px`;
+      const controlBottom=top+element.offsetHeight;
+      if(controlBottom<=0 || top>=height)element.style.visibility='hidden';
     }
   }
   function button(text, action, parent, label = text) {
