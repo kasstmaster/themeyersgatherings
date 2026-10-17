@@ -36,6 +36,20 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
       await page.locator('#uploadPhotosButton').click();
       const rect=await page.locator('#weddingMediaDialog').boundingBox();assert.equal(rect.x,0);assert.equal(rect.y,0);assert.equal(rect.width,width);assert.equal(rect.height,900);
       assert.equal(await page.locator('#weddingMediaUpload').isVisible(),true);
+      await page.evaluate(()=>renderRsvpAttire());
+      async function sharedColors(){
+        const result=await page.evaluate(()=>{
+          const style=selector=>getComputedStyle(document.querySelector(selector));
+          const panel=selector=>{const s=style(selector);return [s.backgroundColor,s.borderTopColor,s.borderTopWidth,s.color];};
+          return {upload:panel('#weddingMediaUpload'),gallery:panel('#weddingMediaView'),rsvp:panel('#rsvpAttireColumns>article'),uploadBackground:style('#weddingMediaDialog').backgroundImage,rsvpBackground:style('#rsvpDialog').backgroundImage,label:style('#weddingMediaUpload label').color,rsvpText:style('#rsvpAttire h4').color};
+        });
+        assert.deepEqual(result.upload,result.rsvp);assert.deepEqual(result.gallery,result.rsvp);assert.equal(result.uploadBackground,result.rsvpBackground);assert.equal(result.label,result.rsvpText);
+      }
+      await sharedColors();
+      const theme=await page.addStyleTag({content:'.fullscreen-flow{--flow-text:rgb(240, 241, 242);--flow-panel-background:rgb(30, 50, 75);--flow-panel-border:rgb(100, 120, 145)}'});
+      await sharedColors();
+      assert.equal(await page.locator('#weddingMediaUpload').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(30, 50, 75)');
+      await theme.evaluate(el=>el.remove());
       assert.equal(await page.locator('#dropboxFiles').getAttribute('multiple'),'');
       assert.equal(await page.evaluate(()=>lastUploadContext.host),role==='host');
       assert.equal(await page.evaluate(()=>lastUploadContext.account),role==='host'?'The Host':'Jane Smith');
