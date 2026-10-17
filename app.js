@@ -2019,7 +2019,7 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
       return InvitationGroups.groups(account,viewedEventId,names).map((group,index)=>{
         const plusOnes=group.names.filter(name=>allowed.includes(name)).length+(index===0?legacy:0);
         const adults=group.names.length+plusOnes;
-        return `<div class="guest-entry"><strong>${escapeHtml(invitationGroupTitle(group))}</strong><div>${group.names.map(escapeHtml).join(', ')}</div><span>${adults} adult${adults===1?'':'s'}${plusOnes?` (${plusOnes} plus one${plusOnes===1?'':'s'})`:''}</span></div>`;
+        return `<div class="guest-entry invited-entry"><div class="invited-entry-heading"><strong>${escapeHtml(invitationGroupTitle(group))}</strong><span>${adults} adult${adults===1?'':'s'}${plusOnes?` (${plusOnes} plus one${plusOnes===1?'':'s'})`:''}</span></div><div class="invited-entry-names">${group.names.map(name=>`<div>${escapeHtml(name)}</div>`).join('')}</div></div>`;
       });
     }).join('')
     : '<p class="guest-empty">No adults are currently invited.</p>';
