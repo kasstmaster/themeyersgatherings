@@ -1299,9 +1299,6 @@ function renderWeddingGathering(hostView) {
     document.querySelector('#perfectExperienceContent').innerHTML = formatEditableText(state.perfectExperienceContent)
       || '<p class="guest-empty">No Perfect Experience details have been added yet.</p>';
   }
-  const weddingPartyIntro = document.querySelector('#weddingPartyIntro');
-  weddingPartyIntro.hidden = hostView || selectedMatronTab !== 'duties';
-  weddingPartyIntro.textContent = 'Your personal wedding responsibilities are below.';
   document.querySelector('#weddingPartyDetails').classList.toggle('host-responsibilities', hostView);
   document.querySelector('#weddingPartyDetails').innerHTML = visibleWeddingPartyMembers.length
     ? visibleWeddingPartyMembers.map(member => {

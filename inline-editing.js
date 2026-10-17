@@ -324,7 +324,15 @@
     const navOriginallyHidden = nav.hidden;
     const visible = !nav.parentElement.closest('[hidden]') && (!nav.hidden || config.available);
     if (!visible) return;
-    const extraPages = (state.sitePages || []).filter(page => page.nav === nav.id && (context.host || page.audience === 'all' || page.audience === 'party' && context.party));
+    // Migrate the host-created Wedding guest information page to its intended audience.
+    // Store the audience on the page so subsequent title edits retain that restriction.
+    for (const page of state.sitePages || []) {
+      if (context.eventId === 'wedding' && page.nav === 'weddingPartyTabs' &&
+          String(page.title || '').trim().replace(/\s+/g, ' ').toLowerCase() === 'what to expect' &&
+          (!page.audience || page.audience === 'all')) page.audience = 'guests';
+    }
+    const extraPages = (state.sitePages || []).filter(page => page.nav === nav.id &&
+      (context.host || page.audience === 'all' || page.audience === 'party' && context.party || page.audience === 'guests' && !context.party));
     buttons.forEach((tab, index) => {
       const key = `${nav.id}:${Object.entries(tab.dataset).map(([key, value]) => `${key}=${value}`).join('|') || index}`;
       tabKeys.set(tab, key);
