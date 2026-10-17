@@ -1878,7 +1878,7 @@ function rsvpFlowSteps() {
   if(rsvpDishesEnabled()){
     add('bringing-dish',document.querySelector('#rsvpDishQuestion'),'Will you be bringing a dish?');
     if(document.querySelector('#rsvpBringingDish').value==='yes'){
-      add('dishes',document.querySelector('#rsvpDishOptions'),'Choose your dish');
+      add('dishes',document.querySelector('#rsvpDishOptions'),'What will you bring?');
       if(document.querySelector('#rsvpCustomDish').checked){
         add('custom-dish-name',document.querySelector('#rsvpCustomDishNameQuestion'),'Your dish');
         add('custom-dish-quantity',document.querySelector('#rsvpCustomDishQuantityQuestion'),'Dish quantity');
