@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - name: Build gathering site from the shared frontend source
         run: node scripts/build-domain-site.js .domain-site
       - name: Verify domain routing and existing service compatibility
