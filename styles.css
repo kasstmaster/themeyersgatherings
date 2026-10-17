@@ -494,3 +494,5 @@ body>.inline-overlay-layer{clip-path:inset(0 0 var(--edit-dock-height, 78px) 0)}
 .account-row-with-plus-ones .account-access{margin-right:auto}
 .account-toolbar-buttons{display:flex;justify-content:flex-end;gap:8px;margin-left:auto}
 .account-toolbar-buttons .account-qr-button,.account-toolbar-buttons .account-invitation-button{width:40px;margin:0}
+
+.account-surname-group+.account-surname-group{padding-left:18px;border-left:1px solid rgba(19,40,65,.14)}

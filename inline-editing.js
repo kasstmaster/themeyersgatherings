@@ -204,7 +204,7 @@
       // the click that moved focus away and unnecessarily resets other editors.
       editors.forEach((editor,index) => {
         const anchor=anchors[index];
-        if(fields[index].type==='textarea') anchor.innerHTML=context.format(editor.value);
+        if(fields[index].type==='textarea') anchor.innerHTML=formatTextForTarget(anchor,editor.value);
         else anchor.textContent=editor.value;
         anchor.classList.remove('inline-edit-replaced');editor.remove();
       });
@@ -248,6 +248,13 @@
     };
     if (options.automatic) open(); else button(`Edit ${title}`, open, control);
   }
+  function formatTextForTarget(target, value) {
+    const html=context.format(value);
+    // Text inside headings and paragraphs must not acquire nested paragraphs
+    // and their default vertical margins. Keep inline Markdown and line breaks.
+    return /^(?:H[1-6]|P)$/.test(target.tagName)
+      ? html.replace(/<p>([\s\S]*?)<\/p>/g,'$1<br>').replace(/<br>$/,'') : html;
+  }
   function staticText(root) {
     const data = context.state.siteText || {};
     // Text blocks, headings and captions can be changed without changing links or controls.
@@ -257,7 +264,7 @@
     for (const [element, path] of elements.map(element => [element, selectorPath(element, root)])) {
       if (!originals.has(path)) originals.set(path, element.innerHTML);
       const initial = element.innerHTML;
-      if (Object.hasOwn(data, path)) element.innerHTML = context.format(data[path]);
+      if (Object.hasOwn(data, path)) element.innerHTML = formatTextForTarget(element,data[path]);
       else if (element.closest('footer') || !element.id) element.innerHTML = originals.get(path);
       cleanup.push(() => { element.innerHTML = initial; });
       field(element, element.tagName === 'ADDRESS' ? 'footer' : 'text', [{ label: 'Text (Markdown supported)', type: 'textarea', value: data[path] ?? element.innerText }], ([value]) => {
