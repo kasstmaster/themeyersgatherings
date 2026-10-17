@@ -436,7 +436,7 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 @media(max-width:650px){.summary-strip,.summary-strip.wedding-summary{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:16px}}
 
 /* Host controls track their anchors without changing the document flow. */
-.inline-overlay-layer{position:fixed;inset:0;z-index:200;pointer-events:none}
+.inline-overlay-layer{position:absolute;inset:0;z-index:200;pointer-events:none}
 .inline-overlay-item{position:absolute;pointer-events:auto;margin:0!important;box-sizing:border-box;max-width:calc(100vw - 8px)}
 .inline-overlay-layer [hidden]{display:none!important}
 .inline-overlay-item.inline-editor,.inline-overlay-item.inline-meal-editor,.inline-overlay-item.inline-attire-edit-area{overflow:auto;overscroll-behavior:contain;background:var(--cream,#fffaf2);color:var(--navy)}
@@ -449,7 +449,9 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 
 .inline-edit-replaced{display:none!important}
 .inline-title-editor{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-body>.inline-overlay-layer{clip-path:inset(0 0 var(--edit-dock-height, 78px) 0)}
+/* Document-positioned controls scroll natively with the page, without frame lag. */
+body>.inline-overlay-layer{position:absolute;inset:0 0 auto;height:0}
+.event-dock{z-index:201}
 
 .inline-direct-input{box-sizing:border-box;display:block;border:1px solid var(--border);outline:2px solid var(--accent, #b89968);resize:vertical;white-space:pre-wrap}
 
