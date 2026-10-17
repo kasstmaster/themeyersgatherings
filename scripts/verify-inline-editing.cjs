@@ -23,6 +23,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
     state.rsvps = [{ name: HOST_DISPLAY_NAME, adults: 1, children: 1, people: [{ name: HOST_DISPLAY_NAME, attending: true }], menuSelections: [{ meal: 'Beef' }, { meal: 'Chicken' }] }, { name: 'Zero Person', adults: 0, children: 0, people: [{ name: 'Zero Person', attending: false }] }];
     hostAuthenticated = true; guestName = HOST_DISPLAY_NAME; showSignedInDestination(); render();
   });
+  async function openRsvpJourney(){await page.locator('#rsvpButton').click();if(await page.locator('#rsvpAttireAcknowledge').isVisible())await page.locator('#rsvpAttireAcknowledge').click();}
   async function show(selector) { await page.locator(selector).scrollIntoViewIfNeeded(); await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))); }
   async function edit(selector, name) { await show(selector); await page.getByRole('button', { name, exact: true }).click(); }
   const action = name => page.getByRole('button', { name, exact: true });
@@ -47,7 +48,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   await page.getByRole('textbox', {name:'Page title',exact:true}).fill('New page'); await page.getByRole('textbox', {name:'Page title',exact:true}).blur();
   await show('#brideGroomTabs'); page.once('dialog', dialog => dialog.dismiss()); await action('Delete New page page').click(); assert.equal(await page.locator('#brideGroomTabs [role="tab"]').count(), 2);
   page.once('dialog', dialog => dialog.accept()); await action('Delete New page page').click(); assert.equal(await page.locator('#brideGroomTabs [role="tab"]').count(), 1);
-  await page.locator('#rsvpButton').click(); assert.equal(await page.locator('#rsvpAttendance #rsvpChildrenCounter').count(), 1); await show('#weddingRsvpMenu');
+  await openRsvpJourney(); assert.equal(await page.locator('#rsvpAttendance #rsvpChildrenCounter').count(), 1); await show('#weddingRsvpMenu');
   assert.ok((await page.locator('.inline-meal-editor').textContent()).includes('Kids pasta — Children only'));
   await page.locator('.inline-meal-editor').evaluate(element => { element.scrollTop = element.scrollHeight; }); await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)));
   await action('Edit new meal').click(); await page.locator('[aria-label="Edit new meal"] input').fill('Fish'); await page.locator('[aria-label="Edit new meal"] select').selectOption('Adults only'); await page.locator('[aria-label="Edit new meal"] input').press('Enter');
@@ -66,13 +67,13 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   await page.locator('#editItemsButton').click(); assert.equal(await page.locator('.inline-edit-control').count(), 0); assert.equal(await page.locator('.inline-overlay-layer').count(), 0);
   await page.evaluate(() => { appState.accounts = [{ name: 'Jane,John Smith', selectedEvents: { wedding: true } }]; hostAuthenticated = false; guestName = 'Jane,John Smith'; signedInPersonName = 'Jane Smith'; viewedEventId = 'wedding'; state = appState.events.wedding; selectedWeddingTab = 'guest'; render(); });
   assert.equal(await page.locator('.inline-edit-control').count(), 0);
-  await page.locator('#rsvpButton').click(); assert.equal(await page.locator('[data-rsvp-person]').count(), 2);
+  await openRsvpJourney(); assert.equal(await page.locator('[data-rsvp-person]').count(), 2);
   await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending][value="yes"]').check(); await page.locator('#rsvpNext').click(); await page.locator('[data-rsvp-person="John Smith"] [data-person-attending][value="no"]').check(); await page.locator('#rsvpNext').click(); await page.locator('[data-target="children"][data-step="1"]').click();
   await page.locator('#rsvpNext').click(); await page.locator('[data-rsvp-child-name="0"]').fill('Tyson'); await page.locator('#rsvpNext').click();
   await page.locator('[data-guest-type="adult"] [data-rsvp-meal][value="Beef"]').check(); await page.locator('#rsvpNext').click(); await page.locator('#rsvpNext').click(); await page.locator('[data-guest-type="child"] [data-rsvp-meal][value="Kids pasta"]').check(); await page.locator('#rsvpNext').click(); await page.locator('#rsvpNext').click(); await page.locator('#rsvpNext').click();
   assert.deepEqual(await page.evaluate(() => state.rsvps.find(rsvp => rsvp.name === 'Jane,John Smith').people.map(person => [person.name, person.attending])), [['Jane Smith', true], ['John Smith', false]]);
   await page.evaluate(() => { state.rsvpDate='2000-01-01'; render(); });
-  await page.locator('#rsvpButton').click();
+  await openRsvpJourney();
   assert.equal(await page.locator('#rsvpDeadlineNotice').isVisible(), true);
   assert.equal(await page.locator('[data-rsvp-dietary]').first().isDisabled(), true);
   assert.equal(await page.locator('[data-rsvp-meal]').first().isDisabled(), true);
@@ -80,7 +81,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending][value="no"]').check();
   for(let i=0;i<5;i++)await page.locator('#rsvpNext').click();
   assert.equal(await page.evaluate(() => state.rsvps.find(rsvp=>rsvp.name==='Jane,John Smith').adults), 0);
-  await page.locator('#rsvpButton').click();
+  await openRsvpJourney();
   await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending][value="yes"]').check();
   for(let i=0;i<5;i++)await page.locator('#rsvpNext').click();
   assert.equal(await page.evaluate(() => state.rsvps.find(rsvp=>rsvp.name==='Jane,John Smith').menuSelections.find(meal=>meal.name==='Jane Smith').meal), 'Beef');

@@ -82,3 +82,11 @@ Guest and wedding-party RSVP screens show a child’s entered name without a
 numbered prefix, including name inputs, meal/dietary headings, and review. The
 Wedding review lists each named child as accepting instead of a child count and
 numbered name row. Host labels and stored meal identities remain compatible.
+
+Wedding RSVP begins with the attire acknowledgment. It reuses the Ladies and
+Gentlemen requirements from the existing attire page, displayed in responsive
+white-text containers. Selecting Wedding automatically starts RSVP only for a
+guest invitation without a submitted response. Completion opens the appropriate
+Wedding home page; cancellation returns to gathering selection. Saved responses
+prevent automatic reopening on later visits, while the RSVP button remains
+available for changes. Hosts can enter their planning view directly.

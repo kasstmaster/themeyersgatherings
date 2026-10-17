@@ -355,9 +355,10 @@
       <form method="dialog" id="rsvpForm" class="modal-card full-page-form" novalidate>
         <button class="modal-close" type="button" aria-label="Close">×</button>
         <p class="section-kicker">Save your seat</p>
-        <h2 id="rsvpHeading">RSVP</h2>
+        <h2 id="rsvpHeading" tabindex="-1">RSVP</h2>
         <p id="rsvpChildAge" hidden>Age 17 and under</p>
         <p id="rsvpDeadlineNotice" role="status" hidden></p>
+        <section id="rsvpAttire" hidden><div id="rsvpAttireColumns" class="rsvp-attire-columns"></div><button id="rsvpAttireAcknowledge" class="primary-button" type="button" data-rsvp-advance>I've read the required attire information</button></section>
         <fieldset id="rsvpAttendance" class="rsvp-attendance-box"><legend>Attending</legend>
         <p id="rsvpInvitationGroup" hidden></p>
         <div id="rsvpPeople"></div>

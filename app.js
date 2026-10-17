@@ -1154,6 +1154,7 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   // the exact option the guest just selected and leave this page stuck open.
   showSignedInDestination();
   render();
+  if(eventId==='wedding' && !isHostView() && !hasSubmittedInvitationRsvp())openRsvp({fromEntry:true});
 }
 function ensureAccount(callback) {
   if (guestName) return callback();
@@ -1831,7 +1832,11 @@ function captureRsvpMeals() {
   }
   return rsvpMealDraft;
 }
-document.querySelector('#rsvpButton').addEventListener('click', () => ensureAccount(() => {
+document.querySelector('#rsvpButton').addEventListener('click',()=>openRsvp());
+function openRsvp({fromEntry=false}={}) {ensureAccount(() => {
+  if(document.querySelector('#rsvpDialog').open)return;
+  document.querySelector('#rsvpForm').dataset.fromEntry=String(fromEntry);
+  document.querySelector('#rsvpForm').dataset.saved='false';
   document.querySelector('#rsvpForm').dataset.eventId = viewedEventId;
   document.querySelector('#rsvpForm').dataset.accountName = guestName;
   const existing = currentInvitationRsvp();
@@ -1849,9 +1854,28 @@ document.querySelector('#rsvpButton').addEventListener('click', () => ensureAcco
   renderRsvpChildNames();
   renderWeddingRsvpMenu(rsvpMealDraft);
   renderRsvpDishes();
+  renderRsvpAttire();
   document.querySelector('#rsvpDialog').showModal();
   RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',editing:SiteEditing.enabled});
-}));
+});}
+document.querySelector('#rsvpAttireAcknowledge').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));
+document.querySelector('#rsvpDialog').addEventListener('close',()=>{
+  const form=document.querySelector('#rsvpForm');
+  const fromEntry=form.dataset.fromEntry==='true';form.dataset.fromEntry='false';
+  if(!fromEntry)return;
+  if(form.dataset.saved==='true'){showSignedInDestination();render();}
+  else showEventSelection();
+});
+function renderRsvpAttire(){
+  const section=document.querySelector('#rsvpAttire');section.hidden=viewedEventId!=='wedding' || SiteEditing.enabled;
+  const columns=document.querySelector('#rsvpAttireColumns');columns.replaceChildren();
+  if(section.hidden)return;
+  document.querySelectorAll('#weddingAttireGuidance>article').forEach(source=>{
+    const article=document.createElement('article');
+    for(const selector of ['h4','.guest-attire-requirements']){const original=source.querySelector(selector);if(original){const copy=original.cloneNode(true);copy.querySelectorAll('button,.inline-edit-control').forEach(node=>node.remove());copy.removeAttribute('id');copy.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));article.append(copy);}}
+    columns.append(article);
+  });
+}
 document.querySelectorAll('.stepper button').forEach(button => button.addEventListener('click', () => {
   const output = document.querySelector(`#${button.dataset.target}`);
   output.value = Math.max(0, Math.min(20, Number(output.value) + Number(button.dataset.step)));
@@ -1862,6 +1886,7 @@ document.querySelectorAll('.stepper button').forEach(button => button.addEventLi
 function rsvpFlowSteps() {
   const steps=[];
   const add=(key,element,title)=>{if(element)steps.push({key,element,title});};
+  if(viewedEventId==='wedding' && !SiteEditing.enabled)add('attire',document.querySelector('#rsvpAttire'),'Formal Attire Required');
   document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>{
     add(`person-${index}`,row.querySelector('.rsvp-attendance-options'),row.dataset.rsvpPerson);
     if(rsvpAttendanceValue(row)==='yes' && !rsvpOptionsLocked()) {
@@ -2107,6 +2132,7 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   if(account)rsvp=InvitationGroups.merge(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),state.rsvps[index],rsvp);
   if(!applyRsvpDishes(rsvpDishDraft())){event.preventDefault();showToast('A dish is no longer available. Please reopen RSVP and choose again.');return;}
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
+  form.dataset.saved='true';
   saveState({refresh:true}); showToast('Your RSVP has been saved.');
 });
 const editorInputSaveTimers = new WeakMap();
