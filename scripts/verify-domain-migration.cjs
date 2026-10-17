@@ -8,7 +8,7 @@ const os=require('node:os');
 const http=require('node:http');
 (async()=>{
   const {buildDomainSite}=await import(pathToFileURL(path.resolve('scripts/build-domain-site.js')));
-  const {handleGatheringSite}=await import(pathToFileURL(path.resolve('github-state-worker/gathering-site.js')));
+  const {handleGatheringSite}=await import(pathToFileURL(path.resolve('domain-site-worker/gathering-site.js')));
   const output=await fs.mkdtemp(path.join(os.tmpdir(),'meyers-domain-browser-'));
   await buildDomainSite(output);
   const state=JSON.parse(await fs.readFile(path.join(output,'themeyers/data/app-state.json'),'utf8'));
