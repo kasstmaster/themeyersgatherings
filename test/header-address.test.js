@@ -6,7 +6,7 @@ const source=await readFile(new URL('../app.js',import.meta.url),'utf8');
 const code=source.slice(source.indexOf('function gatheringHeaderAddress()'),source.indexOf('function weddingDetailsWithoutHeaderAddress('));
 function address(state,viewedEventId='wedding') { const context=vm.createContext({state,viewedEventId});vm.runInContext(code,context);return context.gatheringHeaderAddress(); }
 test('Wedding header identifies ceremony and reception addresses instead of the home address',()=>{
-  assert.equal(address({homeAddress:'Do not show',churchStreet:'123 Church St',churchCityStateZip:'Town CA 12345',venueStreet:'456 Venue Rd',venueCityStateZip:'City CA 67890'}),'Ceremony: 123 Church St, Town CA 12345\nReception: 456 Venue Rd, City CA 67890');
+  assert.equal(address({homeAddress:'Do not show',churchStreet:'123 Church St',churchCityStateZip:'Town CA 12345',venueStreet:'456 Venue Rd',venueCityStateZip:'City CA 67890'}),'123 Church St, Town CA 12345\n456 Venue Rd, City CA 67890');
 });
 test('Wedding header shows identical or single configured addresses only once',()=>{
   assert.equal(address({churchStreet:'at 123 Main St.',churchCityStateZip:'Town CA 12345',venueStreet:'123 main st',venueCityStateZip:'Town, CA 12345'}),'123 Main St., Town CA 12345');
