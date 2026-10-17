@@ -2,6 +2,7 @@ import '../guest-planning.js';
 import '../gathering-history.js';
 import { handleDropboxOAuth } from './dropbox.js';
 import { handleWeddingMedia } from './wedding-media.js';
+import { handleGatheringSite } from './gathering-site.js';
 const GITHUB_API = 'https://api.github.com';
 
 function allowedOrigins(env) {
@@ -234,6 +235,8 @@ export default {
     if(result.status!==200)throw new Error(result.error || 'Could not save gathering history.');
   },
   async fetch(request, env) {
+    const site = await handleGatheringSite(request, env);
+    if (site) return site;
     const origin = request.headers.get('Origin');
     if (!originAllowed(origin, env)) {
       return response(request, env, 'Origin not allowed.', 403);

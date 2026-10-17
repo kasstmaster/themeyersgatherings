@@ -1,3 +1,6 @@
 node_modules/
 .DS_Store
 npm-debug.log*
+
+# Generated custom-domain frontend; rebuilt from the shared source in CI.
+.domain-site/

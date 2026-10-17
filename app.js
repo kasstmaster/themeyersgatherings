@@ -801,11 +801,14 @@ function accountForSignIn(name) {
     ? (accountNameMatches(name, qrScopedAccount) ? qrScopedAccount : null)
     : findAccount(name);
 }
-function generalLoginUrl() { return `${window.location.origin}${window.location.pathname}`; }
+function generalLoginUrl() {
+  const productionOrigins = ['https://ilymmd.com', 'https://www.ilymmd.com', 'https://kasstmaster.github.io'];
+  if (productionOrigins.includes(window.location.origin)) return 'https://ilymmd.com/themeyers/';
+  return `${window.location.origin}${window.location.pathname}`;
+}
 function accountQrUrl(account) {
   if (account?.generalLogin) return generalLoginUrl();
-  const base = `${window.location.origin}${window.location.pathname}`;
-  return `${base}#/signin/account/${account.qrToken}`;
+  return `${generalLoginUrl()}#/signin/account/${account.qrToken}`;
 }
 function safeQrFilename(name) {
   const filename = name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase()

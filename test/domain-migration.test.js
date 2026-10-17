@@ -41,3 +41,29 @@ test('domain bundle contains relative frontend assets and fallback state, retain
     await assert.rejects(buildDomainSite(output),/already exists/);
   } finally { await rm(output,{recursive:true,force:true}); }
 });
+
+test('Cloudflare serves only the gathering prefix with relative assets and no copied credentials', async () => {
+  const {handleGatheringSite}=await import('../github-state-worker/gathering-site.js');
+  const requests=[];
+  const env={GATHERING_SITE:{async fetch(request){requests.push(request);return new Response('asset',{headers:{'Content-Type':request.url.endsWith('.css')?'text/css':'text/html'}});}}};
+  for(const pathname of ['/','/app.js','/api/plex-library','/themeyers-other']) {
+    assert.equal(await handleGatheringSite(new Request('https://ilymmd.com'+pathname),env),null);
+  }
+  assert.equal(await handleGatheringSite(new Request('https://curly-sun-ef0f.example/themeyers/'),env),null);
+  const html=await handleGatheringSite(new Request('https://ilymmd.com/themeyers/',{headers:{Cookie:'private',Authorization:'Bearer private','X-Host-Password':'private'}}),env);
+  assert.equal(await html.text(),'asset');assert.equal(html.headers.get('Cache-Control'),'no-cache');
+  assert.equal(new URL(requests[0].url).pathname,'/index.html');
+  assert.equal([...requests[0].headers].length,0);
+  const css=await handleGatheringSite(new Request('https://ilymmd.com/themeyers/styles.css'),env);
+  assert.equal(css.headers.get('Content-Type'),'text/css');assert.equal(new URL(requests[1].url).pathname,'/styles.css');
+  assert.equal((await handleGatheringSite(new Request('https://ilymmd.com/themeyers/',{method:'POST'}),env)).status,405);
+  assert.equal((await handleGatheringSite(new Request('https://ilymmd.com/themeyers/'),{})).status,503);
+});
+
+test('Cloudflare redirects retain queries and canonicalize aliases without taking over unrelated paths', async () => {
+  const {handleGatheringSite}=await import('../github-state-worker/gathering-site.js');
+  for(const url of ['https://ilymmd.com/themeyers?event=wedding','https://ilymmd.com/themeyersgatherings/?event=wedding','https://www.ilymmd.com/themeyers/?event=wedding']){
+    const response=await handleGatheringSite(new Request(url),{});
+    assert.equal(response.status,308);assert.equal(response.headers.get('Location'),'https://ilymmd.com/themeyers/?event=wedding');
+  }
+});

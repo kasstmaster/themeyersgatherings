@@ -1,6 +1,26 @@
 name = "curly-sun-ef0f"
 main = "worker.js"
 compatibility_date = "2026-09-17"
+workers_dev = true
+
+# Match only the gathering paths; the Plex home page and API keep their existing origin.
+routes = [
+  { pattern = "ilymmd.com/themeyers", zone_name = "ilymmd.com" },
+  { pattern = "ilymmd.com/themeyers/*", zone_name = "ilymmd.com" },
+  { pattern = "ilymmd.com/themeyersgatherings", zone_name = "ilymmd.com" },
+  { pattern = "ilymmd.com/themeyersgatherings/*", zone_name = "ilymmd.com" },
+  { pattern = "www.ilymmd.com/themeyers", zone_name = "ilymmd.com" },
+  { pattern = "www.ilymmd.com/themeyers/*", zone_name = "ilymmd.com" },
+  { pattern = "www.ilymmd.com/themeyersgatherings", zone_name = "ilymmd.com" },
+  { pattern = "www.ilymmd.com/themeyersgatherings/*", zone_name = "ilymmd.com" },
+]
+
+[assets]
+directory = "../.domain-site/themeyers"
+binding = "GATHERING_SITE"
+run_worker_first = true
+html_handling = "none"
+
 
 [vars]
 # Live shared state is kept separately because it contains guest names.

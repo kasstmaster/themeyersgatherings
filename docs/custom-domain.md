@@ -1,71 +1,80 @@
 # Publishing at ilymmd.com/themeyers/
 
-## Current status
+## Cloudflare route and shared source
 
-The gathering site is prepared to run at `/themeyers/` with the same shared-state
-service and existing account QR tokens. The live domain has **not** been switched.
-The parent website is `plexrequests/plex-requests-app`; access to that repository
-and the live domain is needed before its hosting configuration can be changed.
-Do not rename or disable `kasstmaster/themeyersgatherings` or change its Pages settings.
+The existing `curly-sun-ef0f` Worker serves the gathering frontend through a static
+asset binding at `https://ilymmd.com/themeyers/`. Its routes match only
+`/themeyers`, `/themeyers/*`, `/themeyersgatherings`, and
+`/themeyersgatherings/*`, on the apex and www hostnames. The Plex home page,
+Plex assets, API, and Firebase deployment keep their existing origin. No changes
+to `plexrequests/plex-requests-app` are needed.
 
-## Build from the shared source
+The existing main-site service worker was inspected: it fetches requests from
+the network first and does not replace gathering paths with the Plex shell.
 
-Run from this repository:
+The GitHub Actions Worker deployment builds the static frontend from this
+repository on every main-branch push, then deploys the Worker, routes, and assets
+together. There is one editable frontend source, not a second copy in the Plex
+repository. GitHub Pages continues publishing the original source as before.
 
-```sh
-node scripts/build-domain-site.js /tmp/meyers-domain-site
-```
+Cloudflare must have the ilymmd.com zone in the account used by the existing
+workflow. Its `CLOUDFLARE_API_TOKEN` needs Workers Scripts and Workers Routes
+permissions for that zone; the existing R2 permissions remain needed. The route
+requires the hostname to be proxied through Cloudflare. The repository uses its
+existing `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets; no credentials
+are embedded in source or the generated frontend.
 
-The output contains only:
+## Existing invitation QR links
 
-- `themeyers/`: the existing frontend, relative assets, and fallback state, with a
-  canonical URL of `https://ilymmd.com/themeyers/`.
-- `themeyersgatherings/`: a legacy-path redirect preserving the entire query
-  string and fragment, including `#/signin/account/TOKEN`.
+Do not rename or disable `kasstmaster/themeyersgatherings` or change its Pages
+settings. The original address remains a working frontend using the same shared
+state and account QR tokens. Existing printed invitations do not need to change. All future general-login and
+individual invitation QR prints use `https://ilymmd.com/themeyers/`, even when
+printed from the old frontend. There is no date-based cutoff and old links do not expire.
 
-The builder refuses to overwrite either output directory. It leaves any parent
-home page intact and excludes the Worker, Git metadata, dependency manifests,
-and CNAME settings. No account, invitation assignment, RSVP, or QR token is edited.
+The custom-domain legacy path and www hostname redirect to the canonical path
+with HTTP 308. The complete query string is retained and the browser preserves
+its original fragment, including `#/signin/account/TOKEN`. Account tokens,
+invitation assignments, account records, and RSVP data are not regenerated.
 
-Call this builder from the parent website's normal build using a checkout of the
-shared gathering source; do not maintain a second editable copy of the frontend.
-The actual output directory and routing must be integrated with that repository's
-existing hosting framework after inspection. DNS cannot route individual paths.
-Do not replace its home page, existing deployment workflow, or SPA fallback blindly.
+The Worker allowlist retains `https://kasstmaster.github.io` and adds
+`https://ilymmd.com` and `https://www.ilymmd.com`. Exact allowed origins receive
+matching CORS headers; unrelated origins remain rejected. The Dropbox OAuth
+callback remains on the existing Worker and does not change.
 
-## Service compatibility
-
-Deploy the gathering Worker before making the new page public. Its allowlist
-retains `https://kasstmaster.github.io` and adds `https://ilymmd.com` and
-`https://www.ilymmd.com`. Exact origins receive their own CORS response; unrelated
-origins remain rejected. If Cloudflare has environment overrides, check those
-against the same allowlist. The Dropbox OAuth callback remains on the existing
-Worker and does not require changing the Dropbox app's callback URL.
-
-The old GitHub Pages frontend remains functional. The custom-domain legacy-path
-alias handles `/themeyersgatherings/` if old links are ever redirected there by
-GitHub. Do not redirect or retire the old frontend before the new route and service
-have passed live checks. Browser-only storage does not transfer between origins;
-verify the host's latest state is synced before any eventual redirect.
-
-## Release checks
-
-1. Verify the parent website still works at `/`.
-2. Verify `/themeyers/` and all relative assets serve successfully over HTTPS.
-3. Verify general sign-in, an existing invitation QR link, and invitation-scoped RSVP.
-4. Verify requests from both origins reach the same shared-state service, including
-   saves, upload sessions, and existing Dropbox connectivity.
-5. Verify `/themeyersgatherings/` forwards query and fragment unchanged.
-6. Scan an already printed invitation and confirm it still opens the correct
-   invitation. Keep the old repository and Pages address active permanently.
-
-Automated checks:
+## Build and validate
 
 ```sh
+node scripts/build-domain-site.js .domain-site
+npx wrangler deploy --config github-state-worker/wrangler.toml --dry-run
 node --test --test-isolation=none test/domain-migration.test.js
 NODE_PATH=/path/to/playwright/node_modules node scripts/verify-domain-migration.cjs
 ```
 
-The browser check is offline: it serves a staged bundle through request interception,
-uses a synthetic account token, and sends no requests or writes to the live sites.
-It proves path/asset/redirect compatibility, not live deployment or real invitation access.
+The builder creates `.domain-site/themeyers/` from relative frontend assets and
+fallback state, and a standalone legacy-path redirect in
+`.domain-site/themeyersgatherings/`. It refuses to overwrite either directory.
+It excludes the Worker, Git metadata, package manifests, and CNAME settings.
+The generated directory is ignored by Git and rebuilt in CI.
+
+The browser check is local-only: a local HTTP server runs the actual route handler
+using staged static assets and a synthetic account token. Canonical redirect hosts
+are mapped to the local server so the browser never contacts the live website. It verifies browser
+fragment preservation, asset loading, and scoped sign-in at desktop/mobile sizes
+without sending requests or writes to the live sites.
+
+## After merging
+
+The existing Worker workflow publishes this change and runs a read-only public
+smoke check of both sites, original QR address, assets, redirect, and CORS. Confirm that it completes,
+then verify the live site before sharing its new address:
+
+1. Plex still opens at `/` and its existing routes continue working.
+2. `/themeyers/` serves the gathering site and its assets over HTTPS.
+3. A general login and an already printed invitation both open the intended account.
+4. Both old and new frontends reach the same shared state, including RSVP saves,
+   private galleries, and Dropbox upload sessions.
+5. `/themeyersgatherings/` retains query/fragment information when redirecting.
+
+Do not retire or force a redirect from the old GitHub Pages frontend. Browser-only
+storage does not transfer across origins; verify the latest host state is synced.
