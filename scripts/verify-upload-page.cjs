@@ -46,6 +46,12 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
         assert.deepEqual(result.upload,result.rsvp);assert.deepEqual(result.gallery,result.rsvp);assert.equal(result.uploadBackground,result.rsvpBackground);assert.equal(result.label,result.rsvpText);
       }
       await sharedColors();
+      const buttons=await page.evaluate(()=>{
+        const keys=['fontFamily','fontSize','fontWeight','lineHeight','padding','border','borderRadius','backgroundColor','color','boxShadow'];
+        const snapshot=selector=>{const style=getComputedStyle(document.querySelector(selector));return keys.map(key=>style[key]);};
+        return {upload:snapshot('#dropboxUpload'),save:snapshot('#weddingMediaSaveLink'),rsvp:snapshot('#rsvpNext'),uploadClose:snapshot('#weddingMediaDialog .modal-close'),rsvpClose:snapshot('#rsvpDialog .modal-close'),uploadBack:snapshot('#weddingMediaDialog .sign-in-back'),rsvpBack:snapshot('#rsvpBack')};
+      });
+      assert.deepEqual(buttons.upload,buttons.rsvp);assert.deepEqual(buttons.save,buttons.rsvp);assert.deepEqual(buttons.uploadClose,buttons.rsvpClose);assert.deepEqual(buttons.uploadBack,buttons.rsvpBack);
       const theme=await page.addStyleTag({content:'.fullscreen-flow{--flow-text:rgb(240, 241, 242);--flow-panel-background:rgb(30, 50, 75);--flow-panel-border:rgb(100, 120, 145)}'});
       await sharedColors();
       assert.equal(await page.locator('#weddingMediaUpload').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(30, 50, 75)');
