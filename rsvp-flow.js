@@ -8,6 +8,7 @@
   const review = document.querySelector('#rsvpReview');
   const heading=document.querySelector('#rsvpHeading');
   const kicker=form.querySelector('.section-kicker');
+  const childAge=document.querySelector('#rsvpChildAge');
   let defaultHeading=heading.textContent;
   const candidates = '[data-rsvp-question],#rsvpAttendance,#rsvpPeople,.rsvp-person,.rsvp-person>label,.rsvp-guest-fields,.rsvp-guest-fields>label,[data-person-guest-name],#rsvpChildrenCounter,#rsvpGuestsCounter,#rsvpAdultsCounter,#rsvpChildNames,.rsvp-child-name,#weddingRsvpMenu,#weddingRsvpGuests,.wedding-rsvp-guest,.wedding-meal-options,.wedding-rsvp-guest>label';
   function steps() { return [...context.steps(), { key:'review', element:review, title:'Review your RSVP' }]; }
@@ -27,6 +28,8 @@
     heading.textContent=step.title || defaultHeading;
     const attendance=step.key.startsWith('person-');
     kicker.hidden=!attendance;
+    childAge.hidden=step.key!=='children';
+    form.classList.toggle('rsvp-choosing-attendance',attendance);
     if (step.key === 'review') context.review(review);
     back.hidden = index === 0;
     next.hidden=Boolean(step.element.querySelector('[data-rsvp-advance]'));
@@ -45,7 +48,8 @@
     defaultHeading=heading.textContent;
     active = !options.editing;
     form.classList.toggle('rsvp-guided',active);
-    form.classList.remove('rsvp-direct-choice','rsvp-dish-selection');
+    form.classList.remove('rsvp-direct-choice','rsvp-dish-selection','rsvp-choosing-attendance');
+    childAge.hidden=true;
     form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));
     review.hidden=true;back.hidden=true;next.hidden=false;kicker.hidden=false;
     next.textContent=active?'Next':'Save my RSVP';
@@ -67,6 +71,6 @@
   }
   back.addEventListener('click',()=>{const all=steps(),index=all.findIndex(step=>step.key===key);if(index>0){key=all[index-1].key;show(true);}});
   dialog.querySelector('.modal-close').addEventListener('click',()=>dialog.close());
-  dialog.addEventListener('close',()=>{active=false;heading.textContent=defaultHeading;kicker.hidden=false;form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));});
+  dialog.addEventListener('close',()=>{active=false;heading.textContent=defaultHeading;kicker.hidden=false;childAge.hidden=true;form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));});
   globalThis.RsvpFlow={start,submit,refresh:()=>show()};
 })();
