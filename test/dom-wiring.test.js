@@ -45,11 +45,11 @@ test('AnyList accounts are read-only while wedding party editing remains availab
   assert.match(javascript, /id="adminAddWeddingPartyMember"|#adminAddWeddingPartyMember/);
 });
 
-test('contact accounts are displayed as surname groups with inline children', async () => {
+test('contact accounts use invitation list groups with inline children', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
   assert.match(javascript, /function accountContactGroups\(accountName\)/);
-  assert.match(javascript, /group\.people\.map\(person/);
+  assert.match(javascript, /group\.names\.map\(name/);
   assert.match(javascript, /<strong>Children:<\/strong> \$\{account\.children\.map\(escapeHtml\)\.join\(', '\)\}/);
   assert.match(javascript, /<div class="account-contact-details">\$\{accountContactsHtml\(account\)\}\$\{guestPermissionControl\}<\/div>/);
 });
@@ -69,7 +69,7 @@ test('every gathering can assign its own plus ones and include them in adult inv
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
 
-  assert.match(javascript, /data-plus-one-person="\$\{escapeAttribute\(person\.fullName\)\}"/);
+  assert.match(javascript, /data-plus-one-person="\$\{escapeAttribute\(name\)\}"/);
   assert.match(accountRenderer, /GuestPlanning\.setPlusOnePeople\(account,accountEventId/);
   assert.match(javascript, /plusOneCount\(account, viewedEventId\)/);
   assert.match(javascript, /adults: sum\.adults \+ accountSignInNames\(account\.name\)\.length \+ plusOneCount/);

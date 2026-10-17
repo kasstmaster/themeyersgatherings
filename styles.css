@@ -532,3 +532,23 @@ body>.inline-overlay-layer{position:absolute;inset:0 0 auto;height:0}
 #rsvpChildNames .rsvp-child-name{display:flex;align-items:center;gap:8px;margin:10px 0}
 .rsvp-child-name>span{flex-shrink:0}
 .rsvp-child-name>input{box-sizing:border-box;min-width:0;flex:1;padding:10px;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);font:inherit}
+
+/* Account management uses the same invitation entries as the guest lists. */
+#adminAccounts .account-row{padding:0;margin:0 0 14px}
+#adminAccounts .account-people{padding:0;border:0;border-radius:0;background:transparent;line-height:1.6}
+#adminAccounts .account-contact-details{margin-top:10px}
+#adminAccounts .account-person-headings{margin:8px 0 6px}
+#adminAccounts .account-invitation-group .account-person-line:last-child{margin-bottom:0}
+#adminAccounts .account-address{margin:0 0 8px}
+
+/* Every popup scrolls its content while its final actions remain in view. */
+dialog>.modal-card{--modal-side:38px;--modal-bottom:38px;max-height:calc(100dvh - 108px);overflow-y:auto}
+dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
+.modal-dialog-footer,.editor-dialog-footer{position:sticky;z-index:3;bottom:calc(-1 * var(--modal-bottom,38px));margin:24px calc(-1 * var(--modal-side,38px)) calc(-1 * var(--modal-bottom,38px));padding:14px var(--modal-side,38px) var(--modal-bottom,38px);background:var(--cream);box-shadow:0 -8px 14px rgba(249,244,234,.95)}
+.modal-dialog-footer>.primary-button,.editor-dialog-footer>.primary-button{margin:0}
+.modal-dialog-footer>.invitation-actions{margin-top:0}
+@media(max-width:520px){dialog>.modal-card{--modal-side:24px;--modal-bottom:32px;max-height:calc(100dvh - 96px)}dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}}
+.modal-dialog-footer,.editor-dialog-footer{z-index:201}
+#nextGatheringForm[hidden]+.modal-dialog-footer{display:none}
+#adminAccounts .account-person-name{font-size:1rem;color:var(--ink)}
+#adminAccounts .invited-entry-heading>strong{font-weight:700}

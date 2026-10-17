@@ -326,7 +326,7 @@
       <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
       <h2>Gathering colors</h2><div id="gatheringColorInputs"></div>
       <button type="button" id="resetGatheringColors">Reset colors</button>
-      <button class="primary-button" value="save">Save colors</button>
+      <div class="modal-dialog-footer"><button class="primary-button" value="save">Save colors</button></div>
     </form></dialog>
     <dialog id="newGatheringDialog"><form method="dialog" class="modal-card" id="newGatheringForm">
       <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
@@ -335,7 +335,7 @@
       <label>Name<input id="newGatheringName" required maxlength="100"></label>
       <label>Gathering date<input id="newGatheringDate" type="date" required></label>
       <label>Home address<textarea id="newGatheringAddress" rows="3"></textarea></label>
-      <button class="primary-button" value="create">Create gathering</button>
+      <div class="modal-dialog-footer"><button class="primary-button" value="create">Create gathering</button></div>
     </form></dialog>
 
     <dialog id="gatheringHistoryDialog"><div class="modal-card history-card">
@@ -347,8 +347,8 @@
         <p>Keeps the layout and menu setup. Starts fresh with no RSVPs or claims; choose accounts to invite again.</p>
         <label>Next date<input id="nextGatheringDate" type="date" required></label>
         <p id="nextGatheringError" class="form-error" role="alert"></p>
-        <button class="primary-button" type="submit">Start next gathering</button>
-      </form>
+        
+      </form><div class="modal-dialog-footer"><button class="primary-button" type="submit" form="nextGatheringForm">Start next gathering</button></div>
     </div></dialog>
 
     <dialog id="rsvpDialog">
@@ -370,7 +370,7 @@
           <p>Choose a meal for each guest.</p>
           <div id="weddingRsvpGuests"></div>
         </section>
-        <button class="primary-button" value="default">Save my RSVP</button>
+        <div class="modal-dialog-footer"><button class="primary-button" value="default">Save my RSVP</button></div>
       </form>
     </dialog>
 
@@ -389,7 +389,7 @@
           <span>Sign-in link</span>
           <a id="qrSignInLink" target="_blank" rel="noopener noreferrer"></a>
         </p>
-        <button class="primary-button" value="default">Done</button>
+        <div class="modal-dialog-footer"><button class="primary-button" value="default">Done</button></div>
       </form>
     </dialog>
 
@@ -399,7 +399,7 @@
         <p class="section-kicker">Our family table</p><h2>Guests attending</h2>
         <div id="guestListTotals" class="guest-list-totals" hidden></div>
         <div id="guestList" class="guest-list"></div>
-        <button class="primary-button" value="default">Close</button>
+        <div class="modal-dialog-footer"><button class="primary-button" value="default">Close</button></div>
       </form>
     </dialog>
 
@@ -408,7 +408,7 @@
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">RSVP responses</p><h2>Not attending</h2>
         <div id="notAttendingList" class="guest-list"></div>
-        <button class="primary-button" value="default">Close</button>
+        <div class="modal-dialog-footer"><button class="primary-button" value="default">Close</button></div>
       </form>
     </dialog>
 
@@ -418,7 +418,7 @@
         <p class="section-kicker">Our family table</p><h2>Adults invited</h2>
         <p id="invitedPeopleTotal" class="invited-people-total"></p>
         <div id="invitedList" class="guest-list"></div>
-        <button class="primary-button" value="default">Close</button>
+        <div class="modal-dialog-footer"><button class="primary-button" value="default">Close</button></div>
       </form>
     </dialog>
 
@@ -431,7 +431,7 @@
         <label><span>Your item</span><input id="customItemName" required maxlength="60" placeholder="e.g. Grandma's pecan pie" /></label>
         <label><span>How many are you bringing?</span><input id="customItemQuantity" required type="number" min="1" max="50" value="1" /></label>
         <label><span>Quantity type</span><select id="customItemUnit"><option value="item">Individual item(s)</option><option value="dozen">Dozen(s)</option></select></label>
-        <button class="primary-button" value="default">Add my item</button>
+        <div class="modal-dialog-footer"><button class="primary-button" value="default">Add my item</button></div>
       </form>
     </dialog>
 
@@ -442,7 +442,7 @@
         <h2>How many will you bring?</h2>
         <p id="claimQuantityDescription"></p>
         <label><span>Quantity</span><select id="claimQuantity" required></select></label>
-        <button class="primary-button" value="default">I'll bring this amount</button>
+        <div class="modal-dialog-footer"><button class="primary-button" value="default">I'll bring this amount</button></div>
       </form>
     </dialog>
 
@@ -586,7 +586,7 @@
         <label><span>Account</span><select id="hostWeddingPartyView" aria-label="Account to sign in to"></select></label>
         <label hidden><span>Person</span><select id="hostAccountPerson" aria-label="Person in this account"></select></label>
         <p id="hostWeddingPartyViewError" class="form-error" role="alert"></p>
-        <button id="openWeddingPartyPreview" class="primary-button" type="button">Sign in</button>
+        <div class="modal-dialog-footer"><button id="openWeddingPartyPreview" class="primary-button" type="button">Sign in</button></div>
       </form>
     </dialog>
 
@@ -652,7 +652,7 @@
           <aside id="fieldInspector"><h3>Field settings</h3><p>Select a placed field.</p></aside>
         </div>
         <p id="templateEditorError" class="form-error" role="alert"></p>
-        <div class="invitation-actions"><button id="saveTemplateButton" type="button">Save template</button><button id="previewEditedTemplateButton" type="button">Preview invitation</button></div>
+        <div class="invitation-actions modal-dialog-footer"><button id="saveTemplateButton" type="button">Save template</button><button id="previewEditedTemplateButton" type="button">Preview invitation</button></div>
       </form>
     </dialog>
 
@@ -664,8 +664,8 @@
         <p id="invitationPreviewStatus" class="invitation-preview-status" role="status" aria-live="polite"></p>
         <div class="invitation-actions"><button id="configureInvitationTemplate" type="button" hidden>Choose invitation template</button></div>
         <div id="invitationCanvasWrap" class="invitation-canvas-wrap"><canvas id="invitationCanvas" width="720" height="1008" aria-label="Invitation preview"></canvas></div>
-        <div class="invitation-actions"><button id="downloadInvitationPng" type="button">Download Invitation</button></div>
-        <button class="primary-button" value="default">Done</button>
+        <div class="modal-dialog-footer"><div class="invitation-actions"><button id="downloadInvitationPng" type="button">Download Invitation</button></div>
+        <button class="primary-button" value="default">Done</button></div>
       </form>
     </dialog>
 
@@ -678,8 +678,8 @@
         <p>Choose general login or individual sign-in QR codes. Each invited account receives the quantity set in Accounts.</p>
         <div class="invitation-actions" id="bulkInvitationChoices"><button type="button" data-bulk-qr="general">General Login QRs (ZIP)</button><button type="button" data-bulk-qr="account">Individual Sign-in QRs (ZIP)</button></div>
         <p id="bulkInvitationStatus" role="status" aria-live="polite"></p>
-        <div class="invitation-actions"><button id="shareBulkInvitations" type="button" hidden>Open Email / Share</button></div>
-        <button class="primary-button" value="cancel">Cancel</button>
+        <div class="modal-dialog-footer"><div class="invitation-actions"><button id="shareBulkInvitations" type="button" hidden>Open Email / Share</button></div>
+        <button class="primary-button" value="cancel">Cancel</button></div>
       </form>
     </dialog>
     <script src="invitation.js" defer></script>

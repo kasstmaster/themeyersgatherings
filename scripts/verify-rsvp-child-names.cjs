@@ -15,7 +15,7 @@ for(const eventId of ['thanksgiving','christmas','wedding']){
  await page.locator('[data-target="children"][data-step="-1"]').click();assert.equal(await page.locator('[data-rsvp-child-name="0"]').inputValue(),'Tyson');
  await page.locator('[data-target="children"][data-step="1"]').click();assert.equal(await page.locator('[data-rsvp-child-name="1"]').inputValue(),'Avery');
  if(eventId==='wedding')for(const card of await page.locator('.wedding-rsvp-guest').all())await card.locator('[data-rsvp-meal]').first().check();
- await page.locator('#rsvpForm>.primary-button').click();await page.waitForFunction(()=>!document.querySelector('#rsvpDialog').open);
+ await page.locator('#rsvpForm .modal-dialog-footer>.primary-button').click();await page.waitForFunction(()=>!document.querySelector('#rsvpDialog').open);
  assert.deepEqual(await page.evaluate(()=>state.rsvps[0].childNames),['Tyson','Avery']);
  await page.locator('#rsvpButton').click();assert.equal(await page.locator('[data-rsvp-child-name="0"]').inputValue(),'Tyson');await page.locator('#rsvpDialog .modal-close').click();
  await page.evaluate(()=>{guestName=HOST_DISPLAY_NAME;signedInPersonName='';render();renderGuestAttendance();});
