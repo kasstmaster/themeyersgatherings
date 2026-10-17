@@ -47,7 +47,7 @@ for(const id of ['thanksgiving','christmas','gathering-test','wedding']){
 }
 // A custom gathering uses the same RSVP path, with counts and no Wedding inputs.
 await page.evaluate(()=>{const id='gathering-test';appState.accounts=[{name:'Jane Smith',selectedEvents:{[id]:true}}];guestName='Jane Smith';signedInPersonName='Jane Smith';viewedEventId=id;state=appState.events[id];state.rsvpDate='2028-01-01';render();});
-await page.locator('#rsvpButton').click();await page.locator('[data-person-attending]').selectOption('yes');await page.locator('#rsvpNext').click();await page.locator('[data-target="children"][data-step="1"]').click();await page.locator('#rsvpNext').click();await page.locator('[data-target="extraGuests"][data-step="1"]').click();await page.locator('#rsvpNext').click();await page.locator('[data-rsvp-dish-answer="no"]').click();
+await page.locator('#rsvpButton').click();await page.locator('[data-person-attending][value="yes"]').check();await page.locator('#rsvpNext').click();await page.locator('[data-target="children"][data-step="1"]').click();await page.locator('#rsvpNext').click();await page.locator('[data-target="extraGuests"][data-step="1"]').click();await page.locator('#rsvpNext').click();await page.locator('[data-rsvp-dish-answer="no"]').click();
 assert.equal(await page.locator('[data-rsvp-child-name]').count(),0);assert.equal(await page.locator('[data-rsvp-meal]').count(),0);
 assert.deepEqual(await page.evaluate(()=>[state.rsvps[0].adults,state.rsvps[0].children]),[2,1]);
 assert.deepEqual(errors,[]);await browser.close();console.log('Custom gatherings share standard RSVP behavior');})().catch(e=>{console.error(e);process.exit(1)});
