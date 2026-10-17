@@ -482,3 +482,15 @@ body>.inline-overlay-layer{clip-path:inset(0 0 var(--edit-dock-height, 78px) 0)}
 #gatheringHistoryContent article{margin:12px 0;padding:8px 0;border-bottom:1px solid var(--border)}
 #gatheringHistoryContent p{line-height:1.5;overflow-wrap:anywhere}.history-notes{white-space:pre-wrap}
 #nextGatheringForm{display:grid;gap:12px;margin-top:24px}
+
+/* Shared headings keep each surname's invitation numbers and +1 permissions aligned. */
+.account-person-headings,.account-person-line{display:grid;grid-template-columns:minmax(80px,1fr) 36px 24px;align-items:center;gap:10px}
+.account-person-headings{margin-bottom:6px}.account-person-headings>span{text-align:center;font-size:.75rem;font-weight:700;white-space:nowrap}
+.account-person-line{margin-bottom:6px}.account-person-name{overflow-wrap:anywhere}
+.account-row .account-person-invitation{box-sizing:border-box;width:36px;min-width:36px;max-width:36px;height:36px;padding:0;text-align:center;appearance:textfield}
+.account-person-invitation::-webkit-inner-spin-button,.account-person-invitation::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.account-person-line .account-guest-permission{display:flex!important;justify-content:center;grid-template-columns:none}
+.account-row-with-plus-ones .account-preview-actions{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.account-row-with-plus-ones .account-access{margin-right:auto}
+.account-toolbar-buttons{display:flex;justify-content:flex-end;gap:8px;margin-left:auto}
+.account-toolbar-buttons .account-qr-button,.account-toolbar-buttons .account-invitation-button{width:40px;margin:0}
