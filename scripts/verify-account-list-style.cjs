@@ -16,6 +16,22 @@ await page.locator('[data-plus-one-person="Sherri Hall"]').check();assert.equal(
 for(const width of [1280,390]){
  await page.setViewportSize({width,height:800});
  assert.ok(await page.locator('#adminAccounts').evaluate(el=>el.scrollWidth<=el.clientWidth));
+ const sharedLayout=await page.evaluate(()=>{
+  const accounts=document.querySelector('#accountsDialog'),invited=document.querySelector('#invitedListDialog');
+  const accountWidth=accounts.querySelector('.modal-card').getBoundingClientRect().width;
+  const list=document.querySelector('#adminAccounts');
+  const nestedScroll=getComputedStyle(list).overflowY;
+  const member=document.querySelector('.account-invitation-group .invitation-member-row');
+  const input=member.querySelector('.account-person-invitation').getBoundingClientRect();
+  accounts.close();invited.showModal();
+  const invitedWidth=invited.querySelector('.modal-card').getBoundingClientRect().width;
+  invited.close();accounts.showModal();
+  return {accountWidth,invitedWidth,nestedScroll,square:input.width===input.height,sharedRow:!!member};
+ });
+ assert.equal(sharedLayout.accountWidth,sharedLayout.invitedWidth,'Account and guest lists share popup width');
+ assert.equal(sharedLayout.nestedScroll,'visible','No nested scrolling list');
+ assert.ok(sharedLayout.square);assert.ok(sharedLayout.sharedRow);
+
  const alignment=await page.locator('.account-invitation-group').evaluateAll(groups=>groups.map(group=>{
   const heading=group.querySelector('.invited-entry-heading'),title=heading.querySelector('strong').getBoundingClientRect(),count=heading.querySelector('span').getBoundingClientRect(),names=[...group.querySelectorAll('.account-person-name')].map(el=>el.getBoundingClientRect().top);
   return {aligned:Math.abs(title.top-count.top)<5,separate:names.every((top,index)=>index===0||top>names[index-1]),background:getComputedStyle(group).backgroundColor,border:getComputedStyle(group).borderBottomWidth};

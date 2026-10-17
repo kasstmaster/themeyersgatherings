@@ -744,10 +744,16 @@ function invitedInvitationGroups(account,eventId=viewedEventId) {
 function invitedAdultCount(account){return invitedInvitationGroups(account).reduce((total,group)=>total+group.adults,0);}
 function adultCountLabel(adults,plusOnes=0){return `${adults} adult${adults===1?'':'s'}${plusOnes?` (${plusOnes} plus one${plusOnes===1?'':'s'})`:''}`;}
 function invitationHeadingHtml(group){return `<div class="invited-entry-heading"><strong>${escapeHtml(invitationGroupTitle(group))}</strong><span>${adultCountLabel(group.adults,group.plusOnes)}</span></div>`;}
+function invitationEntryHtml(group, {className='', headings='', renderName=name=>escapeHtml(name)}={}) {
+  return `<div class="guest-entry invited-entry ${className}">${invitationHeadingHtml(group)}<div class="invited-entry-names">${headings}${group.names.map(name=>`<div class="invitation-member-row">${renderName(name)}</div>`).join('')}</div></div>`;
+}
 function accountContactsHtml(account) {
   const adults=invitedInvitationGroups(account).map(group=>{
-    const rows=group.names.map(name=>`<div class="account-person-line"><span class="account-person-name">${escapeHtml(name)}</span>${invitationAssignmentHtml(account,name)}<label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(name)}" aria-label="Allow a guest for ${escapeAttribute(name)}" ${group.guestPeople.includes(name)?'checked':''}></label></div>`).join('');
-    return `<div class="guest-entry invited-entry account-invitation-group">${invitationHeadingHtml(group)}<div class="account-person-headings"><span></span><span>Inv #</span><span>+1</span></div>${rows}</div>`;
+    return invitationEntryHtml(group, {
+      className:'account-invitation-group',
+      headings:'<div class="account-person-headings"><span></span><span>Inv #</span><span>+1</span></div>',
+      renderName:name=>`<div class="account-person-line"><span class="account-person-name">${escapeHtml(name)}</span>${invitationAssignmentHtml(account,name)}<label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(name)}" aria-label="Allow a guest for ${escapeAttribute(name)}" ${group.guestPeople.includes(name)?'checked':''}></label></div>`
+    });
   }).join('');
   const children = (account.children || []).length
     ? `<div class="account-children"><strong>Children:</strong> ${account.children.map(escapeHtml).join(', ')}</div>`
@@ -2075,7 +2081,7 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
   }), { adults: 0, children: 0 });
   document.querySelector('#invitedPeopleTotal').textContent = `${totals.adults} adult${totals.adults === 1 ? '' : 's'} · ${totals.children} child${totals.children === 1 ? '' : 'ren'} total`;
   document.querySelector('#invitedList').innerHTML = invitedAccounts.length
-    ? invitedAccounts.flatMap(account=>invitedInvitationGroups(account).map(group=>`<div class="guest-entry invited-entry">${invitationHeadingHtml(group)}<div class="invited-entry-names">${group.names.map(name=>`<div>${escapeHtml(name)}</div>`).join('')}</div></div>`)).join('')
+    ? invitedAccounts.flatMap(account=>invitedInvitationGroups(account).map(group=>invitationEntryHtml(group))).join('')
     : '<p class="guest-empty">No adults are currently invited.</p>';
   document.querySelector('#invitedListDialog').showModal();
 });
