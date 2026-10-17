@@ -533,12 +533,12 @@ let sharedLoadNumber = 0;
 function hasActiveEditor() {
   return SiteEditing.enabled || Boolean(document.querySelector('dialog[open]')) || Boolean(document.activeElement?.closest('#eventPage input,#eventPage textarea,#eventPage select,.inline-editor'));
 }
-async function loadSharedState() {
+async function loadSharedState({ allowActiveEditor = false } = {}) {
   const stateUrl = SHARED_STATE_URL || REPOSITORY_STATE_URL;
   if (!stateUrl || (!SHARED_STATE_URL && (localStateRevision > 0 || appState.savedAt))) return;
   // Never replace a local edit with a stale response while that edit is
   // waiting to be uploaded.
-  if (sharedSavePending || sharedSaveInProgress || hasActiveEditor()) return;
+  if (sharedSavePending || sharedSaveInProgress || (!allowActiveEditor && hasActiveEditor())) return;
   const attempt=++sharedLoadNumber;
   const revisionBeforeLoad = localStateRevision;
   try {
@@ -549,8 +549,8 @@ async function loadSharedState() {
     }
     if (!response.ok) throw new Error(`Shared state load failed (${response.status})`);
     const saved = normalizeState(await response.json());
-    if (attempt!==sharedLoadNumber || localStateRevision !== revisionBeforeLoad || sharedSavePending || sharedSaveInProgress || hasActiveEditor()) return;
-    if (stateContentSignature(saved) === stateContentSignature(normalizeState(structuredClone(appState)))) return;
+    if (attempt!==sharedLoadNumber || localStateRevision !== revisionBeforeLoad || sharedSavePending || sharedSaveInProgress || (!allowActiveEditor && hasActiveEditor())) return;
+    if (stateContentSignature(saved) === stateContentSignature(normalizeState(structuredClone(appState)))) return true;
     // The checked-in repository file is read-only when no Worker is set up.
     // Use it to seed a browser, but do not let an older/emptier copy erase a
     // richer local state (most visibly, newly added accounts) on refresh or
@@ -561,6 +561,7 @@ async function loadSharedState() {
     state = appState.events[viewedEventId];
     storeLocalState(appState);
     render();
+    return true;
   } catch (error) {
     console.error(error);
     showToast('Could not refresh sign-ups. Showing the last data saved on this device.');
@@ -2818,7 +2819,13 @@ document.querySelector('#syncAnyListButton').addEventListener('click', async eve
   button.disabled = true;
   button.textContent = 'Syncing…';
   result.textContent = 'Syncing…';
+  const accountList=document.querySelector('#adminAccounts');
+  accountList.inert=true;
   try {
+    clearTimeout(sharedSaveTimer);
+    while(sharedSaveInProgress) await wait(50);
+    if(sharedSavePending) await saveSharedState();
+    if(sharedSavePending) throw new Error('Pending account changes could not be saved.');
     const headers = { 'X-Host-Password': hostCredential };
     const started = await fetch(`${SHARED_STATE_URL.replace(/\/$/, '')}/anylist-sync`, { method: 'POST', headers });
     if (!started.ok) {
@@ -2848,14 +2855,19 @@ document.querySelector('#syncAnyListButton').addEventListener('click', async eve
         : 'Unable to sync: the GitHub Actions job did not finish within 10 minutes.';
       throw error;
     }
-    await loadSharedState();
+    if(!await loadSharedState({allowActiveEditor:true})) {
+      const error=new Error('Account refresh failed.');
+      error.displayMessage='AnyList synced, but the website could not refresh the accounts. Please reload before editing accounts.';
+      throw error;
+    }
     if (document.querySelector('#accountsDialog').open) openAccountsAdmin();
     const added = outcome.added ? `${outcome.added} new account${outcome.added === 1 ? '' : 's'} added` : 'no new accounts found';
     const skipped = outcome.skipped ? `, ${outcome.skipped} entr${outcome.skipped === 1 ? 'y' : 'ies'} skipped` : '';
     const qrResult = outcome.qrAccessCreated
       ? ` Created QR access for ${outcome.qrAccessCreated} account${outcome.qrAccessCreated === 1 ? '' : 's'}.`
       : ' All accounts already have QR access.';
-    result.textContent = `Sync complete — ${added}${skipped}.${qrResult}`;
+    const updated=outcome.updated ? `, ${outcome.updated} account${outcome.updated===1?'':'s'} updated` : '';
+    result.textContent = `Sync complete — ${added}${updated}${skipped}.${qrResult}`;
   } catch (error) {
     console.error(error);
     result.textContent = error.displayMessage || (error instanceof TypeError
@@ -2864,6 +2876,7 @@ document.querySelector('#syncAnyListButton').addEventListener('click', async eve
   } finally {
     button.disabled = false;
     button.textContent = 'Sync AnyList Address Book';
+    accountList.inert=false;
   }
 });
 document.querySelector('#clearClaimItem').addEventListener('change', updateClearClaimFamilies);

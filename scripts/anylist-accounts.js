@@ -174,6 +174,36 @@ function migrateAccountReferences(state, oldName, newName) {
   });
 }
 
+// A spelling correction must retain the person's website-owned choices. Match
+// unchanged identities first, then only unique given-name/suffix pairs within
+// the already-linked household; never guess between two people named alike.
+function migratePersonReferences(state, account, newName) {
+  const previous=accountPeople(account.name), next=accountPeople(newName);
+  const identity=name=>{const person=parsePerson(name);return person ? `${key(person.givenNames)}\0${person.suffix}` : '';};
+  const removed=previous.filter(name=>!next.some(candidate=>normalizedPerson(name)===normalizedPerson(candidate)));
+  const added=next.filter(name=>!previous.some(candidate=>normalizedPerson(name)===normalizedPerson(candidate)));
+  const renames=new Map();
+  for(const old of removed) {
+    const matches=added.filter(name=>identity(name)===identity(old));
+    if(matches.length===1 && removed.filter(name=>identity(name)===identity(old)).length===1)renames.set(old,matches[0]);
+  }
+  const rename=name=>renames.get(name) || name;
+  for(const names of Object.values(account.plusOnePeople || {})) {
+    if(Array.isArray(names))names.forEach((name,index)=>{names[index]=rename(name);});
+  }
+  for(const assignments of Object.values(account.invitationPeople || {})) {
+    for(const [old,value] of Object.entries(assignments))if(renames.has(old)){assignments[rename(old)]=value;delete assignments[old];}
+  }
+  for(const event of Object.values(state.events || {})) {
+    for(const rsvp of event.rsvps || []) {
+      if(rsvp.name!==account.name)continue;
+      for(const person of rsvp.people || [])person.name=rename(person.name);
+      for(const selections of [rsvp.menuSelections,rsvp.savedMenuSelections])for(const selection of selections || [])selection.name=rename(selection.name);
+    }
+    for(const member of event.weddingPartyMembers || [])member.name=rename(member.name);
+  }
+}
+
 /** Reconcile AnyList categories into accounts, preserving all website-owned account fields. */
 export function syncAnyListAccounts(state, categories) {
   const claimedIndexes = new Set();
@@ -212,6 +242,7 @@ export function syncAnyListAccounts(state, categories) {
     claimedIndexes.add(index);
     const account = state.accounts[index];
     const oldName = account.name;
+    migratePersonReferences(state,account,category.account);
     account.name = category.account;
     account.address = clean(category.address);
     account.children = category.children || [];
