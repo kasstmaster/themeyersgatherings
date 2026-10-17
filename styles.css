@@ -338,7 +338,7 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 #dropboxConnectionStatus,#dropboxUploadStatus{overflow-wrap:anywhere;white-space:pre-wrap}
 #dropboxInlineUpload{margin:20px 0}
 
-.dropbox-file-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px}
+.dropbox-file-row{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 #weddingMediaUpload .dropbox-file-row input{min-width:0;margin:0}
 
 .wedding-upload-intro{text-align:center}
