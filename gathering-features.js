@@ -10,7 +10,7 @@
       title: "WE'D LOVE FOR YOU TO BRING A DISH TO SHARE",
       message: "Choose something delicious to bring. If bringing something isn't practical, simply come and enjoy the evening with us."
     }),
-    rsvp: Object.freeze({ childNames: false, guestCounter: true, namedGuests: false, meals: false })
+    rsvp: Object.freeze({ childNames: false, guestCounter: true, namedGuests: false, meals: false, contributions: true })
   });
   const wedding = Object.freeze({
     menu: false,
@@ -22,7 +22,7 @@
       title: 'TOGETHER WITH THEIR PARENTS',
       message: 'Kassandra Lynne Raudman and Steven Michael Meyer request the honor of your presence at their marriage'
     }),
-    rsvp: Object.freeze({ childNames: true, guestCounter: false, namedGuests: true, meals: true })
+    rsvp: Object.freeze({ childNames: true, guestCounter: false, namedGuests: true, meals: true, contributions: false })
   });
   const forGathering = eventId => eventId === 'wedding' ? wedding : standard;
   const rsvp = eventId => forGathering(eventId).rsvp;

@@ -14,9 +14,9 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <section id="signInPage" class="sign-in-page theme-wedding" aria-labelledby="signInHeading">
+    <section id="signInPage" class="sign-in-page fullscreen-flow theme-wedding" aria-labelledby="signInHeading">
       <div class="sign-in-panel">
-        <form id="passwordForm" class="sign-in-card">
+        <form id="passwordForm" class="sign-in-card full-page-form">
           <p class="section-kicker">Welcome</p>
           <h1 id="signInHeading">The Meyer's Gatherings</h1>
           <p id="accountLinkError" class="form-error invalid-sign-in-link" role="alert" hidden>This sign-in link is not valid.</p>
@@ -351,13 +351,14 @@
       </form><div class="modal-dialog-footer"><button class="primary-button" type="submit" form="nextGatheringForm">Start next gathering</button></div>
     </div></dialog>
 
-    <dialog id="rsvpDialog">
-      <form method="dialog" id="rsvpForm" class="modal-card">
-        <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
+    <dialog id="rsvpDialog" class="fullscreen-flow" aria-labelledby="rsvpHeading">
+      <form method="dialog" id="rsvpForm" class="modal-card full-page-form" novalidate>
+        <button class="modal-close" type="button" aria-label="Close">×</button>
         <p class="section-kicker">Save your seat</p>
-        <h2>Who's joining us?</h2>
+        <h2 id="rsvpHeading">Who's joining us?</h2>
         <p>We can't wait to celebrate together.</p>
         <p id="rsvpDeadlineNotice" role="status" hidden></p>
+        <p id="rsvpProgress" class="rsvp-progress" role="status" aria-live="polite" hidden></p>
         <fieldset id="rsvpAttendance" class="rsvp-attendance-box"><legend>Attending</legend>
         <p id="rsvpInvitationGroup" hidden></p>
         <div id="rsvpPeople"></div>
@@ -371,7 +372,13 @@
           <p>Choose a meal for each guest.</p>
           <div id="weddingRsvpGuests"></div>
         </section>
-        <div class="modal-dialog-footer"><button class="primary-button" value="default">Save my RSVP</button></div>
+        <section id="rsvpDishQuestion" data-rsvp-question hidden><label><span>Will you bring a dish?</span><select id="rsvpBringingDish"><option value="">Choose an option</option><option value="yes">Yes, I'll bring a dish</option><option value="no">No, just joining the celebration</option></select></label></section>
+        <section id="rsvpDishOptions" data-rsvp-question hidden><h3>What would you like to bring?</h3><p>Choose a quantity for the dishes you'd like to bring.</p><div id="rsvpDishChoices"></div><label class="rsvp-custom-dish-choice"><input id="rsvpCustomDish" type="checkbox"><span>I'll bring something else</span></label></section>
+        <section id="rsvpCustomDishNameQuestion" data-rsvp-question hidden><label><span>What will you bring?</span><input id="rsvpCustomDishName" maxlength="150" placeholder="Name of your dish"></label></section>
+        <section id="rsvpCustomDishQuantityQuestion" data-rsvp-question hidden><label><span>How many will you bring?</span><input id="rsvpCustomDishQuantity" type="number" min="1" max="50" step="1" value="1"></label><label><span>Unit</span><select id="rsvpCustomDishUnit"></select></label></section>
+        <section id="rsvpCustomDishCategoryQuestion" data-rsvp-question hidden><label><span>Where does your dish belong?</span><select id="rsvpCustomDishCategory"></select></label></section>
+        <section id="rsvpReview" aria-label="Review your RSVP" hidden></section>
+        <div class="modal-dialog-footer"><button id="rsvpNext" class="primary-button" value="default">Next</button><button id="rsvpBack" class="sign-in-back" type="button" hidden>Back</button></div>
       </form>
     </dialog>
 
@@ -684,6 +691,7 @@
     <script src="shared-details.js" defer></script>
     <script src="inline-editing.js" defer></script>
     <script src="gathering-history.js" defer></script>
+    <script src="rsvp-flow.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>

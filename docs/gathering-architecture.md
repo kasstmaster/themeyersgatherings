@@ -8,8 +8,8 @@ meal choices. `gathering-features.js` is the single definition of these choices;
 
 | Concern | Shared implementation | Wedding differences |
 | --- | --- | --- |
-| Pages | `renderGatheringPages`, common page/container styles | `renderWeddingGathering` for couple, party, guest, timeline, registry and media content |
-| RSVP | One form, attendance choices, counters and submit/save flow | Named children, named plus-ones and meals; regular gatherings use guest counts |
+| Pages | `renderGatheringPages`, common page/container styles; Notes and Menu are host-only on standard gatherings | `renderWeddingGathering` for couple, party, guest, timeline, registry and media content |
+| RSVP | `RsvpFlow` provides one full-page question at a time, Back, validation and review. Standard gatherings offer dish commitments at the end; No saves immediately. | Named children, named plus-ones and meals; regular gatherings use guest counts |
 | Attendance | `GuestPlanning`, invitation groups, one host list renderer | Individual names/meals; regular entries show surname and counts |
 | Accounts and invitations | One account manager, invitation assignments, QR/template/download flows | No separate manager or invitation implementation |
 | Editing and history | `SiteEditing`, `SharedDetails`, `GatheringHistory` | Wedding-only content editors enabled by features |
@@ -39,3 +39,19 @@ gatherings look alike. Shared layout, controls, and component styles are separat
 from those intentional content choices. Invitation/account list headings and
 adult counts share `invitedInvitationGroups`, `invitedAdultCount`,
 `adultCountLabel`, and `invitationHeadingHtml` in `app.js`.
+
+RSVP questions reuse the existing form controls and saved-response model. The
+journey builds only the questions enabled by `GatheringFeatures.rsvp`, including
+any dynamically added guests and children. Save commits attendance and standard
+gathering dish claims together. Closing the journey discards unsaved changes.
+Dish selection uses the existing menu quantities and claim ownership; guests may
+also name another dish. At the deadline, dish changes and Wedding guest/meal
+changes are skipped and locked while attendance remains editable. Host edit mode
+keeps the structured form available for editing meal options.
+
+The guest landing page of a standard gathering leads into RSVP instead of
+showing its menu. Hosts keep their Notes/Menu pages for planning. Wedding pages
+remain separate. The sign-in and RSVP screens share `fullscreen-flow` and
+`full-page-form` styles. `scripts/verify-rsvp-flow.cjs` exercises the journey on
+desktop and mobile, including custom gatherings, invitation scope, validation,
+deadlines, and contribution updates.
