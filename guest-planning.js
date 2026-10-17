@@ -78,7 +78,7 @@
     });
     const names = attendees(people);
     const savedMenuSelections = (existing?.savedMenuSelections || existing?.menuSelections || []).map(selection=>selection.type==='child' && incoming.childNames?.[selection.index] ? {...selection,name:childLabel(Number(selection.index),incoming.childNames[selection.index])} : selection);
-    return { ...incoming, people, adults: names.length, savedMenuSelections,
+    return { ...incoming, people, adults: names.length+(Number(incoming.extraGuests)||0), savedMenuSelections,
       menuSelections: savedMenuSelections.filter(selection => selection.type === 'child' ? selection.index < incoming.children : names.includes(selection.name)) };
   }
   const childLabel=(index,name)=>`Child ${index+1}${String(name || '').trim()?` - ${String(name).trim()}`:''}`;
@@ -89,7 +89,7 @@
   const guestResponses = rsvps => rsvps.filter(rsvp => rsvp.name !== 'The Host');
   function attendanceGroups(rsvps) {
     rsvps=guestResponses(rsvps);
-    const attending = rsvps.filter(rsvp => (rsvp.people?.length ? attendees(rsvp.people).length : Number(rsvp.adults)) + Number(rsvp.children || 0) > 0);
+    const attending = rsvps.filter(rsvp => (rsvp.people?.length ? attendees(rsvp.people).length+(Number(rsvp.extraGuests)||0) : Number(rsvp.adults)) + Number(rsvp.children || 0) > 0);
     const notAttending = rsvps.flatMap(rsvp => {
       const declined = (rsvp.people || []).filter(person => person.attending === false).map(person => ({ household: rsvp.name, name: person.name }));
       // Older records can have zero guests without an attendance answer.

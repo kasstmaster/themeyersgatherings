@@ -286,6 +286,7 @@ function normalizeState(saved) {
             ...rsvp,
             adults: Math.max(0, Number(rsvp.adults) || 0),
             children: Math.max(0, Number(rsvp.children) || 0),
+            extraGuests: Math.max(0,Math.floor(Number(rsvp.extraGuests)||0)),
             childNames: Array.isArray(rsvp.childNames) ? rsvp.childNames.map(name=>typeof name==='string'?name.trim():'') : [],
             menuSelections: Array.isArray(rsvp.menuSelections) ? rsvp.menuSelections.filter(selection => selection && typeof selection === 'object').map(selection => ({
               ...(Number.isSafeInteger(selection.invitationNumber) ? {invitationNumber:selection.invitationNumber} : {}),
@@ -1815,6 +1816,8 @@ document.querySelector('#rsvpButton').addEventListener('click', () => ensureAcco
   applyRsvpDeadline();
   renderRsvpPeople(existing);
   document.querySelector('#children').value = existing?.children ?? 0;
+  document.querySelector('#rsvpGuestsCounter').hidden=viewedEventId==='wedding';
+  document.querySelector('#extraGuests').value=viewedEventId==='wedding'?0:(existing?.extraGuests || 0)+(existing?.people || []).filter(person=>person.attending===true && person.guestChoice==='guest' && person.guestName?.trim()).length;
   rsvpChildNameDraft=[...(existing?.childNames || [])];
   renderRsvpChildNames();
   renderWeddingRsvpMenu(rsvpMealDraft);
@@ -1831,7 +1834,7 @@ function applyRsvpDeadline() {
   const locked = rsvpOptionsLocked();
   const notice = document.querySelector('#rsvpDeadlineNotice');
   notice.hidden = !locked;
-  notice.textContent = 'The RSVP deadline has passed. You can still change who is attending and the number of children attending. Guest names, meals, and dietary notes are locked. Contact the hosts for other changes.';
+  notice.textContent = viewedEventId==='wedding'?'The RSVP deadline has passed. You can still change who is attending and the number of children attending. Guest names, meals, and dietary notes are locked. Contact the hosts for other changes.':'The RSVP deadline has passed. You can still change who is attending and the number of children and guests attending.';
   document.querySelectorAll('#rsvpForm [data-person-guest], #rsvpForm [data-person-guest-name], #rsvpForm [data-rsvp-meal], #rsvpForm [data-rsvp-dietary]').forEach(input => { input.disabled=locked; });
 }
 setInterval(() => { if (document.querySelector('#rsvpDialog').open) applyRsvpDeadline(); }, 1000);
@@ -1869,7 +1872,7 @@ function updateRsvpPeople() {
 function renderRsvpPeople(existing) {
   const account = rsvpAccount();
   const names = rsvpNames();
-  const allowed = GuestPlanning.plusOnePeople(account,viewedEventId,names);
+  const allowed = viewedEventId==='wedding'?GuestPlanning.plusOnePeople(account,viewedEventId,names):[];
   document.querySelector('#rsvpPeople').innerHTML = names.map(name => {
     const saved = existing?.people?.find(person => normalizeAccountName(person.name) === normalizeAccountName(name));
     const attending = saved?.attending === true ? 'yes' : saved?.attending === false ? 'no' : '';
@@ -1926,11 +1929,12 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   const names=rsvpNames();
   if (!names.length || people.length!==names.length || new Set(people.map(person=>person.name)).size!==names.length || people.some(person=>!names.includes(person.name))) { event.preventDefault();showToast('Your invitation has changed. Please reopen RSVP.');return; }
   const allowed = GuestPlanning.plusOnePeople(rsvpAccount(),viewedEventId,people.map(person=>person.name));
-  if (!rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
+  if (viewedEventId==='wedding' && !rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
   const menuSelections = viewedEventId === 'wedding' ? readWeddingMenuSelections() : [];
-  let rsvp = { name: guestName, people, childNames, adults: Number(document.querySelector('#adults').value), children: Number(document.querySelector('#children').value), ...(viewedEventId === 'wedding' ? { menuSelections } : {}) };
+  const extraGuests=viewedEventId==='wedding'?0:Number(document.querySelector('#extraGuests').value);
+  let rsvp = { name: guestName, people, childNames, extraGuests, adults: Number(document.querySelector('#adults').value)+extraGuests, children: Number(document.querySelector('#children').value), ...(viewedEventId === 'wedding' ? { menuSelections } : {}) };
   const index = state.rsvps.findIndex(entry => entry.name === guestName);
-  if (rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
+  if (viewedEventId==='wedding' && rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
   const account=rsvpAccount();
   if(account)rsvp=InvitationGroups.merge(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),state.rsvps[index],rsvp);
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
@@ -1995,15 +1999,15 @@ function invitationAttendanceRsvps() {
 function renderGuestAttendance() {
   if (!hostAuthenticated) return;
   const totalsSection = document.querySelector('#guestListTotals');
-  totalsSection.hidden = viewedEventId !== 'wedding';
+  totalsSection.hidden = false;
   if (!totalsSection.hidden) {
-    const totals = GuestPlanning.rsvpTotals(state.rsvps, GuestPlanning.weddingMealOptions(state));
+    const totals = GuestPlanning.rsvpTotals(state.rsvps, viewedEventId==='wedding'?GuestPlanning.weddingMealOptions(state):[]);
     const attendance = [['Adults', totals.adults], ['Children', totals.children]];
     const meals = [...totals.meals,
       ...(totals.noMeal ? [['No meal', totals.noMeal]] : []),
       ...(totals.unselected ? [['No meal selected', totals.unselected]] : [])];
     const row = entries => entries.map(([label, count]) => `<div><dt>${escapeHtml(label)}</dt><dd>${count}</dd></div>`).join('');
-    totalsSection.innerHTML = `<h3>Totals</h3><dl class="attendance-totals">${row(attendance)}</dl><dl class="meal-totals">${row(meals)}</dl>`;
+    totalsSection.innerHTML = `<h3>Totals</h3><dl class="attendance-totals">${row(attendance)}</dl>${viewedEventId==='wedding'?`<dl class="meal-totals">${row(meals)}</dl>`:''}`;
   }
   const list = document.querySelector('#guestList');
   const groupedRsvps=invitationAttendanceRsvps();

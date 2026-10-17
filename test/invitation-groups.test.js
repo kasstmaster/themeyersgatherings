@@ -87,3 +87,16 @@ test('child names stay scoped to their invitation through updates and grouping',
  assert.deepEqual(InvitationGroups.groups(a,'wedding',names,rsvp).map(group=>GuestPlanning.childLabels(group.rsvp)),[['Child 1 - Tyson'],['Child 1 - Avery']]);
  assert.equal(rsvp.menuSelections.find(selection=>selection.type==='child').name,'Child 1 - Tyson');
 });
+
+test('additional non-Wedding guests contribute to adult counts and stay with their invitation',()=>{
+ const a=account();a.invitationPeople.christmas={'Michael Jones':2,'Sally Jones':2};
+ let rsvp=InvitationGroups.merge(a,'christmas',names,1,undefined,{name:a.name,people:[person(names[0])],children:0,extraGuests:2});
+ rsvp=InvitationGroups.merge(a,'christmas',names,2,rsvp,{name:a.name,people:[person(names[3])],children:0,extraGuests:1});
+ assert.equal(rsvp.adults,5);assert.equal(rsvp.extraGuests,3);
+ assert.equal(InvitationGroups.response(a,'christmas',names,1,rsvp).extraGuests,2);
+ assert.equal(InvitationGroups.response(a,'christmas',names,2,rsvp).adults,2);
+ rsvp=InvitationGroups.merge(a,'christmas',names,1,rsvp,{name:a.name,people:[person(names[0])],children:0,extraGuests:0});
+ assert.equal(rsvp.adults,3);assert.equal(rsvp.extraGuests,1);
+ assert.equal(GuestPlanning.rsvpTotals([rsvp]).adults,3);
+ assert.deepEqual(GuestPlanning.attendanceGroups([{name:'Guests Only',people:[{name:'Named Person',attending:false}],adults:2,extraGuests:2,children:0}]).attending.map(rsvp=>rsvp.name),['Guests Only']);
+});

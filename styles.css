@@ -552,3 +552,4 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #nextGatheringForm[hidden]+.modal-dialog-footer{display:none}
 #adminAccounts .account-person-name{font-size:1rem;color:var(--ink)}
 #adminAccounts .invited-entry-heading>strong{font-weight:700}
+#rsvpGuestsCounter[hidden]{display:none}
