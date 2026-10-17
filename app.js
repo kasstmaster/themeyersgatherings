@@ -83,7 +83,7 @@ const GUEST_ACCOUNTS = [];
 const EVENT_DETAILS = {
   thanksgiving: { name: 'Thanksgiving', theme: 'thanksgiving', header: 'https://i.postimg.cc/JnFX8pPS/Website-Header-Thanksgiving.png' },
   christmas: { name: 'Christmas', theme: 'christmas', header: 'https://i.postimg.cc/rmMy7x1t/Website-Header-Christmas.png' },
-  wedding: { name: 'Wedding', theme: 'wedding', header: 'https://i.ibb.co/KjtXKDRn/Wedding-Header-Website-No-Border.png', registryOnly: true, hasMenu: false }
+  wedding: { name: 'Wedding', theme: 'wedding', header: 'https://i.ibb.co/KjtXKDRn/Wedding-Header-Website-No-Border.png' }
 };
 
 function syncGatheringDefinitions(events) {
@@ -1170,7 +1170,7 @@ function renderWeddingPartyAttireImages(canView) {
 }
 
 function gatheringHeaderAddress() {
-  if (viewedEventId !== 'wedding') return state.homeAddress || [state.addressLine1, state.addressLine2].filter(Boolean).join(', ');
+  if (!GatheringFeatures.forGathering(viewedEventId).ceremonyAddresses) return state.homeAddress || [state.addressLine1, state.addressLine2].filter(Boolean).join(', ');
   const address = fields => fields.map(value => (value || '').trim().replace(/^at\s+/i, '')).filter(Boolean).join(', ');
   const ceremony = address([state.churchStreet, state.churchCityStateZip]);
   const reception = address([state.venueStreet, state.venueCityStateZip]);
@@ -1190,57 +1190,12 @@ function weddingDetailsWithoutHeaderAddress(value) {
     return true;
   }).join('\n');
 }
-function render() {
-  if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}
-  SiteEditing.beforeRender();
-  syncGatheringDefinitions(appState.events);
-  const event = EVENT_DETAILS[viewedEventId];
-  const isWedding = event.registryOnly === true;
-  const hostView = isHostView();
-  updateSignedInAccountBanner();
-  document.body.className = `theme-${event.theme}`;
-  applyGatheringColors();
-  document.title = `The Meyers ${event.name}`;
-  document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
-  renderSyncStatus();
-  updateHostToolsPanel();
-  document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Edit Details';
-  document.querySelector('#previewWeddingPartyButton').hidden = false;
-  document.querySelector('#previewWeddingPartyButton').textContent = 'Sign in to account';
-  renderEventDock();
-  updateHeaderImage(event);
-  const eventDate = new Date(`${state.eventDate}T12:00:00`);
-  const dateElement = document.querySelector('#eventDate');
-  dateElement.dateTime = state.eventDate;
-  document.querySelector('#rsvpDeadline').textContent = state.rsvpDate ? `Kindly RSVP by ${new Intl.DateTimeFormat('en-US', {month:'long',day:'numeric',year:'numeric'}).format(new Date(`${state.rsvpDate}T12:00:00`))}` : 'RSVP deadline not set';
-  dateElement.textContent = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', '');
-  document.querySelector('#eventAddress').textContent = gatheringHeaderAddress();
-  document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${escapeHtml(SharedDetails.homeAddress(state)).replaceAll('\n','<br>')}`;
-  document.querySelector('#welcomeKicker').hidden = isWedding;
-  document.querySelector('#welcome-title').textContent = isWedding ? 'TOGETHER WITH THEIR PARENTS' : "WE'D LOVE FOR YOU TO BRING A DISH TO SHARE";
-  document.querySelector('#welcomeNote').innerHTML = isWedding
-    ? '<em>Kassandra Lynne Raudman and Steven Michael Meyer request the honor of your presence at their marriage</em>'
-    : '<em>Choose something delicious to bring. If bringing something isn\'t practical, simply come and enjoy the evening with us.</em>';
-  document.querySelector('#remainingSummary').hidden = isWedding;
-  document.querySelector('.summary-strip').classList.toggle('wedding-summary', isWedding);
-  document.querySelector('.summary-strip').hidden = !hostView;
-  // Menus belong to every gathering except the Wedding, which intentionally
-  // has registry details instead of claimable dishes.
-  if (selectedGatheringTab === 'details') selectedGatheringTab = null;
-  if (!hostView && selectedGatheringTab === 'notes') selectedGatheringTab = 'menu';
-  const gatheringTab = selectedGatheringTab || (hostView ? 'notes' : 'menu');
-  const showingMenu = isWedding || gatheringTab === 'menu';
-  document.querySelector('#gatheringTabs').hidden = isWedding;
-  document.querySelectorAll('[data-gathering-tab]').forEach(button => {
-    button.hidden = button.dataset.gatheringTab === 'notes' && !hostView;
-    const selected = button.dataset.gatheringTab === gatheringTab;
-    button.setAttribute('aria-selected', String(selected)); button.tabIndex = selected ? 0 : -1;
-  });
-  document.querySelector('#hostNotesSection').hidden = isWedding || !hostView || gatheringTab !== 'notes';
-  document.querySelector('#hostNotesContent').innerHTML = !isWedding && hostView
-    ? formatEditableText(state.hostNotes || '') || '<p>Edit Details to add your notes.</p>' : '';
-  document.querySelector('.menu-section').hidden = event.hasMenu === false || !showingMenu;
-  document.querySelector('#copyMenuButton').hidden = state.items.length === 0;
+function renderWeddingGathering(hostView) {
+  const isWedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
+  if(!isWedding){
+    for(const id of ['weddingPartyTabs','brideGroomSection','weddingPartySection','weddingTimelineSection','guestSection','weddingMediaSection','registrySection','registryAttireSection','whatToExpectSection'])document.getElementById(id).hidden=true;
+    return;
+  }
   const registrySection = document.querySelector('#registrySection');
   const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => weddingPartyPersonMatches(member.name, signedInPersonName));
   const isWeddingPartyMember = isWedding && !hostView && Boolean(signedInWeddingPartyMember);
@@ -1371,6 +1326,60 @@ function render() {
   monetaryGiftButton.classList.toggle('disabled', !state.monetaryGiftUrl);
   monetaryGiftButton.setAttribute('aria-disabled', String(!state.monetaryGiftUrl));
   monetaryGiftButton.textContent = state.monetaryGiftUrl ? 'Give a monetary gift' : (hostView ? 'Add monetary gift link in host tools' : 'Monetary gifts coming soon');
+}
+
+// Standard gatherings share one page renderer; Wedding opts out of Notes/Menu.
+function renderGatheringPages(features,hostView) {
+  if(selectedGatheringTab==='details')selectedGatheringTab=null;
+  if(!hostView && selectedGatheringTab==='notes')selectedGatheringTab='menu';
+  const tab=selectedGatheringTab || (hostView?'notes':'menu');
+  document.querySelector('#gatheringTabs').hidden=!features.menu && !features.notes;
+  document.querySelectorAll('[data-gathering-tab]').forEach(button=>{
+    button.hidden=button.dataset.gatheringTab==='notes' && (!features.notes || !hostView);
+    const selected=button.dataset.gatheringTab===tab;
+    button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
+  });
+  document.querySelector('#hostNotesSection').hidden=!features.notes || !hostView || tab!=='notes';
+  document.querySelector('#hostNotesContent').innerHTML=features.notes && hostView
+    ? formatEditableText(state.hostNotes || '') || '<p>Edit Details to add your notes.</p>' : '';
+  document.querySelector('.menu-section').hidden=!features.menu || tab!=='menu';
+  document.querySelector('#copyMenuButton').hidden=state.items.length===0;
+}
+function render() {
+  if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}
+  SiteEditing.beforeRender();
+  syncGatheringDefinitions(appState.events);
+  const event = EVENT_DETAILS[viewedEventId];
+  const features=GatheringFeatures.forGathering(viewedEventId);
+  const isWedding = features.weddingPages;
+  const hostView = isHostView();
+  updateSignedInAccountBanner();
+  document.body.className = `theme-${event.theme}`;
+  applyGatheringColors();
+  document.title = `The Meyers ${event.name}`;
+  document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
+  renderSyncStatus();
+  updateHostToolsPanel();
+  document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Edit Details';
+  document.querySelector('#previewWeddingPartyButton').hidden = false;
+  document.querySelector('#previewWeddingPartyButton').textContent = 'Sign in to account';
+  renderEventDock();
+  updateHeaderImage(event);
+  const eventDate = new Date(`${state.eventDate}T12:00:00`);
+  const dateElement = document.querySelector('#eventDate');
+  dateElement.dateTime = state.eventDate;
+  document.querySelector('#rsvpDeadline').textContent = state.rsvpDate ? `Kindly RSVP by ${new Intl.DateTimeFormat('en-US', {month:'long',day:'numeric',year:'numeric'}).format(new Date(`${state.rsvpDate}T12:00:00`))}` : 'RSVP deadline not set';
+  dateElement.textContent = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', '');
+  document.querySelector('#eventAddress').textContent = gatheringHeaderAddress();
+  document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${escapeHtml(SharedDetails.homeAddress(state)).replaceAll('\n','<br>')}`;
+  document.querySelector('#welcomeKicker').hidden=!features.welcome.showKicker;
+  document.querySelector('#welcome-title').textContent=features.welcome.title;
+  document.querySelector('#welcomeNote').innerHTML=`<em>${escapeHtml(features.welcome.message)}</em>`;
+  document.querySelector('#remainingSummary').hidden=!features.menu;
+  document.querySelector('.summary-strip').style.setProperty('--summary-columns',features.menu?'5':'4');
+  document.querySelector('.summary-strip').hidden = !hostView;
+  renderGatheringPages(features,hostView);
+  renderWeddingGathering(hostView);
   const categories = [...new Set(state.items.map(item => item.category))];
   const categoryCard = category => `
     <article class="category-card">
@@ -1444,7 +1453,7 @@ function renderInlineEditing() {
     values => keys.forEach(([key], index) => { setGatheringDetail(key,values[index]); }));
   SiteEditing.field(document.querySelector('#rsvpDeadline'), 'RSVP deadline', [{label:'RSVP deadline (through end of day, Pacific time; clear for no deadline)',type:'date',value:state.rsvpDate || ''}], ([value]) => { state.rsvpDate=value; });
   field('#eventDate', 'date', [['eventDate', 'Gathering date']], { eventDate: 'date' });
-  if (viewedEventId === 'wedding') {
+  if (GatheringFeatures.forGathering(viewedEventId).ceremonyAddresses) {
     SiteEditing.field(document.querySelector('#eventAddress'), 'address', [{label:'Address (one per line if locations differ)',type:'textarea',value:gatheringHeaderAddress()}], ([value]) => {
       const addresses=value.split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
       state.churchStreet=addresses[0] || '';state.churchCityStateZip='';
@@ -1455,7 +1464,10 @@ function renderInlineEditing() {
     {label:'Name',value:appState.sharedSite?.footerName || 'The Meyers'},
     {label:'Home address (shared with the header and invitations)',value:SharedDetails.homeAddress(state),type:'textarea'}
   ], ([name,address]) => {appState.sharedSite??={};appState.sharedSite.footerName=name;SharedDetails.setDetail(appState.events,viewedEventId,'homeAddress',address);});
-  field('#hostNotesContent', 'notes' , [['hostNotes','Notes']]);
+  const features=GatheringFeatures.forGathering(viewedEventId);
+  if(features.notes)field('#hostNotesContent', 'notes' , [['hostNotes','Notes']]);
+  const prepare = () => { openAdmin(); document.querySelector('#adminDialog').close(); };
+  if(features.weddingPages){
   field('#perfectExperienceContent', 'page', [['perfectExperienceContent','The Perfect Experience']]);
   field('#whatToExpectContent', 'page', [['whatToExpectContent','What to Expect']]);
   field('#weddingTimelineSection', 'timeline', [['timelineAboveContent','Text above timeline'], ['timelineContent','Timeline rows (time, event, notes separated by tabs)'], ['timelineBelowContent','Text below timeline']]);
@@ -1470,7 +1482,6 @@ function renderInlineEditing() {
       SiteEditing.field(document.querySelector('#weddingPartyPersonalPage'), 'page', [{label:'Title',value:page.title,required:true},{label:'Content',value:page.content,type:'textarea'}], ([title,content]) => { Object.assign(page,{title,content}); });
     });
   });
-  const prepare = () => { openAdmin(); document.querySelector('#adminDialog').close(); };
   if (SiteEditing.enabled && viewedEventId==='wedding' && selectedWeddingTab==='party' && selectedMatronTab==='attire') {
     SiteEditing.hide(document.querySelector('#weddingAttireGuidance'));
     SiteEditing.hide(document.querySelector('#registryAffordableAttire .affordable-attire-closing'));
@@ -1482,7 +1493,8 @@ function renderInlineEditing() {
     const target=SiteEditing.mount(document.querySelector('#weddingPartyDetails'),'inline-members-edit-area','inline');
     SiteEditing.portal(target,'party members',['#weddingPartyAdmin'],prepare,{automatic:true});
   } else SiteEditing.portal(document.querySelector('#weddingPartyDetails'), 'party members', ['#weddingPartyAdmin'], prepare);
-  if (viewedEventId !== 'wedding') {
+  }
+  if (features.menu) {
     document.querySelectorAll('#menuGrid [data-claim]').forEach(button => {
       const item = state.items.find(item => item.id === button.dataset.claim);
       const dish = button.closest('.dish');
@@ -1495,6 +1507,7 @@ function renderInlineEditing() {
   SiteEditing.staticText(document.querySelector('#eventPage'));
   SiteEditing.staticText(document.querySelector('#rsvpDialog'));
   document.querySelectorAll('#eventPage [role="tablist"]').forEach(nav => {
+    if(nav.id==='gatheringTabs' ? !features.menu && !features.notes : !features.weddingPages)return;
     const config = { available: nav.id==='brideGroomTabs' && selectedWeddingTab==='couple' && viewedEventId==='wedding' };
     if (nav.id==='brideGroomTabs') Object.assign(config, { audience:'host',
       add: () => { state.brideGroomPages.push({id:crypto.randomUUID(),title:'New page',content:''});selectedBrideGroomPage=state.brideGroomPages.at(-1).id; },
@@ -1507,7 +1520,7 @@ function renderInlineEditing() {
   renderRsvpInlineEditing();
 }
 function renderRsvpInlineEditing() {
-  if (!SiteEditing.enabled || viewedEventId !== 'wedding') return;
+  if (!SiteEditing.enabled || !GatheringFeatures.rsvp(viewedEventId).meals) return;
   const target = document.querySelector('#weddingRsvpMenu');
   if (target.hidden || document.querySelector('#rsvpDialog .inline-meal-editor')) return;
   const area = SiteEditing.mount(target, 'inline-meal-editor');
@@ -1787,12 +1800,15 @@ document.querySelector('#claimQuantityForm').addEventListener('submit', event =>
 });
 document.querySelector('#claimQuantityDialog').addEventListener('close', () => { pendingClaimItemId = null; });
 let rsvpChildNameDraft=[];
-function readRsvpChildNames(){return Array.from({length:Number(document.querySelector('#children').value)},(_,index)=>String(rsvpChildNameDraft[index] || '').trim());}
+function readRsvpChildNames(){return GatheringFeatures.childNames(viewedEventId,rsvpChildNameDraft,Number(document.querySelector('#children').value));}
 function renderRsvpChildNames(){
-  document.querySelector('#rsvpChildNames').innerHTML=readRsvpChildNames().map((name,index)=>`<label class="rsvp-child-name"><span>Child ${index+1} -</span><input data-rsvp-child-name="${index}" aria-label="Child ${index+1} name" placeholder="Name" value="${escapeAttribute(name)}" required></label>`).join('');
+  const container=document.querySelector('#rsvpChildNames');
+  container.hidden=!GatheringFeatures.rsvp(viewedEventId).childNames;
+  if(container.hidden){container.replaceChildren();return;}
+  container.innerHTML=readRsvpChildNames().map((name,index)=>`<label class="rsvp-child-name"><span>Child ${index+1} -</span><input data-rsvp-child-name="${index}" aria-label="Child ${index+1} name" placeholder="Name" value="${escapeAttribute(name)}" required></label>`).join('');
 }
 document.querySelector('#rsvpChildNames').addEventListener('input',event=>{
-  if(!event.target.matches('[data-rsvp-child-name]'))return;
+  if(!GatheringFeatures.rsvp(viewedEventId).childNames || !event.target.matches('[data-rsvp-child-name]'))return;
   const meals=captureRsvpMeals();rsvpChildNameDraft[Number(event.target.dataset.rsvpChildName)]=event.target.value;
   renderWeddingRsvpMenu(meals);
 });
@@ -1816,8 +1832,8 @@ document.querySelector('#rsvpButton').addEventListener('click', () => ensureAcco
   applyRsvpDeadline();
   renderRsvpPeople(existing);
   document.querySelector('#children').value = existing?.children ?? 0;
-  document.querySelector('#rsvpGuestsCounter').hidden=viewedEventId==='wedding';
-  document.querySelector('#extraGuests').value=viewedEventId==='wedding'?0:(existing?.extraGuests || 0)+(existing?.people || []).filter(person=>person.attending===true && person.guestChoice==='guest' && person.guestName?.trim()).length;
+  document.querySelector('#rsvpGuestsCounter').hidden=!GatheringFeatures.rsvp(viewedEventId).guestCounter;
+  document.querySelector('#extraGuests').value=!GatheringFeatures.rsvp(viewedEventId).guestCounter?0:(existing?.extraGuests || 0)+(existing?.people || []).filter(person=>person.attending===true && person.guestChoice==='guest' && person.guestName?.trim()).length;
   rsvpChildNameDraft=[...(existing?.childNames || [])];
   renderRsvpChildNames();
   renderWeddingRsvpMenu(rsvpMealDraft);
@@ -1827,14 +1843,14 @@ document.querySelectorAll('.stepper button').forEach(button => button.addEventLi
   const output = document.querySelector(`#${button.dataset.target}`);
   output.value = Math.max(0, Math.min(20, Number(output.value) + Number(button.dataset.step)));
   renderRsvpChildNames();
-  if (viewedEventId === 'wedding') renderWeddingRsvpMenu(captureRsvpMeals());
+  if (GatheringFeatures.rsvp(viewedEventId).meals) renderWeddingRsvpMenu(captureRsvpMeals());
 }));
 function rsvpOptionsLocked() { return !isHostView() && GuestPlanning.rsvpClosed(state); }
 function applyRsvpDeadline() {
   const locked = rsvpOptionsLocked();
   const notice = document.querySelector('#rsvpDeadlineNotice');
   notice.hidden = !locked;
-  notice.textContent = viewedEventId==='wedding'?'The RSVP deadline has passed. You can still change who is attending and the number of children attending. Guest names, meals, and dietary notes are locked. Contact the hosts for other changes.':'The RSVP deadline has passed. You can still change who is attending and the number of children and guests attending.';
+  notice.textContent = GatheringFeatures.rsvp(viewedEventId).namedGuests?'The RSVP deadline has passed. You can still change who is attending and the number of children attending. Guest names, meals, and dietary notes are locked. Contact the hosts for other changes.':'The RSVP deadline has passed. You can still change who is attending and the number of children and guests attending.';
   document.querySelectorAll('#rsvpForm [data-person-guest], #rsvpForm [data-person-guest-name], #rsvpForm [data-rsvp-meal], #rsvpForm [data-rsvp-dietary]').forEach(input => { input.disabled=locked; });
 }
 setInterval(() => { if (document.querySelector('#rsvpDialog').open) applyRsvpDeadline(); }, 1000);
@@ -1872,7 +1888,7 @@ function updateRsvpPeople() {
 function renderRsvpPeople(existing) {
   const account = rsvpAccount();
   const names = rsvpNames();
-  const allowed = viewedEventId==='wedding'?GuestPlanning.plusOnePeople(account,viewedEventId,names):[];
+  const allowed = GatheringFeatures.rsvp(viewedEventId).namedGuests?GuestPlanning.plusOnePeople(account,viewedEventId,names):[];
   document.querySelector('#rsvpPeople').innerHTML = names.map(name => {
     const saved = existing?.people?.find(person => normalizeAccountName(person.name) === normalizeAccountName(name));
     const attending = saved?.attending === true ? 'yes' : saved?.attending === false ? 'no' : '';
@@ -1900,9 +1916,9 @@ function readWeddingMenuSelections() {
 }
 function renderWeddingRsvpMenu(selections = []) {
   const section = document.querySelector('#weddingRsvpMenu');
-  const isWedding = viewedEventId === 'wedding';
-  section.hidden = !isWedding;
-  if (!isWedding) return;
+  const hasMeals=GatheringFeatures.rsvp(viewedEventId).meals;
+  section.hidden=!hasMeals;
+  if(!hasMeals){document.querySelector('#weddingRsvpGuests').replaceChildren();return;}
   const counts = { adult: Number(document.querySelector('#adults').value), child: Number(document.querySelector('#children').value) };
   const cards = ['adult', 'child'].flatMap(type => Array.from({ length: counts[type] }, (_, index) => {
     const personName = type === 'adult' ? GuestPlanning.attendees(readRsvpPeople())[index] : GuestPlanning.childLabel(index,readRsvpChildNames()[index]);
@@ -1929,12 +1945,12 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   const names=rsvpNames();
   if (!names.length || people.length!==names.length || new Set(people.map(person=>person.name)).size!==names.length || people.some(person=>!names.includes(person.name))) { event.preventDefault();showToast('Your invitation has changed. Please reopen RSVP.');return; }
   const allowed = GuestPlanning.plusOnePeople(rsvpAccount(),viewedEventId,people.map(person=>person.name));
-  if (viewedEventId==='wedding' && !rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
-  const menuSelections = viewedEventId === 'wedding' ? readWeddingMenuSelections() : [];
-  const extraGuests=viewedEventId==='wedding'?0:Number(document.querySelector('#extraGuests').value);
-  let rsvp = { name: guestName, people, childNames, extraGuests, adults: Number(document.querySelector('#adults').value)+extraGuests, children: Number(document.querySelector('#children').value), ...(viewedEventId === 'wedding' ? { menuSelections } : {}) };
+  if (GatheringFeatures.rsvp(viewedEventId).namedGuests && !rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
+  const menuSelections = GatheringFeatures.rsvp(viewedEventId).meals ? readWeddingMenuSelections() : [];
+  const extraGuests=GatheringFeatures.rsvp(viewedEventId).guestCounter?Number(document.querySelector('#extraGuests').value):0;
+  let rsvp = { name: guestName, people, childNames, extraGuests, adults: Number(document.querySelector('#adults').value)+extraGuests, children: Number(document.querySelector('#children').value), ...(GatheringFeatures.rsvp(viewedEventId).meals ? { menuSelections } : {}) };
   const index = state.rsvps.findIndex(entry => entry.name === guestName);
-  if (viewedEventId==='wedding' && rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
+  if (GatheringFeatures.rsvp(viewedEventId).namedGuests && rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
   const account=rsvpAccount();
   if(account)rsvp=InvitationGroups.merge(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),state.rsvps[index],rsvp);
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
@@ -2001,19 +2017,19 @@ function renderGuestAttendance() {
   const totalsSection = document.querySelector('#guestListTotals');
   totalsSection.hidden = false;
   if (!totalsSection.hidden) {
-    const totals = GuestPlanning.rsvpTotals(state.rsvps, viewedEventId==='wedding'?GuestPlanning.weddingMealOptions(state):[]);
+    const totals = GuestPlanning.rsvpTotals(state.rsvps, GatheringFeatures.rsvp(viewedEventId).meals?GuestPlanning.weddingMealOptions(state):[]);
     const attendance = [['Adults', totals.adults], ['Children', totals.children]];
     const meals = [...totals.meals,
       ...(totals.noMeal ? [['No meal', totals.noMeal]] : []),
       ...(totals.unselected ? [['No meal selected', totals.unselected]] : [])];
     const row = entries => entries.map(([label, count]) => `<div><dt>${escapeHtml(label)}</dt><dd>${count}</dd></div>`).join('');
-    totalsSection.innerHTML = `<h3>Totals</h3><dl class="attendance-totals">${row(attendance)}</dl>${viewedEventId==='wedding'?`<dl class="meal-totals">${row(meals)}</dl>`:''}`;
+    totalsSection.innerHTML = `<h3>Totals</h3><dl class="attendance-totals">${row(attendance)}</dl>${GatheringFeatures.rsvp(viewedEventId).meals?`<dl class="meal-totals">${row(meals)}</dl>`:''}`;
   }
   const list = document.querySelector('#guestList');
   const groupedRsvps=invitationAttendanceRsvps();
   const { attending: attendingRsvps } = GuestPlanning.attendanceGroups(groupedRsvps);
   list.innerHTML = attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
-    const wedding=viewedEventId==='wedding';
+    const wedding=GatheringFeatures.rsvp(viewedEventId).meals;
     const adultNames=GuestPlanning.attendees(rsvp.people || []);
     const childNames=GuestPlanning.childLabels(rsvp);
     const selections=rsvp.menuSelections || [];
@@ -2063,7 +2079,7 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
   document.querySelector('#invitedListDialog').showModal();
 });
 function openAdmin() {
-  const isWedding = EVENT_DETAILS[viewedEventId].registryOnly === true;
+  const isWedding = GatheringFeatures.forGathering(viewedEventId).weddingPages;
   document.querySelector('#adminDialog .modal-card').classList.toggle('wedding-details-editor', isWedding);
   document.querySelector('#adminEventDate').value = state.eventDate;
   document.querySelector('#adminEventDate').min=GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):'';
@@ -2811,7 +2827,7 @@ document.querySelector('#gatheringTabs').addEventListener('keydown', event => {
   tabs[next].click(); tabs[next].focus();
 });
 document.querySelector('#adminHostNotes').addEventListener('change', event => {
-  if (!isHostView() || viewedEventId === 'wedding') return;
+  if (!isHostView() || !GatheringFeatures.forGathering(viewedEventId).notes) return;
   state.hostNotes = event.target.value; saveState(); render();
 });
 document.querySelector('#editItemsButton').addEventListener('click', () => {
@@ -2940,7 +2956,7 @@ document.querySelector('#syncAnyListButton').addEventListener('click', async eve
 document.querySelector('#clearClaimItem').addEventListener('change', updateClearClaimFamilies);
 document.querySelector('#clearClaimFamily').addEventListener('change', updateClearClaimQuantities);
 document.querySelector('#clearClaimSubmit').addEventListener('click', event => {
-  if (!isHostView() || viewedEventId === 'wedding') return;
+  if (!isHostView() || !GatheringFeatures.forGathering(viewedEventId).menu) return;
   if (event.submitter?.value === 'cancel') return;
   event.preventDefault();
   const item = state.items.find(entry => entry.id === document.querySelector('#clearClaimItem').value);
@@ -3048,13 +3064,13 @@ document.querySelector('#adminHomeAddress').addEventListener('change', event => 
   });
 });
 document.querySelector('#adminRegistryUrl').addEventListener('change', event => {
-  if (EVENT_DETAILS[viewedEventId].registryOnly !== true) return;
+  if (!GatheringFeatures.forGathering(viewedEventId).weddingPages) return;
   state.registryUrl = event.target.value.trim();
   saveState();
   showToast('Registry link updated.');
 });
 document.querySelector('#adminMonetaryGiftUrl').addEventListener('change', event => {
-  if (EVENT_DETAILS[viewedEventId].registryOnly !== true) return;
+  if (!GatheringFeatures.forGathering(viewedEventId).weddingPages) return;
   state.monetaryGiftUrl = event.target.value.trim();
   saveState();
   showToast('Monetary gift link updated.');
@@ -3299,7 +3315,7 @@ function renderGatheringHistory() {
   area.innerHTML=`<h3>${escapeHtml(snapshot.name)} · ${escapeHtml(snapshot.date)}</h3><p>Read-only snapshot · ${totals.adults} adults · ${totals.children} children. Attendance reflects saved RSVPs.</p>`
     +section('Location',`<p>${escapeHtml(snapshot.eventId==='wedding'?[event.churchStreet,event.churchCityStateZip,event.venueStreet,event.venueCityStateZip].filter(Boolean).join(' · '):SharedDetails.homeAddress(event))}</p>`)
     +section('Invited',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]).map(accountHtml).join(''))
-    +section('Attending',peopleHtml(true)+rsvps.flatMap(rsvp=>GuestPlanning.childLabels(rsvp)).map(name=>`<p>${escapeHtml(name)}</p>`).join(''))+section('Declined',peopleHtml(false))
+    +section('Attending',peopleHtml(true)+(GatheringFeatures.rsvp(snapshot.eventId).childNames?rsvps.flatMap(rsvp=>GuestPlanning.childLabels(rsvp)).map(name=>`<p>${escapeHtml(name)}</p>`).join(''):''))+section('Declined',peopleHtml(false))
     +section('No RSVP',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]&&missing(account).length).map(account=>`<article><strong>${escapeHtml(account.name)}</strong><p>${missing(account).map(escapeHtml).join(', ')}</p></article>`).join(''))
     +section('Contributions and menu requests',(event.items || []).map(item=>{const counts=new Map();for(const name of item.claims || [])counts.set(name,(counts.get(name)||0)+1);return `<article><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.category || '')} · ${item.needed} ${escapeHtml(item.unit || 'item')}(s) requested</p>${[...counts].map(([name,quantity])=>`<p>${escapeHtml(label(name))}: ${quantity}</p>`).join('') || '<p>No claims recorded.</p>'}</article>`;}).join(''))
     +section('Meals and dietary requests',rsvps.flatMap(rsvp=>(rsvp.menuSelections || []).map(meal=>`<p>${escapeHtml(meal.name || rsvp.name)}: ${escapeHtml(meal.meal || 'No meal selected')}${meal.dietaryRestrictions?` · ${escapeHtml(meal.dietaryRestrictions)}`:''}</p>`)).join(''))

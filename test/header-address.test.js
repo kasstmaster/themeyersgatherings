@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+await import('../gathering-features.js');
 const source=await readFile(new URL('../app.js',import.meta.url),'utf8');
 const code=source.slice(source.indexOf('function gatheringHeaderAddress()'),source.indexOf('function weddingDetailsWithoutHeaderAddress('));
-function address(state,viewedEventId='wedding') { const context=vm.createContext({state,viewedEventId});vm.runInContext(code,context);return context.gatheringHeaderAddress(); }
+function address(state,viewedEventId='wedding') { const context=vm.createContext({state,viewedEventId,GatheringFeatures});vm.runInContext(code,context);return context.gatheringHeaderAddress(); }
 test('Wedding header identifies ceremony and reception addresses instead of the home address',()=>{
   assert.equal(address({homeAddress:'Do not show',churchStreet:'123 Church St',churchCityStateZip:'Town CA 12345',venueStreet:'456 Venue Rd',venueCityStateZip:'City CA 67890'}),'123 Church St, Town CA 12345\n456 Venue Rd, City CA 67890');
 });
@@ -21,7 +22,7 @@ test('other gathering headers retain their own configured home or invitation add
 
 
 test('Wedding Details omits old location headings and the divider before What to Expect, preserving other content',()=>{
-  const context=vm.createContext({state:{churchStreet:'123 Church St',venueStreet:'456 Venue Rd'},viewedEventId:'wedding',expandEditableTextVariables:value=>value});
+  const context=vm.createContext({state:{churchStreet:'123 Church St',venueStreet:'456 Venue Rd'},viewedEventId:'wedding',GatheringFeatures,expandEditableTextVariables:value=>value});
   vm.runInContext(source.slice(source.indexOf('function gatheringHeaderAddress()'),source.indexOf('function render()')),context);
   const original='***Ceremony***\n123 Church St\n\n***Reception***\n456 Venue Rd\n\n---\n\n**WHAT TO EXPECT**\nEnjoy the evening.\n---\nBring dancing shoes.';
   assert.equal(context.weddingDetailsWithoutHeaderAddress(original).trim(),'Enjoy the evening.\n---\nBring dancing shoes.');

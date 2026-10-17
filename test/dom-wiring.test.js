@@ -194,8 +194,8 @@ test('Guest and Registry are separate main tabs with Attire selected under Guest
   assert.ok(html.indexOf('id="registryAttireSection"') < html.indexOf('id="registrySection"'));
   assert.match(html, /data-wedding-tab="guest"[^>]*aria-selected="true">Guest/);
   assert.match(html, /data-wedding-tab="registry"[^>]*aria-selected="false">Registry/);
-  assert.match(styles, /\.wedding-party-tabs button\{[^}]*color:#fff/);
-  assert.match(styles, /\.wedding-party-tabs button\[aria-selected="true"\]\{[^}]*border:1px solid var\(--gold\)[^}]*background:var\(--orange\)[^}]*color:#fff/);
+  assert.match(styles, /\.wedding-party-tabs\{[^}]*--tab-text:#fff/);
+  assert.match(styles, /:is\(\.wedding-party-tabs,\.matron-info-tabs\) button\[aria-selected="true"\]\{[^}]*background:var\(--orange\)[^}]*color:#fff/);
 });
 
 test('Wedding Details is an editable sub tab immediately after Attire under Guest', async () => {
@@ -303,7 +303,7 @@ test('wedding page tabs use guest-facing labels and audience-specific visibility
   assert.match(javascript, /showingWeddingPartyPage = isWedding && \(hostView \|\| isWeddingPartyMember\) && selectedWeddingTab === 'party'/);
   assert.match(javascript, /matronInfoTabs\.hidden = !showingWeddingPartyPage/);
   assert.match(javascript, /\$\{description \?/);
-  assert.match(styles, /\.wedding-party-tabs\{[^}]*flex-wrap:wrap/);
+  assert.match(styles, /:is\(\.wedding-party-tabs,\.matron-info-tabs\)\{[^}]*flex-wrap:wrap/);
   assert.doesNotMatch(styles, /\.wedding-party-tabs\{[^}]*overflow-x:auto/);
   assert.match(javascript, /registrySection\.hidden = !showingRegistryPage/);
   assert.match(javascript, /registryAttireSection\.hidden = !showingAttirePage/);
@@ -330,7 +330,7 @@ test('wedding party attire shares the Wedding Party card and Registry remains ri
 test('selected wedding detail tabs use white text inside a visible tab', async () => {
   const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-  assert.match(styles, /\.matron-info-tabs button\[aria-selected="true"\]\{[^}]*border:1px solid var\(--gold\)[^}]*background:var\(--orange\)[^}]*color:#fff/);
+  assert.match(styles, /:is\(\.wedding-party-tabs,\.matron-info-tabs\) button\[aria-selected="true"\]\{[^}]*background:var\(--orange\)[^}]*color:#fff/);
 });
 
 test('all Wedding Party sub tabs are available to hosts and wedding party members', async () => {
