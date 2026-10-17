@@ -87,7 +87,9 @@
     const attending = rsvps.filter(rsvp => (rsvp.people?.length ? attendees(rsvp.people).length : Number(rsvp.adults)) + Number(rsvp.children || 0) > 0);
     const notAttending = rsvps.flatMap(rsvp => {
       const declined = (rsvp.people || []).filter(person => person.attending === false).map(person => ({ household: rsvp.name, name: person.name }));
-      return rsvp.people?.length ? declined : Number(rsvp.adults) + Number(rsvp.children) === 0 ? [{ household: rsvp.name, name: rsvp.name }] : [];
+      // Older records can have zero guests without an attendance answer.
+      // Zero is a headcount, not evidence that somebody declined.
+      return rsvp.people?.length ? declined : rsvp.attending === false ? [{ household: rsvp.name, name: rsvp.name }] : [];
     });
     return { attending, notAttending };
   }

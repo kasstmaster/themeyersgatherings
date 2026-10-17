@@ -35,7 +35,7 @@ test('attendance sections omit zero-person households and include individually d
  {name:'Legacy Decline',adults:0,children:0},{name:'Children Only',adults:0,children:2}];
  const groups=GuestPlanning.attendanceGroups(rsvps);
  assert.deepEqual(groups.attending.map(rsvp=>rsvp.name),['Host','Mixed Family','Children Only']);
- assert.deepEqual(groups.notAttending,[{household:'Mixed Family',name:'John Family'},{household:'Declined Family',name:'Declined Person'},{household:'Legacy Decline',name:'Legacy Decline'}]);
+ assert.deepEqual(groups.notAttending,[{household:'Mixed Family',name:'John Family'},{household:'Declined Family',name:'Declined Person'}]);
  assert.deepEqual(GuestPlanning.attendanceGroups([]),{attending:[],notAttending:[]});
 });
 test('wedding meal editing preserves legacy child meals and supports unlimited audience-specific choices',()=>{
@@ -116,4 +116,12 @@ test('host account is excluded from acceptance, decline and guest/meal totals',(
   assert.deepEqual(GuestPlanning.attendanceGroups(responses),{attending:[guest],notAttending:[]});
   assert.deepEqual(GuestPlanning.rsvpTotals(responses,['Beef','Chicken']),{adults:1,children:0,meals:[['Beef',0],['Chicken',1]],noMeal:0,unselected:0});
  }
+});
+
+
+test('legacy zero-headcount records do not imply declined attendance',()=>{
+ const blank={name:'Unanswered Family',adults:0,children:0};
+ const empty={name:'Empty Family',adults:0,children:0,people:[]};
+ const explicit={name:'Explicit Decline',adults:0,children:0,attending:false};
+ assert.deepEqual(GuestPlanning.attendanceGroups([blank,empty,explicit]),{attending:[],notAttending:[{household:'Explicit Decline',name:'Explicit Decline'}]});
 });
