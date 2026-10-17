@@ -18,7 +18,7 @@ async function assertFullscreen(width){const rect=await page.locator('#rsvpDialo
 for(const width of [1280,390]){
  await page.setViewportSize({width,height:800});
  for(const eventId of ['thanksgiving','christmas','gathering-test']){
-  await seed(eventId);await assertFullscreen(width);assert.equal(await page.locator('#rsvpHeading').textContent(),"Is Jane Smith joining us?");assert.equal(await page.locator('#rsvpIntro,#rsvpProgress').count(),0);assert.equal(await page.locator('#gatheringMenuSection').isVisible(),false);
+  await seed(eventId);assert.equal(await page.locator('#rsvpButton').textContent(),'RSVP');await assertFullscreen(width);assert.equal(await page.locator('#rsvpHeading').textContent(),"Is Jane Smith joining us?");assert.equal(await page.locator('#rsvpIntro,#rsvpProgress').count(),0);assert.equal(await page.locator('#gatheringMenuSection').isVisible(),false);
   assert.equal(await page.locator('[data-rsvp-person="Michael Jones"]').count(),0);
   await next();await on('[data-rsvp-person="Jane Smith"] [data-person-attending]');assert.equal(await page.evaluate(()=>state.rsvps.length),0);
   await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('yes');await next();
@@ -29,6 +29,10 @@ for(const width of [1280,390]){
   await on('#rsvpDishQuestion');assert.equal(await page.locator('#rsvpHeading').textContent(),'Will you be bringing a dish?');assert.equal(await page.evaluate(()=>state.rsvps.length),0);assert.equal(await page.locator('#rsvpNext').isVisible(),false);await page.locator('[data-rsvp-dish-answer="no"]').click();
   assert.equal(await page.locator('#rsvpDialog').isVisible(),false);
   assert.deepEqual(await page.evaluate(()=>{const r=state.rsvps[0];return [r.adults,r.children,r.extraGuests,r.people.map(p=>p.attending)]}),[2,1,1,[true,false]]);
+  assert.equal(await page.locator('#rsvpButton').textContent(),'Change RSVP & Dishes');
+  await page.evaluate(()=>{signedInPersonName='Michael Jones';render()});assert.equal(await page.locator('#rsvpButton').textContent(),'RSVP');
+  await page.evaluate(()=>{signedInPersonName='Jane Smith';render()});assert.equal(await page.locator('#rsvpButton').textContent(),'Change RSVP & Dishes');
+
   await page.locator('#rsvpButton').click();assert.equal(await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').inputValue(),'yes');await page.locator('#rsvpDialog .modal-close').click();
  }
  // Dish choices and RSVP save together; closing the journey never claims a dish.
@@ -82,7 +86,7 @@ for(const width of [1280,390]){
  await on('#rsvpReview');assert.ok((await page.locator('#rsvpReview').textContent()).includes('Tyson'));assert.ok((await page.locator('#rsvpReview').textContent()).includes('Alex Doe'));
  await back();await back();assert.equal(await page.locator('[data-guest-type="child"] [data-rsvp-meal][value="none"]').isChecked(),true);await next();await next();await next();
  assert.equal(await page.locator('#rsvpDialog').isVisible(),false);
- assert.deepEqual(await page.evaluate(()=>{const r=state.rsvps[0];return [r.adults,r.children,r.childNames,r.menuSelections.map(m=>m.meal)]}),[2,1,['Tyson'],['Beef','Chicken','none']]);
+ assert.deepEqual(await page.evaluate(()=>{const r=state.rsvps[0];return [r.adults,r.children,r.childNames,r.menuSelections.map(m=>m.meal)]}),[2,1,['Tyson'],['Beef','Chicken','none']]);assert.equal(await page.locator('#rsvpButton').textContent(),'RSVP');
  await page.evaluate(()=>{state.rsvpDate='2000-01-01';render()});await page.locator('#rsvpButton').click();
  await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('no');await next();await on('[data-rsvp-person="John Smith"] [data-person-attending]');assert.equal(await page.locator('#rsvpHeading').textContent(),'Is John Smith joining us?');assert.equal(await page.locator('[data-rsvp-person="John Smith"] legend').isVisible(),false);await next();await on('#rsvpChildrenCounter');await next();await on('[data-rsvp-child-name="0"]');await next();await on('#rsvpReview');await next();
  assert.deepEqual(await page.evaluate(()=>state.rsvps[0].menuSelections.map(m=>m.meal)),['none']);
