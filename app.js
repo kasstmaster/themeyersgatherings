@@ -1367,6 +1367,7 @@ function render() {
   applyGatheringColors();
   document.title = `The Meyers ${event.name}`;
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
+  document.querySelector('#rsvpButton').textContent=features.rsvp.contributions && hasSubmittedInvitationRsvp()?'Change RSVP & Dishes':'RSVP';
   renderSyncStatus();
   updateHostToolsPanel();
   document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Edit Details';
@@ -1992,6 +1993,14 @@ function currentInvitationNumber() { return InvitationGroups.number(rsvpAccount(
 function rsvpNames() {
   const account=rsvpAccount();
   return account ? InvitationGroups.members(account,viewedEventId,accountSignInNames(account.name),signedInPersonName) : [guestName];
+}
+function hasSubmittedInvitationRsvp() {
+  const saved=state.rsvps.find(rsvp=>rsvp.name===guestName);
+  if(!saved)return false;
+  if(saved.people?.length)return currentInvitationRsvp().people.some(person=>person.attending===true || person.attending===false);
+  // Older count-only RSVPs belong to the account's first invitation.
+  const account=rsvpAccount();
+  return !account || currentInvitationNumber()===(GuestPlanning.invitationNumbers(account,viewedEventId)[0] || 1);
 }
 function currentInvitationRsvp() {
   const existing=state.rsvps.find(rsvp=>rsvp.name===guestName),account=rsvpAccount();
