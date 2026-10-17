@@ -1826,7 +1826,7 @@ function currentInvitationRsvp() {
 function readRsvpPeople() {
   return [...document.querySelectorAll('[data-rsvp-person]')].map(row => ({
     name: row.dataset.rsvpPerson,
-    attending: row.querySelector('[data-person-attending]').value === 'yes',
+    attending: row.querySelector('[data-person-attending]').value === '' ? null : row.querySelector('[data-person-attending]').value === 'yes',
     guestChoice: row.querySelector('[data-person-guest]') ? row.querySelector('[data-person-guest]').value : 'no-guest',
     guestName: row.querySelector('[data-person-attending]').value === 'yes' && row.querySelector('[data-person-guest]')?.value === 'guest' ? row.querySelector('[data-person-guest-name]').value.trim() : ''
   }));
@@ -1850,9 +1850,9 @@ function renderRsvpPeople(existing) {
   const allowed = GuestPlanning.plusOnePeople(account,viewedEventId,names);
   document.querySelector('#rsvpPeople').innerHTML = names.map(name => {
     const saved = existing?.people?.find(person => normalizeAccountName(person.name) === normalizeAccountName(name));
-    const attending = saved ? (saved.attending ? 'yes' : 'no') : '';
+    const attending = saved?.attending === true ? 'yes' : saved?.attending === false ? 'no' : '';
     const guest = allowed.includes(name) ? `<div class="rsvp-guest-fields" hidden><label><span>Guest for ${escapeHtml(name)}</span><select data-person-guest><option value="">Choose a guest option</option><option value="no-guest" ${saved?.guestChoice === 'no-guest' ? 'selected' : ''}>NO GUEST</option><option value="guest" ${saved?.guestChoice === 'guest' ? 'selected' : ''}>Bringing a guest</option></select></label><input data-person-guest-name aria-label="Guest name for ${escapeAttribute(name)}" value="${escapeAttribute(saved?.guestName || '')}" placeholder="Guest’s full name" hidden></div>` : '';
-    return `<fieldset class="rsvp-person" data-rsvp-person="${escapeAttribute(name)}"><legend>${escapeHtml(name)}</legend><label><span>Will ${escapeHtml(name)} attend?</span><select data-person-attending required><option value="">Choose attendance</option><option value="yes" ${attending === 'yes' ? 'selected' : ''}>Attending</option><option value="no" ${attending === 'no' ? 'selected' : ''}>Not attending</option></select></label>${guest}</fieldset>`;
+    return `<fieldset class="rsvp-person" data-rsvp-person="${escapeAttribute(name)}"><legend>${escapeHtml(name)}</legend><label><span>Will ${escapeHtml(name)} attend?</span><select data-person-attending required><option value="">Choose attendance</option><option value="yes" ${attending === 'yes' ? 'selected' : ''}>Accepts with pleasure</option><option value="no" ${attending === 'no' ? 'selected' : ''}>Declines with regret</option></select></label>${guest}</fieldset>`;
   }).join('');
   updateRsvpPeople();
 }

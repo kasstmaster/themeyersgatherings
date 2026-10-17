@@ -99,3 +99,11 @@ test('print quantities come from distinct per-person invitation numbers, ignorin
  account.invitationPeople.christmas['Charlie Smith']=3;account.invitationPeople.christmas['Mason Smith']=3;assert.equal(GuestPlanning.invitationCount(account,'christmas'),1);
  account.invitationPeople.christmas['Removed Person']=4;assert.equal(GuestPlanning.invitationCount(account,'christmas'),1);
 });
+
+test('unanswered attendance is excluded from both attendance sections',()=>{
+ const pending={name:'Pending Family',adults:2,children:0,people:[{name:'Pending One',attending:null},{name:'Pending Two'}]};
+ const mixed={name:'Mixed Family',adults:1,children:0,people:[{name:'Accepted Person',attending:true},{name:'Declined Person',attending:false},{name:'Pending Person',attending:''}]};
+ const groups=GuestPlanning.attendanceGroups([pending,mixed]);
+ assert.deepEqual(groups.attending,[mixed]);
+ assert.deepEqual(groups.notAttending,[{household:'Mixed Family',name:'Declined Person'}]);
+});
