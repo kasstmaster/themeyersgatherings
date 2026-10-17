@@ -74,3 +74,5 @@ Built-in and created pages use the shared page styles in styles.css for heading 
 A custom top-level Wedding page named **What to Expect** is assigned to guests and the host, excluding Wedding Party members. The guest audience is stored on the page so later title edits retain that visibility. Other shared pages retain their existing audience.
 
 Wedding **Upload Photos** is a button directly below RSVP. It opens the shared full-page dialog shell used by RSVP, with Upload and View Photos & Videos inside and Back/Close controls to return to the gathering. It retains the existing Dropbox and account-private gallery handlers; it is no longer a main Wedding tab.
+
+RSVP and Upload Photos share the `.fullscreen-flow` color variables and `.flow-panel` container component. Their background, foreground, card surface, and card border colors are defined once; upload sub-tabs and gallery cards consume those same variables.

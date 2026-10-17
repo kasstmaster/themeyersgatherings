@@ -1880,7 +1880,7 @@ function renderRsvpAttire(){
   const columns=document.querySelector('#rsvpAttireColumns');columns.replaceChildren();
   if(section.hidden)return;
   document.querySelectorAll('#weddingAttireGuidance>article').forEach(source=>{
-    const article=document.createElement('article');
+    const article=document.createElement('article');article.className='flow-panel';
     for(const selector of ['h4','.guest-attire-requirements']){const original=source.querySelector(selector);if(original){const copy=original.cloneNode(true);copy.querySelectorAll('button,.inline-edit-control').forEach(node=>node.remove());copy.removeAttribute('id');copy.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));article.append(copy);}}
     columns.append(article);
   });
