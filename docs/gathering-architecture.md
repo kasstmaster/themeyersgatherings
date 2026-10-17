@@ -71,3 +71,9 @@ that stacks on small screens. Saved quantities restore with their checkboxes.
 
 The children step places “Age 17 and under” directly below its page heading.
 Dish category groups keep a 64px vertical gap.
+
+Attendance uses mutually exclusive checkboxes for accepting and declining.
+Neither checked remains unanswered and cannot be submitted as a decline.
+
+Wedding collects all child names in one step after the children counter, with
+each name required before continuing. Other gatherings still use counts only.

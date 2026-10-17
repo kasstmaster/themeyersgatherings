@@ -1862,14 +1862,14 @@ function rsvpFlowSteps() {
   const steps=[];
   const add=(key,element,title)=>{if(element)steps.push({key,element,title});};
   document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>{
-    add(`person-${index}`,row.querySelector('[data-person-attending]').closest('label'),`Is ${row.dataset.rsvpPerson} joining us?`);
-    if(row.querySelector('[data-person-attending]').value==='yes' && !rsvpOptionsLocked()) {
+    add(`person-${index}`,row.querySelector('.rsvp-attendance-options'),`Is ${row.dataset.rsvpPerson} joining us?`);
+    if(rsvpAttendanceValue(row)==='yes' && !rsvpOptionsLocked()) {
       const choice=row.querySelector('[data-person-guest]');
       if(choice){add(`guest-${index}`,choice.closest('label'),'Bringing a guest?');if(choice.value==='guest')add(`guest-name-${index}`,row.querySelector('[data-person-guest-name]'),'Your guest’s name');}
     }
   });
   add('children',document.querySelector('#rsvpChildrenCounter'),'Are you bringing children?');
-  if(GatheringFeatures.rsvp(viewedEventId).childNames)document.querySelectorAll('.rsvp-child-name').forEach((element,index)=>add(`child-${index}`,element,'Your child’s name'));
+  if(GatheringFeatures.rsvp(viewedEventId).childNames && document.querySelector('[data-rsvp-child-name]'))add('child-names',document.querySelector('#rsvpChildNames'),'Your children’s names');
   if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Are you bringing guests?');
   if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest').forEach(card=>{
     const id=`${card.dataset.guestType}-${card.dataset.guestIndex}`;
@@ -2007,17 +2007,20 @@ function currentInvitationRsvp() {
   const existing=state.rsvps.find(rsvp=>rsvp.name===guestName),account=rsvpAccount();
   return account ? InvitationGroups.response(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),existing) : existing;
 }
+function rsvpAttendanceValue(row) {return row.querySelector('[data-person-attending]:checked')?.value || '';}
 function readRsvpPeople() {
   return [...document.querySelectorAll('[data-rsvp-person]')].map(row => ({
     name: row.dataset.rsvpPerson,
-    attending: row.querySelector('[data-person-attending]').value === '' ? null : row.querySelector('[data-person-attending]').value === 'yes',
+    attending: rsvpAttendanceValue(row) === '' ? null : rsvpAttendanceValue(row) === 'yes',
     guestChoice: row.querySelector('[data-person-guest]') ? row.querySelector('[data-person-guest]').value : 'no-guest',
-    guestName: row.querySelector('[data-person-attending]').value === 'yes' && row.querySelector('[data-person-guest]')?.value === 'guest' ? row.querySelector('[data-person-guest-name]').value.trim() : ''
+    guestName: rsvpAttendanceValue(row) === 'yes' && row.querySelector('[data-person-guest]')?.value === 'guest' ? row.querySelector('[data-person-guest-name]').value.trim() : ''
   }));
 }
 function updateRsvpPeople() {
   document.querySelectorAll('[data-rsvp-person]').forEach(row => {
-    const attending = row.querySelector('[data-person-attending]').value === 'yes';
+    const attendance=[...row.querySelectorAll('[data-person-attending]')];
+    attendance[0].setCustomValidity(attendance.some(input=>input.checked)?'':'Choose attendance.');
+    const attending = rsvpAttendanceValue(row) === 'yes';
     const fields = row.querySelector('.rsvp-guest-fields');
     if (!fields) return;
     fields.hidden = !attending;
@@ -2036,11 +2039,12 @@ function renderRsvpPeople(existing) {
     const saved = existing?.people?.find(person => normalizeAccountName(person.name) === normalizeAccountName(name));
     const attending = saved?.attending === true ? 'yes' : saved?.attending === false ? 'no' : '';
     const guest = allowed.includes(name) ? `<div class="rsvp-guest-fields" hidden><label><span>Guest for ${escapeHtml(name)}</span><select data-person-guest><option value="">Choose a guest option</option><option value="no-guest" ${saved?.guestChoice === 'no-guest' ? 'selected' : ''}>NO GUEST</option><option value="guest" ${saved?.guestChoice === 'guest' ? 'selected' : ''}>Bringing a guest</option></select></label><input data-person-guest-name aria-label="Guest name for ${escapeAttribute(name)}" value="${escapeAttribute(saved?.guestName || '')}" placeholder="Guest’s full name" hidden></div>` : '';
-    return `<fieldset class="rsvp-person" data-rsvp-person="${escapeAttribute(name)}"><legend>${escapeHtml(name)}</legend><label><select data-person-attending aria-label="Attendance for ${escapeAttribute(name)}" required><option value="">Choose attendance</option><option value="yes" ${attending === 'yes' ? 'selected' : ''}>Accepts with pleasure</option><option value="no" ${attending === 'no' ? 'selected' : ''}>Declines with regret</option></select></label>${guest}</fieldset>`;
+    return `<fieldset class="rsvp-person" data-rsvp-person="${escapeAttribute(name)}"><legend>${escapeHtml(name)}</legend><div class="rsvp-attendance-options" role="group" aria-label="Attendance for ${escapeAttribute(name)}"><label class="rsvp-attendance-choice"><input type="checkbox" data-person-attending value="yes" ${attending==='yes'?'checked':''}><span>Accepts with pleasure.</span></label><label class="rsvp-attendance-choice"><input type="checkbox" data-person-attending value="no" ${attending==='no'?'checked':''}><span>Declines with regret.</span></label></div>${guest}</fieldset>`;
   }).join('');
   updateRsvpPeople();
 }
-document.querySelector('#rsvpPeople').addEventListener('change', () => {
+document.querySelector('#rsvpPeople').addEventListener('change', event => {
+  if(event.target.matches('[data-person-attending]') && event.target.checked)event.target.closest('[data-rsvp-person]').querySelectorAll('[data-person-attending]').forEach(input=>{if(input!==event.target)input.checked=false;});
   const selections = captureRsvpMeals(); updateRsvpPeople(); renderWeddingRsvpMenu(selections);
 });
 document.querySelector('#rsvpPeople').addEventListener('input', event => {

@@ -605,3 +605,7 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #rsvpDialog .rsvp-choosing-attendance .rsvp-person>legend{display:none}
 
 #rsvpDialog .rsvp-personal-meal .wedding-rsvp-guest>legend{display:none}
+
+#rsvpDialog .rsvp-attendance-choice{display:flex;flex-direction:row;align-items:center;gap:12px;margin:0 0 16px;min-height:44px}
+#rsvpDialog .rsvp-attendance-choice>input{width:22px;height:22px;margin:0;flex:none;accent-color:var(--orange)}
+#rsvpDialog .rsvp-attendance-choice>span{font-size:1.125rem;font-weight:400}
