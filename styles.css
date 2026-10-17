@@ -521,3 +521,10 @@ body>.inline-overlay-layer{position:absolute;inset:0 0 auto;height:0}
 .inline-edit-control.inline-edit-action{box-sizing:border-box;font:700 .65rem Arial,sans-serif;padding:5px;width:36px;height:24px;white-space:nowrap}
 .signed-in-account{flex-direction:column;gap:4px}
 .signed-in-account .rsvp-deadline{margin:0;font-family:"Times New Roman",Times,serif;font-style:italic}
+
+.guest-entry.invited-entry{display:block}
+.invited-entry-heading{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+.invited-entry-heading>strong{min-width:0;overflow-wrap:anywhere}
+.invited-entry-heading>span{flex-shrink:0;text-align:right}
+.invited-entry-names{margin-top:8px;line-height:1.6}
+@media(max-width:520px){.invited-entry-heading{gap:8px}.invited-entry-heading>span{max-width:55%;flex-shrink:1}}

@@ -18,4 +18,13 @@ for(const selector of ['#guestList','#notAttendingList']){
 }
 await page.locator('#invitedListButton').click();assert.equal(await page.locator('#invitedList .guest-entry').count(),2);
 const invited=await page.locator('#invitedList .guest-entry').allTextContents();assert.ok(invited.every(row=>!row.includes('Inv #')));assert.ok(invited[0].includes('4 adults (1 plus one)'));assert.ok(invited[1].includes('3 adults (1 plus one)'));
+for(const width of [1280,390]){
+ await page.setViewportSize({width,height:900});
+ const entries=await page.locator('#invitedList .invited-entry').evaluateAll(entries=>entries.map(entry=>{
+  const heading=entry.querySelector('.invited-entry-heading'),title=heading.querySelector('strong').getBoundingClientRect(),count=heading.querySelector('span').getBoundingClientRect();
+  const names=[...entry.querySelectorAll('.invited-entry-names>div')].map(name=>name.getBoundingClientRect());
+  return {title:{top:title.top,right:title.right},count:{top:count.top,left:count.left},names:names.map(name=>({top:name.top,left:name.left})),overflow:entry.scrollWidth>entry.clientWidth};
+ }));
+ for(const entry of entries){assert.ok(Math.abs(entry.title.top-entry.count.top)<=4);assert.ok(entry.count.left>entry.title.right);assert.ok(entry.names[0].top>entry.title.top);assert.equal(entry.overflow,false);for(let i=1;i<entry.names.length;i++){assert.ok(entry.names[i].top>entry.names[i-1].top);assert.equal(entry.names[i].left,entry.names[0].left);}}
+}
 assert.deepEqual(errors,[]);await browser.close();console.log('Adults invited includes plus ones; invited, attending and declined lists use invitation groups');})().catch(e=>{console.error(e);process.exit(1)});
