@@ -78,7 +78,9 @@
     }
   }
   function button(text, action, parent, label = text) {
-    const control = node('button', text, 'inline-edit-control');
+    const isEdit = /^Edit(?: |$)/.test(text);
+    const control = node('button', isEdit ? 'Edit' : text, 'inline-edit-control');
+    if (isEdit) control.classList.add('inline-edit-action');
     control.type = 'button'; control.setAttribute('aria-label', label);
     control.addEventListener('click', event => {
       event.preventDefault(); event.stopPropagation();

@@ -514,3 +514,8 @@ body>.inline-overlay-layer{clip-path:inset(0 0 var(--edit-dock-height, 78px) 0)}
 #eventPage .gathering-subpage>.bride-groom-content{width:100%;min-height:0;margin:0;padding:0;border:0;background:transparent}
 @media(max-width:650px){#eventPage{--page-padding:30px 16px;--panel-padding:18px}}
 @media(max-width:600px){#eventPage .matron-info-tabs button{padding:12px 8px;font-size:.82rem}}
+
+/* Contextual Edit actions share the compact tab-control dimensions. */
+.inline-edit-control.inline-edit-action{box-sizing:border-box;font:700 .65rem Arial,sans-serif;padding:5px;width:36px;height:24px;white-space:nowrap}
+.signed-in-account{flex-direction:column;gap:4px}
+.signed-in-account .rsvp-deadline{margin:0;font-family:"Times New Roman",Times,serif;font-style:italic}

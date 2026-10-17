@@ -1166,7 +1166,7 @@ function gatheringHeaderAddress() {
   const reception = address([state.venueStreet, state.venueCityStateZip]);
   const normalize = value => value.toLowerCase().replace(/[.,]/g, '').replace(/\s+/g, ' ').trim();
   if (!ceremony || !reception || normalize(ceremony) === normalize(reception)) return ceremony || reception;
-  return `Ceremony: ${ceremony}\nReception: ${reception}`;
+  return `${ceremony}\n${reception}`;
 }
 function weddingDetailsWithoutHeaderAddress(value) {
   const normalize = text => text.trim().replace(/^[-*]\s+/, '').replace(/^<|>$/g, '').replace(/[*`]/g, '').replace(/,/g, '').replace(/\s+/g, ' ').toLowerCase();
@@ -1202,7 +1202,7 @@ function render() {
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
   const dateElement = document.querySelector('#eventDate');
   dateElement.dateTime = state.eventDate;
-  document.querySelector('#rsvpDeadline').textContent = state.rsvpDate ? `RSVP by ${new Intl.DateTimeFormat('en-US', {month:'long',day:'numeric',year:'numeric'}).format(new Date(`${state.rsvpDate}T12:00:00`))}` : 'RSVP deadline not set';
+  document.querySelector('#rsvpDeadline').textContent = state.rsvpDate ? `Kindly RSVP by ${new Intl.DateTimeFormat('en-US', {month:'long',day:'numeric',year:'numeric'}).format(new Date(`${state.rsvpDate}T12:00:00`))}` : 'RSVP deadline not set';
   dateElement.textContent = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', '');
   document.querySelector('#eventAddress').textContent = gatheringHeaderAddress();
   document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${escapeHtml(SharedDetails.homeAddress(state)).replaceAll('\n','<br>')}`;
@@ -1433,9 +1433,13 @@ function renderInlineEditing() {
     values => keys.forEach(([key], index) => { setGatheringDetail(key,values[index]); }));
   SiteEditing.field(document.querySelector('#rsvpDeadline'), 'RSVP deadline', [{label:'RSVP deadline (through end of day, Pacific time; clear for no deadline)',type:'date',value:state.rsvpDate || ''}], ([value]) => { state.rsvpDate=value; });
   field('#eventDate', 'date', [['eventDate', 'Gathering date']], { eventDate: 'date' });
-  field('#eventAddress', 'address', viewedEventId === 'wedding'
-    ? [['churchWeekDay','Ceremony day'], ['churchYear','Ceremony year'], ['churchTime','Ceremony time'], ['churchStreet','Ceremony street'], ['churchCityStateZip','Ceremony city, state, ZIP'], ['venueTime','Reception time'], ['venueStreet','Reception street'], ['venueCityStateZip','Reception city, state, ZIP']]
-    : [['homeAddress','Home address']]);
+  if (viewedEventId === 'wedding') {
+    SiteEditing.field(document.querySelector('#eventAddress'), 'address', [{label:'Address (one per line if locations differ)',type:'textarea',value:gatheringHeaderAddress()}], ([value]) => {
+      const addresses=value.split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
+      state.churchStreet=addresses[0] || '';state.churchCityStateZip='';
+      state.venueStreet=addresses.slice(1).join(', ') || addresses[0] || '';state.venueCityStateZip='';
+    });
+  } else field('#eventAddress', 'address', [['homeAddress','Home address']]);
   SiteEditing.field(document.querySelector('#eventPage footer address'), 'footer', [
     {label:'Name',value:appState.sharedSite?.footerName || 'The Meyers'},
     {label:'Home address (shared with the header and invitations)',value:SharedDetails.homeAddress(state),type:'textarea'}
