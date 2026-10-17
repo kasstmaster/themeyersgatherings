@@ -1376,7 +1376,7 @@ function render() {
     .map(column => `<div class="menu-column">${column.join('')}</div>`)
     .join('');
   const needed = state.items.reduce((sum, item) => sum + (item.optional ? 0 : Math.max(0, item.needed - item.claims.length)), 0);
-  const guests = state.rsvps.reduce((sum, rsvp) => sum + rsvp.adults + rsvp.children, 0);
+  const guests = GuestPlanning.guestResponses(state.rsvps).reduce((sum, rsvp) => sum + rsvp.adults + rsvp.children, 0);
   const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
   document.querySelector('#guestCount').textContent = guests;
   document.querySelector('#invitedCount').textContent = invitedAccounts.length;
