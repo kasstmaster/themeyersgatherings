@@ -5,11 +5,9 @@
   const dialog = document.querySelector('#rsvpDialog');
   const next = document.querySelector('#rsvpNext');
   const back = document.querySelector('#rsvpBack');
-  const progress = document.querySelector('#rsvpProgress');
   const review = document.querySelector('#rsvpReview');
   const heading=document.querySelector('#rsvpHeading');
   const kicker=form.querySelector('.section-kicker');
-  const intro=document.querySelector('#rsvpIntro');
   let defaultHeading=heading.textContent;
   const candidates = '[data-rsvp-question],#rsvpAttendance,#rsvpPeople,.rsvp-person,.rsvp-person>label,.rsvp-guest-fields,.rsvp-guest-fields>label,[data-person-guest-name],#rsvpChildrenCounter,#rsvpGuestsCounter,#rsvpAdultsCounter,#rsvpChildNames,.rsvp-child-name,#weddingRsvpMenu,#weddingRsvpGuests,.wedding-rsvp-guest,.wedding-meal-options,.wedding-rsvp-guest>label';
   function steps() { return [...context.steps(), { key:'review', element:review, title:'Review your RSVP' }]; }
@@ -28,14 +26,13 @@
     for (let element=step.element;element && element!==form;element=element.parentElement) element.removeAttribute('data-rsvp-flow-hidden');
     heading.textContent=step.title || defaultHeading;
     const attendance=step.key.startsWith('person-');
-    kicker.hidden=!attendance;intro.hidden=!attendance;
+    kicker.hidden=!attendance;
     if (step.key === 'review') context.review(review);
     back.hidden = index === 0;
     next.hidden=Boolean(step.element.querySelector('[data-rsvp-advance]'));
     form.classList.toggle('rsvp-direct-choice',next.hidden);
     form.classList.toggle('rsvp-dish-selection',step.key==='dishes');
     next.textContent = step.key === 'review' || context.finishOn?.(step.key) ? 'Save my RSVP' : 'Next';
-    progress.textContent = `Step ${index + 1} of ${all.length}`;
     if (moveFocus) { dialog.scrollTop=0; form.scrollTop=0; focus(step.element); }
   }
   function invalid(step) {
@@ -50,7 +47,7 @@
     form.classList.toggle('rsvp-guided',active);
     form.classList.remove('rsvp-direct-choice','rsvp-dish-selection');
     form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));
-    review.hidden=true;progress.hidden=!active;back.hidden=true;next.hidden=false;kicker.hidden=false;intro.hidden=false;
+    review.hidden=true;back.hidden=true;next.hidden=false;kicker.hidden=false;
     next.textContent=active?'Next':'Save my RSVP';
     key=active?steps()[0].key:'';
     if (active) show(true);
@@ -70,6 +67,6 @@
   }
   back.addEventListener('click',()=>{const all=steps(),index=all.findIndex(step=>step.key===key);if(index>0){key=all[index-1].key;show(true);}});
   dialog.querySelector('.modal-close').addEventListener('click',()=>dialog.close());
-  dialog.addEventListener('close',()=>{active=false;heading.textContent=defaultHeading;kicker.hidden=false;intro.hidden=false;form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));});
+  dialog.addEventListener('close',()=>{active=false;heading.textContent=defaultHeading;kicker.hidden=false;form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));});
   globalThis.RsvpFlow={start,submit,refresh:()=>show()};
 })();

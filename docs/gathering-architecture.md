@@ -60,10 +60,11 @@ The RSVP page heading follows the current question; attendance keeps “Who's
 joining us?”. Body text uses a simple sans-serif font and shared question-title
 sizes. The standard-gathering dish question uses Yes/No actions that advance or
 save directly, with the normal Next button hidden on that question.
-The welcome kicker and introduction appear only on attendance questions. Later
-steps keep the question and the instructions relevant to that answer.
+The welcome kicker appears only on attendance questions. RSVP omits the generic
+celebration introduction and page counts; later steps keep only relevant copy.
 
-Standard RSVP dishes use checkboxes under full-width category headings. A checked
+Standard RSVP dishes use checkboxes in separate full-width category groups.
+Category names are hidden in the RSVP menu, with spacing between the groups. A checked
 dish with multiple available portions reveals a required quantity selector;
 single-portion dishes use one automatically. Choices share a responsive grid
 that stacks on small screens. Saved quantities restore with their checkboxes.

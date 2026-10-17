@@ -18,13 +18,13 @@ async function assertFullscreen(width){const rect=await page.locator('#rsvpDialo
 for(const width of [1280,390]){
  await page.setViewportSize({width,height:800});
  for(const eventId of ['thanksgiving','christmas','gathering-test']){
-  await seed(eventId);await assertFullscreen(width);assert.equal(await page.locator('#rsvpHeading').textContent(),"Who's joining us?");assert.equal(await page.locator('#rsvpIntro').isVisible(),true);assert.equal(await page.locator('#gatheringMenuSection').isVisible(),false);
+  await seed(eventId);await assertFullscreen(width);assert.equal(await page.locator('#rsvpHeading').textContent(),"Who's joining us?");assert.equal(await page.locator('#rsvpIntro,#rsvpProgress').count(),0);assert.equal(await page.locator('#gatheringMenuSection').isVisible(),false);
   assert.equal(await page.locator('[data-rsvp-person="Michael Jones"]').count(),0);
   await next();await on('[data-rsvp-person="Jane Smith"] [data-person-attending]');assert.equal(await page.evaluate(()=>state.rsvps.length),0);
   await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').selectOption('yes');await next();
   await on('[data-rsvp-person="John Smith"] [data-person-attending]');await page.locator('[data-rsvp-person="John Smith"] [data-person-attending]').selectOption('no');
   await back();assert.equal(await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending]').inputValue(),'yes');await next();await next();
-  await on('#rsvpChildrenCounter');assert.equal(await page.locator('#rsvpHeading').textContent(),'Any children joining us?');assert.equal(await page.locator('#rsvpIntro').isVisible(),false);assert.equal(await page.locator('#rsvpForm>.section-kicker').isVisible(),false);await page.locator('[data-target="children"][data-step="1"]').click();await next();
+  await on('#rsvpChildrenCounter');assert.equal(await page.locator('#rsvpHeading').textContent(),'Any children joining us?');assert.equal(await page.locator('#rsvpForm>.section-kicker').isVisible(),false);await page.locator('[data-target="children"][data-step="1"]').click();await next();
   await on('#rsvpGuestsCounter');assert.equal(await page.locator('[data-rsvp-child-name]').count(),0);await page.locator('[data-target="extraGuests"][data-step="1"]').click();await next();
   await on('#rsvpDishQuestion');assert.equal(await page.locator('#rsvpHeading').textContent(),'Will you be bringing a dish?');assert.equal(await page.evaluate(()=>state.rsvps.length),0);assert.equal(await page.locator('#rsvpNext').isVisible(),false);await page.locator('[data-rsvp-dish-answer="no"]').click();
   assert.equal(await page.locator('#rsvpDialog').isVisible(),false);
@@ -48,7 +48,7 @@ for(const width of [1280,390]){
   const choices=[...root.querySelectorAll('.rsvp-dish-category:first-child .rsvp-dish-option')].map(e=>e.getBoundingClientRect());
   const categories=[...root.querySelectorAll('.rsvp-dish-category')].map(e=>e.getBoundingClientRect());
   return {sameRow:Math.abs(choices[0].top-choices[1].top)<2,separateColumns:choices[1].left>choices[0].left,categoryRows:categories[1].top>=categories[0].bottom,titleSize:getComputedStyle(root.querySelector('h4')).fontSize,itemSize:getComputedStyle(root.querySelector('.rsvp-dish-choice>span')).fontSize,itemWeight:getComputedStyle(root.querySelector('.rsvp-dish-choice>span')).fontWeight};
- });assert.equal(layout.sameRow,width>600);assert.equal(layout.separateColumns,width>600);assert.ok(layout.categoryRows);assert.equal(layout.titleSize,'22px');assert.equal(layout.itemSize,'20px');assert.equal(layout.itemWeight,'400');
+ });assert.equal(layout.sameRow,width>600);assert.equal(layout.separateColumns,width>600);assert.ok(layout.categoryRows);assert.equal(layout.titleSize,'22px');assert.equal(await page.locator('.rsvp-dish-category h4').first().isVisible(),false);assert.equal(layout.itemSize,'20px');assert.equal(layout.itemWeight,'400');
 
  await next();await on('#rsvpDishOptions');await page.locator('[data-rsvp-dish="side"]').check();assert.equal(await side.locator('.rsvp-dish-quantity').isVisible(),true);await next();await on('#rsvpDishOptions');await side.locator('[data-rsvp-dish-quantity]').selectOption('2');await page.locator('[data-rsvp-dish="side"]').uncheck();assert.equal(await side.locator('.rsvp-dish-quantity').isVisible(),false);await page.locator('[data-rsvp-dish="side"]').check();await side.locator('[data-rsvp-dish-quantity]').selectOption('1');await page.locator('#rsvpCustomDish').check();await next();
  await on('#rsvpCustomDishName');await next();await on('#rsvpCustomDishName');await page.locator('#rsvpCustomDishName').fill('Cookies');await next();
@@ -70,7 +70,7 @@ for(const width of [1280,390]){
  await next();await on('[data-person-guest]');await page.locator('[data-person-guest]').selectOption('guest');await next();await on('[data-person-guest-name]');
  await next();await on('[data-person-guest-name]');await page.locator('[data-person-guest-name]').fill('Alex Doe');await page.locator('[data-person-guest-name]').press('Enter');
  await on('[data-rsvp-person="John Smith"] [data-person-attending]');await page.locator('[data-rsvp-person="John Smith"] [data-person-attending]').selectOption('no');await next();
- await on('#rsvpChildrenCounter');assert.equal(await page.locator('#rsvpHeading').textContent(),'Any children joining us?');assert.equal(await page.locator('#rsvpIntro').isVisible(),false);assert.equal(await page.locator('#rsvpForm>.section-kicker').isVisible(),false);await page.locator('[data-target="children"][data-step="1"]').click();await next();await on('[data-rsvp-child-name="0"]');
+ await on('#rsvpChildrenCounter');assert.equal(await page.locator('#rsvpHeading').textContent(),'Any children joining us?');assert.equal(await page.locator('#rsvpForm>.section-kicker').isVisible(),false);await page.locator('[data-target="children"][data-step="1"]').click();await next();await on('[data-rsvp-child-name="0"]');
  await next();await on('[data-rsvp-child-name="0"]');await page.locator('[data-rsvp-child-name="0"]').fill('Tyson');await next();
  for(const [type,index,meal] of [['adult',0,'Beef'],['adult',1,'Chicken'],['child',0,'none']]){
   const card=page.locator(`.wedding-rsvp-guest[data-guest-type="${type}"][data-guest-index="${index}"]`);

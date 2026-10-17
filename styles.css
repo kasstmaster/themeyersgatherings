@@ -551,7 +551,6 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #rsvpDialog .counter-row span{color:#c1cad5}
 #rsvpDialog .stepper button{background:var(--cream);color:var(--navy)}
 #rsvpDialog .wedding-meal-choice{color:#fff!important;padding:12px;border:1px solid var(--border);border-radius:4px;background:rgba(255,255,255,.06)}
-#rsvpDialog .rsvp-progress{color:#c1cad5;font-size:.9rem;margin:0 0 24px}
 #rsvpDialog #rsvpDeadlineNotice{color:#fff;font-size:.9rem;line-height:1.5}
 #rsvpDialog .rsvp-guided #rsvpInvitationGroup{display:none}
 #rsvpDialog .rsvp-guided #weddingRsvpMenu>h3,#rsvpDialog .rsvp-guided #weddingRsvpMenu>p{display:none}
@@ -598,3 +597,7 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #rsvpDialog #rsvpCustomDish{width:22px;height:22px}
 
 #rsvpDialog #rsvpAnythingElse .rsvp-custom-dish-choice{margin-top:0}
+
+/* Keep dish groups separated without showing category headings during RSVP. */
+#rsvpDialog #rsvpDishChoices .rsvp-dish-category>h4{display:none}
+#rsvpDialog .rsvp-dish-category+.rsvp-dish-category{margin-top:32px}
