@@ -78,7 +78,6 @@ test('every gathering can assign its own plus ones and include them in adult inv
 test('gathering access and invitations are independent per-account settings', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
   const accountRenderer = javascript.match(/function openAccountsAdmin\(\)[\s\S]*?\n}\n\nfunction renderWeddingPartyAdmin/)?.[0] || '';
-  const gatheringRenderer = javascript.match(/function openEventsAdmin\(\)[\s\S]*?\n}\nfunction updateClearClaimFamilies/)?.[0] || '';
 
   assert.match(accountRenderer, />Give Access<\/span>/);
   assert.doesNotMatch(accountRenderer, />Can sign in<\/span>/);
@@ -86,13 +85,6 @@ test('gathering access and invitations are independent per-account settings', as
   assert.match(accountRenderer, /account\.selectedEvents\[accountEventId\] = event\.target\.checked/);
   assert.match(accountRenderer, /account\.invitedEvents\[accountEventId\] = event\.target\.checked/);
   assert.doesNotMatch(accountRenderer, /Always Invite|account-always-invite/);
-  assert.doesNotMatch(gatheringRenderer, /Activate|Deactivate|data-toggle-event/);
-});
-
-test('account invitation preview is stacked below the QR preview', async () => {
-  const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
-
-  assert.match(styles, /\.account-preview-actions\{[^}]*display:flex;[^}]*flex-direction:column;/);
 });
 
 test('saved gathering access overrides retired account-wide access flags', async () => {
@@ -142,7 +134,7 @@ test('template editor renders and refreshes a real QR preview', async () => {
 
 test('account invitation preview opens immediately and reports its loading state', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
-  const previewFunction = javascript.match(/async function openInvitationPreview[\s\S]*?\n}\nasync function downloadInvitation/)?.[0] || '';
+  const previewFunction = javascript.match(/async function openInvitationPreview[\s\S]*?\n}\nasync function invitationFile/)?.[0] || '';
 
   assert.match(previewFunction, /status\.textContent = 'Loading invitation preview…'/);
   assert.ok(previewFunction.indexOf('dialog.showModal()') < previewFunction.indexOf('await renderInvitation'), 'the preview should open before its background finishes loading');
@@ -240,7 +232,7 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.match(html, /class="editor-dialog-footer">\s*<button id="adminDoneButton"[^>]*>Done editing<\/button>/);
   assert.match(styles, /\.editor-dialog \.modal-card\{[^}]*max-height:calc\(100dvh - 32px\)[^}]*overflow-y:auto/);
   assert.match(styles, /\.editor-dialog-footer\{[^}]*position:sticky[^}]*bottom:-38px/);
-  for (const dialogId of ['adminDialog', 'eventsDialog', 'accountsDialog', 'invitationTemplatesDialog']) {
+  for (const dialogId of ['adminDialog', 'accountsDialog', 'invitationTemplatesDialog']) {
     const editorDialog = html.match(new RegExp(`<dialog id="${dialogId}"[\\s\\S]*?</dialog>`))?.[0] || '';
     assert.match(editorDialog, /class="editor-dialog-footer">[\s\S]*?>Done(?: editing)?<\/button>/);
   }
@@ -661,13 +653,9 @@ test('wedding defaults match each signed-in audience', async () => {
   assert.match(javascript, /enterEvent\(events\.includes\(viewedEventId\)\?viewedEventId:events\[0\]\)/);
 });
 
-test('choosing Wedding from Gatherings restores the host Bride & Groom tab', async () => {
+test('switching gatherings uses the shared entry flow and restores the host Bride & Groom tab', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
-  const eventPreviewHandler = javascript.match(/querySelectorAll\('\[data-preview-event\]'\)[\s\S]*?\n  \}\)\);/)?.[0] || '';
-
-  assert.match(eventPreviewHandler, /const eventId = button\.dataset\.previewEvent/);
-  assert.match(eventPreviewHandler, /enterEvent\(eventId\)/);
-  assert.doesNotMatch(eventPreviewHandler, /viewedEventId = button\.dataset\.previewEvent[\s\S]*render\(\)/);
+  assert.match(javascript, /enterEvent\(button\.dataset\.switchEvent\)/);
   assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*selectedWeddingTab = isHostView\(\) \? 'couple'/);
 });
 

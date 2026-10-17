@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  addMissingAccounts, accountPeople, categoriesFromRawUserData, convertCategory,
+  accountPeople, categoriesFromRawUserData, convertCategory,
   normalizedPerson, parsePerson, syncAnyListAccounts
 } from '../scripts/anylist-accounts.js';
 
@@ -41,14 +41,16 @@ test('mixed compact and full names do not borrow the final person surname', () =
 
 test('normalized people prevent spacing and case duplicates', () => {
   const state = { accounts: [{ name: 'Josh,Julie,Aiden Wickendoll', selected: false }] };
-  assert.deepEqual(addMissingAccounts(state, [' josh, Julie, Aiden  WICKENDOLL ']), []);
+  const result = syncAnyListAccounts(state, [{...convertCategory('WICKENDOLL', [{name:'josh wickendoll'}, {name:'Julie Wickendoll'}, {name:'Aiden WICKENDOLL'}]), id:'wickendoll'}]);
+  assert.deepEqual(result.added, []);
   assert.equal(state.accounts.length, 1);
 });
 
 test('duplicate leaves enabled existing record untouched', () => {
   const original = { name: 'Josh,Julie,Aiden Wickendoll', selected: true, extra: 'preserved' };
   const state = { accounts: [original] };
-  assert.deepEqual(addMissingAccounts(state, ['Josh, Julie, Aiden Wickendoll']), []);
+  const result = syncAnyListAccounts(state, [{...convertCategory('WICKENDOLL', [{name:'Josh Wickendoll'}, {name:'Julie Wickendoll'}, {name:'Aiden Wickendoll'}]), id:'wickendoll'}]);
+  assert.deepEqual(result.added, []);
   assert.strictEqual(state.accounts[0], original);
   assert.equal(state.accounts[0].selected, true);
 });

@@ -123,7 +123,7 @@
       if (showing) return; showing = true;
       if (['text','page','notes'].includes(title)) {
         control.hidden = true;
-        directFields(target, title, fields, values => { commit(values); fields.forEach((spec,index)=>{spec.value=values[index];}); drafts.delete(key); context.save(); showing=false;control.hidden=false; }, key);
+        directFields(target, fields, values => { commit(values); fields.forEach((spec,index)=>{spec.value=values[index];}); drafts.delete(key); context.save(); showing=false;control.hidden=false; }, key);
         return;
       }
       const form = node('div', undefined, 'inline-editor');
@@ -167,7 +167,7 @@
     target.classList.add('inline-edit-replaced');
     cleanup.push(() => { editor.remove(); target.classList.remove('inline-edit-replaced'); });
   }
-  function directFields(target, title, fields, commit, key) {
+  function directFields(target, fields, commit, key) {
     const editors = [], anchors = [];
     let wrappedBody;
     let pageBody = target.matches('section') ? target.querySelector('.bride-groom-content,.what-to-expect-content') || target : target;
@@ -229,7 +229,7 @@
     tab.dataset.editingTitle = 'true';
     // Hidden single-tab titles are edited at their visible page heading.
     const target = tab.getClientRects().length ? tab : anchor.querySelector('h2,h3') || anchor;
-    directFields(target, 'title', [{label:'Page title',value,required:true}], values => { commit(values[0].trim()); delete tab.dataset.editingTitle;context.save(); });
+    directFields(target, [{label:'Page title',value,required:true}], values => { commit(values[0].trim()); delete tab.dataset.editingTitle;context.save(); });
     cleanup.push(() => delete tab.dataset.editingTitle);
   }
   function portal(target, title, sources, prepare, options = {}) {
