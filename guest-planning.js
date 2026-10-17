@@ -1,6 +1,26 @@
 (() => {
   const normalize = value => String(value || '').trim().replace(/\s+/g,' ').toLowerCase();
+  function accountNames(accountName='') {
+    return accountName.split('/').flatMap(household=>{
+      const names=household.split(',').map(name=>name.trim()).filter(Boolean);
+      return names.map((name,index)=>{
+        if(name.split(/\s+/).length>=2)return name;
+        const next=names.slice(index+1).find(candidate=>candidate.split(/\s+/).length>=2);
+        if(!next)return '';
+        const words=next.split(/\s+/);if(words.length>2 && /^(?:jr\.?|sr\.?|i|ii|iii|iv|v|vi|vii|viii|ix|x)$/i.test(words.at(-1)))words.pop();
+        return `${name} ${words.at(-1)}`;
+      }).filter(Boolean);
+    });
+  }
+  function invitationNumbers(account,eventId) {
+    const assignments=account?.invitationPeople?.[eventId] || {};
+    return [...new Set(accountNames(account?.name).map(name=>{
+      const value=Number(Object.entries(assignments).find(([person])=>normalize(person)===normalize(name))?.[1]);
+      return Number.isSafeInteger(value)&&value>0?value:1;
+    }))].sort((a,b)=>a-b);
+  }
   function invitationCount(account,eventId) {
+    if(account?.name)return invitationNumbers(account,eventId).length || 1;
     const value=account?.invitationQuantities?.[eventId];
     return value===undefined?1:Number.isSafeInteger(Number(value))&&Number(value)>=0?Number(value):1;
   }
@@ -83,5 +103,5 @@
     }
     return { adults, children, meals: [...meals], noMeal, unselected };
   }
-  globalThis.GuestPlanning={rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
+  globalThis.GuestPlanning={accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();

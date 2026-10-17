@@ -1,3 +1,5 @@
+import '../guest-planning.js';
+import '../gathering-history.js';
 import AnyListModule from 'anylist';
 import { categoriesFromRawUserData, convertCategory, syncAnyListAccounts } from './anylist-accounts.js';
 import { ensureAccountQrAccess } from './qr-access.js';
@@ -78,6 +80,7 @@ async function run() {
     const current = await getFile(statePath);
     const state = current.value;
     if (!Array.isArray(state.accounts)) throw new Error('Current state has no accounts array.');
+    GatheringHistory.archiveDue(state);
     outcome = syncAnyListAccounts(state, accounts);
     console.log(`${outcome.updated.length} account(s) updated; ${outcome.added.length} added; ${outcome.skipped.length} ambiguous account(s) skipped.`);
     qrAccessCreated = ensureAccountQrAccess(state.accounts);

@@ -5,7 +5,7 @@
   function number(account, eventId, person) {
     const entry = Object.entries(account?.invitationPeople?.[eventId] || {}).find(([name]) => normalize(name) === normalize(person));
     const value = Number(entry?.[1]);
-    return Number.isSafeInteger(value) && value > 0 && value <= count(account, eventId) ? value : 1;
+    return Number.isSafeInteger(value) && value > 0 ? value : 1;
   }
   function members(account, eventId, names, person) {
     const canonical = names.find(name => normalize(name) === normalize(person));
@@ -15,7 +15,7 @@
   }
   function assign(account, eventId, person, value) {
     const invitation = Number(value);
-    if (!Number.isSafeInteger(invitation) || invitation < 1 || invitation > count(account, eventId)) return false;
+    if (!Number.isSafeInteger(invitation) || invitation < 1) return false;
     account.invitationPeople = { ...(account.invitationPeople || {}), [eventId]: { ...(account.invitationPeople?.[eventId] || {}), [person]: invitation } };
     return true;
   }
@@ -25,8 +25,9 @@
     const source = existing.invitationResponses || { 1: { children: existing.children || 0, menuSelections: childMeals(existing.menuSelections), savedMenuSelections: childMeals(existing.savedMenuSelections || existing.menuSelections) } };
     const buckets = {};
     for (const [key, response] of Object.entries(source)) {
-      // When the invitation count shrinks, keep those children's responses on #1.
-      const target = Number(key) > 0 && Number(key) <= count(account, eventId) ? key : '1';
+      // If a numbered group is removed, preserve its child responses on the first remaining group.
+      const groups=GuestPlanning.invitationNumbers(account,eventId);
+      const target = groups.includes(Number(key)) ? key : String(groups[0] || 1);
       const bucket = buckets[target] ||= { children: 0, menuSelections: [], savedMenuSelections: [] };
       const offset = bucket.children;
       const shift = selections => childMeals(selections).map(selection => ({ ...selection, index: Number(selection.index || 0) + offset, invitationNumber: Number(target) }));

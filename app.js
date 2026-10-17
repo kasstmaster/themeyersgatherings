@@ -385,6 +385,12 @@ function normalizeState(saved) {
   } catch { return initialAppState(); }
 }
 function loadState() {
+  // New saves are deliberate, including deletions and starting a fresh year.
+  // A richer backup must not resurrect the old guest list or the prior occurrence.
+  try {
+    const current=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(current?.savedAt && !Number.isNaN(Date.parse(current.savedAt)) && current.events && Array.isArray(current.accounts))return normalizeState(current);
+  } catch { /* Recover from backups when the primary copy is unreadable. */ }
   const candidates = [STORAGE_KEY, BACKUP_STORAGE_KEY, ...LEGACY_STORAGE_KEYS].flatMap(key => {
     try {
       const value = localStorage.getItem(key);
@@ -416,8 +422,24 @@ function storeLocalState(nextState) {
     return false;
   }
 }
+function captureGatheringHistory() {
+  const before=JSON.stringify(appState.gatheringHistory || {});
+  try {
+    const stored=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(stored?.events){GatheringHistory.archiveDue(stored);GatheringHistory.preserve(appState,stored);}
+  } catch { /* The live state still supplies a snapshot if there is no local backup. */ }
+  GatheringHistory.archiveDue(appState);
+  return before!==JSON.stringify(appState.gatheringHistory || {});
+}
+function setGatheringDetail(key,value) {
+  if(key==='eventDate' && value!==state.eventDate && GatheringHistory.completed(state)) {
+    captureGatheringHistory();state=GatheringHistory.startNext(appState,viewedEventId,value);
+  } else SharedDetails.setDetail(appState.events,viewedEventId,key,value);
+}
 function saveState({ refresh = !SiteEditing.portalOpen && !SiteEditing.flushing } = {}) {
+  captureGatheringHistory();
   appState.events[viewedEventId] = state;
+  appState.savedAt=new Date().toISOString();
   const storedLocally = storeLocalState(appState);
   localStateRevision += 1;
   if (refresh) render();
@@ -513,7 +535,7 @@ function hasActiveEditor() {
 }
 async function loadSharedState() {
   const stateUrl = SHARED_STATE_URL || REPOSITORY_STATE_URL;
-  if (!stateUrl || (!SHARED_STATE_URL && localStateRevision > 0)) return;
+  if (!stateUrl || (!SHARED_STATE_URL && (localStateRevision > 0 || appState.savedAt))) return;
   // Never replace a local edit with a stale response while that edit is
   // waiting to be uploaded.
   if (sharedSavePending || sharedSaveInProgress || hasActiveEditor()) return;
@@ -686,19 +708,7 @@ function removeItemClaims(item, claimant, quantity) {
   });
   return quantity - remaining;
 }
-function accountSignInNames(accountName) {
-  return accountName.split('/').flatMap(household => {
-    const names = household.split(',').map(name => name.trim()).filter(Boolean);
-    return names.map((name, index) => {
-      if (name.split(/\s+/).length >= 2) return name;
-      const nextFullName = names.slice(index + 1).find(candidate => candidate.split(/\s+/).length >= 2);
-      if (!nextFullName) return '';
-      const words = nextFullName.split(/\s+/);
-      if (words.length > 2 && /^(?:jr\.?|sr\.?|i|ii|iii|iv|v|vi|vii|viii|ix|x)$/i.test(words.at(-1))) words.pop();
-      return `${name} ${words.at(-1)}`;
-    }).filter(Boolean);
-  });
-}
+function accountSignInNames(accountName) { return GuestPlanning.accountNames(accountName); }
 function accountContactGroups(accountName) {
   const groups = [];
   accountSignInNames(accountName).forEach(fullName => {
@@ -714,9 +724,7 @@ function accountContactGroups(accountName) {
   return groups;
 }
 function invitationAssignmentHtml(account, person, eventId = viewedEventId) {
-  const quantity=Math.max(1,GuestPlanning.invitationCount(account,eventId));
-  const selected=InvitationGroups.number(account,eventId,person);
-  return `<select class="account-person-invitation" data-person-invitation="${escapeAttribute(person)}" aria-label="Invitation for ${escapeAttribute(person)}">${Array.from({length:Math.min(65535,quantity)},(_,i)=>`<option value="${i+1}" ${selected===i+1?'selected':''}>Inv #${i+1}</option>`).join('')}</select>`;
+  return `<input class="account-person-invitation" data-person-invitation="${escapeAttribute(person)}" type="number" min="1" step="1" value="${InvitationGroups.number(account,eventId,person)}" aria-label="Invitation for ${escapeAttribute(person)}">`;
 }
 function accountContactsHtml(account) {
   const granted = GuestPlanning.plusOnePeople(account, viewedEventId, accountSignInNames(account.name));
@@ -1173,6 +1181,7 @@ function weddingDetailsWithoutHeaderAddress(value) {
   }).join('\n');
 }
 function render() {
+  if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}
   SiteEditing.beforeRender();
   syncGatheringDefinitions(appState.events);
   const event = EVENT_DETAILS[viewedEventId];
@@ -1412,8 +1421,8 @@ function renderInlineEditing() {
     }, format: value => formatEditableText(expandEditableTextVariables(value)), escape: escapeHtml });
   if (state.gatheringName) SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
   const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,
-    keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date' })),
-    values => keys.forEach(([key], index) => { SharedDetails.setDetail(appState.events, viewedEventId, key, values[index]); }));
+    keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date', min:key==='eventDate' && GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):undefined })),
+    values => keys.forEach(([key], index) => { setGatheringDetail(key,values[index]); }));
   SiteEditing.field(document.querySelector('#rsvpDeadline'), 'RSVP deadline', [{label:'RSVP deadline (through end of day, Pacific time; clear for no deadline)',type:'date',value:state.rsvpDate || ''}], ([value]) => { state.rsvpDate=value; });
   field('#eventDate', 'date', [['eventDate', 'Gathering date']], { eventDate: 'date' });
   field('#eventAddress', 'address', viewedEventId === 'wedding'
@@ -1990,6 +1999,7 @@ function openAdmin() {
   const isWedding = EVENT_DETAILS[viewedEventId].registryOnly === true;
   document.querySelector('#adminDialog .modal-card').classList.toggle('wedding-details-editor', isWedding);
   document.querySelector('#adminEventDate').value = state.eventDate;
+  document.querySelector('#adminEventDate').min=GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):'';
   document.querySelector('#adminHomeAddress').value = state.homeAddress || '';
   populateClearClaimControls();
   document.querySelector('#adminHostNotesSection').hidden = isWedding;
@@ -2189,6 +2199,7 @@ function renderInvitationSettings() {
   document.querySelector('#invitationAdminHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation values`;
   document.querySelector('#invitationQrMode').value = state.invitationQrMode === 'general' ? 'general' : 'account';
   document.querySelector('#invitationEventDate').value = state.eventDate;
+  document.querySelector('#invitationEventDate').min=GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):'';
   const invitationFallback = defaultInvitationSettings(state.eventDate);
   document.querySelector('#invitationRsvpDate').value = state.rsvpDate || invitationFallback.rsvpDate;
   document.querySelector('#invitationAddress1').value = state.addressLine1 || invitationFallback.addressLine1;
@@ -2218,9 +2229,8 @@ function openAccountsAdmin() {
   document.querySelector('#adminAccounts').innerHTML = sortedAccounts.length ? sortedAccounts.map(({ account, index }) => {
     const deleteControl = canDeleteWebsiteAccount(account) ? `<button class="account-delete-button" type="button" aria-label="Delete account for ${escapeAttribute(account.name)}">Delete</button>` : '';
     const legacy = !Array.isArray(account.plusOnePeople?.[accountEventId]) && plusOneCount(account,accountEventId)>0;
-    const plusOneControl = `<div class="account-person-settings"><input data-invitation-quantity type="number" min="0" step="1" value="${GuestPlanning.invitationCount(account,accountEventId)}" aria-label="Invitations to print for ${escapeAttribute(account.name)}"></div>`;
     const guestPermissionControl = legacy ? `<p data-legacy-plus-ones>Previously ${plusOneCount(account,accountEventId)} account plus-one(s). Select the people who may bring a guest.</p>` : '';
-    return `<div class="account-row account-row-with-plus-ones" data-account-index="${index}" data-account-name="${escapeAttribute(account.name)}"><div class="account-people"><div class="account-preview-actions"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, accountEventId) ? 'checked' : ''}><span>Give Access</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, accountEventId) ? 'checked' : ''}><span>Invite</span></label></div><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken || state.invitationQrMode === 'general' ? '' : 'disabled title="QR access is required"'}>Inv</button>${plusOneControl}${deleteControl}</div><div class="account-contact-details">${accountContactsHtml(account)}${guestPermissionControl}</div></div></div>`;
+    return `<div class="account-row account-row-with-plus-ones" data-account-index="${index}" data-account-name="${escapeAttribute(account.name)}"><div class="account-people"><div class="account-preview-actions"><div class="account-access"><label class="account-selection"><input class="account-selected" type="checkbox" ${accountCanSignIn(account, accountEventId) ? 'checked' : ''}><span>Give Access</span></label><label class="account-selection"><input class="account-invited" type="checkbox" ${accountIsInvited(account, accountEventId) ? 'checked' : ''}><span>Invite</span></label></div><button class="account-qr-button" type="button" aria-label="View QR code for ${escapeAttribute(account.name)}">QR</button><button class="account-invitation-button" type="button" aria-label="View invitation for ${escapeAttribute(account.name)}" ${account.qrToken || state.invitationQrMode === 'general' ? '' : 'disabled title="QR access is required"'}>Inv</button>${deleteControl}</div><div class="account-contact-details">${accountContactsHtml(account)}${guestPermissionControl}</div></div></div>`;
   }).join('') : '<p class="guest-empty">No guest accounts yet.</p>';
   document.querySelectorAll('.account-row').forEach(row => {
     const access = row.querySelector('.account-access');
@@ -2231,6 +2241,7 @@ function openAccountsAdmin() {
       if(!event.target.matches('[data-person-invitation]'))return;
       const account=appState.accounts.find(account=>account.name===row.dataset.accountName);
       if(account && InvitationGroups.assign(account,accountEventId,event.target.dataset.personInvitation,event.target.value))saveState();
+      else if(account){event.target.value=InvitationGroups.number(account,accountEventId,event.target.dataset.personInvitation);showToast('Enter an invitation number of 1 or higher.');}
     });
     access.querySelector('.account-selected').addEventListener('change', event => {
       const account = appState.accounts.find(account => account.name === row.dataset.accountName);
@@ -2239,14 +2250,6 @@ function openAccountsAdmin() {
       account.selectedEvents[accountEventId] = event.target.checked;
       if (!event.target.checked && guestName === account.name) guestName = '';
       saveState();
-    });
-    row.querySelector('[data-invitation-quantity]').addEventListener('change', event => {
-      const account=appState.accounts.find(account => account.name === row.dataset.accountName),count=Number(event.target.value);
-      if(!account)return;
-      if(!Number.isSafeInteger(count)||count<0){event.target.value=GuestPlanning.invitationCount(account,accountEventId);return;}
-      account.invitationQuantities??={};account.invitationQuantities[accountEventId]=count;
-      accountSignInNames(account.name).forEach(name=>InvitationGroups.assign(account,accountEventId,name,InvitationGroups.number(account,accountEventId,name)));
-      row.querySelectorAll('[data-person-invitation]').forEach(select=>{const holder=document.createElement('div');holder.innerHTML=invitationAssignmentHtml(account,select.dataset.personInvitation,accountEventId);select.replaceWith(holder.firstElementChild);});saveState();
     });
     row.querySelectorAll('[data-plus-one-person]').forEach(input=>input.addEventListener('change',()=>{
       const account=appState.accounts.find(account => account.name === row.dataset.accountName);if(!account)return;
@@ -2357,8 +2360,8 @@ document.querySelector('#downloadQrPng').addEventListener('click', () => { if ((
 document.querySelector('#downloadQrSvg').addEventListener('click', () => { if ((qrAdminAccount?.generalLogin || qrAdminAccount?.qrToken)) downloadQrSvg(qrAdminAccount); });
 [['invitationEventDate', 'eventDate'], ['invitationRsvpDate', 'rsvpDate'], ['invitationAddress1', 'addressLine1'], ['invitationAddress2', 'addressLine2']].forEach(([id, key]) => {
   document.querySelector(`#${id}`).addEventListener('change', event => {
-    const value = event.target.value.trim(); if (!value) return;
-    SharedDetails.setDetail(appState.events, viewedEventId, key, value); saveState(); renderInvitationSettings(); showToast('Invitation setting updated.');
+    const value = event.target.value.trim(); if (!value || !event.target.reportValidity()) return;
+    setGatheringDetail(key,value); saveState(); renderInvitationSettings(); showToast('Invitation setting updated.');
   });
 });
 document.querySelector('#viewGeneralLoginQr').addEventListener('click', () => openQrCode({ name: 'General Login', generalLogin: true }));
@@ -2944,7 +2947,7 @@ document.querySelector('#adminWeddingPartyAttireImages').addEventListener('chang
     saveState(); showToast(`Note for the ${section} updated.`);
   });
 });
-document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value) return; state.eventDate = event.target.value; state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
+document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value || !event.target.reportValidity()) return; setGatheringDetail('eventDate',event.target.value); state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
 document.querySelector('#adminHomeAddress').addEventListener('change', event => {
   SharedDetails.setDetail(appState.events, viewedEventId, 'homeAddress', event.target.value.trim());
   saveState(); showToast('Home address updated.');
@@ -3196,3 +3199,47 @@ document.querySelector('#newGatheringForm').addEventListener('submit',event=>{
   document.querySelector('#newGatheringDialog').close();
   enterEvent(id);saveState();showToast('Gathering created. Add menu items and choose accounts to invite.');
 });
+
+function renderGatheringHistory() {
+  if(!isHostView())return;
+  const snapshot=appState.gatheringHistory?.[viewedEventId]?.[document.querySelector('#gatheringHistoryDate').value];
+  const area=document.querySelector('#gatheringHistoryContent');
+  if(!snapshot){area.innerHTML='<p>No completed gatherings have been saved yet. History is saved after the gathering date ends.</p>';return;}
+  const event=snapshot.event,accounts=snapshot.accounts || [],rsvps=event.rsvps || [];
+  const label=name=>name===HOST_DISPLAY_NAME?'Host':name;
+  const section=(title,body)=>`<section><h3>${title}</h3>${body || '<p>None recorded.</p>'}</section>`;
+  const accountHtml=account=>`<article><strong>${escapeHtml(account.name)}</strong>${account.address?`<p>${escapeHtml(account.address)}</p>`:''}<ul>${accountSignInNames(account.name).map(name=>`<li>${escapeHtml(name)} · Inv #${InvitationGroups.number(account,snapshot.eventId,name)}</li>`).join('')}</ul>${account.children?.length?`<p>Children: ${account.children.map(escapeHtml).join(', ')}</p>`:''}<p>${account.invitationCountAtEvent ?? GuestPlanning.invitationCount(account,snapshot.eventId)} invitation(s)</p></article>`;
+  const personRows=rsvps.flatMap(rsvp=>rsvp.people?.length?rsvp.people.map(person=>({name:person.name,attending:person.attending,guest:person.guestChoice==='guest'?person.guestName:''})): [{name:rsvp.name,attending:rsvp.adults+rsvp.children>0}]);
+  const peopleHtml=attending=>personRows.filter(person=>person.attending===attending).map(person=>`<p>${escapeHtml(label(person.name))}${person.attending&&person.guest?` · Guest: ${escapeHtml(person.guest)}`:''}</p>`).join('');
+  const missing=account=>{const rsvp=rsvps.find(rsvp=>rsvp.name===account.name);return accountSignInNames(account.name).filter(name=>!rsvp || rsvp.people?.length && !rsvp.people.some(person=>person.name===name));};
+  const totals=rsvps.reduce((totals,rsvp)=>({adults:totals.adults+(Number(rsvp.adults)||0),children:totals.children+(Number(rsvp.children)||0)}),{adults:0,children:0});
+  area.innerHTML=`<h3>${escapeHtml(snapshot.name)} · ${escapeHtml(snapshot.date)}</h3><p>Read-only snapshot · ${totals.adults} adults · ${totals.children} children. Attendance reflects saved RSVPs.</p>`
+    +section('Location',`<p>${escapeHtml(snapshot.eventId==='wedding'?[event.churchStreet,event.churchCityStateZip,event.venueStreet,event.venueCityStateZip].filter(Boolean).join(' · '):SharedDetails.homeAddress(event))}</p>`)
+    +section('Invited',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]).map(accountHtml).join(''))
+    +section('Attending',peopleHtml(true))+section('Declined',peopleHtml(false))
+    +section('No RSVP',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]&&missing(account).length).map(account=>`<article><strong>${escapeHtml(account.name)}</strong><p>${missing(account).map(escapeHtml).join(', ')}</p></article>`).join(''))
+    +section('Contributions and menu requests',(event.items || []).map(item=>{const counts=new Map();for(const name of item.claims || [])counts.set(name,(counts.get(name)||0)+1);return `<article><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.category || '')} · ${item.needed} ${escapeHtml(item.unit || 'item')}(s) requested</p>${[...counts].map(([name,quantity])=>`<p>${escapeHtml(label(name))}: ${quantity}</p>`).join('') || '<p>No claims recorded.</p>'}</article>`;}).join(''))
+    +section('Meals and dietary requests',rsvps.flatMap(rsvp=>(rsvp.menuSelections || []).map(meal=>`<p>${escapeHtml(meal.name || rsvp.name)}: ${escapeHtml(meal.meal || 'No meal selected')}${meal.dietaryRestrictions?` · ${escapeHtml(meal.dietaryRestrictions)}`:''}</p>`)).join(''))
+    +section('Host notes',event.hostNotes?`<p class="history-notes">${escapeHtml(event.hostNotes)}</p>`:'');
+}
+document.querySelector('#gatheringHistoryButton').addEventListener('click',()=>{
+  if(!isHostView())return;
+  commitAllPendingEditorInputs();if(captureGatheringHistory())saveState({refresh:false});
+  const dates=Object.keys(appState.gatheringHistory?.[viewedEventId] || {}).sort().reverse();
+  document.querySelector('#gatheringHistoryDate').innerHTML=dates.map(date=>`<option>${escapeHtml(date)}</option>`).join('');
+  document.querySelector('#gatheringHistoryDate').disabled=!dates.length;
+  document.querySelector('#nextGatheringForm').hidden=!GatheringHistory.completed(state);
+  document.querySelector('#nextGatheringDate').min=new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10);
+  document.querySelector('#nextGatheringDate').value='';document.querySelector('#nextGatheringError').textContent='';
+  renderGatheringHistory();document.querySelector('#gatheringHistoryDialog').showModal();
+});
+document.querySelector('#gatheringHistoryDate').addEventListener('change',renderGatheringHistory);
+document.querySelector('#closeGatheringHistory').addEventListener('click',()=>document.querySelector('#gatheringHistoryDialog').close());
+document.querySelector('#nextGatheringForm').addEventListener('submit',event=>{
+  event.preventDefault();if(!isHostView())return;
+  try {
+    captureGatheringHistory();state=GatheringHistory.startNext(appState,viewedEventId,document.querySelector('#nextGatheringDate').value);
+    document.querySelector('#gatheringHistoryDialog').close();saveState();showToast('Next gathering started. Choose the accounts to invite.');
+  } catch(error){document.querySelector('#nextGatheringError').textContent=error.message;}
+});
+setInterval(()=>{if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}},60000);

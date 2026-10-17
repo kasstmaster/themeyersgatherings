@@ -112,6 +112,7 @@
         <button id="previewWeddingPartyButton" type="button">Sign in to account</button>
         <button id="invitationTemplatesButton" type="button">Templates</button>
         <button id="gatheringColorsButton" data-gathering-tool type="button">Colors</button>
+        <button id="gatheringHistoryButton" type="button">History</button>
         <button id="newGatheringButton" data-gathering-tool type="button">New Gathering</button>
       </div>
     </nav>
@@ -337,6 +338,19 @@
       <label>Home address<textarea id="newGatheringAddress" rows="3"></textarea></label>
       <button class="primary-button" value="create">Create gathering</button>
     </form></dialog>
+
+    <dialog id="gatheringHistoryDialog"><div class="modal-card history-card">
+      <button id="closeGatheringHistory" class="modal-close" type="button" aria-label="Close">×</button>
+      <h2>Gathering history</h2>
+      <label>Past gathering date<select id="gatheringHistoryDate"></select></label>
+      <div id="gatheringHistoryContent"></div>
+      <form id="nextGatheringForm"><h3>Start the next gathering</h3>
+        <p>Keeps the layout and menu setup. Starts fresh with no RSVPs or claims; choose accounts to invite again.</p>
+        <label>Next date<input id="nextGatheringDate" type="date" required></label>
+        <p id="nextGatheringError" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">Start next gathering</button>
+      </form>
+    </div></dialog>
 
     <dialog id="rsvpDialog">
       <form method="dialog" id="rsvpForm" class="modal-card">
@@ -678,6 +692,7 @@
     <script src="invitation-groups.js" defer></script>
     <script src="shared-details.js" defer></script>
     <script src="inline-editing.js" defer></script>
+    <script src="gathering-history.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>

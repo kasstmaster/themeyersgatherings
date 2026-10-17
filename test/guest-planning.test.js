@@ -91,3 +91,11 @@ test('late RSVPs preserve options, allow attendance, and restore original meals 
  const late=GuestPlanning.lockedRsvp(undefined,{...incoming,people:[{...incoming.people[0],attending:true,guestChoice:'guest',guestName:'New'}]});
  assert.equal(late.adults,1);assert.equal(late.people[0].guestChoice,'no-guest');
 });
+test('print quantities come from distinct per-person invitation numbers, ignoring the removed count',()=>{
+ const account={name:'Charlie,Jacque,Mason Smith',invitationQuantities:{christmas:99},invitationPeople:{christmas:{'Charlie Smith':1,'Jacque Smith':2,'Mason Smith':2}}};
+ assert.equal(GuestPlanning.invitationCount(account,'christmas'),2);
+ assert.equal(GuestPlanning.invitationCount(account,'wedding'),1);
+ account.invitationPeople.christmas['Jacque Smith']=3;assert.equal(GuestPlanning.invitationCount(account,'christmas'),3);
+ account.invitationPeople.christmas['Charlie Smith']=3;account.invitationPeople.christmas['Mason Smith']=3;assert.equal(GuestPlanning.invitationCount(account,'christmas'),1);
+ account.invitationPeople.christmas['Removed Person']=4;assert.equal(GuestPlanning.invitationCount(account,'christmas'),1);
+});

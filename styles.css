@@ -471,8 +471,14 @@ body>.inline-overlay-layer{clip-path:inset(0 0 var(--edit-dock-height, 78px) 0)}
 
 .custom-gathering-gold .summary-strip strong{color:var(--gold)}
 
-.account-person-invitation{flex:none;width:auto;min-width:80px;margin-left:0;padding:4px 6px;font-size:.8rem;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink)}
+.account-row .account-person-invitation{flex:none;width:60px;min-width:50px;margin-left:0;padding:4px 6px;font-size:.8rem;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink)}
 .account-person-line{grid-template-columns:42px minmax(60px,1fr) auto}
 
 /* One shared accent mapping for every gathering, independent of its theme. */
 .custom-gathering-gold #eventPage .section-kicker,.custom-gathering-gold dialog .section-kicker{color:var(--gold)}
+
+#gatheringHistoryDialog .history-card{width:min(900px,calc(100vw - 32px))}
+#gatheringHistoryContent section{margin:22px 0;padding:16px;border:1px solid var(--border);border-radius:6px}
+#gatheringHistoryContent article{margin:12px 0;padding:8px 0;border-bottom:1px solid var(--border)}
+#gatheringHistoryContent p{line-height:1.5;overflow-wrap:anywhere}.history-notes{white-space:pre-wrap}
+#nextGatheringForm{display:grid;gap:12px;margin-top:24px}

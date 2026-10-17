@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 await import('../guest-planning.js');
 await import('../invitation-groups.js');
 const names=['John Smith','Jane Smith','Joe Smith','Michael Jones','Sally Jones'];
-const account=()=>({invitationQuantities:{wedding:2,christmas:1},invitationPeople:{wedding:{'Michael Jones':2,'Sally Jones':2}}});
+const account=()=>({name:names.join('/'),invitationQuantities:{wedding:2,christmas:1},invitationPeople:{wedding:{'Michael Jones':2,'Sally Jones':2}}});
 test('membership follows the person and gathering, with unassigned people on invitation one',()=>{
  const a=account();assert.deepEqual(InvitationGroups.members(a,'wedding',names,' jane  smith '),names.slice(0,3));
  assert.deepEqual(InvitationGroups.members(a,'wedding',names,'Sally Jones'),names.slice(3));
@@ -11,8 +11,8 @@ test('membership follows the person and gathering, with unassigned people on inv
  assert.deepEqual(InvitationGroups.members(a,'wedding',names,''),[]);
  assert.equal(InvitationGroups.assign(a,'wedding','John Smith',2),true);
  assert.equal(InvitationGroups.number(a,'wedding','John Smith'),2);assert.equal(InvitationGroups.number(a,'christmas','John Smith'),1);
- assert.equal(InvitationGroups.assign(a,'wedding','Joe Smith',3),false);
- a.invitationQuantities.wedding=1;assert.equal(InvitationGroups.number(a,'wedding','Sally Jones'),1);
+ assert.equal(InvitationGroups.assign(a,'wedding','Joe Smith',0),false);
+ a.invitationPeople.wedding['Sally Jones']=1;assert.equal(InvitationGroups.number(a,'wedding','Sally Jones'),1);
 });
 const person=name=>({name,attending:true,guestChoice:'no-guest',guestName:''});
 const meal=(name,type='adult',index=0)=>({name,type,index,meal:'Beef',dietaryRestrictions:'No nuts'});
@@ -27,12 +27,12 @@ test('saving an invitation preserves every other invitation and combines host to
  assert.deepEqual(InvitationGroups.response(a,'wedding',names,2,rsvp).people,preserved.people);
  assert.deepEqual(InvitationGroups.response(a,'wedding',names,2,rsvp).menuSelections,preserved.menuSelections);
 });
-test('legacy household children stay on invitation one and reducing the count preserves child responses',()=>{
+test('legacy household children stay on invitation one and combining invitation groups preserves child responses',()=>{
  const a=account(),existing={people:names.map(person),adults:5,children:2,menuSelections:[meal('Child 1','child'),meal('Child 2','child',1)]};
  assert.equal(InvitationGroups.response(a,'wedding',names,1,existing).children,2);
  assert.equal(InvitationGroups.response(a,'wedding',names,2,existing).children,0);
  const grouped=InvitationGroups.merge(a,'wedding',names,2,existing,{people:names.slice(3).map(person),children:1,menuSelections:[meal('Child 1','child')]});
- a.invitationQuantities.wedding=1;
+ a.invitationPeople.wedding={'Michael Jones':1,'Sally Jones':1};
  const merged=InvitationGroups.response(a,'wedding',names,1,grouped);
  assert.equal(merged.children,3);assert.deepEqual(merged.menuSelections.filter(m=>m.type==='child').map(m=>m.index),[0,1,2]);
 });
