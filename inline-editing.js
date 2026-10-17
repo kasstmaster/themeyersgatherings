@@ -38,12 +38,15 @@
     const width=document.documentElement.clientWidth;
     const dock=document.querySelector('.event-dock');
     const height=dock && !dock.hidden ? Math.min(innerHeight,dock.getBoundingClientRect().top) : innerHeight;
-    document.body.style.setProperty('--edit-dock-height', `${innerHeight-height}px`);
     for (const {element,target,kind} of overlays) {
       const rect=target.getBoundingClientRect();
+      const documentLayer=element.parentElement?.parentElement===document.body;
+      const layerRect=element.parentElement.getBoundingClientRect();
+      const offsetX=-layerRect.left,offsetY=-layerRect.top;
+      const place=(left,top)=>{element.style.left=`${left+offsetX}px`;element.style.top=`${top+offsetY}px`;};
       let visible=target.isConnected && target.getClientRects().length && !target.closest('[hidden]') && rect.width>0 && rect.height>0;
       if (visible && kind!=='editor') {
-        visible=rect.bottom>0 && rect.top<height && rect.right>0 && rect.left<width;
+        if(!documentLayer)visible=rect.bottom>0 && rect.top<height && rect.right>0 && rect.left<width;
         if(getComputedStyle(target).visibility==='hidden' && !target.closest('.inline-edit-masked'))visible=false;
         for(let parent=target.parentElement;visible && parent && parent!==document.body;parent=parent.parentElement) {
           if(/auto|scroll|hidden|clip/.test(getComputedStyle(parent).overflowY)) {
@@ -55,13 +58,12 @@
       if(!visible || element.hidden) continue;
       if(kind==='frame') {
         element.style.width=`${rect.width}px`;element.style.height=`${rect.height}px`;
-        element.style.left=`${rect.left}px`;element.style.top=`${rect.top}px`;element.style.maxHeight=`${rect.height}px`;continue;
+        place(rect.left,rect.top);element.style.maxHeight=`${rect.height}px`;continue;
       }
       if(kind==='editor'||kind==='panel') {
         element.style.width=`${Math.min(780,width-24)}px`;
         const top=Math.max(12,Math.min(rect.top,height-180));
-        element.style.left=`${Math.max(12,Math.min(rect.left,width-element.offsetWidth-12))}px`;
-        element.style.top=`${top}px`;element.style.maxHeight=`${Math.max(120,height-top-12)}px`;
+        place(Math.max(12,Math.min(rect.left,width-element.offsetWidth-12)),top);element.style.maxHeight=`${Math.max(120,height-top-12)}px`;
         continue;
       }
       let anchor=rect;
@@ -73,12 +75,8 @@
       if(kind==='above'){left=rect.left;top=rect.top-element.offsetHeight-3;}
       if(kind==='page'||kind==='delete'){left=rect.right-element.offsetWidth-8;top=rect.top+8;}
       if(kind==='plus'){left=rect.right-element.offsetWidth;top=rect.top-element.offsetHeight-3;}
-      element.style.left=`${Math.max(4,Math.min(left,width-element.offsetWidth-4))}px`;
-      // Keep controls attached to the item. Clamping to the viewport made them
-      // stick to its edges while their item continued scrolling.
-      element.style.top=`${top}px`;
-      const controlBottom=top+element.offsetHeight;
-      if(controlBottom<=0 || top>=height)element.style.visibility='hidden';
+      place(Math.max(4,Math.min(left,width-element.offsetWidth-4)),top);
+      if(!documentLayer && (top+element.offsetHeight<=0 || top>=height))element.style.visibility='hidden';
     }
   }
   function button(text, action, parent, label = text) {
