@@ -1859,30 +1859,30 @@ document.querySelectorAll('.stepper button').forEach(button => button.addEventLi
 }));
 function rsvpFlowSteps() {
   const steps=[];
-  const add=(key,element)=>{if(element)steps.push({key,element});};
+  const add=(key,element,title)=>{if(element)steps.push({key,element,title});};
   document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>{
     add(`person-${index}`,row.querySelector('[data-person-attending]').closest('label'));
     if(row.querySelector('[data-person-attending]').value==='yes' && !rsvpOptionsLocked()) {
       const choice=row.querySelector('[data-person-guest]');
-      if(choice){add(`guest-${index}`,choice.closest('label'));if(choice.value==='guest')add(`guest-name-${index}`,row.querySelector('[data-person-guest-name]'));}
+      if(choice){add(`guest-${index}`,choice.closest('label'),'Bringing a guest?');if(choice.value==='guest')add(`guest-name-${index}`,row.querySelector('[data-person-guest-name]'),'Your guest’s name');}
     }
   });
-  add('children',document.querySelector('#rsvpChildrenCounter'));
-  if(GatheringFeatures.rsvp(viewedEventId).childNames)document.querySelectorAll('.rsvp-child-name').forEach((element,index)=>add(`child-${index}`,element));
-  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'));
+  add('children',document.querySelector('#rsvpChildrenCounter'),'Children joining us');
+  if(GatheringFeatures.rsvp(viewedEventId).childNames)document.querySelectorAll('.rsvp-child-name').forEach((element,index)=>add(`child-${index}`,element,'Your child’s name'));
+  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Guests joining us');
   if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest').forEach(card=>{
     const id=`${card.dataset.guestType}-${card.dataset.guestIndex}`;
-    add(`meal-${id}`,card.querySelector('.wedding-meal-options'));
-    add(`dietary-${id}`,card.querySelector('[data-rsvp-dietary]').closest('label'));
+    add(`meal-${id}`,card.querySelector('.wedding-meal-options'),'Choose a meal');
+    add(`dietary-${id}`,card.querySelector('[data-rsvp-dietary]').closest('label'),'Dietary needs');
   });
   if(rsvpDishesEnabled()){
-    add('bringing-dish',document.querySelector('#rsvpDishQuestion'));
+    add('bringing-dish',document.querySelector('#rsvpDishQuestion'),'Bringing a dish?');
     if(document.querySelector('#rsvpBringingDish').value==='yes'){
-      add('dishes',document.querySelector('#rsvpDishOptions'));
+      add('dishes',document.querySelector('#rsvpDishOptions'),'Choose your dish');
       if(document.querySelector('#rsvpCustomDish').checked){
-        add('custom-dish-name',document.querySelector('#rsvpCustomDishNameQuestion'));
-        add('custom-dish-quantity',document.querySelector('#rsvpCustomDishQuantityQuestion'));
-        add('custom-dish-category',document.querySelector('#rsvpCustomDishCategoryQuestion'));
+        add('custom-dish-name',document.querySelector('#rsvpCustomDishNameQuestion'),'Your dish');
+        add('custom-dish-quantity',document.querySelector('#rsvpCustomDishQuantityQuestion'),'Dish quantity');
+        add('custom-dish-category',document.querySelector('#rsvpCustomDishCategoryQuestion'),'Dish category');
       }
     }
   }
@@ -1892,7 +1892,7 @@ function rsvpDishesEnabled(){return GatheringFeatures.rsvp(viewedEventId).contri
 function renderRsvpDishes(){
   const enabled=rsvpDishesEnabled();
   document.querySelectorAll('[data-rsvp-question]').forEach(section=>{section.hidden=!enabled;section.querySelectorAll('input,select').forEach(input=>{input.disabled=!enabled;input.required=false;input.setCustomValidity('');});});
-  const choice=document.querySelector('#rsvpBringingDish');choice.required=enabled;
+  const choice=document.querySelector('#rsvpBringingDish');
   choice.value=state.items.some(item=>item.claims.includes(guestName))?'yes':'';
   const categories=[...new Set(state.items.map(item=>item.category))];
   document.querySelector('#rsvpDishChoices').innerHTML=enabled?categories.map(category=>{
@@ -1933,7 +1933,13 @@ function applyRsvpDishes(draft){
   if(draft.custom){const item=draft.custom;state.items.push({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:Array(item.quantity).fill(guestName)});}
   return true;
 }
-['rsvpBringingDish','rsvpCustomDish'].forEach(id=>document.querySelector(`#${id}`).addEventListener('change',()=>{validateRsvpQuestion('');RsvpFlow.refresh();}));
+document.querySelector('#rsvpCustomDish').addEventListener('change',()=>{validateRsvpQuestion('');RsvpFlow.refresh();});
+document.querySelectorAll('[data-rsvp-dish-answer]').forEach(button=>button.addEventListener('click',()=>{
+  document.querySelector('#rsvpBringingDish').value=button.dataset.rsvpDishAnswer;
+  validateRsvpQuestion('');
+  RsvpFlow.refresh();
+  document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext'));
+}));
 function renderRsvpReview(container) {
   container.replaceChildren();
   const title=document.createElement('h3');title.textContent='Review your RSVP';container.append(title);
