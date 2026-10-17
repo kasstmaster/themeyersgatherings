@@ -1873,8 +1873,9 @@ function rsvpFlowSteps() {
   if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Are you bringing guests?');
   if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest').forEach(card=>{
     const id=`${card.dataset.guestType}-${card.dataset.guestIndex}`;
-    add(`meal-${id}`,card.querySelector('.wedding-meal-options'),'Choose a meal');
-    add(`dietary-${id}`,card.querySelector('[data-rsvp-dietary]').closest('label'),'Dietary needs');
+    const name=card.querySelector('[data-rsvp-guest-name]').value;
+    add(`meal-${id}`,card.querySelector('.wedding-meal-options'),`Choose ${name}'s meal`);
+    add(`dietary-${id}`,card.querySelector('[data-rsvp-dietary]').closest('label'),`${name}'s dietary needs`);
   });
   if(rsvpDishesEnabled()){
     add('bringing-dish',document.querySelector('#rsvpDishQuestion'),'Will you be bringing a dish?');

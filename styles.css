@@ -603,3 +603,5 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #rsvpDialog .rsvp-dish-category+.rsvp-dish-category{margin-top:64px}
 
 #rsvpDialog .rsvp-choosing-attendance .rsvp-person>legend{display:none}
+
+#rsvpDialog .rsvp-personal-meal .wedding-rsvp-guest>legend{display:none}
