@@ -550,7 +550,8 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 /* Account lists use the guest-list shell; only their member controls differ. */
 #accountsDialog .modal-card{width:min(440px,90vw)}
 #adminAccounts{max-height:none;overflow:visible;margin:5px 0 24px}
-#adminAccounts .account-row{display:block;margin:0 0 14px}
+#adminAccounts .account-row{display:block;margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+#adminAccounts .account-invitation-group{border-bottom:0}
 #adminAccounts .account-preview-actions{flex-direction:row;align-items:center}
 #adminAccounts .account-access{gap:12px}
 #adminAccounts .account-contact-details{margin-top:8px}
