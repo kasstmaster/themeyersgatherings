@@ -435,7 +435,7 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .guest-list-totals .meal-totals{margin-top:12px}
 @media(max-width:650px){.summary-strip,.summary-strip.wedding-summary{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:16px}}
 
-/* Host tools float over their anchors without changing the document flow. */
+/* Host controls track their anchors without changing the document flow. */
 .inline-overlay-layer{position:fixed;inset:0;z-index:200;pointer-events:none}
 .inline-overlay-item{position:absolute;pointer-events:auto;margin:0!important;box-sizing:border-box;max-width:calc(100vw - 8px)}
 .inline-overlay-layer [hidden]{display:none!important}
