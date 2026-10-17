@@ -645,3 +645,5 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 :is(#rsvpDialog,#weddingMediaDialog) .flow-panel :is(p,h2,h3,h4,ul,li,label,a,.bride-groom-content){color:var(--flow-text)}
 #weddingMediaDialog .matron-info-tabs{--tab-surface:var(--flow-panel-background);--tab-text:var(--flow-text);--tab-border:var(--flow-panel-border)}
 #weddingMediaDialog .wedding-media-card{background:var(--flow-panel-background);border-color:var(--flow-panel-border)}
+
+#weddingMediaHeading{text-align:center;margin-right:0}
