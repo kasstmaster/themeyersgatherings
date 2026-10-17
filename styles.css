@@ -326,8 +326,6 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 #weddingMediaSection[hidden],#weddingMediaUpload[hidden],#weddingMediaView[hidden]{display:none}
 #weddingMediaUpload label{display:block;font-weight:700;margin-bottom:8px}
 #weddingMediaUpload input{box-sizing:border-box;max-width:100%;width:100%;margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink)}
-#weddingMediaSection button:not([role="tab"]){padding:10px 14px;border:1px solid var(--border);border-radius:4px;background:var(--orange);color:#fff;cursor:pointer}
-#weddingMediaSection button:disabled{opacity:.6;cursor:wait}
 #weddingMediaLinkStatus{white-space:pre-wrap;overflow-wrap:anywhere}
 .wedding-media-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:16px}
 .wedding-media-card{min-width:0;padding:14px;border:1px solid var(--border);border-radius:6px;overflow-wrap:anywhere}
@@ -548,8 +546,9 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 .fullscreen-dialog .modal-close{position:absolute;right:0;top:0;color:var(--flow-text)}
 .fullscreen-dialog>.full-page-form>h2{font-family:"Times New Roman",Times,serif;font-size:clamp(1.8rem,6vw,2.25rem);line-height:1.1;color:var(--flow-text);margin:0 30px 16px 0}
 .fullscreen-dialog .modal-dialog-footer{position:sticky;bottom:0;box-shadow:none;background:rgba(11,31,58,.98);margin:24px 0 0;padding:14px 0}
-#rsvpDialog .primary-button{width:100%;margin:0}
-#rsvpDialog .sign-in-back{display:block;margin:16px auto 0;color:var(--flow-text)}
+.fullscreen-dialog .primary-button{width:100%;margin:0}
+.fullscreen-dialog .primary-button:disabled{opacity:.6;cursor:wait}
+.fullscreen-dialog .sign-in-back{display:block;margin:16px auto 0;color:var(--flow-text)}
 #rsvpDialog [hidden],#rsvpDialog [data-rsvp-flow-hidden]{display:none!important}
 #rsvpDialog :is(input:not([type="radio"]):not([type="checkbox"]),select,textarea){box-sizing:border-box;width:100%;padding:14px;font:inherit;background:#fff;color:var(--ink);border:1px solid var(--border);border-radius:4px}
 #rsvpDialog label{color:var(--flow-text);font-size:1rem;font-weight:400}

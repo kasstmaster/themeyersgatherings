@@ -330,30 +330,30 @@
         </nav>
         <section id="weddingMediaUpload" class="perfect-experience-panel flow-panel" aria-label="Upload wedding photos and videos">
           <p id="weddingMediaUploadNotice" class="wedding-upload-intro"><em>Keep this page open until uploading finishes.</em></p>
-          <div id="dropboxHostControls" hidden><button id="dropboxConnect" type="button">Connect Dropbox</button></div>
+          <div id="dropboxHostControls" hidden><button id="dropboxConnect" class="primary-button" type="button">Connect Dropbox</button></div>
           <p id="dropboxConnectionStatus" role="status" aria-live="polite"></p>
-          <button id="dropboxCheckConnection" type="button">Check connection</button>
+          <button id="dropboxCheckConnection" class="primary-button" type="button">Check connection</button>
           <div id="dropboxInlineUpload" hidden>
             <label for="dropboxFiles">Choose photos and videos</label>
             <div class="dropbox-file-row">
               <input id="dropboxFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.heic,.heif,.mov">
-              <button id="dropboxUpload" type="button">Upload</button>
+              <button id="dropboxUpload" class="primary-button" type="button">Upload</button>
             </div>
             <p id="dropboxUploadStatus" role="status" aria-live="polite"></p>
           </div>
           <h3>OR</h3>
           <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
           <input id="weddingMediaLink" type="url" placeholder="https://…">
-          <button id="weddingMediaSaveLink" type="button">Save sharing link</button>
+          <button id="weddingMediaSaveLink" class="primary-button" type="button">Save sharing link</button>
           <p id="weddingMediaLinkStatus" role="status" aria-live="polite"></p>
         </section>
         <section id="weddingMediaView" class="perfect-experience-panel flow-panel" aria-label="Your wedding photos and videos" hidden>
-          <button id="weddingMediaRefresh" type="button">Refresh</button>
+          <button id="weddingMediaRefresh" class="primary-button" type="button">Refresh</button>
           <p>Photos and videos sent through Dropbox go directly to the hosts. This gallery shows upload confirmations, sharing links, and files previously shared on this website. New Dropbox uploads are stored in the hosts’ Dropbox.</p>
           <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
           <div id="weddingMediaGallery" class="wedding-media-gallery"></div>
         </section>
-        <div class="modal-dialog-footer"><button class="primary-button" type="button" data-close-wedding-media>Back</button></div>
+        <div class="modal-dialog-footer"><button class="sign-in-back" type="button" data-close-wedding-media>Back</button></div>
       </section>
     </dialog>
 
