@@ -467,25 +467,25 @@ body>.inline-overlay-layer{position:absolute;inset:0 0 auto;height:0}
 
 /* Shared page component: built-in and newly created pages use these same defaults.
    Sub-pages change only their heading level and panel surface. Authored Markdown is retained. */
-#eventPage{--page-heading-gap:28px;--page-padding:50px 30px;--panel-padding:24px;--page-font:Arial,Helvetica,sans-serif;--page-title-font:"Times New Roman",Times,serif;--page-title-size:clamp(2.2rem,5vw,3.5rem);--subpage-title-size:1.6rem;--page-line-height:1.6;--copy-line-height:1.65;--copy-paragraph-gap:12px}
-#eventPage :is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section,.what-to-expect-section){font-family:var(--page-font);font-size:1rem;line-height:var(--page-line-height);overflow-wrap:anywhere}
-#eventPage main>:is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section){padding:var(--page-padding)}
-#eventPage :is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section,.what-to-expect-section)>.section-kicker{margin:0 0 10px;line-height:var(--page-line-height);text-align:center}
-#eventPage main>:is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section)>h2,
-#eventPage .wedding-page-heading,
-#eventPage #gatheringMenuSection .menu-heading{margin-bottom:var(--page-heading-gap)}
-#eventPage main>section>h2,#eventPage .wedding-page-heading>h2,#eventPage #gatheringMenuSection .menu-heading h2{font-family:var(--page-title-font);font-size:var(--page-title-size);line-height:1.15;text-align:center;color:var(--navy);margin-top:0}
-#eventPage .wedding-page-heading>h2{margin:0}
-#eventPage :is(.bride-groom-content,.perfect-experience-panel,.what-to-expect-content,#registryAttireSection,.gathering-subpage){box-sizing:border-box;width:min(900px,100%);padding:var(--panel-padding)}
-#eventPage :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content){font-family:var(--page-font);font-size:1rem;color:var(--muted);line-height:var(--copy-line-height);text-align:left;overflow-wrap:anywhere}
-#eventPage :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) p{margin:0 0 var(--copy-paragraph-gap)}
-#eventPage :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) p:last-child{margin-bottom:0}
-#eventPage :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) :is(ul,ol){padding-left:24px}
-#eventPage :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) code{padding:1px 4px;border-radius:3px;background:rgba(20,36,58,.08)}
-#eventPage :is(.perfect-experience-panel,.gathering-subpage){min-height:120px;margin:0 auto;color:var(--muted);box-shadow:none;text-align:left}
-#eventPage .gathering-subpage>h3{margin:0 0 var(--copy-paragraph-gap);color:var(--navy);font-family:var(--page-title-font);font-size:var(--subpage-title-size);line-height:1.15}
-#eventPage .gathering-subpage>.bride-groom-content{width:100%;min-height:0;margin:0;padding:0;border:0;background:transparent}
-@media(max-width:650px){#eventPage{--page-padding:30px 16px;--panel-padding:18px}}
+:is(#eventPage,#weddingMediaDialog){--page-heading-gap:28px;--page-padding:50px 30px;--panel-padding:24px;--page-font:Arial,Helvetica,sans-serif;--page-title-font:"Times New Roman",Times,serif;--page-title-size:clamp(2.2rem,5vw,3.5rem);--subpage-title-size:1.6rem;--page-line-height:1.6;--copy-line-height:1.65;--copy-paragraph-gap:12px}
+:is(#eventPage,#weddingMediaDialog) :is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section,.what-to-expect-section){font-family:var(--page-font);font-size:1rem;line-height:var(--page-line-height);overflow-wrap:anywhere}
+:is(#eventPage,#weddingMediaDialog) main>:is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section){padding:var(--page-padding)}
+:is(#eventPage,#weddingMediaDialog) :is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section,.what-to-expect-section)>.section-kicker{margin:0 0 10px;line-height:var(--page-line-height);text-align:center}
+:is(#eventPage,#weddingMediaDialog) main>:is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section)>h2,
+:is(#eventPage,#weddingMediaDialog) .wedding-page-heading,
+:is(#eventPage,#weddingMediaDialog) #gatheringMenuSection .menu-heading{margin-bottom:var(--page-heading-gap)}
+:is(#eventPage,#weddingMediaDialog) main>section>h2,:is(#eventPage,#weddingMediaDialog) .wedding-page-heading>h2,:is(#eventPage,#weddingMediaDialog) #gatheringMenuSection .menu-heading h2{font-family:var(--page-title-font);font-size:var(--page-title-size);line-height:1.15;text-align:center;color:var(--navy);margin-top:0}
+:is(#eventPage,#weddingMediaDialog) .wedding-page-heading>h2{margin:0}
+:is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.perfect-experience-panel,.what-to-expect-content,#registryAttireSection,.gathering-subpage){box-sizing:border-box;width:min(900px,100%);padding:var(--panel-padding)}
+:is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content){font-family:var(--page-font);font-size:1rem;color:var(--muted);line-height:var(--copy-line-height);text-align:left;overflow-wrap:anywhere}
+:is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) p{margin:0 0 var(--copy-paragraph-gap)}
+:is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) p:last-child{margin-bottom:0}
+:is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) :is(ul,ol){padding-left:24px}
+:is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) code{padding:1px 4px;border-radius:3px;background:rgba(20,36,58,.08)}
+:is(#eventPage,#weddingMediaDialog) :is(.perfect-experience-panel,.gathering-subpage){min-height:120px;margin:0 auto;color:var(--muted);box-shadow:none;text-align:left}
+:is(#eventPage,#weddingMediaDialog) .gathering-subpage>h3{margin:0 0 var(--copy-paragraph-gap);color:var(--navy);font-family:var(--page-title-font);font-size:var(--subpage-title-size);line-height:1.15}
+:is(#eventPage,#weddingMediaDialog) .gathering-subpage>.bride-groom-content{width:100%;min-height:0;margin:0;padding:0;border:0;background:transparent}
+@media(max-width:650px){:is(#eventPage,#weddingMediaDialog){--page-padding:30px 16px;--panel-padding:18px}}
 
 
 /* Contextual Edit actions share the compact tab-control dimensions. */
@@ -542,12 +542,12 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 .invitation-member-row{min-height:28px;line-height:28px}
 
 /* RSVP uses the same full-page shell as sign-in, with one question per step. */
-#rsvpDialog{position:fixed;inset:0;margin:0;width:100%;height:100dvh;max-width:none;max-height:none;padding:24px;overflow-y:auto;overscroll-behavior:contain}
-#rsvpDialog[open]{display:block}
-#rsvpDialog #rsvpForm{position:relative;max-height:none;overflow:visible;width:min(440px,100%);padding:38px 0;margin:24px auto 0;background:transparent;color:#fff;box-shadow:none;border:0;border-radius:0;font-family:Arial,Helvetica,sans-serif;font-size:1rem;line-height:1.5}
-#rsvpDialog .modal-close{position:absolute;right:0;top:0;color:#fff}
-#rsvpDialog h2{font-family:"Times New Roman",Times,serif;font-size:clamp(1.8rem,6vw,2.25rem);line-height:1.1;color:#fff;margin:0 30px 16px 0}
-#rsvpDialog .modal-dialog-footer{position:sticky;bottom:0;box-shadow:none;background:rgba(11,31,58,.98);margin:24px 0 0;padding:14px 0}
+.fullscreen-dialog{position:fixed;inset:0;margin:0;width:100%;height:100dvh;max-width:none;max-height:none;padding:24px;overflow-y:auto;overscroll-behavior:contain}
+.fullscreen-dialog[open]{display:block}
+.fullscreen-dialog>.full-page-form{position:relative;max-height:none;overflow:visible;width:min(440px,100%);padding:38px 0;margin:24px auto 0;background:transparent;color:#fff;box-shadow:none;border:0;border-radius:0;font-family:Arial,Helvetica,sans-serif;font-size:1rem;line-height:1.5}
+.fullscreen-dialog .modal-close{position:absolute;right:0;top:0;color:#fff}
+.fullscreen-dialog>.full-page-form>h2{font-family:"Times New Roman",Times,serif;font-size:clamp(1.8rem,6vw,2.25rem);line-height:1.1;color:#fff;margin:0 30px 16px 0}
+.fullscreen-dialog .modal-dialog-footer{position:sticky;bottom:0;box-shadow:none;background:rgba(11,31,58,.98);margin:24px 0 0;padding:14px 0}
 #rsvpDialog .primary-button{width:100%;margin:0}
 #rsvpDialog .sign-in-back{display:block;margin:16px auto 0;color:#fff}
 #rsvpDialog [hidden],#rsvpDialog [data-rsvp-flow-hidden]{display:none!important}
@@ -631,3 +631,13 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #rsvpDialog .rsvp-attire-step>.section-kicker{color:#fff}
 
 .inline-tab-tools .inline-edit-control:disabled{opacity:.4;cursor:default}
+
+.gathering-primary-actions{display:flex;flex-direction:column;gap:14px;flex:none}
+.gathering-primary-actions>.rsvp-button{margin:0}
+.gathering-primary-actions>[hidden]{display:none}
+#weddingMediaDialog>#weddingMediaSection{width:min(900px,100%)}
+#weddingMediaDialog .perfect-experience-panel{width:100%;color:var(--ink);padding:24px}
+#weddingMediaDialog .perfect-experience-panel label{color:var(--ink)}
+#weddingMediaDialog .perfect-experience-panel input[type="url"]{width:100%;padding:12px;border:1px solid var(--border);border-radius:4px;font:inherit}
+#weddingMediaDialog .section-kicker{color:#fff}
+@media(max-width:520px){.gathering-primary-actions{margin-top:25px;align-items:flex-start}#weddingMediaDialog{padding:18px}#weddingMediaDialog .perfect-experience-panel{padding:18px}}

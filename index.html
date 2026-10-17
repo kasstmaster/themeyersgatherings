@@ -132,7 +132,10 @@
           <h2 id="welcome-title">WE'D LOVE FOR YOU TO BRING A DISH TO SHARE</h2>
           <p id="welcomeNote" class="welcome-note"><em>Choose something delicious to bring. If bringing something isn't practical, simply come and enjoy the evening with us.</em></p>
         </div>
-        <button class="rsvp-button" id="rsvpButton" type="button">RSVP</button>
+        <div class="gathering-primary-actions">
+          <button class="rsvp-button" id="rsvpButton" type="button">RSVP</button>
+          <button class="rsvp-button" id="uploadPhotosButton" type="button" hidden>Upload Photos</button>
+        </div>
       </section>
 
 
@@ -150,42 +153,8 @@
         <button type="button" role="tab" data-wedding-tab="guest" aria-controls="guestSection" aria-selected="true">Guest</button>
         <button type="button" role="tab" data-wedding-tab="timeline" aria-controls="weddingTimelineSection" aria-selected="false">Timeline</button>
         <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
-        <button type="button" role="tab" data-wedding-tab="media" aria-controls="weddingMediaSection" aria-selected="false">Upload Photos</button>
       </nav>
 
-      <section id="weddingMediaSection" class="wedding-party-section" aria-labelledby="weddingMediaHeading" hidden>
-        <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us through Dropbox.</p>
-        <h2 id="weddingMediaHeading">Upload Photos &amp; Videos</h2>
-        <nav id="weddingMediaTabs" class="matron-info-tabs" role="tablist" aria-label="Wedding uploads">
-          <button type="button" role="tab" data-media-tab="upload" aria-controls="weddingMediaUpload" aria-selected="true">Upload</button>
-          <button type="button" role="tab" data-media-tab="view" aria-controls="weddingMediaView" aria-selected="false" tabindex="-1">View Photos &amp; Videos</button>
-        </nav>
-        <section id="weddingMediaUpload" class="perfect-experience-panel" aria-label="Upload wedding photos and videos">
-          <p id="weddingMediaUploadNotice" class="wedding-upload-intro"><em>Keep this page open until uploading finishes.</em></p>
-          <div id="dropboxHostControls" hidden><button id="dropboxConnect" type="button">Connect Dropbox</button></div>
-          <p id="dropboxConnectionStatus" role="status" aria-live="polite"></p>
-          <button id="dropboxCheckConnection" type="button">Check connection</button>
-          <div id="dropboxInlineUpload" hidden>
-            <label for="dropboxFiles">Choose photos and videos</label>
-            <div class="dropbox-file-row">
-              <input id="dropboxFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.heic,.heif,.mov">
-              <button id="dropboxUpload" type="button">Upload</button>
-            </div>
-            <p id="dropboxUploadStatus" role="status" aria-live="polite"></p>
-          </div>
-          <h3>OR</h3>
-          <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
-          <input id="weddingMediaLink" type="url" placeholder="https://…">
-          <button id="weddingMediaSaveLink" type="button">Save sharing link</button>
-          <p id="weddingMediaLinkStatus" role="status" aria-live="polite"></p>
-        </section>
-        <section id="weddingMediaView" class="perfect-experience-panel" aria-label="Your wedding photos and videos" hidden>
-          <button id="weddingMediaRefresh" type="button">Refresh</button>
-          <p>Photos and videos sent through Dropbox go directly to the hosts. This gallery shows upload confirmations, sharing links, and files previously shared on this website. New Dropbox uploads are stored in the hosts’ Dropbox.</p>
-          <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
-          <div id="weddingMediaGallery" class="wedding-media-gallery"></div>
-        </section>
-      </section>
 
       <section id="brideGroomSection" class="bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
         <p class="section-kicker">A private space for the couple</p>
@@ -350,7 +319,45 @@
       </form><div class="modal-dialog-footer"><button class="primary-button" type="submit" form="nextGatheringForm">Start next gathering</button></div>
     </div></dialog>
 
-    <dialog id="rsvpDialog" class="fullscreen-flow" aria-labelledby="rsvpHeading">
+    <dialog id="weddingMediaDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="weddingMediaHeading">
+      <section id="weddingMediaSection" class="full-page-form" aria-labelledby="weddingMediaHeading">
+        <button class="modal-close" type="button" data-close-wedding-media aria-label="Close">×</button>
+        <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us through Dropbox.</p>
+        <h2 id="weddingMediaHeading">Upload Photos &amp; Videos</h2>
+        <nav id="weddingMediaTabs" class="matron-info-tabs" role="tablist" aria-label="Wedding uploads">
+          <button type="button" role="tab" data-media-tab="upload" aria-controls="weddingMediaUpload" aria-selected="true">Upload</button>
+          <button type="button" role="tab" data-media-tab="view" aria-controls="weddingMediaView" aria-selected="false" tabindex="-1">View Photos &amp; Videos</button>
+        </nav>
+        <section id="weddingMediaUpload" class="perfect-experience-panel" aria-label="Upload wedding photos and videos">
+          <p id="weddingMediaUploadNotice" class="wedding-upload-intro"><em>Keep this page open until uploading finishes.</em></p>
+          <div id="dropboxHostControls" hidden><button id="dropboxConnect" type="button">Connect Dropbox</button></div>
+          <p id="dropboxConnectionStatus" role="status" aria-live="polite"></p>
+          <button id="dropboxCheckConnection" type="button">Check connection</button>
+          <div id="dropboxInlineUpload" hidden>
+            <label for="dropboxFiles">Choose photos and videos</label>
+            <div class="dropbox-file-row">
+              <input id="dropboxFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.heic,.heif,.mov">
+              <button id="dropboxUpload" type="button">Upload</button>
+            </div>
+            <p id="dropboxUploadStatus" role="status" aria-live="polite"></p>
+          </div>
+          <h3>OR</h3>
+          <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
+          <input id="weddingMediaLink" type="url" placeholder="https://…">
+          <button id="weddingMediaSaveLink" type="button">Save sharing link</button>
+          <p id="weddingMediaLinkStatus" role="status" aria-live="polite"></p>
+        </section>
+        <section id="weddingMediaView" class="perfect-experience-panel" aria-label="Your wedding photos and videos" hidden>
+          <button id="weddingMediaRefresh" type="button">Refresh</button>
+          <p>Photos and videos sent through Dropbox go directly to the hosts. This gallery shows upload confirmations, sharing links, and files previously shared on this website. New Dropbox uploads are stored in the hosts’ Dropbox.</p>
+          <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
+          <div id="weddingMediaGallery" class="wedding-media-gallery"></div>
+        </section>
+        <div class="modal-dialog-footer"><button class="primary-button" type="button" data-close-wedding-media>Back</button></div>
+      </section>
+    </dialog>
+
+    <dialog id="rsvpDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="rsvpHeading">
       <form method="dialog" id="rsvpForm" class="modal-card full-page-form" novalidate>
         <button class="modal-close" type="button" aria-label="Close">×</button>
         <p class="section-kicker">Save your seat</p>
