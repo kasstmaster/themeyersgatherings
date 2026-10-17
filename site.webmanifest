@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "The Meyers",
+  "short_name": "The Meyers",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#132841",
+  "theme_color": "#132841",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/rfvgWyJZ/rose-1-copy.png",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
