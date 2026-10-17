@@ -70,3 +70,5 @@ Run `node scripts/verify-gathering-history.cjs` for completed-date capture, froz
 Deliberate saves are marked so backup recovery does not resurrect deleted accounts or restore the prior year’s RSVP records after starting the next occurrence. Backups remain available when the primary copy is unreadable. A read-only repository seed does not overwrite a deliberately saved local state.
 
 Built-in and created pages use the shared page styles in styles.css for heading fonts/sizes, upper text, title spacing, responsive padding, body typography, paragraph/list spacing, and colors. Created sub-pages use the shared inner-panel surface and spacing; their heading level is smaller than a top-level page. Main tabs and sub-tabs use the same tab component with their respective shared surface variables. Changes to these shared defaults apply to existing and future pages without replacing authored Markdown formatting.
+
+A custom top-level Wedding page named **What to Expect** is assigned to guests and the host, excluding Wedding Party members. The guest audience is stored on the page so later title edits retain that visibility. Other shared pages retain their existing audience.
