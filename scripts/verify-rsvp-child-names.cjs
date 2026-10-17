@@ -20,6 +20,9 @@ for(const eventId of ['thanksgiving','christmas','wedding']){
  await page.locator('#rsvpButton').click();assert.equal(await page.locator('[data-rsvp-child-name="0"]').inputValue(),'Tyson');await page.locator('#rsvpDialog .modal-close').click();
  await page.evaluate(()=>{guestName=HOST_DISPLAY_NAME;signedInPersonName='';render();renderGuestAttendance();});
  const list=await page.locator('#guestList').textContent();assert.ok(list.includes('Child 1 - Tyson'));assert.ok(list.includes('Child 2 - Avery'));
+ assert.equal(list.split('Child 1 - Tyson').length-1,1);assert.equal(list.split('Child 2 - Avery').length-1,1);assert.ok(!list.includes(': Attending'));
+ assert.equal(await page.locator('#guestList .guest-menu-summary>div').count(),3);
+ assert.equal(await page.locator('#guestList .guest-menu-summary').evaluate(element=>getComputedStyle(element).borderTopWidth),'0px');
  console.log('Named children save, reopen and display',eventId);
 }
 assert.deepEqual(errors,[]);await browser.close();})().catch(e=>{console.error(e);process.exit(1)});

@@ -2002,8 +2002,18 @@ function renderGuestAttendance() {
   const groupedRsvps=invitationAttendanceRsvps();
   const { attending: attendingRsvps } = GuestPlanning.attendanceGroups(groupedRsvps);
   list.innerHTML = attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
-    const menu = viewedEventId === 'wedding' && rsvp.menuSelections?.length ? `<div class="guest-menu-summary">${rsvp.menuSelections.map(selection => `<div><strong>${escapeHtml((selection.name === 'someone-else' ? selection.customName : selection.name || `${selection.type} ${selection.index + 1}`))}</strong>: ${escapeHtml(selection.meal === 'none' ? 'No meal' : selection.meal || 'No meal selected')}${selection.dietaryRestrictions ? `<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>` : ''}</div>`).join('')}</div>` : '';
-    return `<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong><span>${rsvp.adults} adult${rsvp.adults === 1 ? '' : 's'} · ${rsvp.children} child${rsvp.children === 1 ? '' : 'ren'}</span>${rsvp.name === HOST_DISPLAY_NAME ? '<em class="rsvp-attendance">Attending</em>' : rsvp.people?.length ? `<div class="guest-people-summary">${rsvp.people.filter(person=>person.attending).map(person=>`<div>${escapeHtml(person.name)}: ${person.attending?'Attending':'Not attending'}${person.attending&&person.guestChoice==='guest'&&person.guestName?` · Guest: ${escapeHtml(person.guestName)}`:''}</div>`).join('')}</div>` : ''}${GuestPlanning.childLabels(rsvp).map(label=>`<div>${escapeHtml(label)}</div>`).join('')}${menu}</div>`;
+    const wedding=viewedEventId==='wedding';
+    const adultNames=GuestPlanning.attendees(rsvp.people || []);
+    const childNames=GuestPlanning.childLabels(rsvp);
+    const selections=rsvp.menuSelections || [];
+    const selectionName=selection=>selection.name==='someone-else'?selection.customName:selection.name || `${selection.type} ${selection.index+1}`;
+    const legacyNames=!rsvp.people?.length ? selections.map(selectionName) : [];
+    const names=[...new Set([...adultNames,...childNames,...legacyNames])];
+    const rows=names.map(name=>{
+      const selection=selections.find(selection=>normalizeAccountName(selectionName(selection))===normalizeAccountName(name));
+      return `<div><strong>${escapeHtml(name)}</strong>${wedding?`: ${escapeHtml(selection?.meal==='none'?'No meal':selection?.meal || 'No meal selected')}`:''}${selection?.dietaryRestrictions?`<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>`:''}</div>`;
+    }).join('');
+    return `<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong><span>${rsvp.adults} adult${rsvp.adults===1?'':'s'} · ${rsvp.children} child${rsvp.children===1?'':'ren'}</span><div class="guest-menu-summary">${rows}</div></div>`;
   }).join('') : '<p class="guest-empty">No guests are attending yet.</p>';
   const declined=groupedRsvps.map(rsvp=>({rsvp,people:GuestPlanning.attendanceGroups([rsvp]).notAttending})).filter(group=>group.people.length);
   document.querySelector('#notAttendingList').innerHTML=declined.length ? declined.map(({rsvp,people})=>`<div class="guest-entry"><strong>${escapeHtml(rsvp.invitationTitle)}</strong>${people.map(person=>`<div>${escapeHtml(person.name)}</div>`).join('')}<em class="rsvp-attendance">Declines with regret</em></div>`).join('') : '<p class="guest-empty">No declined RSVPs yet.</p>';
