@@ -62,3 +62,8 @@ sizes. The standard-gathering dish question uses Yes/No actions that advance or
 save directly, with the normal Next button hidden on that question.
 The welcome kicker and introduction appear only on attendance questions. Later
 steps keep the question and the instructions relevant to that answer.
+
+Standard RSVP dishes use checkboxes under full-width category headings. A checked
+dish with multiple available portions reveals a required quantity selector;
+single-portion dishes use one automatically. Choices share a responsive grid
+that stacks on small screens. Saved quantities restore with their checkboxes.
