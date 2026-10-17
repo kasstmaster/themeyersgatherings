@@ -15,11 +15,18 @@
     <meta name="shared-state-url" content="https://curly-sun-ef0f.kassandraraudman.workers.dev" />
     <!-- This checked-in file is the cross-device fallback when no worker is configured. -->
     <meta name="repository-state-url" content="data/app-state.json" />
-    <title>The Meyers Gatherings</title>
+    <title>The Meyers</title>
+    <link rel="stylesheet" href="loading-screen.css" />
+    <script src="loading-screen.js"></script>
     <link rel="preconnect" href="https://i.postimg.cc" crossorigin />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div id="meyersLoadingScreen" role="status" aria-live="polite" aria-label="Loading The Meyers">
+      <img src="https://ilymmd.com/themeyers/assets/rose-icon-v2.png" width="144" height="144" alt="" />
+      <h1>The Meyers</h1>
+      <p>Loading…</p>
+    </div>
     <section id="signInPage" class="sign-in-page fullscreen-flow theme-wedding" aria-labelledby="signInHeading">
       <div class="sign-in-panel">
         <form id="passwordForm" class="sign-in-card full-page-form">

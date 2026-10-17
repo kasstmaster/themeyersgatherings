@@ -13,6 +13,7 @@ const http=require('node:http');
   await buildDomainSite(output);
   const state=JSON.parse(await fs.readFile(path.join(output,'themeyers/data/app-state.json'),'utf8'));
   const token='A'.repeat(43);
+  let stateReady = Promise.resolve();
   state.accounts=[{name:'Jane Smith',qrToken:token,selectedEvents:{wedding:true},invitedEvents:{wedding:true}}];
   const GATHERING_SITE={async fetch(request){
     const url=new URL(request.url),filename=path.join(output,'themeyers',decodeURIComponent(url.pathname));
@@ -20,7 +21,7 @@ const http=require('node:http');
       let body=await fs.readFile(filename);
       const extension=path.extname(filename),type={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml'}[extension]||'application/octet-stream';
       if(extension==='.html')body=body.toString().replace(/(<meta name="shared-state-url" content=")[^"]*/,'$1');
-      if(url.pathname.endsWith('/data/app-state.json'))body=JSON.stringify(state);
+      if(url.pathname.endsWith('/data/app-state.json')){await stateReady;body=JSON.stringify(state);}
       return new Response(body,{headers:{'Content-Type':type}});
     }catch{return new Response('Not found',{status:404});}
   }};
@@ -43,16 +44,41 @@ const http=require('node:http');
       const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
       page.on('pageerror',error=>errors.push(error.message));
       await page.route('**/*',route=>route.request().url().startsWith(base+'/')?route.continue():route.abort());
-      await page.goto(base+'/themeyersgatherings/?invitation=existing#/signin/account/'+token);
+      let releaseState;
+      stateReady=new Promise(resolve=>{releaseState=resolve;});
+      await page.goto(base+'/themeyersgatherings/?invitation=existing#/signin/account/'+token,{waitUntil:'domcontentloaded'});
+      try {
+        assert.equal(await page.locator('#meyersLoadingScreen').isVisible(),true);
+        assert.equal(await page.locator('#meyersLoadingScreen h1').textContent(),'The Meyers');
+        assert.equal(await page.title(),'The Meyers');
+        assert.equal(await page.locator('#accountFirstName').isVisible(),false);
+      } finally { releaseState(); }
       await page.waitForFunction(()=>typeof qrScopedAccount!=='undefined'&&qrScopedAccount?.name==='Jane Smith');
       assert.equal(page.url(),base+'/themeyers/?invitation=existing#/signin/account/'+token);
       assert.equal(await page.locator('#accountLinkError').isVisible(),false);
       assert.equal(await page.evaluate(()=>accountQrUrl(qrScopedAccount)),base+'/themeyers/#/signin/account/'+token);
       assert.equal(await page.evaluate(()=>generalLoginUrl()),base+'/themeyers/');
       assert.equal(await page.locator('#accountFirstName').isVisible(),true);
+      assert.equal(await page.locator('#meyersLoadingScreen').isVisible(),false);
+      assert.equal(await page.title(),'The Meyers');
+      await page.evaluate(()=>{
+        for(const eventId of Object.keys(appState.events)){
+          viewedEventId=eventId;state=appState.events[eventId];render();
+          if(document.title!=='The Meyers')throw new Error('Gathering changed the browser title');
+        }
+      });
       assert.equal(await page.evaluate(()=>appState.accounts[0].qrToken),token);
       assert.deepEqual(errors,[]);
-      await page.close();console.log('Cloudflare route, staged assets, legacy HTTP redirect and account token passed',width);
+      await page.close();console.log('Meyers loading screen, startup, legacy HTTP redirect and account token passed',width);
     }
+    const failedPage=await browser.newPage();
+    await failedPage.clock.install();
+    await failedPage.route('**/*',route=>route.request().url().startsWith(base+'/')&&!route.request().url().endsWith('/app.js')?route.continue():route.abort());
+    await failedPage.goto(base+'/themeyers/');
+    assert.equal(await failedPage.locator('#meyersLoadingScreen').isVisible(),true);
+    await failedPage.clock.fastForward(20001);
+    assert.equal(await failedPage.locator('#meyersLoadingScreen').isVisible(),false);
+    await failedPage.close();
+    console.log('Missing startup script cannot leave a permanent loading screen');
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));await fs.rm(output,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exit(1);});
