@@ -77,3 +77,8 @@ Neither checked remains unanswered and cannot be submitted as a decline.
 
 Wedding collects all child names in one step after the children counter, with
 each name required before continuing. Other gatherings still use counts only.
+
+Guest and wedding-party RSVP screens show a child’s entered name without a
+numbered prefix, including name inputs, meal/dietary headings, and review. The
+Wedding review lists each named child as accepting instead of a child count and
+numbered name row. Host labels and stored meal identities remain compatible.
