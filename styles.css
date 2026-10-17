@@ -562,7 +562,7 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 
 #rsvpDialog #rsvpForm>p:not(.section-kicker){color:#c1cad5}
 
-#rsvpDialog .rsvp-dish-choice{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px;align-items:center;margin:0 0 12px}
+#rsvpDialog .rsvp-dish-choice{display:flex;flex-direction:row;gap:12px;align-items:flex-start;margin:0}
 #rsvpDialog .rsvp-dish-choice small{display:block;font-weight:400;font-size:.8rem;color:#c1cad5;margin-top:4px}
 #rsvpDialog .rsvp-custom-dish-choice{display:flex;flex-direction:row;gap:10px;align-items:center;margin-top:24px}
 #rsvpDialog #rsvpCustomDish{width:20px;height:20px;flex:none}
@@ -582,3 +582,17 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 #rsvpDialog .rsvp-guided :is(#rsvpDishQuestion,#rsvpDishOptions,#rsvpReview)>h3{display:none}
 
 #rsvpDialog .rsvp-direct-choice .modal-dialog-footer{background:transparent;margin-top:12px;padding-top:0}
+
+/* Dish categories span the row; choices form columns when space allows. */
+#rsvpDialog #rsvpForm.rsvp-dish-selection{width:min(920px,100%)}
+#rsvpDialog .rsvp-dish-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:20px 28px}
+#rsvpDialog .rsvp-dish-option{min-width:0}
+#rsvpDialog .rsvp-dish-choice>input{flex:none;width:22px;height:22px;margin:4px 0 0;accent-color:var(--orange)}
+#rsvpDialog .rsvp-dish-choice>span{font-size:1.25rem;overflow-wrap:anywhere}
+#rsvpDialog #rsvpDishOptions h4{font-size:1.375rem;margin:28px 0 16px}
+#rsvpDialog .rsvp-dish-quantity{display:flex;flex-direction:row;align-items:center;gap:12px;margin:12px 0 0 34px}
+#rsvpDialog .rsvp-dish-quantity>span{font-size:1rem;flex:none}
+#rsvpDialog .rsvp-dish-quantity select{width:auto;min-width:100px;max-width:100%;padding:10px}
+
+#rsvpDialog .rsvp-custom-dish-choice>span{font-size:1.25rem!important}
+#rsvpDialog #rsvpCustomDish{width:22px;height:22px}

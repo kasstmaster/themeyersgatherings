@@ -33,6 +33,7 @@
     back.hidden = index === 0;
     next.hidden=Boolean(step.element.querySelector('[data-rsvp-advance]'));
     form.classList.toggle('rsvp-direct-choice',next.hidden);
+    form.classList.toggle('rsvp-dish-selection',step.key==='dishes');
     next.textContent = step.key === 'review' || context.finishOn?.(step.key) ? 'Save my RSVP' : 'Next';
     progress.textContent = `Step ${index + 1} of ${all.length}`;
     if (moveFocus) { dialog.scrollTop=0; form.scrollTop=0; focus(step.element); }
@@ -47,7 +48,7 @@
     defaultHeading=heading.textContent;
     active = !options.editing;
     form.classList.toggle('rsvp-guided',active);
-    form.classList.remove('rsvp-direct-choice');
+    form.classList.remove('rsvp-direct-choice','rsvp-dish-selection');
     form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));
     review.hidden=true;progress.hidden=!active;back.hidden=true;next.hidden=false;kicker.hidden=false;intro.hidden=false;
     next.textContent=active?'Next':'Save my RSVP';

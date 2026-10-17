@@ -1901,8 +1901,9 @@ function renderRsvpDishes(){
       const available=Math.max(0,item.needed-item.claims.filter(name=>name!==guestName).length);
       if(!available&&!saved)return [];
       const limit=Math.max(available,saved);
-      return [`<label class="rsvp-dish-choice"><span>${escapeHtml(item.name)}<small>${available?`${formatQuantity(available,item)} available`:'Already claimed'}</small></span><select data-rsvp-dish="${escapeAttribute(item.id)}" aria-label="Quantity of ${escapeAttribute(item.name)}">${Array.from({length:limit+1},(_,quantity)=>`<option value="${quantity}" ${quantity===saved?'selected':''}>${quantity?escapeHtml(formatQuantity(quantity,item)):'0'}</option>`).join('')}</select></label>`];
-    }).join('');return items?`<h4>${escapeHtml(category)}</h4>${items}`:'';
+      const quantity=limit>1?`<label class="rsvp-dish-quantity" ${saved?'':'hidden'}><span>How many?</span><select data-rsvp-dish-quantity aria-label="Quantity of ${escapeAttribute(item.name)}" ${saved?'required':''}><option value="">Choose</option>${Array.from({length:limit},(_,index)=>{const quantity=index+1;return `<option value="${quantity}" ${quantity===saved?'selected':''}>${escapeHtml(formatQuantity(quantity,item))}</option>`;}).join('')}</select></label>`:'<input type="hidden" data-rsvp-dish-quantity value="1">';
+      return [`<div class="rsvp-dish-option"><label class="rsvp-dish-choice"><input type="checkbox" data-rsvp-dish="${escapeAttribute(item.id)}" ${saved?'checked':''}><span>${escapeHtml(item.name)}<small>${available?`${formatQuantity(available,item)} available`:'Already claimed'}</small></span></label>${quantity}</div>`];
+    }).join('');return items?`<section class="rsvp-dish-category"><h4>${escapeHtml(category)}</h4><div class="rsvp-dish-grid">${items}</div></section>`:'';
   }).join(''):'';
   if(enabled&&!document.querySelector('#rsvpDishChoices').textContent.trim())document.querySelector('#rsvpDishChoices').textContent='The listed dishes are covered. You can bring something else or go back and choose No.';
   document.querySelector('#rsvpCustomDish').checked=false;document.querySelector('#rsvpCustomDishName').value='';document.querySelector('#rsvpCustomDishQuantity').value=1;
@@ -1912,7 +1913,7 @@ function renderRsvpDishes(){
 function rsvpDishDraft(){
   if(!rsvpDishesEnabled())return null;
   const yes=document.querySelector('#rsvpBringingDish').value==='yes';
-  const quantities=new Map([...document.querySelectorAll('[data-rsvp-dish]')].map(select=>[select.dataset.rsvpDish,yes?Number(select.value):0]));
+  const quantities=new Map([...document.querySelectorAll('[data-rsvp-dish]')].map(input=>[input.dataset.rsvpDish,yes&&input.checked?Number(input.closest('.rsvp-dish-option').querySelector('[data-rsvp-dish-quantity]').value):0]));
   const custom=yes&&document.querySelector('#rsvpCustomDish').checked?{name:document.querySelector('#rsvpCustomDishName').value.trim(),quantity:Number(document.querySelector('#rsvpCustomDishQuantity').value),unit:document.querySelector('#rsvpCustomDishUnit').value,category:document.querySelector('#rsvpCustomDishCategory').value}:null;
   return {quantities,custom};
 }
@@ -1923,7 +1924,7 @@ function validateRsvpQuestion(key){
   document.querySelector('#rsvpCustomDishQuantity').required=custom;
   const draft=rsvpDishDraft();
   const choice=document.querySelector('#rsvpCustomDish');choice.setCustomValidity('');
-  if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.custom&&![...draft.quantities.values()].some(quantity=>quantity>0)){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
+  if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.custom&&!document.querySelector('[data-rsvp-dish]:checked')){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
   return true;
 }
 function applyRsvpDishes(draft){
@@ -1933,6 +1934,14 @@ function applyRsvpDishes(draft){
   if(draft.custom){const item=draft.custom;state.items.push({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:Array(item.quantity).fill(guestName)});}
   return true;
 }
+document.querySelector('#rsvpDishChoices').addEventListener('change',event=>{
+  if(event.target.matches('[data-rsvp-dish]')){
+    const option=event.target.closest('.rsvp-dish-option');
+    const question=option.querySelector('.rsvp-dish-quantity');
+    if(question){question.hidden=!event.target.checked;question.querySelector('select').required=event.target.checked;}
+  }
+  validateRsvpQuestion('');
+});
 document.querySelector('#rsvpCustomDish').addEventListener('change',()=>{validateRsvpQuestion('');RsvpFlow.refresh();});
 document.querySelectorAll('[data-rsvp-dish-answer]').forEach(button=>button.addEventListener('click',()=>{
   document.querySelector('#rsvpBringingDish').value=button.dataset.rsvpDishAnswer;
