@@ -11,8 +11,9 @@ await page.evaluate(()=>{
 assert.equal(await page.locator('#adminAccounts .account-invitation-group').count(),2);
 assert.deepEqual(await page.locator('#adminAccounts .account-person-name').allTextContents(),['Benjamin Hall IV','Sherri Hall','Buddy Raudman']);
 assert.equal(await page.locator('[data-person-invitation]').count(),3);assert.equal(await page.locator('[data-plus-one-person]').count(),3);
-assert.equal(await page.locator('#adminAccounts .invited-entry-heading>span').last().textContent(),'2 adults (1 plus one)');
-await page.locator('[data-plus-one-person="Sherri Hall"]').check();assert.equal(await page.locator('#adminAccounts .invited-entry-heading>span').first().textContent(),'3 adults (1 plus one)');
+assert.equal(await page.locator('#adminAccounts .invited-entry-heading>span').count(),0);
+await page.locator('[data-plus-one-person="Sherri Hall"]').check();
+assert.ok(await page.evaluate(()=>appState.accounts[0].plusOnePeople.wedding.includes('Sherri Hall')));
 for(const width of [1280,390]){
  await page.setViewportSize({width,height:800});
  assert.ok(await page.locator('#adminAccounts').evaluate(el=>el.scrollWidth<=el.clientWidth));
@@ -33,10 +34,10 @@ for(const width of [1280,390]){
  assert.ok(sharedLayout.square);assert.ok(sharedLayout.sharedRow);
 
  const alignment=await page.locator('.account-invitation-group').evaluateAll(groups=>groups.map(group=>{
-  const heading=group.querySelector('.invited-entry-heading'),title=heading.querySelector('strong').getBoundingClientRect(),count=heading.querySelector('span').getBoundingClientRect(),names=[...group.querySelectorAll('.account-person-name')].map(el=>el.getBoundingClientRect().top);
-  return {aligned:Math.abs(title.top-count.top)<5,separate:names.every((top,index)=>index===0||top>names[index-1]),background:getComputedStyle(group).backgroundColor,border:getComputedStyle(group).borderBottomWidth};
+  const heading=group.querySelector('.invited-entry-heading'),title=heading.querySelector('strong').getBoundingClientRect(),names=[...group.querySelectorAll('.account-person-name')].map(el=>el.getBoundingClientRect().top);
+  return {separate:names.every((top,index)=>index===0||top>names[index-1]),background:getComputedStyle(group).backgroundColor,border:getComputedStyle(group).borderBottomWidth};
  }));
- for(const group of alignment){assert.ok(group.aligned);assert.ok(group.separate);assert.equal(group.background,'rgba(0, 0, 0, 0)');assert.equal(group.border,'0px');}
+ for(const group of alignment){assert.ok(group.separate);assert.equal(group.background,'rgba(0, 0, 0, 0)');assert.equal(group.border,'0px');}
  console.log('Account list styling and controls passed',width);
 }
 assert.deepEqual(errors,[]);await browser.close();})().catch(e=>{console.error(e);process.exit(1)});

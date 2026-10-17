@@ -743,14 +743,14 @@ function invitedInvitationGroups(account,eventId=viewedEventId) {
 }
 function invitedAdultCount(account){return invitedInvitationGroups(account).reduce((total,group)=>total+group.adults,0);}
 function adultCountLabel(adults,plusOnes=0){return `${adults} adult${adults===1?'':'s'}${plusOnes?` (${plusOnes} plus one${plusOnes===1?'':'s'})`:''}`;}
-function invitationHeadingHtml(group){return `<div class="invited-entry-heading"><strong>${escapeHtml(invitationGroupTitle(group))}</strong><span>${adultCountLabel(group.adults,group.plusOnes)}</span></div>`;}
-function invitationEntryHtml(group, {className='', headings='', renderName=name=>escapeHtml(name)}={}) {
-  return `<div class="guest-entry invited-entry ${className}">${invitationHeadingHtml(group)}<div class="invited-entry-names">${headings}${group.names.map(name=>`<div class="invitation-member-row">${renderName(name)}</div>`).join('')}</div></div>`;
+function invitationHeadingHtml(group,showCount=true){return `<div class="invited-entry-heading"><strong>${escapeHtml(invitationGroupTitle(group))}</strong>${showCount?`<span>${adultCountLabel(group.adults,group.plusOnes)}</span>`:''}</div>`;}
+function invitationEntryHtml(group, {className='', headings='', showCount=true, renderName=name=>escapeHtml(name)}={}) {
+  return `<div class="guest-entry invited-entry ${className}">${invitationHeadingHtml(group,showCount)}<div class="invited-entry-names">${headings}${group.names.map(name=>`<div class="invitation-member-row">${renderName(name)}</div>`).join('')}</div></div>`;
 }
 function accountContactsHtml(account) {
   const adults=invitedInvitationGroups(account).map(group=>{
     return invitationEntryHtml(group, {
-      className:'account-invitation-group',
+      className:'account-invitation-group',showCount:false,
       headings:'<div class="account-person-headings"><span></span><span>Inv #</span><span>+1</span></div>',
       renderName:name=>`<div class="account-person-line"><span class="account-person-name">${escapeHtml(name)}</span>${invitationAssignmentHtml(account,name)}<label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(name)}" aria-label="Allow a guest for ${escapeAttribute(name)}" ${group.guestPeople.includes(name)?'checked':''}></label></div>`
     });
@@ -2345,10 +2345,7 @@ function openAccountsAdmin() {
       const account=appState.accounts.find(account => account.name === row.dataset.accountName);if(!account)return;
       GuestPlanning.setPlusOnePeople(account,accountEventId,[...row.querySelectorAll('[data-plus-one-person]:checked')].map(input=>input.dataset.plusOnePerson));
       row.querySelector('[data-legacy-plus-ones]')?.remove();
-      row.querySelectorAll('.account-invitation-group').forEach(group=>{
-        const people=group.querySelectorAll('[data-plus-one-person]').length,plusOnes=group.querySelectorAll('[data-plus-one-person]:checked').length;
-        group.querySelector('.invited-entry-heading>span').textContent=adultCountLabel(people+plusOnes,plusOnes);
-      });saveState();
+      saveState();
     }));
     access.querySelector('.account-invited').addEventListener('change', event => {
       const account = appState.accounts.find(account => account.name === row.dataset.accountName);
