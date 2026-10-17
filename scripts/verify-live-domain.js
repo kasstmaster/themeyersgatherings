@@ -5,10 +5,11 @@ async function request(url,options={}) {
   return fetch(url,{...options,signal:AbortSignal.timeout(30000),headers:{'Cache-Control':'no-cache',...options.headers}});
 }
 const site=await request(canonical);assert.equal(site.status,200);
-const html=await site.text();assert.match(html,/<title>The Meyers Gatherings<\/title>/);
+const html=await site.text();assert.match(html,/<title>The Meyers<\/title>/);
 for(const file of ['app.js','styles.css','vendor/qrcode.js'])assert.equal((await request(canonical+file,{method:'HEAD'})).status,200,file);
 const home=await request('https://ilymmd.com/');assert.equal(home.status,200);assert.match(await home.text(),/<title>Plex Requests<\/title>/);
-const old=await request('https://kasstmaster.github.io/themeyersgatherings/');assert.equal(old.status,200);assert.match(await old.text(),/<title>The Meyers Gatherings<\/title>/);
+// GitHub Pages publishes independently, so either title is valid during rollout.
+const old=await request('https://kasstmaster.github.io/themeyersgatherings/');assert.equal(old.status,200);assert.match(await old.text(),/<title>The Meyers(?: Gatherings)?<\/title>/);
 const alias=await request('https://ilymmd.com/themeyersgatherings/?invitation=check',{redirect:'manual'});
 assert.equal(alias.status,308);assert.equal(alias.headers.get('Location'),canonical+'?invitation=check');
 const service=html.match(/<meta name="shared-state-url" content="([^"]+)"/)[1];

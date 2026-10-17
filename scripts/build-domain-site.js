@@ -9,7 +9,7 @@ export function legacyRedirectHtml() {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
-<title>The Meyers Gatherings</title><link rel="canonical" href="${canonical}">
+<title>The Meyers</title><link rel="canonical" href="${canonical}">
 <script>
 const target = new URL(${JSON.stringify(canonical)});
 target.search = window.location.search;

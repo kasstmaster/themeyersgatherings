@@ -1,0 +1,21 @@
+#meyersLoadingScreen { display: none; }
+html.meyers-loading { background: #132841; overflow: hidden; }
+html.meyers-loading body > :not(#meyersLoadingScreen) { visibility: hidden; }
+html.meyers-loading #meyersLoadingScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  box-sizing: border-box;
+  background: #132841;
+  color: #fff;
+  text-align: center;
+}
+#meyersLoadingScreen img { display: block; object-fit: contain; max-width: 40vw; }
+#meyersLoadingScreen h1 { margin: 0; color: inherit; font: 400 clamp(32px, 7vw, 46px)/1.2 "Times New Roman", Times, serif; }
+#meyersLoadingScreen p { margin: 0; color: inherit; font: 400 16px/1.5 Arial, sans-serif; }

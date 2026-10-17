@@ -1368,7 +1368,7 @@ function render() {
   updateSignedInAccountBanner();
   document.body.className = `theme-${event.theme}`;
   applyGatheringColors();
-  document.title = `The Meyers ${event.name}`;
+  document.title = 'The Meyers';
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
   document.querySelector('#uploadPhotosButton').hidden=!isWedding;
   document.querySelector('#rsvpButton').textContent=features.rsvp.contributions && hasSubmittedInvitationRsvp()?'Change RSVP & Dishes':'RSVP';
@@ -3380,7 +3380,7 @@ document.querySelectorAll('.affordable-attire-toggle').forEach(button => {
 
 render();
 if (sharedSavePending) queueSharedStateSave();
-startApp();
+startApp().finally(() => window.MeyersLoading?.finish());
 singleColumnMenu.addEventListener('change', () => { commitAllPendingEditorInputs();render(); });
 window.addEventListener('focus', loadSharedState);
 window.addEventListener('online', () => {
