@@ -56,8 +56,8 @@ remain separate. The sign-in and RSVP screens share `fullscreen-flow` and
 desktop and mobile, including custom gatherings, invitation scope, validation,
 deadlines, and contribution updates.
 
-The RSVP page heading follows the current question; attendance keeps “Who's
-joining us?”. Body text uses a simple sans-serif font and shared question-title
+The RSVP page heading follows the current question; attendance asks “Is [name]
+joining us?” without repeating the name below. Body text uses a simple sans-serif font and shared question-title
 sizes. The standard-gathering dish question uses Yes/No actions that advance or
 save directly, with the normal Next button hidden on that question.
 The welcome kicker appears only on attendance questions. RSVP omits the generic
@@ -68,3 +68,6 @@ Category names are hidden in the RSVP menu, with spacing between the groups. A c
 dish with multiple available portions reveals a required quantity selector;
 single-portion dishes use one automatically. Choices share a responsive grid
 that stacks on small screens. Saved quantities restore with their checkboxes.
+
+The children step places “Age 17 and under” directly below its page heading.
+Dish category groups keep a 64px vertical gap.

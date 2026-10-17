@@ -600,4 +600,6 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 
 /* Keep dish groups separated without showing category headings during RSVP. */
 #rsvpDialog #rsvpDishChoices .rsvp-dish-category>h4{display:none}
-#rsvpDialog .rsvp-dish-category+.rsvp-dish-category{margin-top:32px}
+#rsvpDialog .rsvp-dish-category+.rsvp-dish-category{margin-top:64px}
+
+#rsvpDialog .rsvp-choosing-attendance .rsvp-person>legend{display:none}
