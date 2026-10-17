@@ -1,33 +1,44 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { serveRoseIcon } from '../domain-site-worker/gathering-site.js';
+import vm from 'node:vm';
+import { handleGatheringSite } from '../domain-site-worker/gathering-site.js';
 
-test('rose icon fetch uses only the fixed public source and serves PNG with cache headers', async () => {
-  const request = new Request('https://ilymmd.com/themeyers/assets/rose-icon-v2.png?url=https://other.example', { headers: { Authorization: 'private', Cookie: 'private' } });
-  const response = await serveRoseIcon(request, async (url, options) => {
-    assert.equal(url, 'https://i.ibb.co/rfvgWyJZ/rose-1-copy.png');
-    assert.equal(options.headers, undefined);
-    return new Response(new Uint8Array([137,80,78,71]), {headers:{'Content-Type':'image/png'}});
-  });
-  assert.equal(response.status, 200);
-  assert.equal(response.headers.get('Content-Type'), 'image/png');
-  assert.match(response.headers.get('Cache-Control'), /max-age/);
-  assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [137,80,78,71]);
+test('installable app uses separate root identity and bundled correctly sized PNG icons', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../site.webmanifest', import.meta.url), 'utf8'));
+  assert.equal(manifest.name, 'The Meyers');
+  assert.equal(manifest.id, '/');
+  assert.equal(manifest.scope, '/');
+  assert.equal(manifest.start_url, '/');
+  for (const icon of manifest.icons) {
+    const png = await readFile(new URL('../' + icon.src, import.meta.url));
+    assert.equal(png.subarray(1,4).toString(), 'PNG');
+    assert.equal(`${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`, icon.sizes);
+  }
+  assert.deepEqual(manifest.icons.map(icon => icon.sizes), ['192x192','512x512']);
 });
 
-test('upstream errors and HTML cannot become a cached browser icon', async () => {
-  for (const fetchImage of [async () => new Response('denied', {status:403}), async () => new Response('<html>error</html>'), async () => { throw new Error('offline'); }]) {
-    const response = await serveRoseIcon(new Request('https://ilymmd.com/themeyers/assets/rose-icon-v2.png'), fetchImage);
-    assert.equal(response.status, 502);
-    assert.equal(response.headers.get('Cache-Control'), null);
+test('standard root icon lookups and old rose path use local assets, never an image host', async () => {
+  const env = { GATHERING_SITE: { async fetch(request) { return new Response(new URL(request.url).pathname); } } };
+  for (const [url, path] of Object.entries({
+    '/favicon.ico':'/assets/icons/favicon.ico',
+    '/apple-touch-icon.png':'/assets/icons/apple-touch-icon.png',
+    '/apple-touch-icon-precomposed.png':'/assets/icons/apple-touch-icon.png',
+    '/assets/rose-icon-v2.png':'/assets/icons/rose-source.png',
+  })) {
+    const response = await handleGatheringSite(new Request('https://themeyers.ilymmd.com'+url),env);
+    assert.equal(await response.text(),path);
   }
 });
 
-test('browser, Apple and manifest icons share the new Meyers URL, including legacy QR pages', async () => {
-  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
-  const manifest = JSON.parse(await readFile(new URL('../site.webmanifest', import.meta.url), 'utf8'));
-  const icon = 'https://ilymmd.com/themeyers/assets/rose-icon-v2.png';
-  assert.equal((html.match(/href="https:\/\/ilymmd.com\/themeyers\/assets\/rose-icon-v2.png"/g) || []).length, 3);
-  assert.equal(manifest.icons[0].src, icon);
+test('original printed Pages QR redirects preserve query and account token without capturing other sites', async () => {
+  const source = await readFile(new URL('../site-entry.js',import.meta.url),'utf8');
+  for (const origin of ['https://kasstmaster.github.io','https://ilymmd.com','https://www.ilymmd.com']) {
+    let target;
+    vm.runInNewContext(source,{window:{location:{origin,pathname:'/themeyersgatherings/',search:'?event=wedding',hash:'#/signin/account/original-token',replace:url=>target=url}}});
+    assert.equal(target,'https://themeyers.ilymmd.com/?event=wedding#/signin/account/original-token');
+  }
+  for (const [origin,pathname] of [['https://themeyers.ilymmd.com','/'],['https://kasstmaster.github.io','/another-site/'],['https://ilymmd.com','/'],['https://ilymmd.com','/themeyers-other']]) {
+    vm.runInNewContext(source,{window:{location:{origin,pathname,replace:()=>assert.fail('Unrelated URL redirected')}}});
+  }
 });

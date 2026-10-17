@@ -1,0 +1,4 @@
+.app-install { margin-top: 20px; color: #fff; font: 16px/1.5 Arial, sans-serif; }
+.app-install[hidden], .app-install [hidden] { display: none; }
+.app-install button { border: 1px solid #ded7ca; border-radius: 4px; padding: 9px 16px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.app-install p { margin: 12px 0 0; color: inherit; }

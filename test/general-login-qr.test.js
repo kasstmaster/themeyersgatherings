@@ -31,11 +31,11 @@ test('general QR invitations include invited accounts without tokens while indiv
 
 test('future prints use the new login address from either production site without changing account tokens', () => {
   const context=fixture(),account=context.appState.accounts[0];
-  for(const origin of ['https://ilymmd.com','https://www.ilymmd.com','https://kasstmaster.github.io']){
+  for(const origin of ['https://themeyers.ilymmd.com','https://ilymmd.com','https://www.ilymmd.com','https://kasstmaster.github.io']){
     context.window.location={origin,pathname:origin.includes('github')?'/themeyersgatherings/':'/themeyers/'};
-    assert.equal(context.generalLoginUrl(),'https://ilymmd.com/themeyers/');
-    assert.equal(context.accountQrUrl(account),'https://ilymmd.com/themeyers/#/signin/account/one');
-    assert.equal(context.accountQrUrl({generalLogin:true}),'https://ilymmd.com/themeyers/');
+    assert.equal(context.generalLoginUrl(),'https://themeyers.ilymmd.com/');
+    assert.equal(context.accountQrUrl(account),'https://themeyers.ilymmd.com/#/signin/account/one');
+    assert.equal(context.accountQrUrl({generalLogin:true}),'https://themeyers.ilymmd.com/');
     assert.equal(account.qrToken,'one');
   }
 });

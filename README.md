@@ -18,7 +18,7 @@ GitHub will provide a public link you can share with your guests.
 ## Custom domain path
 
 See [the custom-domain migration guide](docs/custom-domain.md) for publishing at
-`https://ilymmd.com/themeyers/` while preserving existing invitation QR links.
+`https://themeyers.ilymmd.com/` as a separate installable app while preserving existing invitation QR links.
 
 ## Save everything permanently in GitHub
 

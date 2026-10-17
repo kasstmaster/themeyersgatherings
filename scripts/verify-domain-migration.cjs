@@ -19,8 +19,10 @@ const http=require('node:http');
     const url=new URL(request.url),filename=path.join(output,'themeyers',decodeURIComponent(url.pathname));
     try {
       let body=await fs.readFile(filename);
-      const extension=path.extname(filename),type={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml'}[extension]||'application/octet-stream';
+      const extension=path.extname(filename),type={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png','.ico':'image/x-icon','.svg':'image/svg+xml'}[extension]||'application/octet-stream';
       if(extension==='.html')body=body.toString().replace(/(<meta name="shared-state-url" content=")[^"]*/,'$1');
+      // Exercise production-only installation against this secure localhost fixture.
+      if(url.pathname==='/app-install.js')body=body.toString().replace('https://themeyers.ilymmd.com',base);
       if(url.pathname.endsWith('/data/app-state.json')){await stateReady;body=JSON.stringify(state);}
       return new Response(body,{headers:{'Content-Type':type}});
     }catch{return new Response('Not found',{status:404});}
@@ -28,11 +30,12 @@ const http=require('node:http');
   let base;
   const server=http.createServer(async(req,res)=>{
     try {
-      const response=await handleGatheringSite(new Request('https://ilymmd.com'+req.url),{GATHERING_SITE});
+      const legacyPath=/^\/themeyers(?:gatherings)?(?:\/|$)/.test(req.url);
+      const response=await handleGatheringSite(new Request((legacyPath?'https://ilymmd.com':'https://themeyers.ilymmd.com')+req.url),{GATHERING_SITE});
       if(!response){res.writeHead(404);res.end();return;}
       const headers=Object.fromEntries(response.headers);
       // Keep browser requests local while exercising a real HTTP redirect, not an intercepted one.
-      if(headers.location){assert.ok(headers.location.startsWith('https://ilymmd.com/themeyers/'));headers.location=headers.location.replace('https://ilymmd.com',base);}
+      if(headers.location){assert.ok(headers.location.startsWith('https://themeyers.ilymmd.com/'));headers.location=headers.location.replace('https://themeyers.ilymmd.com',base);}
       res.writeHead(response.status,headers);res.end(Buffer.from(await response.arrayBuffer()));
     }catch(error){res.writeHead(500);res.end(error.message);}
   });
@@ -54,13 +57,32 @@ const http=require('node:http');
         assert.equal(await page.locator('#accountFirstName').isVisible(),false);
       } finally { releaseState(); }
       await page.waitForFunction(()=>typeof qrScopedAccount!=='undefined'&&qrScopedAccount?.name==='Jane Smith');
-      assert.equal(page.url(),base+'/themeyers/?invitation=existing#/signin/account/'+token);
+      assert.equal(page.url(),base+'/?invitation=existing#/signin/account/'+token);
       assert.equal(await page.locator('#accountLinkError').isVisible(),false);
-      assert.equal(await page.evaluate(()=>accountQrUrl(qrScopedAccount)),base+'/themeyers/#/signin/account/'+token);
-      assert.equal(await page.evaluate(()=>generalLoginUrl()),base+'/themeyers/');
+      assert.equal(await page.evaluate(()=>accountQrUrl(qrScopedAccount)),base+'/#/signin/account/'+token);
+      assert.equal(await page.evaluate(()=>generalLoginUrl()),base+'/');
       assert.equal(await page.locator('#accountFirstName').isVisible(),true);
       assert.equal(await page.locator('#meyersLoadingScreen').isVisible(),false);
       assert.equal(await page.title(),'The Meyers');
+      assert.equal(await page.locator('#meyersLoadingScreen img').evaluate(image=>image.complete && image.naturalWidth>0),true);
+      const manifest=await page.evaluate(async()=>fetch(document.querySelector('link[rel=manifest]').href).then(response=>response.json()));
+      assert.equal(manifest.name,'The Meyers');
+      assert.equal(manifest.scope,'/');
+      for(const icon of manifest.icons)assert.equal((await page.request.get(base+'/'+icon.src)).status(),200);
+      await page.evaluate(()=>navigator.serviceWorker.ready);
+      assert.equal(await page.evaluate(async()=>(await navigator.serviceWorker.getRegistration()).scope),base+'/');
+      await page.locator('#installAppButton').click();
+      assert.equal(await page.locator('#installAppHelp').isVisible(),true);
+      await page.evaluate(()=>{
+        const event=new Event('beforeinstallprompt',{cancelable:true});
+        event.prompt=async()=>{window.installPromptShown=true;};
+        event.userChoice=Promise.resolve({outcome:'accepted'});
+        window.dispatchEvent(event);
+      });
+      await page.locator('#installAppButton').click();
+      assert.equal(await page.evaluate(()=>window.installPromptShown),true);
+      await page.evaluate(()=>window.dispatchEvent(new Event('appinstalled')));
+      assert.equal(await page.locator('#installAppPrompt').isVisible(),false);
       await page.evaluate(()=>{
         for(const eventId of Object.keys(appState.events)){
           viewedEventId=eventId;state=appState.events[eventId];render();
@@ -68,13 +90,24 @@ const http=require('node:http');
         }
       });
       assert.equal(await page.evaluate(()=>appState.accounts[0].qrToken),token);
+      await page.context().setOffline(true);
+      await page.reload();
+      assert.match(await page.locator('body').textContent(),/Please reconnect to the internet/);
+      await page.context().setOffline(false);
+      await page.reload();
+      await page.waitForFunction(()=>typeof qrScopedAccount!=='undefined'&&qrScopedAccount?.name==='Jane Smith');
+      const cachedUrls=await page.evaluate(async()=>{
+        const cache=await caches.open('meyers-offline-v1');
+        return (await cache.keys()).map(request=>new URL(request.url).pathname);
+      });
+      assert.deepEqual(cachedUrls,['/offline.html']);
       assert.deepEqual(errors,[]);
-      await page.close();console.log('Meyers loading screen, startup, legacy HTTP redirect and account token passed',width);
+      await page.close();console.log('Meyers startup, rose icons, app installation, offline fallback and legacy QR sign-in passed',width);
     }
     const failedPage=await browser.newPage();
     await failedPage.clock.install();
     await failedPage.route('**/*',route=>route.request().url().startsWith(base+'/')&&!route.request().url().endsWith('/app.js')?route.continue():route.abort());
-    await failedPage.goto(base+'/themeyers/');
+    await failedPage.goto(base+'/');
     assert.equal(await failedPage.locator('#meyersLoadingScreen').isVisible(),true);
     await failedPage.clock.fastForward(20001);
     assert.equal(await failedPage.locator('#meyersLoadingScreen').isVisible(),false);

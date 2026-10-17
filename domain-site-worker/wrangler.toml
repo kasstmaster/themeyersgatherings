@@ -5,6 +5,8 @@ workers_dev = true
 
 # Match only the gathering paths; the Plex home page and API keep their existing origin.
 routes = [
+  # Custom Domain provisions this hostname's DNS and TLS in the domain account.
+  { pattern = "themeyers.ilymmd.com", custom_domain = true },
   { pattern = "ilymmd.com/themeyers", zone_name = "ilymmd.com" },
   { pattern = "ilymmd.com/themeyers/*", zone_name = "ilymmd.com" },
   { pattern = "ilymmd.com/themeyersgatherings", zone_name = "ilymmd.com" },

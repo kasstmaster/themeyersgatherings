@@ -1,4 +1,4 @@
-# Publishing at ilymmd.com/themeyers/ with two Cloudflare accounts
+# The Meyers standalone app with two Cloudflare accounts
 
 ## Workers and account boundaries
 
@@ -44,26 +44,44 @@ secret is absent. No extra R2 bucket or Dropbox connection is needed in the doma
 account. The ilymmd.com hostname must be proxied through Cloudflare for Worker
 routes to apply.
 
-## Paths and existing website
+## Separate app and existing invitations
 
-The website Worker matches only `/themeyers`, `/themeyers/*`,
-`/themeyersgatherings`, and `/themeyersgatherings/*` on the apex and www hostnames.
-The Plex home page, Plex assets, API, and Firebase deployment keep their existing
-origin. No changes to `plexrequests/plex-requests-app` are needed.
+The website Worker serves **https://themeyers.ilymmd.com/** through a Cloudflare
+Workers Custom Domain. Wrangler provisions its DNS and TLS in the domain account;
+do not point this hostname at Firebase or move the existing apex/www records.
+The same Worker retains the gathering path routes on the apex and www hostnames
+and redirects those paths to the subdomain, preserving asset paths, query strings
+and browser fragments. Plex home page, assets, API and Firebase stay unchanged.
 
-The main site's existing service worker was inspected: it uses network-first
-requests and does not replace gathering paths with the Plex shell.
+The app manifest has its own origin, name **The Meyers**, root identity, root
+launch URL and scope. Local rose PNGs (192/512), Apple touch icon (180) and favicon
+are bundled with the app. No external image host is needed at runtime. The generic
+offline reconnect page is the only cached page; live pages, RSVP data, account
+information and uploads are never cached by the app's service worker.
 
-The custom-domain legacy path and www hostname redirect to
-`https://ilymmd.com/themeyers/`, retaining the query string and browser fragment.
-The original `kasstmaster/themeyersgatherings` repository and GitHub Pages address
-remain active for printed invitations. Existing account QR tokens are not changed.
-All future general and individual invitation QR prints use the new address,
-including prints made from the old frontend. There is no date-based expiration.
+The original GitHub Pages address stays active for printed invitations. Its early
+entry script redirects to the new app with the original query and account token
+fragment intact. Existing account QR tokens are never changed. Future general and
+individual QR prints use the subdomain, even when printed from an old frontend.
+There is no date-based expiration. Existing browser-local preferences are not
+transferred between origins; shared accounts and RSVPs stay in the same backend.
 
-Both sites use the same service URL. Its CORS allowlist retains
-`https://kasstmaster.github.io` and includes `https://ilymmd.com` and
-`https://www.ilymmd.com`. The Dropbox callback remains on the original Worker.
+The backend CORS allowlist retains both old origins and adds
+`https://themeyers.ilymmd.com`. Dropbox authorization callbacks remain on the
+original service Worker and existing connections/storage stay in its account.
+
+### Install and open
+
+Open **https://themeyers.ilymmd.com/** directly. On Android/desktop, use
+**Install The Meyers** for the native browser installation prompt when available.
+On iPhone/iPad, open in Safari, tap Share, then **Add to Home Screen**. The button
+also shows these manual instructions and hides when the app is already running
+in standalone mode. The rose loading screen and browser title both use The Meyers.
+An old shortcut installed from the parent domain may still be Plex; install again
+from the new address to obtain the separate app. Plex does not need to be removed.
+
+QR links use ordinary HTTPS. Whether a QR opens the installed app or the browser
+is controlled by the operating system; this setup cannot force that choice.
 
 ## Validation and release
 
@@ -85,5 +103,6 @@ preservation and sign-in without contacting or changing either live website.
 
 After adding the new secrets and merging, the workflow deploys both Workers and
 runs a read-only live check of the main site, gathering site/assets, original QR
-address, redirect, and CORS. Then verify an existing printed invitation and normal
+address, redirect, and CORS. The host-authorized setup can also be deployed with workflow_dispatch against the review branch.
+Then verify an existing printed invitation and normal
 RSVP/upload interactions. Keep the old GitHub Pages address active permanently.

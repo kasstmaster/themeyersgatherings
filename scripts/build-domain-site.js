@@ -3,7 +3,7 @@ import { cp, mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const source = fileURLToPath(new URL('../', import.meta.url));
-const canonical = 'https://ilymmd.com/themeyers/';
+const canonical = 'https://themeyers.ilymmd.com/';
 
 export function legacyRedirectHtml() {
   return `<!doctype html>
@@ -31,14 +31,15 @@ export async function buildDomainSite(output) {
   const site = join(destination, 'themeyers');
   await mkdir(site, { recursive: true });
   const html = await readFile(join(source, 'index.html'), 'utf8');
-  const files = new Set([...html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"?#]+)"/g)]
-    .map(match => match[1]).filter(path => !/^(?:[a-z]+:|\/)/i.test(path)));
+  const files = new Set([...html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"/g)]
+    .map(match => match[1].split(/[?#]/)[0]).filter(path => !/^(?:[a-z]+:|\/)/i.test(path)));
   for (const file of files) {
     if (file.split('/').includes('..')) throw new Error('Site assets must stay within the source directory.');
     await mkdir(dirname(join(site, file)), { recursive: true });
     await cp(join(source, file), join(site, file));
   }
   for (const directory of ['assets', 'vendor', 'data']) await cp(join(source, directory), join(site, directory), { recursive: true });
+  for (const file of ['service-worker.js', 'offline.html']) await cp(join(source, file), join(site, file));
   await writeFile(join(site, 'index.html'), html.replace('</head>', `    <link rel="canonical" href="${canonical}" />\n  </head>`));
   await mkdir(join(destination, 'themeyersgatherings'));
   await writeFile(join(destination, 'themeyersgatherings/index.html'), legacyRedirectHtml());

@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 24
       - name: Verify domain routing and existing service compatibility
-        run: node --test --test-isolation=none test/domain-migration.test.js test/state-worker.test.js test/wedding-media.test.js test/dropbox.test.js test/qr-access.test.js test/general-login-qr.test.js
+        run: node --test --test-isolation=none test/domain-migration.test.js test/site-icon.test.js test/state-worker.test.js test/wedding-media.test.js test/dropbox.test.js test/qr-access.test.js test/general-login-qr.test.js
       - name: Build gathering site from the shared frontend source
         run: node scripts/build-domain-site.js .domain-site
       - uses: actions/upload-artifact@v4
