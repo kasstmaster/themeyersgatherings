@@ -107,3 +107,13 @@ test('unanswered attendance is excluded from both attendance sections',()=>{
  assert.deepEqual(groups.attending,[mixed]);
  assert.deepEqual(groups.notAttending,[{household:'Mixed Family',name:'Declined Person'}]);
 });
+
+test('host account is excluded from acceptance, decline and guest/meal totals',()=>{
+ const guest={name:'Guest Family',adults:1,children:0,people:[{name:'Jane Family',attending:true}],menuSelections:[{meal:'Chicken'}]};
+ for(const attending of [true,false]){
+  const responses=[guest,{name:'The Host',adults:attending?2:0,children:attending?1:0,people:[{name:'The Host',attending}],menuSelections:[{meal:'Beef'}]}];
+  assert.deepEqual(GuestPlanning.guestResponses(responses),[guest]);
+  assert.deepEqual(GuestPlanning.attendanceGroups(responses),{attending:[guest],notAttending:[]});
+  assert.deepEqual(GuestPlanning.rsvpTotals(responses,['Beef','Chicken']),{adults:1,children:0,meals:[['Beef',0],['Chicken',1]],noMeal:0,unselected:0});
+ }
+});

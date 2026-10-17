@@ -81,7 +81,9 @@
     return { ...incoming, people, adults: names.length, savedMenuSelections,
       menuSelections: savedMenuSelections.filter(selection => selection.type === 'child' ? selection.index < incoming.children : names.includes(selection.name)) };
   }
+  const guestResponses = rsvps => rsvps.filter(rsvp => rsvp.name !== 'The Host');
   function attendanceGroups(rsvps) {
+    rsvps=guestResponses(rsvps);
     const attending = rsvps.filter(rsvp => (rsvp.people?.length ? attendees(rsvp.people).length : Number(rsvp.adults)) + Number(rsvp.children || 0) > 0);
     const notAttending = rsvps.flatMap(rsvp => {
       const declined = (rsvp.people || []).filter(person => person.attending === false).map(person => ({ household: rsvp.name, name: person.name }));
@@ -92,7 +94,7 @@
   function rsvpTotals(rsvps, mealOptions = []) {
     const meals = new Map(mealOptions.filter(Boolean).map(meal => [meal, 0]));
     let adults = 0, children = 0, noMeal = 0, unselected = 0;
-    for (const rsvp of rsvps) {
+    for (const rsvp of guestResponses(rsvps)) {
       adults += Number(rsvp.adults) || 0;
       children += Number(rsvp.children) || 0;
       for (const selection of rsvp.menuSelections || []) {
@@ -103,5 +105,5 @@
     }
     return { adults, children, meals: [...meals], noMeal, unselected };
   }
-  globalThis.GuestPlanning={accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
+  globalThis.GuestPlanning={guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();
