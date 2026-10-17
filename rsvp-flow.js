@@ -30,6 +30,7 @@
     kicker.hidden=!attendance;
     childAge.hidden=step.key!=='children';
     form.classList.toggle('rsvp-choosing-attendance',attendance);
+    form.classList.toggle('rsvp-personal-meal',step.key.startsWith('meal-')||step.key.startsWith('dietary-'));
     if (step.key === 'review') context.review(review);
     back.hidden = index === 0;
     next.hidden=Boolean(step.element.querySelector('[data-rsvp-advance]'));
@@ -48,7 +49,7 @@
     defaultHeading=heading.textContent;
     active = !options.editing;
     form.classList.toggle('rsvp-guided',active);
-    form.classList.remove('rsvp-direct-choice','rsvp-dish-selection','rsvp-choosing-attendance');
+    form.classList.remove('rsvp-direct-choice','rsvp-dish-selection','rsvp-choosing-attendance','rsvp-personal-meal');
     childAge.hidden=true;
     form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));
     review.hidden=true;back.hidden=true;next.hidden=false;kicker.hidden=false;

@@ -79,8 +79,8 @@ for(const width of [1280,390]){
  for(const [type,index,meal] of [['adult',0,'Beef'],['adult',1,'Chicken'],['child',0,'none']]){
   const card=page.locator(`.wedding-rsvp-guest[data-guest-type="${type}"][data-guest-index="${index}"]`);
   await on(`.wedding-rsvp-guest[data-guest-type="${type}"][data-guest-index="${index}"] .wedding-meal-options`);
-  assert.equal(await card.locator('[data-rsvp-dietary]').isVisible(),false);assert.equal(await page.locator('#rsvpHeading').textContent(),'Choose a meal');
-  await card.locator(`[data-rsvp-meal][value="${meal}"]`).check();await next();assert.equal(await card.locator('[data-rsvp-dietary]').isVisible(),true);assert.equal(await page.locator('#rsvpHeading').textContent(),'Dietary needs');
+  assert.equal(await card.locator('[data-rsvp-dietary]').isVisible(),false);assert.equal(await page.locator('#rsvpHeading').textContent(),`Choose ${await card.locator('[data-rsvp-guest-name]').inputValue()}'s meal`);assert.equal(await card.locator('legend').isVisible(),false);
+  await card.locator(`[data-rsvp-meal][value="${meal}"]`).check();await next();assert.equal(await card.locator('[data-rsvp-dietary]').isVisible(),true);assert.equal(await page.locator('#rsvpHeading').textContent(),`${await card.locator('[data-rsvp-guest-name]').inputValue()}'s dietary needs`);assert.equal(await card.locator('legend').isVisible(),false);
   if(type==='adult'&&index===0)await card.locator('[data-rsvp-dietary]').fill('Gluten free');await next();
  }
  await on('#rsvpReview');assert.ok((await page.locator('#rsvpReview').textContent()).includes('Tyson'));assert.ok((await page.locator('#rsvpReview').textContent()).includes('Alex Doe'));
