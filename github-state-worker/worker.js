@@ -2,13 +2,24 @@ import '../guest-planning.js';
 import '../gathering-history.js';
 import { handleDropboxOAuth } from './dropbox.js';
 import { handleWeddingMedia } from './wedding-media.js';
+import { handleGatheringSite } from './gathering-site.js';
 const GITHUB_API = 'https://api.github.com';
+
+function allowedOrigins(env) {
+  const origins = [env.ALLOWED_ORIGIN, env.ALLOWED_ORIGINS].filter(Boolean).join(',').split(/[\s,]+/).filter(Boolean);
+  return origins.length ? [...new Set(origins)] : ['*'];
+}
+function originAllowed(origin, env) {
+  const origins = allowedOrigins(env);
+  return !origin || origins.includes('*') || origins.includes(origin);
+}
 
 function corsHeaders(request, env) {
   const origin = request.headers.get('Origin') || '';
-  const allowedOrigin = env.ALLOWED_ORIGIN || '*';
+  const origins = allowedOrigins(env);
+  const allowedOrigin = origins.includes('*') ? '*' : origins.includes(origin) ? origin : origins[0];
   return {
-    'Access-Control-Allow-Origin': allowedOrigin === '*' ? '*' : (origin === allowedOrigin ? origin : allowedOrigin),
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Host-Password, Authorization, Range',
     'Access-Control-Max-Age': '86400',
@@ -224,11 +235,13 @@ export default {
     if(result.status!==200)throw new Error(result.error || 'Could not save gathering history.');
   },
   async fetch(request, env) {
-    if (request.method === 'OPTIONS') return response(request, env, null, 204);
+    const site = await handleGatheringSite(request, env);
+    if (site) return site;
     const origin = request.headers.get('Origin');
-    if (env.ALLOWED_ORIGIN && origin && origin !== env.ALLOWED_ORIGIN) {
+    if (!originAllowed(origin, env)) {
       return response(request, env, 'Origin not allowed.', 403);
     }
+    if (request.method === 'OPTIONS') return response(request, env, null, 204);
     try {
       const url = new URL(request.url);
       if (url.pathname.startsWith('/dropbox/')) return await handleDropboxOAuth(request, env, { response, jsonResponse, requireHost });

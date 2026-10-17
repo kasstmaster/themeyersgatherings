@@ -15,6 +15,11 @@ Sign in as the host and choose **Edit website** to edit content in place. See [t
 
 GitHub will provide a public link you can share with your guests.
 
+## Custom domain path
+
+See [the custom-domain migration guide](docs/custom-domain.md) for publishing at
+`https://ilymmd.com/themeyers/` while preserving existing invitation QR links.
+
 ## Save everything permanently in GitHub
 
 The published menu can appear to be synced even when syncing is off because its
@@ -45,7 +50,7 @@ state when the page opens, regains focus, and every 30 seconds.
 2. Create a fine-grained GitHub personal access token with access only to that
    repository and **Contents: Read and write** permission.
 3. Edit `github-state-worker/wrangler.toml`: set `GITHUB_REPOSITORY` to
-   `owner/repository`, set `ALLOWED_ORIGIN` to the exact GitHub Pages origin
+   `owner/repository`, set `ALLOWED_ORIGIN` to the exact GitHub Pages origin (and use the comma-separated `ALLOWED_ORIGINS` for additional website origins)
    (include a repository path only in the Pages URL, not in the origin), and
    change the branch or state path if needed.
 4. Create the invitation artwork bucket, then deploy the Worker from the

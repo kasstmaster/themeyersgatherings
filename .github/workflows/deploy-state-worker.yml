@@ -1,13 +1,8 @@
-name: Deploy shared-state Worker
+name: Deploy gathering site and shared-state Worker
 
 on:
   push:
     branches: [main]
-    paths:
-      - github-state-worker/**
-      - gathering-history.js
-      - guest-planning.js
-      - .github/workflows/deploy-state-worker.yml
   workflow_dispatch:
 
 permissions:
@@ -22,6 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build gathering site from the shared frontend source
+        run: node scripts/build-domain-site.js .domain-site
+      - name: Verify domain routing and existing service compatibility
+        run: node --test --test-isolation=none test/domain-migration.test.js test/state-worker.test.js test/wedding-media.test.js test/dropbox.test.js test/qr-access.test.js test/general-login-qr.test.js
       - name: Create R2 bucket if needed and deploy Worker
         uses: cloudflare/wrangler-action@v3
         with:
@@ -30,3 +32,5 @@ jobs:
           workingDirectory: github-state-worker
           preCommands: wrangler r2 bucket create meyers-invitation-backgrounds || echo "R2 bucket already exists"
           command: deploy
+      - name: Verify both public websites and legacy invitation address
+        run: node scripts/verify-live-domain.js
