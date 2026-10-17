@@ -36,7 +36,7 @@ for(const width of [1280,390]){
   const heading=group.querySelector('.invited-entry-heading'),title=heading.querySelector('strong').getBoundingClientRect(),count=heading.querySelector('span').getBoundingClientRect(),names=[...group.querySelectorAll('.account-person-name')].map(el=>el.getBoundingClientRect().top);
   return {aligned:Math.abs(title.top-count.top)<5,separate:names.every((top,index)=>index===0||top>names[index-1]),background:getComputedStyle(group).backgroundColor,border:getComputedStyle(group).borderBottomWidth};
  }));
- for(const group of alignment){assert.ok(group.aligned);assert.ok(group.separate);assert.equal(group.background,'rgba(0, 0, 0, 0)');assert.equal(group.border,'1px');}
+ for(const group of alignment){assert.ok(group.aligned);assert.ok(group.separate);assert.equal(group.background,'rgba(0, 0, 0, 0)');assert.equal(group.border,'0px');}
  console.log('Account list styling and controls passed',width);
 }
 assert.deepEqual(errors,[]);await browser.close();})().catch(e=>{console.error(e);process.exit(1)});
