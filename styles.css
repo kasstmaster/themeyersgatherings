@@ -695,3 +695,11 @@ body.theme-wedding .fullscreen-flow {
 @media (max-width:650px) {
   body.theme-wedding { --wedding-pattern-size: 660px; }
 }
+
+/* Readability over the floral pattern: shadow follows letters, never a text box. */
+body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) {
+  text-shadow: 0 1px 3px rgba(7,18,35,.95),0 0 9px rgba(7,18,35,.85);
+}
+body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,input,select,textarea,.flow-panel,.modal-card,.matron-info-tabs,.inline-editor) {
+  text-shadow: none;
+}
