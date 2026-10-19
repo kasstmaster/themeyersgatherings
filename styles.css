@@ -648,40 +648,42 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 
 #weddingMediaHeading{text-align:center;margin-right:0}
 
-/* Reversible Wedding glass trial. Keep the existing warm palette and typography. */
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+/* Wedding translucent surfaces: clear pattern, without any glass blur. */
+body.theme-wedding {
+  --wedding-page-surface: linear-gradient(135deg,rgba(255,250,241,.70),rgba(247,231,206,.62));
+  --wedding-inner-surface: rgba(253,248,240,.64);
+  --wedding-modal-surface: rgba(255,252,245,.9);
+  --wedding-tab-surface: rgba(19,40,65,.82);
+  --registry-container-background: var(--gathering-card-background,var(--wedding-page-surface));
+  --registry-inner-background: var(--gathering-inner-background,var(--wedding-inner-surface));
+}
+.theme-wedding :is(.modal-card,.admin-units,.account-people,.account-invitation-settings) {
+  background: var(--wedding-modal-surface);
+}
+.theme-wedding .wedding-party-member {
+  background: var(--registry-inner-background);
+}
+.theme-wedding .wedding-party-tabs {
+  --tab-surface: var(--wedding-tab-surface);
+}
+.theme-wedding #eventPage main {
+  --muted: var(--ink);
+}
+.theme-wedding .event-dock,
+.theme-wedding dialog::backdrop {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@media (prefers-reduced-transparency: reduce) {
   body.theme-wedding {
-    --wedding-glass-page: linear-gradient(135deg,rgba(255,250,241,.86),rgba(247,231,206,.78));
-    --wedding-glass-inner: rgba(253,248,240,.64);
-    --wedding-glass-modal: rgba(255,252,245,.9);
-    --wedding-glass-filter: blur(16px) saturate(120%);
-    --registry-container-background: var(--gathering-card-background,var(--wedding-glass-page));
-    --registry-inner-background: var(--gathering-inner-background,var(--wedding-glass-inner));
-  }
-  .theme-wedding :is(.bride-groom-section,.what-to-expect-section,.gathering-page,.wedding-timeline-section,.wedding-party-section,.registry-section,.registry-attire-section,.bride-groom-content,.what-to-expect-content,.perfect-experience-panel,.wedding-party-card,.registry-gift-note,.gathering-subpage,.summary-strip,.modal-card,.wedding-party-member,.admin-units,.account-people,.account-invitation-settings,.flow-panel,.wedding-media-card) {
-    -webkit-backdrop-filter: var(--wedding-glass-filter);
-    backdrop-filter: var(--wedding-glass-filter);
-  }
-  .theme-wedding :is(.modal-card,.admin-units,.account-people,.account-invitation-settings) {
-    background: var(--wedding-glass-modal);
-  }
-  .theme-wedding .wedding-party-member {
-    background: var(--registry-inner-background);
-  }
-  .theme-wedding #eventPage main :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-panel,.wedding-party-card,.registry-gift-note,.gathering-subpage) {
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    body.theme-wedding {
-      --wedding-glass-page: linear-gradient(135deg,#fffaf1,#f7e7ce);
-      --wedding-glass-inner: #fdf8f0;
-      --wedding-glass-modal: #fffcf5;
-      --wedding-glass-filter: none;
-    }
+    --wedding-page-surface: linear-gradient(135deg,#fffaf1,#f7e7ce);
+    --wedding-inner-surface: #fdf8f0;
+    --wedding-modal-surface: #fffcf5;
+    --wedding-tab-surface: #132841;
   }
 }
 
-/* Separate reversible floral-background trial, layered behind the Wedding glass. */
+/* Wedding floral background, visible through the translucent surfaces. */
 body.theme-wedding {
   --wedding-pattern-size: 900px;
   --wedding-floral-background: linear-gradient(rgba(7,18,35,.36),rgba(7,18,35,.36)),url("assets/wedding-floral.webp") center top / var(--wedding-pattern-size) var(--wedding-pattern-size) repeat var(--navy);
