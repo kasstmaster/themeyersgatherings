@@ -784,6 +784,9 @@ function weddingPartyPersonMatches(memberName, enteredName) {
   return normalizeAccountName(accountPersonName(memberName, account || { name: memberName }) || memberName)
     === normalizeAccountName(accountPersonName(enteredName, account || { name: enteredName }) || enteredName);
 }
+function isSignedInWeddingPartyMember() {
+  return viewedEventId === 'wedding' && Boolean(state.weddingPartyMembers?.some(member => weddingPartyPersonMatches(member.name, signedInPersonName)));
+}
 function findAccount(name) {
   const normalizedName = normalizeAccountName(name);
   // Once signed in, guestName contains the complete stored household account
@@ -1147,7 +1150,7 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   viewedEventId = eventId;
   state = nextState;
   if (eventId === 'wedding' && !preserveWeddingView) {
-    const partyMember = state.weddingPartyMembers?.some(member => weddingPartyPersonMatches(member.name, signedInPersonName));
+    const partyMember = isSignedInWeddingPartyMember();
     selectedWeddingTab = isHostView() ? 'couple' : partyMember ? 'party' : 'guest';
     selectedMatronTab = 'experience';
   }
@@ -1157,7 +1160,7 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   // the exact option the guest just selected and leave this page stuck open.
   showSignedInDestination();
   render();
-  if(eventId==='wedding' && !isHostView() && !hasSubmittedInvitationRsvp())openRsvp({fromEntry:true});
+  if(eventId==='wedding' && !isHostView() && !isSignedInWeddingPartyMember() && !hasSubmittedInvitationRsvp())openRsvp({fromEntry:true});
 }
 function ensureAccount(callback) {
   if (guestName) return callback();
@@ -1879,7 +1882,7 @@ document.querySelector('#rsvpDialog').addEventListener('close',()=>{
   else showEventSelection();
 });
 function renderRsvpAttire(){
-  const section=document.querySelector('#rsvpAttire');section.hidden=viewedEventId!=='wedding' || SiteEditing.enabled;
+  const section=document.querySelector('#rsvpAttire');section.hidden=viewedEventId!=='wedding' || isSignedInWeddingPartyMember() || SiteEditing.enabled;
   const columns=document.querySelector('#rsvpAttireColumns');columns.replaceChildren();
   if(section.hidden)return;
   document.querySelectorAll('#weddingAttireGuidance>article').forEach(source=>{
@@ -1898,7 +1901,7 @@ document.querySelectorAll('.stepper button').forEach(button => button.addEventLi
 function rsvpFlowSteps() {
   const steps=[];
   const add=(key,element,title)=>{if(element)steps.push({key,element,title});};
-  if(viewedEventId==='wedding' && !SiteEditing.enabled)add('attire',document.querySelector('#rsvpAttire'),'Formal Attire Required');
+  if(viewedEventId==='wedding' && !isSignedInWeddingPartyMember() && !SiteEditing.enabled)add('attire',document.querySelector('#rsvpAttire'),'Formal Attire Required');
   document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>{
     add(`person-${index}`,row.querySelector('.rsvp-attendance-options'),row.dataset.rsvpPerson);
     if(rsvpAttendanceValue(row)==='yes' && !rsvpOptionsLocked()) {
