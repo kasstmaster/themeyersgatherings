@@ -299,6 +299,7 @@ function normalizeState(saved) {
             })) : []
           })) : [];
         eventState.eventDate = typeof eventState.eventDate === 'string' ? eventState.eventDate : fallback.eventDate;
+        eventState.headerText = typeof eventState.headerText === 'string' ? eventState.headerText : '';
         eventState.hostNotes = typeof eventState.hostNotes === 'string' ? eventState.hostNotes : '';
         eventState.homeAddress = typeof eventState.homeAddress === 'string' ? eventState.homeAddress : '';
         const invitationFallback = defaultInvitationSettings(eventState.eventDate);
@@ -1324,6 +1325,7 @@ function render() {
   renderEventDock();
   updateHeaderImage(event);
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
+  document.querySelector('#eventHeaderText').innerHTML = formatEditableText(expandEditableTextVariables(state.headerText || ''));
   const dateElement = document.querySelector('#eventDate');
   dateElement.dateTime = state.eventDate;
   document.querySelector('#rsvpDeadline').textContent = state.rsvpDate ? `Kindly RSVP by ${new Intl.DateTimeFormat('en-US', {month:'long',day:'numeric',year:'numeric'}).format(new Date(`${state.rsvpDate}T12:00:00`))}` : 'RSVP deadline not set';
@@ -1411,6 +1413,7 @@ function renderInlineEditing() {
     keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date', min:key==='eventDate' && GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):undefined })),
     values => keys.forEach(([key], index) => { setGatheringDetail(key,values[index]); }));
   SiteEditing.field(document.querySelector('#rsvpDeadline'), 'RSVP deadline', [{label:'RSVP deadline (through end of day, Pacific time; clear for no deadline)',type:'date',value:state.rsvpDate || ''}], ([value]) => { state.rsvpDate=value; });
+  field('#eventHeaderText', 'text', [['headerText', 'Header text']]);
   field('#eventDate', 'date', [['eventDate', 'Gathering date']], { eventDate: 'date' });
   if (GatheringFeatures.forGathering(viewedEventId).ceremonyAddresses) {
     SiteEditing.field(document.querySelector('#eventAddress'), 'address', [{label:'Address (one per line if locations differ)',type:'textarea',value:gatheringHeaderAddress()}], ([value]) => {
