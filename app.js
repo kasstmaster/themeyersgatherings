@@ -1815,9 +1815,27 @@ function openRsvp({fromEntry=false}={}) {ensureAccount(() => {
   renderWeddingRsvpMenu(rsvpMealDraft);
   renderRsvpDishes();
   renderRsvpAttire();
+  renderRsvpEventHeader();
   document.querySelector('#rsvpDialog').showModal();
   RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',editing:SiteEditing.enabled});
 });}
+function renderRsvpEventHeader() {
+  const section=document.querySelector('#rsvpEventConfirmation');
+  section.hidden=SiteEditing.enabled;
+  const header=document.querySelector('#eventPage .header-art').cloneNode(true);
+  header.querySelectorAll('.inline-edit-tools,.inline-editor,button').forEach(node=>node.remove());
+  header.removeAttribute('id');
+  header.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
+  header.querySelectorAll('img[src]').forEach(image=>{image.hidden=false;image.addEventListener('error',()=>{image.hidden=true;},{once:true});});
+  document.querySelector('#rsvpEventHeader').replaceChildren(header);
+}
+document.querySelector('#rsvpConfirmEvent').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));
+document.querySelector('#rsvpWrongEvent').addEventListener('click',()=>{
+  document.querySelector('#rsvpForm').dataset.fromEntry='false';
+  const dialog=document.querySelector('#rsvpDialog');
+  dialog.addEventListener('close',showEventSelection,{once:true});
+  dialog.close();
+});
 document.querySelector('#rsvpAttireAcknowledge').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));
 document.querySelector('#rsvpDialog').addEventListener('close',()=>{
   const form=document.querySelector('#rsvpForm');
@@ -1846,6 +1864,7 @@ document.querySelectorAll('.stepper button').forEach(button => button.addEventLi
 function rsvpFlowSteps() {
   const steps=[];
   const add=(key,element,title)=>{if(element)steps.push({key,element,title});};
+  if(!SiteEditing.enabled)add('event-confirmation',document.querySelector('#rsvpEventConfirmation'),'Confirm your gathering');
   if(viewedEventId==='wedding' && !isSignedInWeddingPartyMember() && !SiteEditing.enabled)add('attire',document.querySelector('#rsvpAttire'),'Formal Attire Required');
   document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>{
     add(`person-${index}`,row.querySelector('.rsvp-attendance-options'),row.dataset.rsvpPerson);
