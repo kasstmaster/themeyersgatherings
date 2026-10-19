@@ -253,3 +253,18 @@ In **Accounts**, select the gathering and set **Invitations to print** for each 
 Under **Allow a guest for**, check each named adult who may bring one guest to that gathering. Permissions and quantities are independent for each gathering. Older account-wide plus-one totals are flagged for assignment; the website does not guess which adult receives them.
 
 Families RSVP separately for each adult, selecting Attending or Not attending. An attending person with a guest allowance must enter the guest's name or select **NO GUEST**. Children remain a numerical count. Wedding meal cards use the resulting adult/guest names and Child 1, Child 2, etc., and preserve choices by person when attendance changes. Hosts can see individual attendance and guest names in the RSVP list. Existing RSVP totals are retained until a family updates its response.
+
+## Shared page actions
+
+`page-actions.js` owns Print Page and Email Page for every gathering. The shared
+render calls `PageActions.sync()` after built-in and custom tab pages are rendered.
+It discovers page containers and `aria-controls` relationships, so new pages need
+no separate print/email markup or handlers. Actions stay outside the title layout,
+and exports use only the selected, visible page. Hidden pages and gallery session
+URLs are excluded. Printing uses the device print dialog; email opens its composer.
+
+Browser verification (against a local static server):
+
+```sh
+BASE_URL=http://127.0.0.1:8765 node scripts/verify-page-actions.cjs
+```
