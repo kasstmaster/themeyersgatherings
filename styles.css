@@ -672,7 +672,8 @@ body.theme-wedding {
   --tab-text: var(--flow-text);
   --tab-border: var(--flow-panel-border);
 }
-.theme-wedding #eventPage main :is(h2,h3,h4,h5,h6,.attire-shop-links a,.section-kicker,.wedding-party-role,.wedding-timeline-table td:first-child,.wedding-page-actions button,.wedding-page-actions a),
+.theme-wedding #eventPage main :is(h2,h3,h4,h5,h6,legend,summary,.attire-shop-links a,.section-kicker,.wedding-party-role,.wedding-timeline-table td:first-child,.wedding-page-actions button,.wedding-page-actions a),
+.theme-wedding #eventPage #gatheringMenuSection .menu-heading h2,
 .theme-wedding .modal-card :is(h2,h3,h4,legend,label,.input-label) {
   color: var(--flow-text);
 }
