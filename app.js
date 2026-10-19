@@ -1465,7 +1465,10 @@ function renderInlineEditing() {
     });
     SiteEditing.portal(document.querySelector('#gatheringMenuSection'), 'menu items and claims', ['#menuAdminFields'], prepare);
   }
-  SiteEditing.field(document.querySelector('#eventPage .header-art'), 'header image', [{label:'Header image URL (empty to remove)',value:state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header,type:'url'}], ([value])=>{state.siteHeaderImage=value;}, {replace:false});
+  SiteEditing.field(document.querySelector('#eventPage .header-art'), 'header image', [
+    {label:'Gathering header banner URL (empty to remove)',value:state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header,type:'url'},
+    {label:'RSVP first-page banner URL (empty to remove; changes only RSVP)',value:state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header,type:'url'}
+  ], ([header,rsvpHeader])=>{state.siteHeaderImage=header;state.rsvpHeaderImage=rsvpHeader;}, {replace:false});
   SiteEditing.staticText(document.querySelector('#eventPage'));
   SiteEditing.staticText(document.querySelector('#rsvpDialog'));
   if(document.querySelector('#weddingMediaDialog').open)SiteEditing.staticText(document.querySelector('#weddingMediaDialog'));
@@ -1824,6 +1827,11 @@ function renderRsvpEventHeader() {
   section.hidden=SiteEditing.enabled;
   const header=document.querySelector('#eventPage .header-art').cloneNode(true);
   header.querySelectorAll('.inline-edit-tools,.inline-editor,button').forEach(node=>node.remove());
+  const banner=header.querySelector('img');
+  if(banner && typeof state.rsvpHeaderImage==='string') {
+    banner.removeAttribute('src');banner.hidden=!state.rsvpHeaderImage;
+    if(state.rsvpHeaderImage)banner.src=state.rsvpHeaderImage;
+  }
   header.removeAttribute('id');
   header.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
   header.querySelectorAll('img[src]').forEach(image=>{image.hidden=false;image.addEventListener('error',()=>{image.hidden=true;},{once:true});});
