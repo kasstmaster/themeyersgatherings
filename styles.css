@@ -635,7 +635,7 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 /* RSVP cards and upload panels are one shared full-page surface component. */
 :is(#rsvpDialog,#weddingMediaDialog) .flow-panel{background:var(--flow-panel-background);border:1px solid var(--flow-panel-border);border-radius:6px;color:var(--flow-text)}
 :is(#rsvpDialog,#weddingMediaDialog) .flow-panel :is(p,h2,h3,h4,ul,li,label,a,.bride-groom-content){color:var(--flow-text)}
-#weddingMediaDialog .matron-info-tabs{--tab-surface:var(--flow-panel-background);--tab-text:var(--flow-text);--tab-border:var(--flow-panel-border)}
+#weddingMediaTabs{width:100%;max-width:none}
 #weddingMediaDialog .wedding-media-card{background:var(--flow-panel-background);border-color:var(--flow-panel-border)}
 
 #weddingMediaHeading{text-align:center;margin-right:0}
@@ -683,6 +683,7 @@ body.theme-wedding {
 }
 body.theme-wedding .fullscreen-flow {
   --flow-background: var(--wedding-floral-background);
+  --flow-panel-background: rgba(19,40,65,.90);
 }
 @media (max-width:650px) {
   body.theme-wedding { --wedding-pattern-size: 660px; }
@@ -690,7 +691,7 @@ body.theme-wedding .fullscreen-flow {
 
 /* Readability over the floral pattern: shadow follows letters, never a text box. */
 body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) {
-  text-shadow: 0 1px 3px rgba(7,18,35,.95),0 0 9px rgba(7,18,35,.85);
+  text-shadow: 0 1px 3px rgba(7,18,35,.98),0 0 11px rgba(7,18,35,.92);
 }
 body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,input,select,textarea,.flow-panel,.modal-card,.matron-info-tabs,.inline-editor) {
   text-shadow: none;
