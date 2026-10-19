@@ -280,9 +280,7 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 .host-responsibilities .wedding-party-member-name{display:block;margin:5px 0 0;font-family:"Times New Roman",Times,serif;font-size:1.6rem;font-weight:700;overflow-wrap:anywhere}
 .host-responsibilities .wedding-party-card[open]>summary{margin-bottom:12px}
 
-.wedding-page-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:12px 0 20px}
-.wedding-page-actions button,.wedding-page-actions a{border:1px solid var(--border);border-radius:4px;padding:8px 12px;background:var(--registry-inner-background);color:var(--navy);font:inherit;font-size:.85rem;text-decoration:none;cursor:pointer}
-.wedding-export-preview{position:fixed;left:-10000px;top:0;width:800px;border:0}
+.page-export-preview{position:fixed;left:-10000px;top:0;width:800px;border:0}
 
 .account-row .account-delete-button{font-size:.75rem;font-weight:700;padding:8px}
 .invitation-actions[hidden]{display:none}
@@ -312,10 +310,6 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 #clearClaimSection{margin-bottom:18px;border:1px solid var(--border);border-radius:5px;padding:12px}
 #clearClaimSection>summary{cursor:pointer;font-weight:700}
 #clearClaimSection[open]>summary{margin-bottom:12px}
-.wedding-page-heading{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:16px;margin-bottom:28px}
-.wedding-page-heading>h2{grid-column:1;grid-row:2;margin:0;text-align:center;color:var(--navy);font-family:"Times New Roman",Times,serif;font-size:clamp(2.2rem,5vw,3.5rem)}
-.wedding-page-heading>.wedding-page-actions{grid-column:1;grid-row:1;justify-self:end;max-width:100%;margin:0;flex-wrap:wrap}
-.wedding-page-actions :is(button,a){white-space:nowrap}
 .bride-groom-content,.perfect-experience-panel,.what-to-expect-content{box-sizing:border-box;width:min(900px,100%)}
 .guest-section .what-to-expect-section{margin-top:0;padding-top:0}
 .guest-section .what-to-expect-section>.section-kicker,.guest-section .what-to-expect-section>h2{display:none}
@@ -470,10 +464,8 @@ body>.inline-overlay-layer{position:absolute;inset:0 0 auto;height:0}
 :is(#eventPage,#weddingMediaDialog) main>:is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section){padding:var(--page-padding)}
 :is(#eventPage,#weddingMediaDialog) :is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section,.what-to-expect-section)>.section-kicker{margin:0 0 10px;line-height:var(--page-line-height);text-align:center}
 :is(#eventPage,#weddingMediaDialog) main>:is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section)>h2,
-:is(#eventPage,#weddingMediaDialog) .wedding-page-heading,
 :is(#eventPage,#weddingMediaDialog) #gatheringMenuSection .menu-heading{margin-bottom:var(--page-heading-gap)}
-:is(#eventPage,#weddingMediaDialog) main>section>h2,:is(#eventPage,#weddingMediaDialog) .wedding-page-heading>h2,:is(#eventPage,#weddingMediaDialog) #gatheringMenuSection .menu-heading h2{font-family:var(--page-title-font);font-size:var(--page-title-size);line-height:1.15;text-align:center;color:var(--navy);margin-top:0}
-:is(#eventPage,#weddingMediaDialog) .wedding-page-heading>h2{margin:0}
+:is(#eventPage,#weddingMediaDialog) main>section>h2,:is(#eventPage,#weddingMediaDialog) #gatheringMenuSection .menu-heading h2{font-family:var(--page-title-font);font-size:var(--page-title-size);line-height:1.15;text-align:center;color:var(--navy);margin-top:0}
 :is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.perfect-experience-panel,.what-to-expect-content,#registryAttireSection,.gathering-subpage){box-sizing:border-box;width:min(900px,100%);padding:var(--panel-padding)}
 :is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content){font-family:var(--page-font);font-size:1rem;color:var(--muted);line-height:var(--copy-line-height);text-align:left;overflow-wrap:anywhere}
 :is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) p{margin:0 0 var(--copy-paragraph-gap)}
@@ -703,3 +695,11 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) {
 body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,input,select,textarea,.flow-panel,.modal-card,.matron-info-tabs,.inline-editor) {
   text-shadow: none;
 }
+
+/* Shared actions sit independently of page headings, copy and tab layouts. */
+.page-action-surface { position: relative; }
+.page-actions { position: absolute; top: 4px; right: 8px; z-index: 2; display: flex; gap: 6px; margin: 0; }
+.page-actions :is(button,a) { box-sizing: border-box; border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; background: var(--registry-inner-background); color: var(--navy); font: 400 .75rem/1.25 Arial,Helvetica,sans-serif; white-space: nowrap; text-decoration: none; cursor: pointer; text-shadow: none; }
+.page-action-surface:has(> .modal-close) > .page-actions { right: 48px; }
+.fullscreen-flow .page-actions :is(button,a) { background: #132841; border-color: var(--flow-panel-border); color: var(--flow-text); }
+@media print { .page-actions { display: none; } }

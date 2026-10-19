@@ -82,7 +82,11 @@
           if(row>0)top=rows[0]-(row+1)*(element.offsetHeight+3);
         }
       }
-      if(kind==='page'||kind==='delete'){left=rect.right-element.offsetWidth-8;top=rect.top+8;}
+      if(kind==='page'||kind==='delete'){
+        left=rect.right-element.offsetWidth-8;top=rect.top+8;
+        const actions=target.querySelector(':scope > [data-page-actions]');
+        if(actions?.getClientRects().length)top=Math.max(top,actions.getBoundingClientRect().bottom+6);
+      }
       if(kind==='plus'){left=rect.right-element.offsetWidth;top=rect.top-element.offsetHeight-3;}
       place(Math.max(4,Math.min(left,width-element.offsetWidth-4)),top);
       if(!documentLayer && (top+element.offsetHeight<=0 || top>=height))element.style.visibility='hidden';

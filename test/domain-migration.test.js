@@ -37,7 +37,7 @@ test('domain bundle contains relative frontend assets and fallback state, retain
     assert.equal(await readFile(join(output,'index.html'),'utf8'),'Existing main website');
     const html=await readFile(join(output,'themeyers/index.html'),'utf8');
     assert.match(html,/https:\/\/themeyers.ilymmd.com\//);
-    for (const file of ['app.js','styles.css','data/app-state.json','vendor/qrcode.js','assets/thanksgiving-header.svg','site.webmanifest','site-entry.js','app-install.js','service-worker.js','offline.html','assets/icons/meyers-512.png']) await access(join(output,'themeyers',file));
+    for (const file of ['app.js','page-actions.js','styles.css','data/app-state.json','vendor/qrcode.js','assets/thanksgiving-header.svg','site.webmanifest','site-entry.js','app-install.js','service-worker.js','offline.html','assets/icons/meyers-512.png']) await access(join(output,'themeyers',file));
     for (const file of ['github-state-worker/worker.js','.git/config','CNAME','package.json']) await assert.rejects(access(join(output,'themeyers',file)));
     await assert.rejects(buildDomainSite(output),/already exists/);
   } finally { await rm(output,{recursive:true,force:true}); }
