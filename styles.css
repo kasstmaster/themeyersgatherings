@@ -717,3 +717,10 @@ body.theme-wedding :is(#rsvpDialog,#weddingMediaDialog) .flow-panel :is(.flow-pa
   background: var(--flow-inner-background);
   border-color: var(--flow-panel-border);
 }
+
+/* Optional gathering header copy uses the shared formatted-text editor. */
+.event-header-text{width:100%;margin:18px auto 0;text-align:center;color:inherit;line-height:1.6;overflow-wrap:anywhere}
+.event-header-text:empty{margin:0}
+.site-edit-mode .event-header-text:empty{min-height:24px}
+.event-header-text>:first-child{margin-top:0}
+.event-header-text>:last-child{margin-bottom:0}
