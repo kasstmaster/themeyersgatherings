@@ -730,3 +730,10 @@ body.theme-wedding :is(#rsvpDialog,#weddingMediaDialog) .flow-panel :is(.flow-pa
 body.theme-wedding #rsvpDialog > #rsvpForm.rsvp-dish-selection{width:min(1000px,100%)}
 #rsvpDialog .rsvp-attire-columns>article{padding:clamp(24px,4vw,32px);box-sizing:border-box}
 #rsvpDialog .modal-dialog-footer{background:transparent;box-shadow:none;border:0;border-radius:0;margin:24px 0 0;padding:0}
+
+/* RSVP event confirmation reuses the gathering's rendered header content. */
+#rsvpEventHeader .header-art{width:100%}
+#rsvpEventHeader :is(.event-date,.event-address,.event-header-text){color:var(--flow-text);text-shadow:none}
+#rsvpEventHeader .event-date{text-align:center;overflow-wrap:anywhere}
+#rsvpEventHeader h1{color:var(--flow-text)}
+.rsvp-event-actions{display:grid;gap:14px;margin-top:28px}
