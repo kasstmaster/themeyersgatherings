@@ -711,7 +711,8 @@ body.theme-wedding #rsvpDialog > #rsvpForm {
   background: var(--flow-panel-background);
   border: 1px solid var(--flow-panel-border);
   border-radius: 6px;
-  padding: 24px;
+  padding: clamp(24px,5vw,40px);
+  width: min(640px,100%);
 }
 body.theme-wedding :is(#rsvpDialog,#weddingMediaDialog) .flow-panel :is(.flow-panel,.wedding-media-card,.wedding-meal-choice) {
   background: var(--flow-inner-background);
@@ -724,3 +725,8 @@ body.theme-wedding :is(#rsvpDialog,#weddingMediaDialog) .flow-panel :is(.flow-pa
 .site-edit-mode .event-header-text:empty{min-height:24px}
 .event-header-text>:first-child{margin-top:0}
 .event-header-text>:last-child{margin-bottom:0}
+
+/* RSVP has comfortable reading space, with unboxed navigation buttons. */
+body.theme-wedding #rsvpDialog > #rsvpForm.rsvp-dish-selection{width:min(1000px,100%)}
+#rsvpDialog .rsvp-attire-columns>article{padding:clamp(24px,4vw,32px);box-sizing:border-box}
+#rsvpDialog .modal-dialog-footer{background:transparent;box-shadow:none;border:0;border-radius:0;margin:24px 0 0;padding:0}
