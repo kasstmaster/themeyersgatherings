@@ -684,6 +684,7 @@ body.theme-wedding {
 body.theme-wedding .fullscreen-flow {
   --flow-background: var(--wedding-floral-background);
   --flow-panel-background: rgba(19,40,65,.90);
+  --flow-inner-background: rgba(50,73,101,.94);
 }
 @media (max-width:650px) {
   body.theme-wedding { --wedding-pattern-size: 660px; }
@@ -704,3 +705,15 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 .page-action-surface:has(> .modal-close) > .page-actions { right: 48px; }
 .fullscreen-flow .page-actions :is(button,a) { background: #132841; border-color: var(--flow-panel-border); color: var(--flow-text); }
 @media print { .page-actions { display: none; } }
+
+/* Full-page RSVP uses the upload panel surface; nested cards are lighter. */
+body.theme-wedding #rsvpDialog > #rsvpForm {
+  background: var(--flow-panel-background);
+  border: 1px solid var(--flow-panel-border);
+  border-radius: 6px;
+  padding: 24px;
+}
+body.theme-wedding :is(#rsvpDialog,#weddingMediaDialog) .flow-panel :is(.flow-panel,.wedding-media-card,.wedding-meal-choice) {
+  background: var(--flow-inner-background);
+  border-color: var(--flow-panel-border);
+}
