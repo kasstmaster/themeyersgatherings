@@ -1832,8 +1832,9 @@ function renderRsvpEventHeader() {
 document.querySelector('#rsvpConfirmEvent').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));
 document.querySelector('#rsvpWrongEvent').addEventListener('click',()=>{
   document.querySelector('#rsvpForm').dataset.fromEntry='false';
-  document.querySelector('#rsvpDialog').close();
-  showEventSelection();
+  const dialog=document.querySelector('#rsvpDialog');
+  dialog.addEventListener('close',showEventSelection,{once:true});
+  dialog.close();
 });
 document.querySelector('#rsvpAttireAcknowledge').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));
 document.querySelector('#rsvpDialog').addEventListener('close',()=>{
