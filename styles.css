@@ -680,3 +680,16 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
     }
   }
 }
+
+/* Separate reversible floral-background trial, layered behind the Wedding glass. */
+body.theme-wedding {
+  --wedding-pattern-size: 900px;
+  --wedding-floral-background: linear-gradient(rgba(7,18,35,.36),rgba(7,18,35,.36)),url("assets/wedding-floral.webp") center top / var(--wedding-pattern-size) var(--wedding-pattern-size) repeat var(--navy);
+  background: var(--wedding-floral-background);
+}
+body.theme-wedding .fullscreen-flow {
+  --flow-background: var(--wedding-floral-background);
+}
+@media (max-width:650px) {
+  body.theme-wedding { --wedding-pattern-size: 660px; }
+}
