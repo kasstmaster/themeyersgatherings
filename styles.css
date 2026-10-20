@@ -734,6 +734,6 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 /* RSVP event confirmation reuses the gathering's rendered header content. */
 #rsvpEventHeader .header-art{width:100%}
 #rsvpEventHeader :is(.event-date,.event-address,.event-header-text){color:var(--flow-text);text-shadow:none}
-#rsvpEventHeader .event-date{text-align:center;overflow-wrap:anywhere}
+#rsvpEventHeader :is(.event-date,.event-address){text-align:center;overflow-wrap:anywhere}
 #rsvpEventHeader h1{color:var(--flow-text)}
 .rsvp-event-actions{display:grid;gap:14px;margin-top:28px}
