@@ -623,14 +623,11 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 
 .inline-tab-tools .inline-edit-control:disabled{opacity:.4;cursor:default}
 
-.gathering-primary-actions{display:flex;flex-direction:column;gap:14px;flex:none}
-.gathering-primary-actions>.rsvp-button{margin:0}
-.gathering-primary-actions>[hidden]{display:none}
 #weddingMediaDialog>#weddingMediaSection{width:min(900px,100%)}
 #weddingMediaDialog .perfect-experience-panel{width:100%;padding:24px}
 #weddingMediaDialog .perfect-experience-panel input[type="url"]{width:100%;padding:12px;border:1px solid var(--border);border-radius:4px;font:inherit}
 #weddingMediaDialog .section-kicker{color:var(--flow-text)}
-@media(max-width:520px){.gathering-primary-actions{margin-top:25px;align-items:flex-start}#weddingMediaDialog{padding:18px}#weddingMediaDialog .perfect-experience-panel{padding:18px}}
+@media(max-width:520px){#weddingMediaDialog{padding:18px}#weddingMediaDialog .perfect-experience-panel{padding:18px}}
 
 /* RSVP cards and upload panels are one shared full-page surface component. */
 :is(#rsvpDialog,#weddingMediaDialog) .flow-panel{background:var(--flow-panel-background);border:1px solid var(--flow-panel-border);border-radius:6px;color:var(--flow-text)}
@@ -737,3 +734,14 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpEventHeader :is(.event-date,.event-address){text-align:center;overflow-wrap:anywhere}
 #rsvpEventHeader h1{color:var(--flow-text)}
 .rsvp-event-actions{display:grid;gap:14px;margin-top:28px}
+
+/* Shared signed-in identity bar and gathering actions. */
+.signed-in-account{position:fixed;top:0;left:0;right:0;z-index:202;padding-top:calc(10px + env(safe-area-inset-top))}
+body:has(#signedInAccount:not([hidden])){padding-top:var(--account-toolbar-height,80px)}
+#eventPage .welcome{display:block}
+#eventPage main>.site-header{margin:0 auto 40px;border-radius:8px}
+.event-dock button[hidden]{display:none}
+.event-dock .dock-action::before{content:"";display:block;width:24px;height:24px;background:currentColor;mask:center/contain no-repeat var(--dock-icon);-webkit-mask:center/contain no-repeat var(--dock-icon)}
+.dock-rsvp{--dock-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 3h18v18H3V3zm2 2v14h14V5H5zm1.5 6 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7-4-4z'/%3E%3C/svg%3E")}
+.dock-upload{--dock-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 3 7 6H3v15h18V6h-4l-2-3H9zm1 2h4l2 3h3v11H5V8h3l2-3zm2 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4z'/%3E%3C/svg%3E")}
+@media(max-width:520px){.event-dock .dock-action{white-space:normal;line-height:1.2}.event-dock button{font-size:.65rem}}
