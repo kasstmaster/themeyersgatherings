@@ -1018,10 +1018,6 @@ function setSignInStep(step) {
   document.querySelector(`[data-sign-in-step="${step}"] input`).focus({ preventScroll: true });
 }
 document.querySelector('#signInBack').addEventListener('click', () => setSignInStep(Math.max(0, signInStep - 1)));
-const accountToolbarObserver=new ResizeObserver(entries=>{
-  document.body.style.setProperty('--account-toolbar-height',`${entries[0].target.getBoundingClientRect().height}px`);
-});
-accountToolbarObserver.observe(document.querySelector('#signedInAccount'));
 function updateSignedInAccountBanner() {
   const signedInAccount = document.querySelector('#signedInAccount');
   signedInAccount.hidden = !guestName || !document.querySelector('#signInPage').hidden;
