@@ -737,3 +737,10 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpEventHeader :is(.event-date,.event-address){text-align:center;overflow-wrap:anywhere}
 #rsvpEventHeader h1{color:var(--flow-text)}
 .rsvp-event-actions{display:grid;gap:14px;margin-top:28px}
+
+/* Keep household and deadline visible while guests read any gathering. */
+.signed-in-account{position:sticky;top:0;z-index:202;padding-top:max(10px,env(safe-area-inset-top));background:var(--navy-2)}
+.event-dock>button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.event-dock button{min-width:76px;white-space:normal;text-align:center;line-height:1.2}
+.welcome .event-header-text{margin:16px 0;text-align:left}
+.welcome .event-header-text:empty{margin:0}

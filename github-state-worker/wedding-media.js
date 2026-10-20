@@ -14,27 +14,31 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
   if (!bucket) return fail('Wedding upload storage is not configured.', 503);
   const url = new URL(request.url), route = url.pathname.replace('/wedding-media', '') || '/';
   if (route === '/session' && request.method === 'POST') {
+    let body; try { body = await request.json(); } catch { return fail('Invalid sign-in request.', 400); }
+    if (!body || typeof body !== 'object') return fail('Invalid sign-in request.', 400);
+    const eventId = body.eventId === undefined ? 'wedding' : body.eventId;
+    if (typeof eventId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(eventId)) return fail('Invalid gathering.', 400);
+    const scopedOwner = value => ownerId(eventId === 'wedding' ? value : JSON.stringify([eventId, value]));
     let identity;
-    if (requireHost(request, env)) identity = { host: true, owner: await ownerId('host'), accountName: 'The Host', uploadedBy: 'The Host' };
+    if (requireHost(request, env)) identity = { host: true, owner: await scopedOwner('host'), accountName: 'The Host', uploadedBy: 'The Host' };
     else {
-      let body; try { body = await request.json(); } catch { return fail('Invalid sign-in request.', 400); }
-      if (!body || typeof body !== 'object') return fail('Invalid sign-in request.', 400);
       const name = typeof body.name === 'string' ? body.name.trim() : '';
       if (!normalizedPerson(name)) return fail('Sign in before uploading.', 401);
       const result = await readState(env);
       if (result.status !== 200) return fail('Unable to verify your sign-in. Please try again.', 503);
       const state = JSON.parse(result.text);
       const matches = (state.accounts || []).flatMap(account => {
-        if (account.selectedEvents?.wedding !== true) return [];
+        if (account.selectedEvents?.[eventId] !== true) return [];
         const names = accountPeople(account.name);
         const canonical = names.find(person => normalizedPerson(person) === normalizedPerson(name));
         const alias = (account.signInAliases || []).find(entry => normalizedPerson(entry.alias) === normalizedPerson(name) && names.some(person => normalizedPerson(person) === normalizedPerson(entry.name)));
         return canonical || alias ? [{ account, person: canonical || alias.name }] : [];
       });
-      if (matches.length !== 1) return fail('Your wedding account could not be verified.', 401);
+      if (matches.length !== 1) return fail('Your gathering account could not be verified.', 401);
       const { account, person } = matches[0];
-      identity = { host: false, owner: await ownerId(String(account.anyListCategoryId || account.qrToken || account.name)), accountName: account.name, uploadedBy: person };
+      identity = { host: false, owner: await scopedOwner(String(account.anyListCategoryId || account.qrToken || account.name)), accountName: account.name, uploadedBy: person };
     }
+    identity.eventId = eventId;
     const token = crypto.randomUUID() + crypto.randomUUID();
     const expires = Date.now() + 60 * 60 * 1000;
     await bucket.put(`${PREFIX}sessions/${token}`, JSON.stringify({ ...identity, expires }), { httpMetadata: { contentType: 'application/json' } });
@@ -52,7 +56,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
     const items = []; let cursor;
     do {
       const page = await bucket.list({ prefix: identity.host ? prefix : `${prefix}${identity.owner}/`, include: ['customMetadata'], cursor });
-      for (const object of page.objects) items.push({ ...object.customMetadata, path: object.key.slice(PREFIX.length), size: object.size });
+      for (const object of page.objects) if ((object.customMetadata?.eventId || 'wedding') === (identity.eventId || 'wedding')) items.push({ ...object.customMetadata, path: object.key.slice(PREFIX.length), size: object.size });
       cursor = page.truncated ? page.cursor : undefined;
     } while (cursor);
     items.sort((a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
@@ -66,7 +70,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
     const bytes = await request.arrayBuffer();
     if (!bytes.byteLength || bytes.byteLength > limit) return fail('Empty file or file exceeds the upload size limit.', 413);
     const name = (url.searchParams.get('name') || 'Upload').slice(0, 240);
-    const metadata = { name, contentType, accountName: identity.accountName, uploadedBy: identity.uploadedBy, uploadedAt: new Date().toISOString(), kind: contentType.startsWith('video/') ? 'video' : 'image' };
+    const metadata = { eventId: identity.eventId || 'wedding', name, contentType, accountName: identity.accountName, uploadedBy: identity.uploadedBy, uploadedAt: new Date().toISOString(), kind: contentType.startsWith('video/') ? 'video' : 'image' };
     await bucket.put(`${prefix}${identity.owner}/${crypto.randomUUID()}`, bytes, { httpMetadata: { contentType }, customMetadata: metadata });
     return reply({ ok: true }, 201);
   }
@@ -75,7 +79,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
     if (!body || typeof body.url !== 'string' || body.url.length > 4000) return fail('Enter a valid photo-sharing link.', 400);
     let link; try { link = new URL(body.url); } catch { return fail('Enter a valid photo-sharing link.', 400); }
     if (!['https:', 'http:'].includes(link.protocol) || link.username || link.password) return fail('Use an http or https sharing link.', 400);
-    const metadata = { kind: 'link', name: link.hostname, url: link.href, accountName: identity.accountName, uploadedBy: identity.uploadedBy, uploadedAt: new Date().toISOString() };
+    const metadata = { eventId: identity.eventId || 'wedding', kind: 'link', name: link.hostname, url: link.href, accountName: identity.accountName, uploadedBy: identity.uploadedBy, uploadedAt: new Date().toISOString() };
     await bucket.put(`${prefix}${identity.owner}/${crypto.randomUUID()}`, '', { customMetadata: metadata });
     return reply({ ok: true }, 201);
   }

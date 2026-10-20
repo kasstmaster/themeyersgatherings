@@ -2,16 +2,16 @@
   let current, tab = 'upload', loadNumber = 0;
   const sessions = new Map();
   const node = id => document.getElementById(id);
-  const key = ctx => JSON.stringify([ctx.base, ctx.host ? 'host' : ctx.account, ctx.name, ctx.preview]);
+  const key = ctx => JSON.stringify([ctx.base, ctx.host ? 'host' : ctx.account, ctx.name, ctx.preview, ctx.eventId]);
   function available(ctx) {
     if (ctx.preview) throw new Error('Uploads and private galleries are unavailable in View As. Return to Host View to use them.');
-    if (!ctx.base) throw new Error('Wedding uploads are not configured yet.');
+    if (!ctx.base) throw new Error('Gathering uploads are not configured yet.');
   }
   async function session(ctx) {
     available(ctx);
     const cached = sessions.get(key(ctx));
     if (cached && cached.expires > Date.now() + 10000) return cached.token;
-    const response = await fetch(`${ctx.base}/wedding-media/session`, { method:'POST', headers:{ 'Content-Type':'application/json', ...(ctx.host ? {'X-Host-Password':ctx.password} : {}) }, body:JSON.stringify({name:ctx.name}), cache:'no-store' });
+    const response = await fetch(`${ctx.base}/wedding-media/session`, { method:'POST', headers:{ 'Content-Type':'application/json', ...(ctx.host ? {'X-Host-Password':ctx.password} : {}) }, body:JSON.stringify({name:ctx.name,eventId:ctx.eventId || 'wedding'}), cache:'no-store' });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || 'Upload service unavailable. Deploy the latest Worker before using uploads.');
     sessions.set(key(ctx), result); return result.token;
