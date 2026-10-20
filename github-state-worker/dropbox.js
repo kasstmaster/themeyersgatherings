@@ -73,7 +73,7 @@ export async function handleDropboxUpload(request,env,identity,{jsonResponse}) {
     if(!input || !types.includes(input.contentType) || !Number.isSafeInteger(input.size) || input.size<=0 || typeof input.name!=='string')return reply({error:'Choose a supported photo or video.'},400);
     try {
       const started=await content(env,'upload_session/start',{close:false});const id=crypto.randomUUID();
-      await write(bucket,base+id,{sessionId:started.session_id,offset:0,size:input.size,name:safeName(input.name),contentType:input.contentType,path:`/${identity.eventId && identity.eventId !== 'wedding' ? `Gathering Uploads/${safeName(identity.eventId)}` : 'Wedding Uploads'}/${safeName(identity.accountName)}/${safeName(identity.uploadedBy)}/${id}-${safeName(input.name)}`});
+      await write(bucket,base+id,{sessionId:started.session_id,offset:0,size:input.size,name:safeName(input.name),contentType:input.contentType,path:`/Wedding Uploads/${safeName(identity.accountName)}/${safeName(identity.uploadedBy)}/${id}-${safeName(input.name)}`});
       return reply({id,offset:0});
     }catch(error){return reply({error:error.message},503);}
   }
@@ -93,7 +93,7 @@ export async function handleDropboxUpload(request,env,identity,{jsonResponse}) {
     }
     if(job.offset!==job.size)return reply({error:'The file has not finished uploading.'},409);
     await content(env,'upload_session/finish',{cursor:{session_id:job.sessionId,offset:job.offset},commit:{path:job.path,mode:'add',autorename:false,mute:true}});
-    await bucket.put(`wedding-media/uploads/${identity.owner}/${match[1]}`,'',{customMetadata:{eventId:identity.eventId || 'wedding',kind:'dropbox',name:job.name,uploadedBy:identity.uploadedBy,accountName:identity.accountName,uploadedAt:new Date().toISOString(),contentType:job.contentType}});
+    await bucket.put(`wedding-media/uploads/${identity.owner}/${match[1]}`,'',{customMetadata:{kind:'dropbox',name:job.name,uploadedBy:identity.uploadedBy,accountName:identity.accountName,uploadedAt:new Date().toISOString(),contentType:job.contentType}});
     job.completed=true;await write(bucket,base+match[1],job);return reply({ok:true});
   }catch(error){return reply({error:error.message},503);}
 }

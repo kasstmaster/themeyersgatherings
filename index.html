@@ -117,6 +117,7 @@
         <img id="eventHeaderImage" alt="" decoding="async" fetchpriority="high" hidden />
         <h1 id="customGatheringHeading" hidden></h1>
         <time id="eventDate" class="event-date"></time>
+        <div id="eventHeaderText" class="event-header-text"></div>
         <p id="eventAddress" class="event-address"></p>
       </div>
     </header>
@@ -151,10 +152,12 @@
         <div>
           <p id="welcomeKicker" class="section-kicker">The Meyer's Table</p>
           <h2 id="welcome-title">WE'D LOVE FOR YOU TO BRING A DISH TO SHARE</h2>
-          <div id="eventHeaderText" class="event-header-text"></div>
           <p id="welcomeNote" class="welcome-note"><em>Choose something delicious to bring. If bringing something isn't practical, simply come and enjoy the evening with us.</em></p>
         </div>
-
+        <div class="gathering-primary-actions">
+          <button class="rsvp-button" id="rsvpButton" type="button">RSVP</button>
+          <button class="rsvp-button" id="uploadPhotosButton" type="button" hidden>Upload Photos</button>
+        </div>
       </section>
 
 
@@ -298,8 +301,6 @@
 
     <nav id="eventDock" class="event-dock" aria-label="Event navigation" hidden>
       <div id="eventSwitchButtons" class="event-switch-buttons"></div>
-      <button id="rsvpButton" type="button" title="RSVP"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M7 2v4m10-4v4M3 9h18m-14 6 3 3 6-6"/></svg><span id="rsvpButtonLabel">RSVP</span></button>
-      <button id="uploadPhotosButton" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h4l2-3h6l2 3h4v14H3Z"/><circle cx="12" cy="13" r="4"/></svg><span>Upload Photos</span></button>
     </nav>
 
     <dialog id="gatheringColorsDialog"><form method="dialog" class="modal-card" id="gatheringColorsForm">
@@ -334,13 +335,13 @@
     <dialog id="weddingMediaDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="weddingMediaHeading">
       <section id="weddingMediaSection" class="full-page-form" aria-labelledby="weddingMediaHeading">
         <button class="modal-close" type="button" data-close-wedding-media aria-label="Close">×</button>
-        <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your gathering photos and videos directly with us through Dropbox.</p>
+        <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us through Dropbox.</p>
         <h2 id="weddingMediaHeading">Upload Photos &amp; Videos</h2>
-        <nav id="weddingMediaTabs" class="wedding-party-tabs" role="tablist" aria-label="Gathering uploads">
+        <nav id="weddingMediaTabs" class="wedding-party-tabs" role="tablist" aria-label="Wedding uploads">
           <button type="button" role="tab" data-media-tab="upload" aria-controls="weddingMediaUpload" aria-selected="true">Upload</button>
           <button type="button" role="tab" data-media-tab="view" aria-controls="weddingMediaView" aria-selected="false" tabindex="-1">View Photos &amp; Videos</button>
         </nav>
-        <section id="weddingMediaUpload" class="perfect-experience-panel flow-panel" aria-label="Upload photos and videos">
+        <section id="weddingMediaUpload" class="perfect-experience-panel flow-panel" aria-label="Upload wedding photos and videos">
           <p id="weddingMediaUploadNotice" class="wedding-upload-intro"><em>Keep this page open until uploading finishes.</em></p>
           <div id="dropboxHostControls" hidden><button id="dropboxConnect" class="primary-button" type="button">Connect Dropbox</button></div>
           <p id="dropboxConnectionStatus" role="status" aria-live="polite"></p>
