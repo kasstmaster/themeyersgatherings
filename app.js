@@ -1023,7 +1023,7 @@ function updateSignedInAccountBanner() {
   signedInAccount.hidden = !guestName || !document.querySelector('#signInPage').hidden;
   document.querySelector('#signedInAccountName').textContent = guestName === HOST_DISPLAY_NAME ? 'Host' : accountContactGroups(signedInPersonName || guestName)[0]?.surname || invitedAccountDisplayName(guestName);
   if (!document.querySelector('#eventSelectionPage').hidden) document.querySelector('#eventSelectionPage').before(signedInAccount);
-  else document.querySelector('#eventPage').prepend(signedInAccount);
+  else document.querySelector('#eventPage .site-header').after(signedInAccount);
 }
 function showSignInPage() {
   document.querySelector('#signInPage').hidden = false;
@@ -1151,6 +1151,7 @@ function weddingDetailsWithoutHeaderAddress(value) {
 function renderWeddingGathering(hostView) {
   const isWedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
   if(!isWedding){
+    document.querySelector('#weddingMediaDialog').close();
     for(const id of ['weddingPartyTabs','brideGroomSection','weddingPartySection','weddingTimelineSection','guestSection','weddingMediaSection','registrySection','registryAttireSection','whatToExpectSection'])document.getElementById(id).hidden=true;
     return;
   }
@@ -1172,6 +1173,7 @@ function renderWeddingGathering(hostView) {
   const showingWhatToExpectPage = showingGuestPage && selectedGuestTab === 'details';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
   document.querySelector('#weddingMediaSection').hidden = false;
+  if (document.querySelector('#weddingMediaDialog').open) WeddingMedia.show({ base: SHARED_STATE_URL, host: hostView, password: hostView ? hostCredential : '', name: signedInPersonName || guestName, account: guestName, preview: false });
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
@@ -1313,7 +1315,8 @@ function render() {
   applyGatheringColors();
   document.title = 'The Meyers';
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
-  document.querySelector('#rsvpButtonLabel').textContent=features.rsvp.contributions && hasSubmittedInvitationRsvp()?'Change RSVP':'RSVP';
+  document.querySelector('#uploadPhotosButton').hidden=!isWedding;
+  document.querySelector('#rsvpButton').textContent=features.rsvp.contributions && hasSubmittedInvitationRsvp()?'Change RSVP & Dishes':'RSVP';
   renderSyncStatus();
   updateHostToolsPanel();
   document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Edit Details';
@@ -1337,8 +1340,6 @@ function render() {
   document.querySelector('.summary-strip').hidden = !hostView;
   renderGatheringPages(features,hostView);
   renderWeddingGathering(hostView);
-  document.querySelector('#weddingMediaSection').hidden = false;
-  if (document.querySelector('#weddingMediaDialog').open) WeddingMedia.show({ base: SHARED_STATE_URL, host: hostView, password: hostView ? hostCredential : '', name: signedInPersonName || guestName, account: guestName, preview: false, eventId: viewedEventId });
   const categories = [...new Set(state.items.map(item => item.category))];
   const categoryCard = category => `
     <article class="category-card">
@@ -1787,6 +1788,7 @@ function captureRsvpMeals() {
   return rsvpMealDraft;
 }
 document.querySelector('#uploadPhotosButton').addEventListener('click',()=>ensureAccount(()=>{
+  if(!GatheringFeatures.forGathering(viewedEventId).weddingPages)return;
   const dialog=document.querySelector('#weddingMediaDialog');
   if(!dialog.open)dialog.showModal();
   render();
