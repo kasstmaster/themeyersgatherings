@@ -1299,7 +1299,8 @@ function renderGatheringPages(features,hostView) {
   document.querySelector('#hostNotesSection').hidden=!features.notes || !hostView || tab!=='notes';
   document.querySelector('#hostNotesContent').innerHTML=features.notes && hostView
     ? formatEditableText(state.hostNotes || '') || '<p>Edit Website to add your notes.</p>' : '';
-  document.querySelector('.menu-section').hidden=!hostView || !features.menu || tab!=='menu';
+  const guestBringingDish = !hostView && hasSubmittedInvitationRsvp() && state.items.some(item => item.claims.includes(guestName));
+  document.querySelector('.menu-section').hidden=!features.menu || (hostView ? tab!=='menu' : !guestBringingDish);
   document.querySelector('#copyMenuButton').hidden=state.items.length===0;
 }
 function render() {
