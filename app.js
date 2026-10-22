@@ -936,38 +936,25 @@ async function invitationFile(account, mode = state.invitationQrMode) {
   return new File([blob], window.Invitation.filenameFor(account?.name || 'General Login', EVENT_DETAILS[viewedEventId].name), { type: 'image/png' });
 }
 function showToast(message) { const toast = document.querySelector('#toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2600); }
-function menuExportGroups() {
-  const bringing = [], needed = [];
-  for (const item of state.items) {
-    const committed = item.claims.length;
-    const remaining = Math.max(0, item.needed - committed);
-    const entry = quantity => ({ category: item.category, text: `${item.name} — ${formatQuantity(quantity, item)}` });
-    if (committed) bringing.push(entry(committed));
-    if ((!item.optional && remaining) || (item.optional && !committed)) {
-      const row = entry(remaining);
-      if (item.optional) row.text = `${item.name} — Optional`;
-      needed.push(row);
-    }
-  }
-  return [
-    { title: 'ITEMS STILL NEEDED', items: needed },
-    { title: 'ITEMS ALREADY CLAIMED AND BEING BROUGHT', items: bringing }
-  ];
+function menuExportIntro() {
+  return `Here's the list of items for ${EVENT_DETAILS[viewedEventId].name}. Some dishes have already been claimed but we still need others!`;
+}
+function menuExportItems() {
+  return state.items.map(item => {
+    const remaining = Math.max(0, item.needed - item.claims.length);
+    const claimed = item.optional ? item.claims.length > 0 : remaining === 0;
+    const status = claimed ? '✓ CLAIMED' : `need ${formatQuantity(Math.max(1, remaining), item)}${item.optional ? ' (optional)' : ''}`;
+    return `${item.name} - ${status}`;
+  });
 }
 function menuCopyText() {
-  return menuExportGroups().map(group => {
-    const categories = [...new Set(group.items.map(item => item.category))];
-    const lists = categories.map(category => [category + ':', ...group.items.filter(item => item.category === category).map(item => `• ${item.text}`)].join('\n'));
-    return [group.title, ...(lists.length ? lists : ['None.'])].join('\n\n');
-  }).join('\n\n');
+  const items = menuExportItems();
+  return `${menuExportIntro()}\n\n${items.length ? items.map(item => `• ${item}`).join('\n') : 'No items listed.'}`;
 }
 function menuExportPage() {
-  const html = menuExportGroups().map(group => {
-    const categories = [...new Set(group.items.map(item => item.category))];
-    const lists = categories.map(category => `<h3>${escapeHtml(category)}</h3><ul>${group.items.filter(item => item.category === category).map(item => `<li>${escapeHtml(item.text)}</li>`).join('')}</ul>`).join('');
-    return `<section><h2>${group.title}</h2>${lists || '<p>None.</p>'}</section>`;
-  }).join('');
-  return { title: 'Menu', text: menuCopyText(), html };
+  const items = menuExportItems();
+  const list = items.length ? `<ul>${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : '<p>No items listed.</p>';
+  return { title: 'Menu', text: menuCopyText(), html: `<p>${escapeHtml(menuExportIntro())}</p>${list}` };
 }
 PageActions.menuExport = menuExportPage;
 async function copyMenu() {
