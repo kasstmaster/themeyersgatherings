@@ -936,27 +936,40 @@ async function invitationFile(account, mode = state.invitationQrMode) {
   return new File([blob], window.Invitation.filenameFor(account?.name || 'General Login', EVENT_DETAILS[viewedEventId].name), { type: 'image/png' });
 }
 function showToast(message) { const toast = document.querySelector('#toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2600); }
-function menuItemSummary(item) {
-  const claimCounts = item.claims.reduce((counts, name) => counts.set(name, (counts.get(name) || 0) + 1), new Map());
-  const bringing = [...claimCounts].map(([name, quantity]) => {
-    const amount = quantity > 1 ? ` ${formatQuantity(quantity, item)}` : '';
-    return `${contributionDisplayName(name)} is bringing${amount}`;
-  });
-  const remaining = Math.max(0, item.needed - item.claims.length);
-  const needed = item.optional
-    ? (item.claims.length ? '' : 'Optional')
-    : (remaining ? `${remaining} of ${formatQuantity(item.needed, item)} still needed` : '');
-  return [needed, ...bringing].filter(Boolean).join('; ');
+function menuExportGroups() {
+  const bringing = [], needed = [];
+  for (const item of state.items) {
+    const committed = item.claims.length;
+    const remaining = Math.max(0, item.needed - committed);
+    const entry = quantity => ({ category: item.category, text: `${item.name} — ${formatQuantity(quantity, item)}` });
+    if (committed) bringing.push(entry(committed));
+    if ((!item.optional && remaining) || (item.optional && !committed)) {
+      const row = entry(remaining);
+      if (item.optional) row.text = `${item.name} — Optional`;
+      needed.push(row);
+    }
+  }
+  return [
+    { title: 'Items Being Brought', items: bringing },
+    { title: 'Items Still Needed', items: needed }
+  ];
 }
 function menuCopyText() {
-  const categories = [...new Set(state.items.map(item => item.category))];
-  return categories.map(category => {
-    const items = state.items
-      .filter(item => item.category === category)
-      .map(item => `${item.name} - ${menuItemSummary(item)}`);
-    return [`${category.toLocaleUpperCase()}:`, ...items].join('\n');
+  return menuExportGroups().map(group => {
+    const categories = [...new Set(group.items.map(item => item.category))];
+    const lists = categories.map(category => [category + ':', ...group.items.filter(item => item.category === category).map(item => `• ${item.text}`)].join('\n'));
+    return [group.title, ...(lists.length ? lists : ['None.'])].join('\n\n');
   }).join('\n\n');
 }
+function menuExportPage() {
+  const html = menuExportGroups().map(group => {
+    const categories = [...new Set(group.items.map(item => item.category))];
+    const lists = categories.map(category => `<h3>${escapeHtml(category)}</h3><ul>${group.items.filter(item => item.category === category).map(item => `<li>${escapeHtml(item.text)}</li>`).join('')}</ul>`).join('');
+    return `<section><h2>${group.title}</h2>${lists || '<p>None.</p>'}</section>`;
+  }).join('');
+  return { title: 'Menu', text: menuCopyText(), html };
+}
+PageActions.menuExport = menuExportPage;
 async function copyMenu() {
   const text = menuCopyText();
   try {

@@ -25,6 +25,7 @@
   }
   function exportPage(surface) {
     if(!visible(surface))return null;
+    if(surface.id === 'gatheringMenuSection' && api.menuExport)return api.menuExport();
     const selected=surface.querySelector('[role="tab"][aria-selected="true"]');
     const controlled=selected && document.getElementById(selected.getAttribute('aria-controls'));
     const content=controlled && surface.contains(controlled) && visible(controlled)?controlled:surface;
