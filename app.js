@@ -950,8 +950,8 @@ function menuExportGroups() {
     }
   }
   return [
-    { title: 'Items Being Brought', items: bringing },
-    { title: 'Items Still Needed', items: needed }
+    { title: 'ITEMS ALREADY CLAIMED AND BEING BROUGHT', items: bringing },
+    { title: 'ITEMS STILL NEEDED', items: needed }
   ];
 }
 function menuCopyText() {
