@@ -943,8 +943,8 @@ function menuExportItems() {
   return state.items.map(item => {
     const remaining = Math.max(0, item.needed - item.claims.length);
     const claimed = item.optional ? item.claims.length > 0 : remaining === 0;
-    const status = claimed ? '✓ CLAIMED' : `need ${formatQuantity(Math.max(1, remaining), item)}${item.optional ? ' (optional)' : ''}`;
-    return `${item.name} - ${status}`;
+    const status = claimed ? '✓ CLAIMED' : `- need ${formatQuantity(Math.max(1, remaining), item)}${item.optional ? ' (optional)' : ''}`;
+    return `${item.name} ${status}`;
   });
 }
 function menuCopyText() {
