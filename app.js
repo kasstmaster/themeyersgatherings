@@ -1189,6 +1189,7 @@ function renderWeddingGathering(hostView) {
     for(const id of ['weddingHostTabs','weddingPartyTabs','brideGroomSection','weddingPartySection','weddingTimelineSection','guestSection','weddingMediaSection','registrySection','registryAttireSection','whatToExpectSection'])document.getElementById(id).hidden=true;
     return;
   }
+  for(const page of state.sitePages || [])if(page.nav==='guestInfoTabs'){page.nav='weddingPartyTabs';if(!page.audience||page.audience==='all')page.audience='guests';}
   const registrySection = document.querySelector('#registrySection');
   const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => weddingPartyPersonMatches(member.name, signedInPersonName));
   const isWeddingPartyMember = isWedding && !hostView && Boolean(signedInWeddingPartyMember);
@@ -1201,11 +1202,11 @@ function renderWeddingGathering(hostView) {
   const showingBrideGroomPage = isWedding && hostView && selectedWeddingTab !== 'timeline';
   const showingWeddingPartyPage = isWedding && (hostView || isWeddingPartyMember) && selectedWeddingTab === 'party';
   const showingTimelinePage = isWedding && hostView && selectedWeddingTab === 'timeline';
-  const publicWeddingTab = ['couple','timeline'].includes(selectedWeddingTab) ? 'guest' : selectedWeddingTab;
-  const showingGuestPage = isWedding && !isWeddingPartyMember && publicWeddingTab === 'guest';
-  const showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire';
-  const showingAttirePage = (showingGuestPage && selectedGuestTab === 'attire') || showingPartyAttirePage;
-  const showingWhatToExpectPage = showingGuestPage && selectedGuestTab === 'details';
+  const publicWeddingTab = ['couple','timeline','guest'].includes(selectedWeddingTab) ? selectedGuestTab : selectedWeddingTab;
+  const showingGuestPage = isWedding && ['attire','details'].includes(publicWeddingTab);
+  const showingPartyAttirePage = (showingWeddingPartyPage && selectedMatronTab === 'attire') || (isWeddingPartyMember && publicWeddingTab === 'attire');
+  const showingAttirePage = (showingGuestPage && publicWeddingTab === 'attire') || showingPartyAttirePage;
+  const showingWhatToExpectPage = showingGuestPage && publicWeddingTab === 'details';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
   document.querySelector('#weddingMediaSection').hidden = false;
   if (document.querySelector('#weddingMediaDialog').open) WeddingMedia.show({ base: SHARED_STATE_URL, host: hostView, password: hostView ? hostCredential : '', name: signedInPersonName || guestName, account: guestName, preview: false });
@@ -1219,8 +1220,8 @@ function renderWeddingGathering(hostView) {
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     const hostCanViewTab = true;
-    const partyMemberCanViewTab = ['party', 'registry'].includes(button.dataset.weddingTab);
-    const guestCanViewTab = ['guest', 'registry'].includes(button.dataset.weddingTab);
+    const partyMemberCanViewTab = ['party', 'attire', 'registry'].includes(button.dataset.weddingTab);
+    const guestCanViewTab = ['attire', 'registry', 'details'].includes(button.dataset.weddingTab);
     button.hidden = !(hostView ? hostCanViewTab : isWeddingPartyMember ? partyMemberCanViewTab : guestCanViewTab);
     const isSelected = button.dataset.weddingTab === publicWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
@@ -1305,9 +1306,9 @@ function renderWeddingGathering(hostView) {
   const registryAttireSection = document.querySelector('#registryAttireSection');
   const weddingPartyAttirePanel = document.querySelector('#weddingPartyAttirePanel');
   const guestAttireAnchor = document.querySelector('#guestAttireAnchor');
-  if (showingPartyAttirePage && registryAttireSection.parentElement !== weddingPartyAttirePanel) {
+  if (showingWeddingPartyPage && showingPartyAttirePage && registryAttireSection.parentElement !== weddingPartyAttirePanel) {
     weddingPartyAttirePanel.append(registryAttireSection);
-  } else if (!showingPartyAttirePage && registryAttireSection.previousElementSibling !== guestAttireAnchor) {
+  } else if (!(showingWeddingPartyPage && showingPartyAttirePage) && registryAttireSection.previousElementSibling !== guestAttireAnchor) {
     guestAttireAnchor.after(registryAttireSection);
   }
   registryAttireSection.classList.toggle('wedding-party-attire-section', showingPartyAttirePage);
@@ -1681,6 +1682,7 @@ document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav
   const button = event.target.closest('[data-wedding-tab]');
   if (!button) return;
   selectedWeddingTab = button.dataset.weddingTab;
+  if(['attire','details'].includes(selectedWeddingTab))selectedGuestTab=selectedWeddingTab;
   render();
 }));
 document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav.addEventListener('keydown', event => {

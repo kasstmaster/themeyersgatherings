@@ -8,7 +8,7 @@ const prefix=source.slice(source.indexOf('function renderWeddingGathering('),sou
 function visibility(host,party,tab,event='wedding'){
  const nodes={};const node=id=>nodes[id]??={hidden:false,close(){}};
  const c=vm.createContext({viewedEventId:event,GatheringFeatures,selectedWeddingTab:tab,selectedGuestTab:'attire',selectedMatronTab:'experience',signedInPersonName:'Person',state:{weddingPartyMembers:party?[{name:'Person'}]:[]},weddingPartyPersonMatches:(a,b)=>a===b,document:{querySelector:node,querySelectorAll:()=>[],getElementById:node}});
- vm.runInContext(prefix+'return {showingBrideGroomPage,showingTimelinePage,showingWeddingPartyPage,showingGuestPage};}',c);
+ vm.runInContext(prefix+'return {showingBrideGroomPage,showingTimelinePage,showingWeddingPartyPage,showingGuestPage,showingAttirePage,showingWhatToExpectPage,showingRegistryPage};}',c);
  return {result:c.renderWeddingGathering(host),nodes};
 }
 test('private Wedding pages remain restricted after public pages move into RSVP',()=>{
@@ -30,4 +30,13 @@ test('public Wedding content and Upload Photos follow RSVP buttons; private page
  assert.ok(rsvp.indexOf('id="uploadPhotosButton"')>rsvp.indexOf('id="rsvpWrongEvent"'));
  assert.ok(rsvp.indexOf('id="uploadPhotosButton"')<rsvp.indexOf('id="rsvpWeddingPages"'));
  assert.equal(visibility(false,false,'guest','christmas').nodes['#rsvpWeddingPages'].hidden,true);
+});
+
+test('Wedding public pages use one flat tab bar without an extra Guest layer',()=>{
+ const nav=html.slice(html.indexOf('<nav id="weddingPartyTabs"'),html.indexOf('</nav>',html.indexOf('<nav id="weddingPartyTabs"')));
+ assert.deepEqual([...nav.matchAll(/data-wedding-tab="([^"]+)"/g)].map(m=>m[1]),['party','attire','registry','details']);
+ assert.match(html,/<nav id="guestInfoTabs" hidden/);
+ assert.equal(visibility(false,false,'attire').result.showingAttirePage,true);
+ assert.equal(visibility(false,false,'details').result.showingWhatToExpectPage,true);
+ assert.equal(visibility(false,false,'registry').result.showingRegistryPage,true);
 });
