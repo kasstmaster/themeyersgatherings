@@ -100,6 +100,7 @@ const GATHERING_COLORS = [
   ['inner','Inner containers','--gathering-inner-background'], ['text','Page text','--ink'], ['border','Borders','--border']
 ];
 function applyGatheringColors() {
+  GatheringPalette.apply(state.gatheringColors?.details || {});
   for (const [, ,variable] of GATHERING_COLORS) document.body.style.removeProperty(variable);
   document.body.style.removeProperty('--orange-dark');
   document.body.style.removeProperty('--muted');
@@ -121,7 +122,7 @@ function applyGatheringColors() {
     const color=state.gatheringColors.accent;
     if (/^#[0-9a-f]{6}$/i.test(color)) document.body.style.setProperty('--orange-dark',`#${[1,3,5].map(i=>Math.round(parseInt(color.slice(i,i+2),16)*.65).toString(16).padStart(2,'0')).join('')}`);
   }
-  document.body.classList.toggle('custom-gathering-colors',Boolean(state.gatheringColors && Object.keys(state.gatheringColors).length));
+  document.body.classList.toggle('custom-gathering-colors',GATHERING_COLORS.some(([key])=>/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.[key] || '')));
 }
 
 function christmasItems() {
@@ -3526,6 +3527,7 @@ document.querySelector('#gatheringColorsButton').addEventListener('click', () =>
     const color=/^#[0-9a-f]{6}$/i.test(current)?current:defaults[key];
     return `<label>${label}<input type="color" data-gathering-color="${key}" value="${color}"></label>`;
   }).join('');
+  GatheringPalette.mount(document.querySelector('#gatheringColorInputs'),state.gatheringColors?.details || {});
   document.querySelector('#gatheringColorsDialog').showModal();
 });
 document.querySelector('#gatheringColorsForm').addEventListener('input', event => { if(event.target.matches('[data-gathering-color]'))event.target.dataset.changed='true'; });
@@ -3534,6 +3536,7 @@ document.querySelector('#gatheringColorsForm').addEventListener('submit', event 
   if(!isHostView() || document.querySelector('#gatheringColorsDialog').dataset.eventId!==viewedEventId){event.preventDefault();return;}
   state.gatheringColors ??= {};
   document.querySelectorAll('[data-gathering-color][data-changed]').forEach(input=>{state.gatheringColors[input.dataset.gatheringColor]=input.value;});
+  state.gatheringColors.details=GatheringPalette.edits(document.querySelector('#gatheringColorInputs'),state.gatheringColors.details || {});
   applyGatheringColors();saveState({refresh:false});
 });
 document.querySelector('#resetGatheringColors').addEventListener('click',()=>{
