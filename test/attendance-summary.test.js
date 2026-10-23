@@ -23,9 +23,9 @@ function fixture(eventId='thanksgiving'){
 test('summary reports adults and children separately for each status',()=>{
  const context=fixture();
  assert.deepEqual(JSON.parse(JSON.stringify(context.attendanceSummaryCounts())),{
-  attending:{adults:1,children:1},notAttending:{adults:2,children:2},noResponse:{adults:1,children:1},invited:{adults:4,children:4}
+  attending:{adults:1,children:1,households:1},notAttending:{adults:2,children:2,households:2},noResponse:{adults:1,children:1,households:1},invited:{adults:4,children:4,households:3}
  });
- assert.equal(context.peopleTotalsLabel({adults:13,children:2}),'13 adults · 2 children total');
+ assert.equal(context.peopleTotalsLabel({adults:13,children:2,households:6}),'6 households · 13 adults · 2 children total');
 });
 test('attendance family entries use the invited layout with plain member rows',()=>{
  const context=fixture();
@@ -41,4 +41,13 @@ test('shared family formatting applies to existing and newly created gatherings'
   assert.equal(context.attendanceSummaryCounts().invited.children,4);
   assert.match(context.attendanceEntryHtml('Hall',1,0,'<div>Pat Hall</div>'),/invited-entry-heading/);
  }
+});
+
+test('household totals count accounts once rather than individual people',()=>{
+ const context=fixture();
+ context.state.rsvps[0].people.push({name:'Extra Hall',attending:false});
+ assert.equal(context.attendanceSummaryCounts().notAttending.households,2);
+ assert.equal(context.accountPeopleTotals(context.appState.accounts.slice(0,1)).households,1);
+ assert.equal(context.peopleTotalsLabel({adults:1,children:1,households:1}),'1 household · 1 adult · 1 child total');
+ assert.equal(context.peopleTotalsLabel({adults:0,children:0,households:0}),'0 households · 0 adults · 0 children total');
 });
