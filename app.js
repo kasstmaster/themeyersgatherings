@@ -1778,7 +1778,7 @@ function renderRsvpChildNames(){
   container.hidden=false;
   const selected=rsvpChildPicker.selected;
   const known=rsvpChildPicker.known.map((name,index)=>`<label class="rsvp-known-child"><input type="checkbox" data-rsvp-known-child="${index}" ${selected.includes(name)?'checked':''} ${!selected.includes(name)&&selected.length>=count?'disabled':''}><span>${escapeHtml(name)}</span></label>`).join('');
-  const custom=Array.from({length:Math.max(0,count-selected.length)},(_,index)=>`<label class="rsvp-child-name"><span>Additional child ${index+1}</span><input data-rsvp-child-name="${index}" aria-label="Additional child ${index+1} name" placeholder="Child’s name" value="${escapeAttribute(rsvpChildPicker.custom[index] || '')}" required></label>`).join('');
+  const custom=Array.from({length:Math.max(0,count-selected.length)},(_,index)=>`<label class="rsvp-child-name"><span>Additional Child’s Name</span><input data-rsvp-child-name="${index}" aria-label="Additional Child’s Name" placeholder="Child’s name" value="${escapeAttribute(rsvpChildPicker.custom[index] || '')}" required></label>`).join('');
   container.innerHTML=known+custom;
 }
 function refreshRsvpChildMeals(before,meals){
