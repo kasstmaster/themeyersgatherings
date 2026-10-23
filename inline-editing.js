@@ -265,19 +265,29 @@
     };
     if (options.automatic) open(); else button(`Edit ${title}`, open, control);
   }
-  function formatTextForTarget(target, value) {
-    const html=context.format(value);
+  function formatTextForTarget(target, value, format=context.format) {
+    const html=format(value);
     // Text inside headings and paragraphs must not acquire nested paragraphs
     // and their default vertical margins. Keep inline Markdown and line breaks.
     return /^(?:H[1-6]|P)$/.test(target.tagName)
       ? html.replace(/<p>([\s\S]*?)<\/p>/g,'$1<br>').replace(/<br>$/,'') : html;
   }
-  function staticText(root) {
-    const data = context.state.siteText || {};
+  function staticTextElements(root) {
     // Text blocks, headings and captions can be changed without changing links or controls.
-    const elements = [...root.querySelectorAll('h1,h2,h3,h4,p,footer address')].filter(element =>
+    return [...root.querySelectorAll('h1,h2,h3,h4,p,footer address')].filter(element =>
       !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.inline-editor,.inline-edit-tools,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,.inline-edit-masked,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
       !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#rsvpDeadline,#signedInAccountName,#customGatheringHeading'));
+  }
+  function applyStaticText(root,state,format) {
+    const data=state.siteText || {};
+    for(const element of staticTextElements(root)) {
+      const path=selectorPath(element,root);
+      if(Object.hasOwn(data,path))element.innerHTML=formatTextForTarget(element,data[path],format);
+    }
+  }
+  function staticText(root) {
+    const data = context.state.siteText || {};
+    const elements=staticTextElements(root);
     for (const [element, path] of elements.map(element => [element, selectorPath(element, root)])) {
       if (!originals.has(path)) originals.set(path, element.innerHTML);
       const initial = element.innerHTML;
@@ -442,7 +452,7 @@
     return element;
   }
   const selectedCustom = new Map();
-  globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, tabs, button, mount, hide,
+  globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, applyStaticText, tabs, button, mount, hide,
     flush() { flushing=true;try { [...savers].forEach(save=>save()); } finally { flushing=false; } },
     get flushing() { return flushing; },
     get portalOpen() { return Boolean(document.querySelector('.inline-portal-editor')); },

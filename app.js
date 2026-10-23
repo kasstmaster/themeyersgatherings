@@ -580,6 +580,7 @@ function safeEditableLink(value) {
 }
 function formatWeddingPartyDescription(value) {
   value = expandEditableTextVariables(value);
+  if(!String(value || '').trim())return '';
   const formatMarkdown = text => escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/__(.+?)__/g, '<strong>$1</strong>')
@@ -629,6 +630,7 @@ function formatWeddingPartyDescription(value) {
     }
     closeList();
     if (line.trim()) output.push(`<p>${formatInline(line)}</p>`);
+    else output.push('<br>');
   });
   closeList();
   return output.join('');
@@ -1912,6 +1914,7 @@ function renderRsvpEventHeader() {
   header.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
   header.querySelectorAll('img[src]').forEach(image=>{image.hidden=false;image.addEventListener('error',()=>{image.hidden=true;},{once:true});});
   document.querySelector('#rsvpEventHeader').replaceChildren(header);
+  SiteEditing.applyStaticText(document.querySelector('#rsvpDialog'),state,value=>formatEditableText(expandEditableTextVariables(value)));
 }
 document.querySelector('#rsvpConfirmEvent').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));
 document.querySelector('#rsvpWrongEvent').addEventListener('click',()=>{

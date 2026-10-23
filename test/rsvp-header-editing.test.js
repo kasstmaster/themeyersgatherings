@@ -11,7 +11,7 @@ function fixture(editing,eventId='thanksgiving'){
  const container={replaceChildren(node){this.child=node;}};
  const nodes={'#rsvpEventConfirmation':section,'#rsvpConfirmEvent':confirm,'#rsvpWrongEvent':wrong,'#eventPage .header-art':{cloneNode:()=>clone},'#rsvpEventHeader':container,'#rsvpEventHeader .header-art':clone};
  const state={rsvpHeaderImage:'rsvp.png'};
- const context=vm.createContext({state,viewedEventId:eventId,EVENT_DETAILS:{[eventId]:{header:'main.png'}},GatheringFeatures:{rsvp:()=>({meals:false})},SiteEditing:{enabled:editing,field:(target,title,specs,commit,options)=>fields.push({target,title,specs,commit,options})},document:{querySelector:selector=>nodes[selector]}});
+ const context=vm.createContext({state,viewedEventId:eventId,EVENT_DETAILS:{[eventId]:{header:'main.png'}},GatheringFeatures:{rsvp:()=>({meals:false})},SiteEditing:{enabled:editing,applyStaticText(){},field:(target,title,specs,commit,options)=>fields.push({target,title,specs,commit,options})},document:{querySelector:selector=>nodes[selector]}});
  vm.runInContext(headerCode+editorCode,context);
  return {context,fields,section,confirm,wrong,image};
 }
