@@ -6,12 +6,12 @@ test('all non-Wedding gatherings share the same RSVP behavior',()=>{
  const shared=GatheringFeatures.rsvp('thanksgiving');
  assert.strictEqual(GatheringFeatures.rsvp('christmas'),shared);
  assert.strictEqual(GatheringFeatures.rsvp('new-custom-gathering'),shared);
- assert.deepEqual(shared,{childNames:false,guestCounter:true,namedGuests:false,meals:false,contributions:true});
+ assert.deepEqual(shared,{childNames:true,guestCounter:true,namedGuests:false,meals:false,contributions:true});
  assert.deepEqual(GatheringFeatures.rsvp('wedding'),{childNames:true,guestCounter:false,namedGuests:true,meals:true,contributions:false});
 });
 
-test('child-name collection ignores stale Wedding drafts in every regular gathering',()=>{
- for(const event of ['thanksgiving','christmas','new-custom-gathering'])assert.deepEqual(GatheringFeatures.childNames(event,['Tyson'],2),[]);
+test('child names are collected in every regular gathering and Wedding',()=>{
+ for(const event of ['thanksgiving','christmas','new-custom-gathering'])assert.deepEqual(GatheringFeatures.childNames(event,['Tyson'],2),['Tyson','']);
  assert.deepEqual(GatheringFeatures.childNames('wedding',[' Tyson '],2),['Tyson','']);
 });
 

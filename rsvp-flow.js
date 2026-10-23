@@ -10,7 +10,7 @@
   const kicker=form.querySelector('.section-kicker');
   const childAge=document.querySelector('#rsvpChildAge');
   let defaultHeading=heading.textContent,defaultKicker=kicker.textContent;
-  const candidates = '#rsvpEventConfirmation,#rsvpAttire,[data-rsvp-question],#rsvpAttendance,#rsvpPeople,.rsvp-person,.rsvp-attendance-options,.rsvp-person>label,.rsvp-guest-fields,.rsvp-guest-fields>label,[data-person-guest-name],#rsvpChildrenCounter,#rsvpGuestsCounter,#rsvpAdultsCounter,#rsvpChildNames,#weddingRsvpMenu,#weddingRsvpGuests,.wedding-rsvp-guest,.wedding-meal-options,.wedding-rsvp-guest>label';
+  const candidates = '#rsvpEventConfirmation,#rsvpAttire,[data-rsvp-question],#rsvpAttendance,#rsvpPeople,.rsvp-person,.rsvp-attendance-options,.rsvp-person>label,.rsvp-guest-fields,.rsvp-guest-fields>label,[data-person-guest-name],#rsvpChildrenQuestion,#rsvpGuestsCounter,#rsvpAdultsCounter,#weddingRsvpMenu,#weddingRsvpGuests,.wedding-rsvp-guest,.wedding-meal-options,.wedding-rsvp-guest>label';
   function steps() { return [...context.steps(), { key:'review', element:review, title:'Review your RSVP' }]; }
   function focus(element) {
     if(element.id==='rsvpAttire'){heading.focus({preventScroll:true});return;}
