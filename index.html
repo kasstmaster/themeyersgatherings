@@ -129,6 +129,7 @@
     <nav id="hostToolsPanel" class="host-tools-panel" aria-label="Host tools" hidden>
       <div id="syncStatus" class="sync-status" role="status" aria-live="polite" hidden></div>
       <div class="host-tool-actions">
+        <button id="editAccountsButton" type="button">Accounts</button>
         <button id="editItemsButton" type="button">Wedding Details</button>
         <button id="previewWeddingPartyButton" type="button">Sign in to account</button>
         <button id="invitationTemplatesButton" type="button">Templates</button>
@@ -143,9 +144,9 @@
       <section class="summary-strip" aria-label="Event summary">
         <button class="summary-item" id="guestListButton" type="button"><strong id="guestCount">0</strong><span>Guests attending</span></button>
         <button class="summary-item" id="notAttendingButton" type="button"><strong id="notAttendingCount">0</strong><span>Not attending</span></button>
+        <button class="summary-item" id="noResponseButton" type="button"><strong id="noResponseCount">0</strong><span>No Response</span></button>
         <button class="summary-item" id="invitedListButton" type="button"><strong id="invitedCount">0</strong><span>Adults invited</span></button>
         <div id="remainingSummary" class="summary-stat"><strong id="remainingCount">0</strong><span>Dishes needed</span></div>
-        <button class="summary-item" id="editAccountsButton" type="button"><strong id="accountCount">0</strong><span>Accounts</span></button>
       </section>
 
       <section class="welcome" aria-labelledby="welcome-title">
@@ -442,6 +443,15 @@
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
         <p class="section-kicker">RSVP responses</p><h2>Not attending</h2>
         <div id="notAttendingList" class="guest-list"></div>
+        <div class="modal-dialog-footer"><button class="primary-button" value="default">Close</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="noResponseDialog" aria-labelledby="noResponseHeading">
+      <form method="dialog" class="modal-card">
+        <button class="modal-close" value="cancel" aria-label="Close">×</button>
+        <p class="section-kicker">RSVP responses</p><h2 id="noResponseHeading">No Response</h2>
+        <div id="noResponseList" class="guest-list"></div>
         <div class="modal-dialog-footer"><button class="primary-button" value="default">Close</button></div>
       </form>
     </dialog>
