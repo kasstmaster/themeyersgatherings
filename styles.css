@@ -742,4 +742,4 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpChildNames .rsvp-known-child{display:flex;flex-direction:row;align-items:center;gap:10px;margin:12px 0;font-size:1rem;color:inherit}
 #rsvpChildNames .rsvp-known-child input{width:20px;height:20px;flex:none;padding:0;accent-color:var(--orange)}
 #rsvpDialog #rsvpChildNames .rsvp-child-name{flex-direction:column;align-items:flex-start;gap:4px;margin:8px 0}
-#rsvpDialog #rsvpChildNames .rsvp-child-name input{flex:none;width:240px;max-width:100%;height:38px;padding:8px 10px;font-size:16px;line-height:20px}
+#rsvpDialog #rsvpChildNames .rsvp-child-name input{flex:none;width:100%;max-width:100%;height:38px;padding:8px 10px;font-size:16px;line-height:20px}
