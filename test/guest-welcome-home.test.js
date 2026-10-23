@@ -34,3 +34,14 @@ test('non-Wedding sign-in stays at welcome instead of immediately resuming a pen
   assert.equal(context.pendingAccountAction,null);
  }
 });
+
+test('choosing any standard gathering opens RSVP directly, including already submitted responses',()=>{
+ const code=source.slice(source.indexOf('function enterEvent('),source.indexOf('function ensureAccount('));
+ for(const event of ['thanksgiving','christmas','new-gathering','wedding'])for(const host of [false,true])for(const submitted of [false,true]){
+  const calls=[];
+  const context=vm.createContext({appState:{events:{[event]:{}}},EVENT_DETAILS:{[event]:{}},GatheringFeatures,selectedGatheringTab:null,viewedEventId:'',state:{},isHostView:()=>host,isSignedInWeddingPartyMember:()=>false,hasSubmittedInvitationRsvp:()=>submitted,showSignedInDestination:()=>calls.push('gathering'),render:()=>calls.push('render'),openRsvp:()=>calls.push('rsvp')});
+  vm.runInContext(code,context);context.enterEvent(event);
+  const opens=!host&&(event!=='wedding'||!submitted);
+  assert.deepEqual(calls,opens?['gathering','render','rsvp']:['gathering','render']);
+ }
+});
