@@ -1375,6 +1375,7 @@ function render() {
   invitedListButton.disabled = !hostView;
   invitedListButton.title = hostView ? 'View invited adults by invitation' : 'Invitation details are private to the host';
   invitedListButton.setAttribute('aria-label', hostView ? `${invitedAdults} adults and ${summaryCounts.invited.children} children invited; view private invitation list` : `${invitedAdults} adults invited; details visible only to the host`);
+  if(document.querySelector('#rsvpDialog').open)renderRsvpEventHeader();
   renderInlineEditing();
   document.querySelectorAll('[data-gathering-tool]').forEach(button => { button.hidden=!isHostView(); });
   if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
@@ -1492,7 +1493,10 @@ function renderInlineEditing() {
   renderRsvpInlineEditing();
 }
 function renderRsvpInlineEditing() {
-  if (!SiteEditing.enabled || !GatheringFeatures.rsvp(viewedEventId).meals) return;
+  if (!SiteEditing.enabled) return;
+  const header=document.querySelector('#rsvpEventHeader .header-art');
+  if(header)SiteEditing.field(header,'header image',[{label:'RSVP first-page banner URL (empty to remove)',type:'url',value:state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header}],([value])=>{state.rsvpHeaderImage=value;},{key:'rsvp-first-page-banner'});
+  if (!GatheringFeatures.rsvp(viewedEventId).meals) return;
   const target = document.querySelector('#weddingRsvpMenu');
   if (target.hidden || document.querySelector('#rsvpDialog .inline-meal-editor')) return;
   const area = SiteEditing.mount(target, 'inline-meal-editor');
@@ -1888,11 +1892,14 @@ function openRsvp({fromEntry=false}={}) {ensureAccount(() => {
   renderRsvpAttire();
   renderRsvpEventHeader();
   document.querySelector('#rsvpDialog').showModal();
+  if(SiteEditing.enabled)render();
   RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',editing:SiteEditing.enabled});
 });}
 function renderRsvpEventHeader() {
   const section=document.querySelector('#rsvpEventConfirmation');
-  section.hidden=SiteEditing.enabled;
+  section.hidden=false;
+  document.querySelector('#rsvpConfirmEvent').disabled=SiteEditing.enabled;
+  document.querySelector('#rsvpWrongEvent').disabled=SiteEditing.enabled;
   const header=document.querySelector('#eventPage .header-art').cloneNode(true);
   header.querySelectorAll('.inline-edit-tools,.inline-editor,button').forEach(node=>node.remove());
   const banner=header.querySelector('img');
@@ -1974,7 +1981,8 @@ function rsvpFlowSteps() {
 function rsvpDishesEnabled(){return GatheringFeatures.rsvp(viewedEventId).contributions && !SiteEditing.enabled && !rsvpOptionsLocked();}
 function renderRsvpDishes(){
   const enabled=rsvpDishesEnabled();
-  document.querySelectorAll('[data-rsvp-question]').forEach(section=>{section.hidden=!enabled;section.querySelectorAll('input,select').forEach(input=>{input.disabled=!enabled;input.required=false;input.setCustomValidity('');});});
+  document.querySelectorAll('[data-rsvp-question]').forEach(section=>{section.hidden=!(enabled || (section.id==='rsvpDishQuestion' && SiteEditing.enabled && GatheringFeatures.rsvp(viewedEventId).contributions));section.querySelectorAll('input,select').forEach(input=>{input.disabled=!enabled;input.required=false;input.setCustomValidity('');});});
+  document.querySelectorAll('[data-rsvp-dish-answer]').forEach(button=>{button.disabled=SiteEditing.enabled;});
   const choice=document.querySelector('#rsvpBringingDish');
   choice.value=state.items.some(item=>item.claims.includes(guestName))?'yes':'';
   const categories=[...new Set(state.items.map(item=>item.category))];
