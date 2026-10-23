@@ -1507,9 +1507,7 @@ function renderRsvpInlineEditing() {
   if (!GatheringFeatures.rsvp(viewedEventId).meals) return;
   const target = document.querySelector('#weddingRsvpMenu');
   if (target.hidden || document.querySelector('#rsvpDialog .inline-meal-editor')) return;
-  const area = SiteEditing.mount(target, 'inline-meal-editor');
-  SiteEditing.button('Close meal editor',()=>{area.hidden=true;},area);
-  SiteEditing.button('Edit meals',()=>{area.hidden=false;},document.querySelector('#weddingRsvpMenuHeading'));
+  const area = SiteEditing.mount(document.querySelector('#weddingRsvpGuests'), 'inline-meal-editor', 'inline');
   const heading = document.createElement('h4');heading.textContent='Meal options';area.append(heading);
   const meals=GuestPlanning.weddingMeals(state);
   const audiences=['Adults and children','Adults only','Children only'];
@@ -1517,11 +1515,12 @@ function renderRsvpInlineEditing() {
   meals.forEach((meal,index) => {
     const row=document.createElement('div');row.className='inline-meal-row';
     const label=document.createElement('span');label.textContent=`${meal.name} — ${meal.audience}`;row.append(label);area.append(row);
-    SiteEditing.field(label,'meal',[{label:'Meal name',value:meal.name,required:true},{label:'Available to',value:meal.audience,options:audiences}],([name,audience])=>{saveMeals(meals.map((entry,i)=>i===index?{...entry,name,audience}:entry));},{key:meal.id});
+    SiteEditing.field(label,'meal',[{label:'Meal name',value:meal.name,required:true},{label:'Available to',value:meal.audience,options:audiences}],([name,audience])=>{saveMeals(meals.map((entry,i)=>i===index?{...entry,name,audience}:entry));},{key:meal.id,placement:'inline'});
     SiteEditing.button('×',()=>{if(confirm(`Delete “${meal.name}” from the meal options?`)){saveMeals(meals.filter((_,i)=>i!==index));saveState();}},row,`Delete ${meal.name} meal`);
   });
-  const add=document.createElement('div');add.textContent='Add meal option';area.append(add);
-  SiteEditing.field(add,'new meal',[{label:'Meal name',value:'',required:true},{label:'Available to',value:audiences[0],options:audiences}],([name,audience])=>{saveMeals([...meals,{id:crypto.randomUUID(),name,audience}]);},{key:'new-meal'});
+  const addRow=document.createElement('div');addRow.className='inline-meal-row';area.append(addRow);
+  const add=document.createElement('span');add.textContent='Add meal option';addRow.append(add);
+  SiteEditing.field(add,'new meal',[{label:'Meal name',value:'',required:true},{label:'Available to',value:audiences[0],options:audiences}],([name,audience])=>{saveMeals([...meals,{id:crypto.randomUUID(),name,audience}]);},{key:'new-meal',placement:'inline'});
 }
 
 function renderEventDock() {

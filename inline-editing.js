@@ -101,7 +101,7 @@
       event.preventDefault(); event.stopPropagation();
       if (context.host && enabled) action();
     });
-    if (parent.isConnected && !parent.closest('.inline-overlay-layer')) overlay(control,parent,'delete');
+    if (parent.isConnected && !parent.closest('.inline-overlay-layer,.inline-edit-tools,.inline-meal-editor')) overlay(control,parent,'delete');
     else parent.append(control);
     cleanup.push(() => control.remove());
     return control;
@@ -137,7 +137,8 @@
     const placement = options.placement || (title === 'page' ? 'page' : 'after');
     const container=placement==='page' ? target.closest('.bride-groom-content,.what-to-expect-content,.perfect-experience-panel,.gathering-page') || target.closest('section') || target : target;
     if(placement==='page')control.classList.add('inline-page-tools');
-    overlay(control,container,placement);
+    if(placement==='inline') { target.after(control);cleanup.push(()=>control.remove()); }
+    else overlay(control,container,placement);
     let showing = false;
     const open = () => {
       if (showing) return; showing = true;

@@ -387,7 +387,11 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 @media print{.inline-edit-control,.inline-edit-tools,.inline-tab-tools,.inline-editor{display:none!important}}
 
 .inline-meal-editor{margin:14px 0;padding:14px;border:1px solid var(--border);border-radius:4px}
-.inline-meal-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:8px 0}
+.inline-meal-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0}
+.inline-meal-row>span:first-child{flex:1 1 180px;overflow-wrap:anywhere}
+.inline-meal-row>.inline-editor{flex:1 1 100%;min-width:0;box-sizing:border-box}
+.inline-meal-row>.inline-edit-tools{position:static;flex:none}
+.inline-meal-editor button{flex:none}
 .rsvp-attendance-box{min-width:0;margin:16px 0;padding:14px;border:1px solid var(--border);border-radius:5px}
 .rsvp-attendance-box>legend{font-weight:700}
 .inline-attire-edit-area>.inline-editor{margin:0}
