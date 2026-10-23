@@ -1419,7 +1419,7 @@ function renderInlineEditing() {
         if(page)tab.textContent=page.title;
       });
     }, format: value => formatEditableText(expandEditableTextVariables(value)), escape: escapeHtml });
-  if (state.gatheringName) SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
+  SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
   const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,
     keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date', min:key==='eventDate' && GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):undefined })),
     values => keys.forEach(([key], index) => { setGatheringDetail(key,values[index]); }));
@@ -1500,6 +1500,7 @@ function renderRsvpInlineEditing() {
   if (!SiteEditing.enabled) return;
   const header=document.querySelector('#rsvpEventHeader .header-art');
   if(header)SiteEditing.field(header,'header image',[{label:'RSVP first-page banner URL (empty to remove)',type:'url',value:state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header}],([value])=>{state.rsvpHeaderImage=value;},{key:'rsvp-first-page-banner'});
+  SiteEditing.field(document.querySelector('#rsvpFirstPageDate'),'date',[{label:'Gathering date',type:'date',value:state.eventDate,required:true}],([value])=>{setGatheringDetail('eventDate',value);});
   for(const [selector,value,key] of rsvpFirstPageTextFields()) {
     SiteEditing.field(document.querySelector(selector),'text',[{label:'Text (Markdown supported)',type:'textarea',value}],([text])=>{state[key]=text;},{key,placement:'text'});
   }

@@ -402,6 +402,7 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .inline-overlay-layer [hidden]{display:none!important}
 .inline-overlay-item.inline-editor,.inline-overlay-item.inline-meal-editor,.inline-overlay-item.inline-attire-edit-area{overflow:auto;overscroll-behavior:contain;background:var(--cream,#fffaf2);color:var(--navy)}
 .inline-edit-masked{visibility:hidden!important}
+.site-edit-mode .inline-empty-field{min-height:36px;min-width:80px;box-sizing:border-box}
 #editItemsButton{width:144px}
 @media(max-width:650px){#editItemsButton{width:auto}}
 @media print{.inline-overlay-layer{display:none!important}.inline-edit-masked{visibility:visible!important}}

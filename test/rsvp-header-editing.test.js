@@ -37,8 +37,8 @@ test('all first pages have one fixed image, date, two text slots and two buttons
  assert.doesNotMatch(headerCode,/cloneNode/);
  for(const id of ['wedding','thanksgiving','christmas','new-gathering']){
   const f=fixture(true,id);f.context.renderRsvpEventHeader();f.context.renderRsvpInlineEditing();
-  assert.equal(f.fields.length,3);
-  f.fields[1].commit(['First text']);f.fields[2].commit(['Second text']);
+  assert.equal(f.fields.length,4);
+  f.fields[2].commit(['First text']);f.fields[3].commit(['Second text']);
   assert.equal(f.context.rsvpFirstPageTextFields()[0][1],'First text');
   assert.equal(f.context.rsvpFirstPageTextFields()[1][1],'Second text');
  }
