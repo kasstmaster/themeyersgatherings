@@ -11,17 +11,16 @@
     }
     return {known:unique,selected,custom};
   }
-  function names(state,count) {
-    const selected=state.selected.slice(0,count);
-    return [...selected,...Array.from({length:Math.max(0,count-selected.length)},(_,index)=>String(state.custom[index] || '').trim())];
-  }
-  function resize(state,count) {state.selected=state.selected.slice(0,count);}
-  function toggle(state,index,checked,count) {
+  function names(state) {return [...state.selected,...state.custom.map(name=>String(name || '').trim())];}
+  function toggle(state,index,checked) {
     const name=state.known[index];
     if(!name)return;
     state.selected=state.selected.filter(child=>child!==name);
-    if(checked && state.selected.length<count)state.selected.push(name);
+    if(checked && names(state).length<20)state.selected.push(name);
   }
+  function add(state) {if(names(state).length<20)state.custom.push('');}
+  function remove(state,index) {state.custom.splice(index,1);}
+  function clear(state) {state.selected=[];state.custom=[];}
   function remapMeals(before,after,selections) {
     return selections.flatMap(selection=>{
       if(selection.type!=='child')return [selection];
@@ -30,5 +29,5 @@
       return index>=0?[{...selection,index}]:[];
     });
   }
-  globalThis.ChildPicker={create,names,resize,toggle,remapMeals};
+  globalThis.ChildPicker={create,names,toggle,add,remove,clear,remapMeals};
 })();

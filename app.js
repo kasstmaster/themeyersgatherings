@@ -287,6 +287,7 @@ function normalizeState(saved) {
             adults: Math.max(0, Number(rsvp.adults) || 0),
             children: Math.max(0, Number(rsvp.children) || 0),
             extraGuests: Math.max(0,Math.floor(Number(rsvp.extraGuests)||0)),
+            extraGuestNames: Array.isArray(rsvp.extraGuestNames)?rsvp.extraGuestNames.map(name=>typeof name==='string'?name.trim():''):[],
             childNames: Array.isArray(rsvp.childNames) ? rsvp.childNames.map(name=>typeof name==='string'?name.trim():'') : [],
             menuSelections: Array.isArray(rsvp.menuSelections) ? rsvp.menuSelections.filter(selection => selection && typeof selection === 'object').map(selection => ({
               ...(Number.isSafeInteger(selection.invitationNumber) ? {invitationNumber:selection.invitationNumber} : {}),
@@ -1769,17 +1770,28 @@ document.querySelector('#claimQuantityForm').addEventListener('submit', event =>
   showToast(`Thanks, ${householdDisplayName(guestName)}! You're bringing ${formatQuantity(quantity, item)} of ${item.name}.`);
 });
 document.querySelector('#claimQuantityDialog').addEventListener('close', () => { pendingClaimItemId = null; });
-let rsvpChildPicker=ChildPicker.create([]);
-function readRsvpChildNames(){return ChildPicker.names(rsvpChildPicker,Number(document.querySelector('#children').value));}
+let rsvpChildPicker=ChildPicker.create([]),rsvpChildNone=false;
+let rsvpGuestPicker=ChildPicker.create([]),rsvpGuestNone=false;
+function readRsvpChildNames(){return ChildPicker.names(rsvpChildPicker);}
+function readRsvpGuestNames(){return GatheringFeatures.rsvp(viewedEventId).guestCounter?ChildPicker.names(rsvpGuestPicker):[];}
+function rsvpChoiceHtml(attribute,label,checked=false,disabled=false){
+  return `<label class="rsvp-person-choice"><input type="checkbox" ${attribute} ${checked?'checked':''} ${disabled?'disabled':''}><span>${label}</span></label>`;
+}
+function rsvpCustomNamesHtml(picker,kind){
+  const title=kind==='child'?'Additional Child’s Name':'Guest’s Name';
+  return picker.custom.map((name,index)=>`<div class="rsvp-custom-person"><label class="rsvp-child-name"><span>${title}</span><input data-rsvp-${kind}-name="${index}" aria-label="${title}" placeholder="Name" value="${escapeAttribute(name)}" required></label><button type="button" data-remove-rsvp-${kind}="${index}" aria-label="Remove ${kind==='child'?'additional child':'guest'}">×</button></div>`).join('');
+}
 function renderRsvpChildNames(){
-  const container=document.querySelector('#rsvpChildNames');
-  const count=Number(document.querySelector('#children').value);
-  ChildPicker.resize(rsvpChildPicker,count);
-  container.hidden=false;
-  const selected=rsvpChildPicker.selected;
-  const known=rsvpChildPicker.known.map((name,index)=>`<label class="rsvp-known-child"><input type="checkbox" data-rsvp-known-child="${index}" ${selected.includes(name)?'checked':''} ${!selected.includes(name)&&selected.length>=count?'disabled':''}><span>${escapeHtml(name)}</span></label>`).join('');
-  const custom=Array.from({length:Math.max(0,count-selected.length)},(_,index)=>`<label class="rsvp-child-name"><span>Additional Child’s Name</span><input data-rsvp-child-name="${index}" aria-label="Additional Child’s Name" placeholder="Child’s name" value="${escapeAttribute(rsvpChildPicker.custom[index] || '')}" required></label>`).join('');
-  container.innerHTML=known+custom;
+  const count=readRsvpChildNames().length;
+  document.querySelector('#children').value=count;
+  const known=rsvpChildPicker.known.map((name,index)=>rsvpChoiceHtml(`data-rsvp-known-child="${index}"`,escapeHtml(name),rsvpChildPicker.selected.includes(name),!rsvpChildPicker.selected.includes(name)&&count>=20)).join('');
+  document.querySelector('#rsvpChildNames').innerHTML=rsvpChoiceHtml('data-rsvp-no-children','No Children',rsvpChildNone)+known+rsvpCustomNamesHtml(rsvpChildPicker,'child')+rsvpChoiceHtml('data-rsvp-add-child','Another child',false,count>=20);
+}
+function renderRsvpGuests(){
+  const names=readRsvpGuestNames();
+  document.querySelector('#extraGuests').value=names.length;
+  document.querySelector('#rsvpGuestsCounter').hidden=!GatheringFeatures.rsvp(viewedEventId).guestCounter;
+  document.querySelector('#rsvpGuestNames').innerHTML=rsvpChoiceHtml('data-rsvp-no-guests','We aren’t bringing a guest',rsvpGuestNone)+rsvpCustomNamesHtml(rsvpGuestPicker,'guest')+rsvpChoiceHtml('data-rsvp-add-guest',names.length?'We’re bringing another guest':'Yes we’re bringing a guest',false,names.length>=20);
 }
 function refreshRsvpChildMeals(before,meals){
   rsvpMealDraft=ChildPicker.remapMeals(before,readRsvpChildNames(),meals);
@@ -1792,12 +1804,41 @@ document.querySelector('#rsvpChildNames').addEventListener('input',event=>{
   renderWeddingRsvpMenu(meals);
 });
 document.querySelector('#rsvpChildNames').addEventListener('change',event=>{
-  if(!event.target.matches('[data-rsvp-known-child]'))return;
+  const input=event.target;
+  if(!input.matches('[data-rsvp-no-children],[data-rsvp-known-child],[data-rsvp-add-child]'))return;
   const before=readRsvpChildNames(),meals=captureRsvpMeals();
-  ChildPicker.toggle(rsvpChildPicker,Number(event.target.dataset.rsvpKnownChild),event.target.checked,Number(document.querySelector('#children').value));
-  renderRsvpChildNames();
-  refreshRsvpChildMeals(before,meals);
-  document.querySelector(`[data-rsvp-known-child="${event.target.dataset.rsvpKnownChild}"]`)?.focus({preventScroll:true});
+  if(input.matches('[data-rsvp-no-children]')){rsvpChildNone=input.checked;if(input.checked)ChildPicker.clear(rsvpChildPicker);}
+  else {
+    rsvpChildNone=false;
+    if(input.matches('[data-rsvp-add-child]'))ChildPicker.add(rsvpChildPicker);
+    else ChildPicker.toggle(rsvpChildPicker,Number(input.dataset.rsvpKnownChild),input.checked);
+  }
+  renderRsvpChildNames();refreshRsvpChildMeals(before,meals);
+  if(input.matches('[data-rsvp-add-child]'))document.querySelector(`[data-rsvp-child-name="${rsvpChildPicker.custom.length-1}"]`)?.focus();
+  else document.querySelector(input.matches('[data-rsvp-no-children]')?'[data-rsvp-no-children]':`[data-rsvp-known-child="${input.dataset.rsvpKnownChild}"]`)?.focus({preventScroll:true});
+});
+document.querySelector('#rsvpChildNames').addEventListener('click',event=>{
+  const button=event.target.closest('[data-remove-rsvp-child]');if(!button)return;
+  const before=readRsvpChildNames(),meals=captureRsvpMeals();
+  ChildPicker.remove(rsvpChildPicker,Number(button.dataset.removeRsvpChild));
+  renderRsvpChildNames();refreshRsvpChildMeals(before,meals);
+  document.querySelector('[data-rsvp-add-child]')?.focus({preventScroll:true});
+});
+document.querySelector('#rsvpGuestNames').addEventListener('input',event=>{
+  if(event.target.matches('[data-rsvp-guest-name]'))rsvpGuestPicker.custom[Number(event.target.dataset.rsvpGuestName)]=event.target.value;
+});
+document.querySelector('#rsvpGuestNames').addEventListener('change',event=>{
+  if(event.target.matches('[data-rsvp-no-guests]')){rsvpGuestNone=event.target.checked;if(rsvpGuestNone)ChildPicker.clear(rsvpGuestPicker);}
+  else if(event.target.matches('[data-rsvp-add-guest]')){rsvpGuestNone=false;ChildPicker.add(rsvpGuestPicker);}
+  else return;
+  renderRsvpGuests();RsvpFlow.refresh();
+  if(event.target.matches('[data-rsvp-add-guest]'))document.querySelector(`[data-rsvp-guest-name="${rsvpGuestPicker.custom.length-1}"]`)?.focus();
+  else document.querySelector('[data-rsvp-no-guests]')?.focus({preventScroll:true});
+});
+document.querySelector('#rsvpGuestNames').addEventListener('click',event=>{
+  const button=event.target.closest('[data-remove-rsvp-guest]');if(!button)return;
+  ChildPicker.remove(rsvpGuestPicker,Number(button.dataset.removeRsvpGuest));
+  renderRsvpGuests();RsvpFlow.refresh();document.querySelector('[data-rsvp-add-guest]')?.focus({preventScroll:true});
 });
 let rsvpMealDraft = [];
 function captureRsvpMeals() {
@@ -1830,10 +1871,13 @@ function openRsvp({fromEntry=false}={}) {ensureAccount(() => {
   rsvpMealDraft = existing?.savedMenuSelections || existing?.menuSelections || [];
   applyRsvpDeadline();
   renderRsvpPeople(existing);
-  document.querySelector('#children').value = existing?.children ?? 0;
-  document.querySelector('#rsvpGuestsCounter').hidden=!GatheringFeatures.rsvp(viewedEventId).guestCounter;
-  document.querySelector('#extraGuests').value=!GatheringFeatures.rsvp(viewedEventId).guestCounter?0:(existing?.extraGuests || 0)+(existing?.people || []).filter(person=>person.attending===true && person.guestChoice==='guest' && person.guestName?.trim()).length;
-  rsvpChildPicker=ChildPicker.create(rsvpAccount()?.children || [],existing?.childNames || []);
+  rsvpChildPicker=ChildPicker.create(rsvpAccount()?.children || [],Array.from({length:existing?.children || 0},(_,index)=>existing?.childNames?.[index] || ''));
+  rsvpChildNone=Boolean(existing)&&!readRsvpChildNames().length;
+  const savedGuests=Array.from({length:existing?.extraGuests || 0},(_,index)=>existing?.extraGuestNames?.[index] || '');
+  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)(existing?.people || []).filter(person=>person.attending===true && person.guestChoice==='guest' && person.guestName?.trim()).forEach(person=>savedGuests.push(person.guestName));
+  rsvpGuestPicker=ChildPicker.create([],GatheringFeatures.rsvp(viewedEventId).guestCounter?savedGuests:[]);
+  rsvpGuestNone=Boolean(existing)&&!readRsvpGuestNames().length;
+  renderRsvpGuests();
   rsvpMealDraft=ChildPicker.remapMeals(existing?.childNames || [],readRsvpChildNames(),rsvpMealDraft);
   renderRsvpChildNames();
   renderWeddingRsvpMenu(rsvpMealDraft);
@@ -1958,6 +2002,12 @@ function rsvpDishDraft(){
   return {quantities,custom};
 }
 function validateRsvpQuestion(key){
+  for(const [step,selector,none,names] of [['children','[data-rsvp-no-children]',rsvpChildNone,readRsvpChildNames()],['guests','[data-rsvp-no-guests]',rsvpGuestNone,readRsvpGuestNames()]]){
+    if(step==='guests'&&!GatheringFeatures.rsvp(viewedEventId).guestCounter)continue;
+    const choice=document.querySelector(selector);
+    choice?.setCustomValidity('');
+    if((key===step||key==='review')&&!none&&!names.length){choice?.setCustomValidity(step==='children'?'Choose No Children or select the children attending.':'Choose whether you are bringing a guest.');return key==='review'?step:false;}
+  }
   const custom=rsvpDishesEnabled()&&document.querySelector('#rsvpBringingDish').value==='yes'&&document.querySelector('#rsvpCustomDish').checked;
   document.querySelector('#rsvpCustomDishName').required=custom;
   document.querySelector('#rsvpCustomDishName').setCustomValidity(custom&&!document.querySelector('#rsvpCustomDishName').value.trim()?'Enter a dish name.':'');
@@ -1999,7 +2049,7 @@ function renderRsvpReview(container) {
   });
   if(GatheringFeatures.rsvp(viewedEventId).childNames && !isHostView())readRsvpChildNames().filter(Boolean).forEach(name=>line(name,'Accepts with pleasure'));
   else {line('Children',String(document.querySelector('#children').value));readRsvpChildNames().filter(Boolean).forEach((name,index)=>line(`Child ${index+1}`,name));}
-  if(GatheringFeatures.rsvp(viewedEventId).guestCounter)line('Guests',String(document.querySelector('#extraGuests').value));
+  if(GatheringFeatures.rsvp(viewedEventId).guestCounter){line('Guests',String(readRsvpGuestNames().length));readRsvpGuestNames().filter(Boolean).forEach(name=>line(name,'Accepts with pleasure'));}
   if(GatheringFeatures.rsvp(viewedEventId).contributions){
     const draft=rsvpDishDraft();
     const dishes=draft?[...draft.quantities].flatMap(([id,quantity])=>{const item=state.items.find(item=>item.id===id);return quantity&&item?[`${item.name} (${formatQuantity(quantity,item)})`]:[];}):state.items.flatMap(item=>{const quantity=item.claims.filter(name=>name===guestName).length;return quantity?[`${item.name} (${formatQuantity(quantity,item)})`]:[];});
@@ -2132,8 +2182,10 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   const allowed = GuestPlanning.plusOnePeople(rsvpAccount(),viewedEventId,people.map(person=>person.name));
   if (GatheringFeatures.rsvp(viewedEventId).namedGuests && !rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
   const menuSelections = GatheringFeatures.rsvp(viewedEventId).meals ? readWeddingMenuSelections() : [];
-  const extraGuests=GatheringFeatures.rsvp(viewedEventId).guestCounter?Number(document.querySelector('#extraGuests').value):0;
-  let rsvp = { name: guestName, people, childNames, extraGuests, adults: Number(document.querySelector('#adults').value)+extraGuests, children: Number(document.querySelector('#children').value), ...(GatheringFeatures.rsvp(viewedEventId).meals ? { menuSelections } : {}) };
+  const extraGuestNames=readRsvpGuestNames();
+  if(extraGuestNames.some(name=>!name)){event.preventDefault();showToast('Please enter a name for each guest.');return;}
+  const extraGuests=extraGuestNames.length;
+  let rsvp = { name: guestName, people, childNames, extraGuests, extraGuestNames, adults: Number(document.querySelector('#adults').value)+extraGuests, children: Number(document.querySelector('#children').value), ...(GatheringFeatures.rsvp(viewedEventId).meals ? { menuSelections } : {}) };
   const index = state.rsvps.findIndex(entry => entry.name === guestName);
   if (GatheringFeatures.rsvp(viewedEventId).namedGuests && rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
   const account=rsvpAccount();
@@ -2264,7 +2316,7 @@ function renderGuestAttendance() {
     const selections=rsvp.menuSelections || [];
     const selectionName=selection=>selection.name==='someone-else'?selection.customName:selection.name || `${selection.type} ${selection.index+1}`;
     const legacyNames=!rsvp.people?.length ? selections.map(selectionName) : [];
-    const names=[...new Set([...adultNames,...childNames,...legacyNames])];
+    const names=[...new Set([...adultNames,...(rsvp.extraGuestNames || []),...childNames,...legacyNames])];
     const rows=names.map(name=>{
       const selection=selections.find(selection=>normalizeAccountName(selectionName(selection))===normalizeAccountName(name));
       return `<div>${escapeHtml(name)}${wedding?`: ${escapeHtml(selection?.meal==='none'?'No meal':selection?.meal || 'No meal selected')}`:''}${selection?.dietaryRestrictions?`<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>`:''}</div>`;

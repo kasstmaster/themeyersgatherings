@@ -743,3 +743,11 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpChildNames .rsvp-known-child input{width:20px;height:20px;flex:none;padding:0;accent-color:var(--orange)}
 #rsvpDialog #rsvpChildNames .rsvp-child-name{flex-direction:column;align-items:flex-start;gap:4px;margin:8px 0}
 #rsvpDialog #rsvpChildNames .rsvp-child-name input{flex:none;width:100%;max-width:100%;height:38px;padding:8px 10px;font-size:16px;line-height:20px}
+
+/* Shared child/guest choices replace numeric counters. */
+#rsvpDialog .rsvp-person-choice{display:flex;flex-direction:row;align-items:center;gap:10px;margin:12px 0;font-size:1rem;color:inherit}
+#rsvpDialog .rsvp-person-choice input{width:20px;height:20px;flex:none;margin:0;padding:0;accent-color:var(--orange)}
+#rsvpDialog .rsvp-custom-person{display:flex;align-items:end;gap:8px;margin:8px 0}
+#rsvpDialog .rsvp-custom-person .rsvp-child-name{flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:4px;margin:0}
+#rsvpDialog #rsvpGuestsCounter .rsvp-child-name input{width:100%;height:38px;padding:8px 10px;font-size:16px;line-height:20px}
+#rsvpDialog .rsvp-custom-person>button{flex:none;width:38px;height:38px;padding:0;border:1px solid var(--border);border-radius:4px;background:transparent;color:inherit;font-size:1.25rem}
