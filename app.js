@@ -1978,8 +1978,7 @@ document.querySelector('#rsvpDialog').addEventListener('close',()=>{
   const form=document.querySelector('#rsvpForm');
   const fromEntry=form.dataset.fromEntry==='true';form.dataset.fromEntry='false';
   if(!isHostView()){
-    if(GatheringFeatures.forGathering(viewedEventId).weddingPages && form.dataset.saved==='true'){showSignedInDestination();render();}
-    else showEventSelection();
+    showEventSelection();
     return;
   }
   if(!fromEntry)return;
