@@ -1048,6 +1048,21 @@ function showSignInPage() {
   updateSignedInAccountBanner();
   if (!document.querySelector('#guestSignInFields').hidden) setSignInStep(0);
 }
+function gatheringRsvpStatus(eventId) {
+  const saved=appState.events[eventId]?.rsvps?.find(rsvp=>rsvp.name===guestName);
+  if(!saved)return '';
+  const account=rsvpAccount();
+  const invitation=InvitationGroups.number(account,eventId,signedInPersonName);
+  if(!saved.people?.length) {
+    if(account && invitation!==(GuestPlanning.invitationNumbers(account,eventId)[0] || 1))return '';
+    return Number(saved.adults)>0 || Number(saved.children)>0 ? 'attending' : 'declined';
+  }
+  const response=account ? InvitationGroups.response(account,eventId,accountSignInNames(account.name),invitation,saved) : saved;
+  const person=response.people.find(person=>normalize(person.name)===normalize(signedInPersonName));
+  if(person)return person.attending===true?'attending':person.attending===false?'declined':'';
+  if(response.people.some(person=>person.attending===true))return 'attending';
+  return response.people.length && response.people.every(person=>person.attending===false)?'declined':'';
+}
 function renderEventSelection() {
   const ids = availableEventIds();
   document.querySelector('#eventSelectionChoices').innerHTML = ids.map(id => {
@@ -1055,7 +1070,9 @@ function renderEventSelection() {
     const eventState = appState.events[id];
     const date = new Date(`${eventState.eventDate}T12:00:00`);
     const formatted = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(date).replaceAll(',', '');
-    return `<button type="button" data-enter-event="${id}"><span>${escapeHtml(event.name)}</span><small>${formatted}</small></button>`;
+    const status=gatheringRsvpStatus(id);
+    const badge=status?`<span class="event-selection-status ${status}" role="img" aria-label="${status==='attending'?'RSVP: Attending':'RSVP: Declined'}">${status==='attending'?'✓':'✕'}</span>`:'';
+    return `<button type="button" data-enter-event="${id}"${status?' class="has-rsvp-status"':''}>${badge}<span class="event-selection-label"><span>${escapeHtml(event.name)}</span><small>${formatted}</small></span></button>`;
   }).join('');
   document.querySelector('#eventSelectionEmpty').hidden = ids.length > 0;
 }
@@ -1328,6 +1345,7 @@ function render() {
   const isWedding = features.weddingPages;
   const hostView = isHostView();
   updateSignedInAccountBanner();
+  if(!document.querySelector('#eventSelectionPage').hidden)renderEventSelection();
   document.body.className = `theme-${event.theme}`;
   applyGatheringColors();
   document.title = 'The Meyers';
