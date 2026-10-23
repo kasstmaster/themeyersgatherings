@@ -6,7 +6,7 @@ const [app,editing]=await Promise.all(['app.js','inline-editing.js'].map(file=>r
 const context=vm.createContext({expandEditableTextVariables:value=>value,escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),escapeAttribute:value=>value});
 vm.runInContext(app.slice(app.indexOf('function safeEditableLink('),app.indexOf('function editableTextVariables()')),context);
 vm.runInContext(editing,context);
-const format=value=>context.formatWeddingPartyDescription(value);
+const format=(value,options)=>context.formatEditableText(value,options);
 test('shared formatting preserves single and repeated blank lines, including Markdown and lists',()=>{
  assert.equal(format('First\n\nSecond'),'<p>First</p><br><p>Second</p>');
  assert.equal(format('First\n\n\nSecond'),'<p>First</p><br><br><p>Second</p>');
@@ -75,4 +75,12 @@ test('RSVP time and multiline address render formatting inside a larger text fie
  assert.equal(format(text),"<p><strong>TWO O'CLOCK IN THE AFTERNOON</strong></p><p><em>221 W China Grade Loop, Bldg A</em></p><p><em>Bakersfield CA 93308</em></p><p>Kindly RSVP by DATE</p>");
  assert.equal(format('Before\n**First\nSecond**\nAfter'),'<p>Before</p><p><strong>First</strong></p><p><strong>Second</strong></p><p>After</p>');
  assert.equal(format('Before\n_Address\n\nCity_\nAfter'),'<p>Before</p><p><em>Address</em></p><br><p><em>City</em></p><p>After</p>');
+});
+
+test('one formatter handles both page blocks and inline text without changing blank lines',()=>{
+ const copy="**Time**\n*Street\nCity*\n\nDetails";
+ assert.equal(format(copy),'<p><strong>Time</strong></p><p><em>Street</em></p><p><em>City</em></p><br><p>Details</p>');
+ assert.equal(format(copy,{inline:true}),'<strong>Time</strong><br><em>Street</em><br><em>City</em><br><br>Details');
+ assert.equal(context.formatWeddingPartyDescription(copy),format(copy));
+ assert.doesNotMatch(format('<script>',{inline:true}),/<script>/);
 });

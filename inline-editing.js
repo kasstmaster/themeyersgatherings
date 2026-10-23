@@ -314,11 +314,7 @@
     if (options.automatic) open(); else button(`Edit ${title}`, open, control);
   }
   function formatTextForTarget(target, value, format=context.format) {
-    const html=format(value);
-    // Text inside headings and paragraphs must not acquire nested paragraphs
-    // and their default vertical margins. Keep inline Markdown and line breaks.
-    return /^(?:H[1-6]|P)$/.test(target.tagName)
-      ? html.replace(/<p>([\s\S]*?)<\/p>/g,'$1<br>').replace(/<br>$/,'') : html;
+    return format(value,{inline:/^(?:H[1-6]|P|ADDRESS)$/.test(target.tagName)});
   }
   function staticTextElements(root) {
     // Text blocks, headings and captions can be changed without changing links or controls.

@@ -578,7 +578,7 @@ function safeEditableLink(value) {
   const href = String(value || '').trim();
   return /^(?:https?:|mailto:|tel:|\/(?!\/)|\.{1,2}\/|#)/i.test(href) ? href : '';
 }
-function formatWeddingPartyDescription(value) {
+function formatEditableText(value, {inline=false} = {}) {
   value = expandEditableTextVariables(value);
   if(!String(value || '').trim())return '';
   // Emphasis can span lines anywhere in a text box, not only the whole field.
@@ -643,8 +643,10 @@ function formatWeddingPartyDescription(value) {
     else output.push('<br>');
   });
   closeList();
-  return output.join('');
+  const html=output.join('');
+  return inline ? html.replace(/<p>([\s\S]*?)<\/p>/g,'$1<br>').replace(/<br>$/,'') : html;
 }
+function formatWeddingPartyDescription(value) { return formatEditableText(value); }
 function editableTextVariables() {
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
   const locationLines = keys => keys.map(key => state[key] || '').join('\n');
@@ -661,7 +663,6 @@ function expandEditableTextVariables(value) {
   const variables = editableTextVariables();
   return String(value || '').replace(/\{(date|home|church|venue|registry|monetary)\}/g, (_placeholder, name) => variables[name]);
 }
-function formatEditableText(value) { return formatWeddingPartyDescription(value); }
 function renderWeddingTimeline(value) {
   const rows = String(value || '').split(/\r?\n/).map(line => line.split('\t')).filter(columns => columns.some(column => column.trim()));
   return rows.map(columns => {
@@ -1269,10 +1270,10 @@ function renderWeddingGathering(hostView) {
     ? visibleWeddingPartyMembers.map(member => {
       const description = member.responsibilities || '';
       if (hostView) {
-        const content = description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>';
+        const content = description ? `<div class="wedding-party-description">${formatEditableText(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>';
         return `<details class="wedding-party-card" data-responsibilities-member="${escapeAttribute(member.id)}"><summary><span class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</span><span class="wedding-party-member-name">${escapeHtml(member.name)}</span></summary>${content}</details>`;
       }
-      return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${description ? `<div class="wedding-party-description">${formatWeddingPartyDescription(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>'}</article>`;
+      return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${description ? `<div class="wedding-party-description">${formatEditableText(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>'}</article>`;
     }).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !showingRegistryPage;
@@ -1341,14 +1342,14 @@ function render() {
   renderEventDock();
   updateHeaderImage(event);
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
-  document.querySelector('#eventHeaderText').innerHTML = formatEditableText(expandEditableTextVariables(state.headerText || ''));
+  document.querySelector('#eventHeaderText').innerHTML = formatEditableText(state.headerText || '');
   const dateElement = document.querySelector('#eventDate');
   dateElement.dateTime = state.eventDate;
   document.querySelector('#rsvpDeadline').hidden = !SiteEditing.enabled;
   document.querySelector('#rsvpDeadline').textContent = state.rsvpDate ? `Kindly RSVP by ${new Intl.DateTimeFormat('en-US', {month:'long',day:'numeric',year:'numeric'}).format(new Date(`${state.rsvpDate}T12:00:00`))}` : 'RSVP deadline not set';
   dateElement.textContent = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', '');
-  document.querySelector('#eventAddress').textContent = gatheringHeaderAddress();
-  document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${escapeHtml(SharedDetails.homeAddress(state)).replaceAll('\n','<br>')}`;
+  document.querySelector('#eventAddress').innerHTML = formatEditableText(gatheringHeaderAddress(),{inline:true});
+  document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${formatEditableText(SharedDetails.homeAddress(state),{inline:true})}`;
   document.querySelector('#welcomeKicker').hidden=!features.welcome.showKicker;
   document.querySelector('#welcome-title').textContent=features.welcome.title;
   document.querySelector('#welcomeNote').innerHTML=`<em>${escapeHtml(features.welcome.message)}</em>`;
@@ -1428,7 +1429,7 @@ function renderInlineEditing() {
         const page=state.sitePages?.find(page=>`custom-page-${page.id}`===tab.getAttribute('aria-controls'));
         if(page)tab.textContent=page.title;
       });
-    }, format: value => formatEditableText(expandEditableTextVariables(value)), escape: escapeHtml });
+    }, format: (value,options) => formatEditableText(value,options), escape: escapeHtml });
   SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
   const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,
     keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date', min:key==='eventDate' && GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):undefined })),
@@ -1934,9 +1935,9 @@ function renderRsvpEventHeader() {
   date.dateTime=state.eventDate;
   date.textContent=document.querySelector('#eventDate').textContent;
   for(const [selector,value] of rsvpFirstPageTextFields()) {
-    document.querySelector(selector).innerHTML=formatEditableText(expandEditableTextVariables(value));
+    document.querySelector(selector).innerHTML=formatEditableText(value);
   }
-  SiteEditing.applyStaticText(document.querySelector('#rsvpDialog'),state,value=>formatEditableText(expandEditableTextVariables(value)));
+  SiteEditing.applyStaticText(document.querySelector('#rsvpDialog'),state,(value,options)=>formatEditableText(value,options));
 }
 document.querySelector('#rsvpConfirmEvent').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));
 document.querySelector('#rsvpWrongEvent').addEventListener('click',()=>{
