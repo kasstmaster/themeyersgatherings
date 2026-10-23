@@ -189,7 +189,7 @@
     cleanup.push(() => { editor.remove(); target.classList.remove('inline-edit-replaced'); });
   }
   function directFields(target, fields, commit, key) {
-    const editors = [], anchors = [];
+    const editors = [], anchors = [], toolbars = [];
     let wrappedBody;
     let pageBody = target.matches('section') ? target.querySelector('.bride-groom-content,.what-to-expect-content') || target : target;
     const heading = target.closest('section')?.querySelector('h2,h3');
@@ -217,6 +217,28 @@
       }
       input.addEventListener('input', () => { if (key) drafts.set(key,editors.map(editor=>editor.value)); });
       replaceInPlace(input,anchor); editors.push(input); anchors.push(anchor);
+      if(input.tagName==='TEXTAREA') {
+        const toolbar=node('div',undefined,'inline-text-formatting');
+        toolbar.setAttribute('role','toolbar');toolbar.setAttribute('aria-label','Text formatting');
+        const apply=kind=>{
+          const start=input.selectionStart,end=input.selectionEnd,selected=input.value.slice(start,end);
+          const replacement=formatTextSelection(kind,selected);
+          input.setRangeText(replacement,start,end,'select');
+          input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();
+        };
+        for(const [kind,label] of [['bold','Bold'],['italic','Italic'],['code','Code'],['bullets','Bullets'],['numbers','Numbered list'],['link','Link']]) {
+          const control=node('button',label,'inline-edit-control');control.type='button';
+          control.setAttribute('aria-label',`Format ${label.toLowerCase()}`);
+          control.addEventListener('mousedown',event=>event.preventDefault());
+          control.addEventListener('click',()=>apply(kind));toolbar.append(control);
+        }
+        input.addEventListener('keydown',event=>{
+          if((event.ctrlKey||event.metaKey) && ['b','i'].includes(event.key.toLowerCase())) {
+            event.preventDefault();apply(event.key.toLowerCase()==='b'?'bold':'italic');
+          }
+        });
+        input.before(toolbar);toolbars.push(toolbar);cleanup.push(()=>toolbar.remove());
+      }
     });
     let saved = false;
     const save = () => {
@@ -234,16 +256,25 @@
         anchor.classList.remove('inline-edit-replaced');editor.remove();
       });
       if(wrappedBody?.parentNode)wrappedBody.replaceWith(...wrappedBody.childNodes);
+      toolbars.forEach(toolbar=>toolbar.remove());
       savers.delete(save);context.directSaved?.();
     };
     savers.add(save); cleanup.push(() => savers.delete(save));
+    const insideEditor=element=>editors.includes(element)||toolbars.some(toolbar=>toolbar.contains(element));
+    toolbars.forEach(toolbar=>toolbar.addEventListener('focusout',event=>{if(!insideEditor(event.relatedTarget))save();}));
     editors.forEach(editor => {
-      editor.addEventListener('blur', event => { if (!editors.includes(event.relatedTarget)) save(); });
+      editor.addEventListener('blur', event => { if (!insideEditor(event.relatedTarget)) save(); });
       editor.addEventListener('keydown', event => {
         if (event.key==='Enter' && editor.tagName!=='TEXTAREA') { event.preventDefault(); editor.blur(); }
       });
     });
     (editors.find(editor=>editor.tagName==='TEXTAREA') || editors[0])?.focus();
+  }
+  function formatTextSelection(kind,selected) {
+    if(kind==='bullets'||kind==='numbers')return (selected||'List item').split('\n').map((line,index)=>`${kind==='bullets'?'-':`${index+1}.`} ${line}`).join('\n');
+    if(kind==='link')return `[${selected||'Link text'}](https://example.com)`;
+    const marker={bold:'**',italic:'*',code:'`'}[kind];
+    return `${marker}${selected||'Text'}${marker}`;
   }
   function editTitle(tab, anchor, value, commit) {
     if (tab.dataset.editingTitle) return;

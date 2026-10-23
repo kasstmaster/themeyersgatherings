@@ -33,3 +33,15 @@ test('saved first-page text reapplies to rebuilt RSVP headers with editing turne
  }
  const other=root();context.SiteEditing.applyStaticText(other.result,{siteText:{}},format);assert.equal(other.paragraph.innerHTML,'Original');
 });
+
+vm.runInContext(editing.slice(editing.indexOf('  function formatTextSelection('),editing.indexOf('  function editTitle(')),context);
+test('formatting controls produce supported text while retaining selected line breaks',()=>{
+ const apply=(kind,text)=>context.formatTextSelection(kind,text);
+ assert.equal(format(apply('bold','Welcome')),'<p><strong>Welcome</strong></p>');
+ assert.equal(format(apply('italic','Welcome')),'<p><em>Welcome</em></p>');
+ assert.equal(format(apply('code','Welcome')),'<p><code>Welcome</code></p>');
+ assert.equal(format(apply('bullets','One\nTwo')),'<ul><li>One</li><li>Two</li></ul>');
+ assert.equal(format(apply('numbers','One\nTwo')),'<ol><li>One</li><li>Two</li></ol>');
+ assert.match(format(apply('link','Details')),/<a href="https:\/\/example.com">Details<\/a>/);
+ assert.equal(apply('bold',''),'**Text**');
+});
