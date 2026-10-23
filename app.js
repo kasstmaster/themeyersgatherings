@@ -1779,7 +1779,7 @@ function rsvpChoiceHtml(attribute,label,checked=false,disabled=false){
 }
 function rsvpCustomNamesHtml(picker,kind){
   const title=kind==='child'?'Additional Child’s Name':'Guest’s Name';
-  return picker.custom.map((name,index)=>`<div class="rsvp-custom-person"><label class="rsvp-child-name"><span>${title}</span><input data-rsvp-${kind}-name="${index}" aria-label="${title}" placeholder="Name" value="${escapeAttribute(name)}" required></label><button type="button" data-remove-rsvp-${kind}="${index}" aria-label="Remove ${kind==='child'?'additional child':'guest'}">×</button></div>`).join('');
+  return picker.custom.map((name,index)=>`<div class="rsvp-custom-person"><label class="rsvp-person-choice"><input type="checkbox" data-remove-rsvp-${kind}="${index}" checked><span>${title}</span></label><input data-rsvp-${kind}-name="${index}" aria-label="${title}" placeholder="Name" value="${escapeAttribute(name)}" required></div>`).join('');
 }
 function renderRsvpChildNames(){
   const count=readRsvpChildNames().length;
@@ -1805,6 +1805,14 @@ document.querySelector('#rsvpChildNames').addEventListener('input',event=>{
 });
 document.querySelector('#rsvpChildNames').addEventListener('change',event=>{
   const input=event.target;
+  if(input.matches('[data-remove-rsvp-child]')){
+    if(input.checked)return;
+    const before=readRsvpChildNames(),meals=captureRsvpMeals();
+    ChildPicker.remove(rsvpChildPicker,Number(input.dataset.removeRsvpChild));
+    renderRsvpChildNames();refreshRsvpChildMeals(before,meals);
+    document.querySelector('[data-rsvp-add-child]')?.focus({preventScroll:true});
+    return;
+  }
   if(!input.matches('[data-rsvp-no-children],[data-rsvp-known-child],[data-rsvp-add-child]'))return;
   const before=readRsvpChildNames(),meals=captureRsvpMeals();
   if(input.matches('[data-rsvp-no-children]')){rsvpChildNone=input.checked;if(input.checked)ChildPicker.clear(rsvpChildPicker);}
@@ -1817,28 +1825,22 @@ document.querySelector('#rsvpChildNames').addEventListener('change',event=>{
   if(input.matches('[data-rsvp-add-child]'))document.querySelector(`[data-rsvp-child-name="${rsvpChildPicker.custom.length-1}"]`)?.focus();
   else document.querySelector(input.matches('[data-rsvp-no-children]')?'[data-rsvp-no-children]':`[data-rsvp-known-child="${input.dataset.rsvpKnownChild}"]`)?.focus({preventScroll:true});
 });
-document.querySelector('#rsvpChildNames').addEventListener('click',event=>{
-  const button=event.target.closest('[data-remove-rsvp-child]');if(!button)return;
-  const before=readRsvpChildNames(),meals=captureRsvpMeals();
-  ChildPicker.remove(rsvpChildPicker,Number(button.dataset.removeRsvpChild));
-  renderRsvpChildNames();refreshRsvpChildMeals(before,meals);
-  document.querySelector('[data-rsvp-add-child]')?.focus({preventScroll:true});
-});
 document.querySelector('#rsvpGuestNames').addEventListener('input',event=>{
   if(event.target.matches('[data-rsvp-guest-name]'))rsvpGuestPicker.custom[Number(event.target.dataset.rsvpGuestName)]=event.target.value;
 });
 document.querySelector('#rsvpGuestNames').addEventListener('change',event=>{
+  if(event.target.matches('[data-remove-rsvp-guest]')){
+    if(event.target.checked)return;
+    ChildPicker.remove(rsvpGuestPicker,Number(event.target.dataset.removeRsvpGuest));
+    renderRsvpGuests();RsvpFlow.refresh();document.querySelector('[data-rsvp-add-guest]')?.focus({preventScroll:true});
+    return;
+  }
   if(event.target.matches('[data-rsvp-no-guests]')){rsvpGuestNone=event.target.checked;if(rsvpGuestNone)ChildPicker.clear(rsvpGuestPicker);}
   else if(event.target.matches('[data-rsvp-add-guest]')){rsvpGuestNone=false;ChildPicker.add(rsvpGuestPicker);}
   else return;
   renderRsvpGuests();RsvpFlow.refresh();
   if(event.target.matches('[data-rsvp-add-guest]'))document.querySelector(`[data-rsvp-guest-name="${rsvpGuestPicker.custom.length-1}"]`)?.focus();
   else document.querySelector('[data-rsvp-no-guests]')?.focus({preventScroll:true});
-});
-document.querySelector('#rsvpGuestNames').addEventListener('click',event=>{
-  const button=event.target.closest('[data-remove-rsvp-guest]');if(!button)return;
-  ChildPicker.remove(rsvpGuestPicker,Number(button.dataset.removeRsvpGuest));
-  renderRsvpGuests();RsvpFlow.refresh();document.querySelector('[data-rsvp-add-guest]')?.focus({preventScroll:true});
 });
 let rsvpMealDraft = [];
 function captureRsvpMeals() {
@@ -1947,7 +1949,7 @@ function rsvpFlowSteps() {
       if(choice){add(`guest-${index}`,choice.closest('label'),'Bringing a guest?');if(choice.value==='guest')add(`guest-name-${index}`,row.querySelector('[data-person-guest-name]'),'Your guest’s name');}
     }
   });
-  add('children',document.querySelector('#rsvpChildrenQuestion'),'Any children?');
+  add('children',document.querySelector('#rsvpChildrenQuestion'),'Any children attending?');
   if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Any guests?');
   if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest').forEach(card=>{
     const id=`${card.dataset.guestType}-${card.dataset.guestIndex}`;
