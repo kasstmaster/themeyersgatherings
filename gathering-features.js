@@ -10,7 +10,7 @@
       title: "WE'D LOVE FOR YOU TO BRING A DISH TO SHARE",
       message: "Choose something delicious to bring. If bringing something isn't practical, simply come and enjoy the evening with us."
     }),
-    rsvp: Object.freeze({ childNames: false, guestCounter: true, namedGuests: false, meals: false, contributions: true })
+    rsvp: Object.freeze({ childNames: true, guestCounter: true, namedGuests: false, meals: false, contributions: true })
   });
   const wedding = Object.freeze({
     menu: false,
