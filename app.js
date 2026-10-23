@@ -1058,7 +1058,7 @@ function gatheringRsvpStatus(eventId) {
     return Number(saved.adults)>0 || Number(saved.children)>0 ? 'attending' : 'declined';
   }
   const response=account ? InvitationGroups.response(account,eventId,accountSignInNames(account.name),invitation,saved) : saved;
-  const person=response.people.find(person=>normalize(person.name)===normalize(signedInPersonName));
+  const person=response.people.find(person=>normalizeAccountName(person.name)===normalizeAccountName(signedInPersonName));
   if(person)return person.attending===true?'attending':person.attending===false?'declined':'';
   if(response.people.some(person=>person.attending===true))return 'attending';
   return response.people.length && response.people.every(person=>person.attending===false)?'declined':'';

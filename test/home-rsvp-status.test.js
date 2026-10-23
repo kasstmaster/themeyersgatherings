@@ -10,8 +10,8 @@ function fixture(){
  const account={name:'Jane Smith/John Smith',invitationPeople:{wedding:{'John Smith':2}}};
  const events=Object.fromEntries(['wedding','thanksgiving','christmas','new-gathering'].map(id=>[id,{eventDate:'2026-12-01',rsvps:[]}]));
  const choices={},empty={};
- const c=vm.createContext({appState:{events},guestName:account.name,signedInPersonName:'Jane Smith',rsvpAccount:()=>account,GuestPlanning,InvitationGroups,accountSignInNames:()=>GuestPlanning.accountNames(account.name),normalize:s=>String(s||'').trim().toLowerCase(),availableEventIds:()=>Object.keys(events),EVENT_DETAILS:Object.fromEntries(Object.keys(events).map(id=>[id,{name:id}])),escapeHtml:s=>s,document:{querySelector:s=>s==='#eventSelectionChoices'?choices:empty}});
- vm.runInContext(code,c);return {c,account,events,choices};
+ const c=vm.createContext({appState:{events},guestName:account.name,signedInPersonName:'Jane Smith',rsvpAccount:()=>account,GuestPlanning,InvitationGroups,accountSignInNames:()=>GuestPlanning.accountNames(account.name),availableEventIds:()=>Object.keys(events),EVENT_DETAILS:Object.fromEntries(Object.keys(events).map(id=>[id,{name:id}])),escapeHtml:s=>s,document:{querySelector:s=>s==='#eventSelectionChoices'?choices:empty}});
+ vm.runInContext(source.slice(source.indexOf('function normalizeAccountName('),source.indexOf('function householdDisplayName('))+code,c);return {c,account,events,choices};
 }
 test('home status follows each person and gathering, including new gatherings',()=>{
  const {c,events}=fixture();
