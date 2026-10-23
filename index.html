@@ -158,7 +158,6 @@
         </div>
         <div class="gathering-primary-actions">
           <button class="rsvp-button" id="rsvpButton" type="button">RSVP</button>
-          <button class="rsvp-button" id="uploadPhotosButton" type="button" hidden>Upload Photos</button>
         </div>
       </section>
 
@@ -171,21 +170,148 @@
       <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent" class="bride-groom-content"></div></section>
 
 
-      <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
-        <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="false" hidden>Bride &amp; Groom</button>
-        <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
-        <button type="button" role="tab" data-wedding-tab="guest" aria-controls="guestSection" aria-selected="true">Guest</button>
+      <nav id="weddingHostTabs" class="wedding-party-tabs" aria-label="Host Wedding pages" role="tablist" hidden>
+        <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="true">Bride &amp; Groom</button>
         <button type="button" role="tab" data-wedding-tab="timeline" aria-controls="weddingTimelineSection" aria-selected="false">Timeline</button>
-        <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
       </nav>
-
-
       <section id="brideGroomSection" class="bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
         <p class="section-kicker">A private space for the couple</p>
         <h2 id="brideGroomHeading">Bride &amp; Groom</h2>
         <nav id="brideGroomTabs" class="matron-info-tabs bride-groom-tabs" aria-label="Bride and Groom pages" role="tablist" hidden></nav>
         <div id="brideGroomContent" class="bride-groom-content"></div>
       </section>
+      <section id="weddingTimelineSection" class="wedding-timeline-section" aria-labelledby="weddingTimelineHeading" hidden>
+        <p class="section-kicker">The wedding day at a glance</p>
+        <h2 id="weddingTimelineHeading">Wedding Timeline</h2>
+        <div id="weddingTimelineAboveContent" class="wedding-timeline-copy"></div>
+        <div class="wedding-timeline-table-wrap">
+          <table class="wedding-timeline-table">
+            <thead><tr><th scope="col">Time</th><th scope="col">What Happens</th><th scope="col">Notes</th></tr></thead>
+            <tbody id="weddingTimelineBody"></tbody>
+          </table>
+        </div>
+        <div id="weddingTimelineBelowContent" class="wedding-timeline-copy"></div>
+      </section>
+
+      <section id="gatheringMenuSection" class="menu-section gathering-page" aria-label="Available dishes">
+        <div class="menu-heading">
+          <h2>Menu</h2>
+          <button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button>
+        </div>
+        <div id="menuGrid" class="menu-grid"></div>
+      </section>
+
+    </main>
+
+    <footer>
+      <address>
+        <b>The Meyers</b><br />
+        221 W China Grade Loop<br />
+        Bakersfield CA 93225
+      </address>
+    </footer>
+
+    <nav id="eventDock" class="event-dock" aria-label="Event navigation" hidden>
+      <div id="eventSwitchButtons" class="event-switch-buttons"></div>
+    </nav>
+
+    <dialog id="gatheringColorsDialog"><form method="dialog" class="modal-card" id="gatheringColorsForm">
+      <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
+      <h2>Gathering colors</h2><div id="gatheringColorInputs"></div>
+      <button type="button" id="resetGatheringColors">Reset colors</button>
+      <div class="modal-dialog-footer"><button class="primary-button" value="save">Save colors</button></div>
+    </form></dialog>
+    <dialog id="newGatheringDialog"><form method="dialog" class="modal-card" id="newGatheringForm">
+      <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
+      <h2>New gathering</h2>
+      <p>Uses the standard gathering layout with Notes, Menu, RSVP, and accounts. Wedding stays separate.</p>
+      <label>Name<input id="newGatheringName" required maxlength="100"></label>
+      <label>Gathering date<input id="newGatheringDate" type="date" required></label>
+      <label>Home address<textarea id="newGatheringAddress" rows="3"></textarea></label>
+      <div class="modal-dialog-footer"><button class="primary-button" value="create">Create gathering</button></div>
+    </form></dialog>
+
+    <dialog id="gatheringHistoryDialog"><div class="modal-card history-card">
+      <button id="closeGatheringHistory" class="modal-close" type="button" aria-label="Close">×</button>
+      <h2>Gathering history</h2>
+      <label>Past gathering date<select id="gatheringHistoryDate"></select></label>
+      <div id="gatheringHistoryContent"></div>
+      <form id="nextGatheringForm"><h3>Start the next gathering</h3>
+        <p>Keeps the layout and menu setup. Starts fresh with no RSVPs or claims; choose accounts to invite again.</p>
+        <label>Next date<input id="nextGatheringDate" type="date" required></label>
+        <p id="nextGatheringError" class="form-error" role="alert"></p>
+
+      </form><div class="modal-dialog-footer"><button class="primary-button" type="submit" form="nextGatheringForm">Start next gathering</button></div>
+    </div></dialog>
+
+    <dialog id="weddingMediaDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="weddingMediaHeading">
+      <section id="weddingMediaSection" class="full-page-form" aria-labelledby="weddingMediaHeading">
+        <button class="modal-close" type="button" data-close-wedding-media aria-label="Close">×</button>
+        <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us through Dropbox.</p>
+        <h2 id="weddingMediaHeading">Upload Photos &amp; Videos</h2>
+        <nav id="weddingMediaTabs" class="wedding-party-tabs" role="tablist" aria-label="Wedding uploads">
+          <button type="button" role="tab" data-media-tab="upload" aria-controls="weddingMediaUpload" aria-selected="true">Upload</button>
+          <button type="button" role="tab" data-media-tab="view" aria-controls="weddingMediaView" aria-selected="false" tabindex="-1">View Photos &amp; Videos</button>
+        </nav>
+        <section id="weddingMediaUpload" class="perfect-experience-panel flow-panel" aria-label="Upload wedding photos and videos">
+          <p id="weddingMediaUploadNotice" class="wedding-upload-intro"><em>Keep this page open until uploading finishes.</em></p>
+          <div id="dropboxHostControls" hidden><button id="dropboxConnect" class="primary-button" type="button">Connect Dropbox</button></div>
+          <p id="dropboxConnectionStatus" role="status" aria-live="polite"></p>
+          <button id="dropboxCheckConnection" class="primary-button" type="button">Check connection</button>
+          <div id="dropboxInlineUpload" hidden>
+            <label for="dropboxFiles">Choose photos and videos</label>
+            <div class="dropbox-file-row">
+              <input id="dropboxFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.heic,.heif,.mov">
+              <button id="dropboxUpload" class="primary-button" type="button">Upload</button>
+            </div>
+            <p id="dropboxUploadStatus" role="status" aria-live="polite"></p>
+          </div>
+          <h3>OR</h3>
+          <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
+          <input id="weddingMediaLink" type="url" placeholder="https://…">
+          <button id="weddingMediaSaveLink" class="primary-button" type="button">Save sharing link</button>
+          <p id="weddingMediaLinkStatus" role="status" aria-live="polite"></p>
+        </section>
+        <section id="weddingMediaView" class="perfect-experience-panel flow-panel" aria-label="Your wedding photos and videos" hidden>
+          <button id="weddingMediaRefresh" class="primary-button" type="button">Refresh</button>
+          <p>Photos and videos sent through Dropbox go directly to the hosts. This gallery shows upload confirmations, sharing links, and files previously shared on this website. New Dropbox uploads are stored in the hosts’ Dropbox.</p>
+          <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
+          <div id="weddingMediaGallery" class="wedding-media-gallery"></div>
+        </section>
+        <div class="modal-dialog-footer"><button class="sign-in-back" type="button" data-close-wedding-media>Back</button></div>
+      </section>
+    </dialog>
+
+    <dialog id="rsvpDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="rsvpHeading">
+      <form method="dialog" id="rsvpForm" class="modal-card full-page-form flow-panel" novalidate>
+        <button class="modal-close" type="button" aria-label="Close">×</button>
+        <p class="section-kicker">Save your seat</p>
+        <h2 id="rsvpHeading" tabindex="-1">RSVP</h2>
+        <p id="rsvpChildAge" hidden>Ages 17 and under</p>
+        <p id="rsvpDeadlineNotice" role="status" hidden></p>
+        <section id="rsvpEventConfirmation" aria-label="Confirm your gathering" hidden>
+          <div id="rsvpEventHeader">
+            <div class="header-art">
+              <img id="rsvpFirstPageImage" alt="" decoding="async" hidden />
+              <time id="rsvpFirstPageDate" class="event-date"></time>
+              <div id="rsvpFirstPageText" class="event-header-text"></div>
+              <div id="rsvpFirstPageDetails" class="event-header-text"></div>
+            </div>
+          </div>
+          <div class="rsvp-event-actions">
+            <button id="rsvpConfirmEvent" class="primary-button" type="button" data-rsvp-advance>RSVP to this event</button>
+            <button id="rsvpWrongEvent" class="primary-button" type="button">RSVP to a different event</button>
+            <button id="uploadPhotosButton" class="primary-button" type="button" hidden>Upload Photos</button>
+          </div>
+          <div id="rsvpWeddingPages" hidden>
+      <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
+        <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
+        <button type="button" role="tab" data-wedding-tab="guest" aria-controls="guestSection" aria-selected="true">Guest</button>
+        <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
+      </nav>
+
+
+
 
       <section id="weddingPartySection" class="wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
         <p class="section-kicker">The people by our side</p>
@@ -203,18 +329,7 @@
         <div id="weddingPartyAttirePanel"></div>
       </section>
 
-      <section id="weddingTimelineSection" class="wedding-timeline-section" aria-labelledby="weddingTimelineHeading" hidden>
-        <p class="section-kicker">The wedding day at a glance</p>
-        <h2 id="weddingTimelineHeading">Wedding Timeline</h2>
-        <div id="weddingTimelineAboveContent" class="wedding-timeline-copy"></div>
-        <div class="wedding-timeline-table-wrap">
-          <table class="wedding-timeline-table">
-            <thead><tr><th scope="col">Time</th><th scope="col">What Happens</th><th scope="col">Notes</th></tr></thead>
-            <tbody id="weddingTimelineBody"></tbody>
-          </table>
-        </div>
-        <div id="weddingTimelineBelowContent" class="wedding-timeline-copy"></div>
-      </section>
+
 
       <section id="guestSection" class="wedding-party-section guest-section" aria-labelledby="guestHeading" hidden>
         <p class="section-kicker">Everything you need to celebrate</p>
@@ -282,115 +397,6 @@
           <a id="monetaryGiftButton" class="registry-button registry-button-secondary" target="_blank" rel="noopener noreferrer">Give a monetary gift</a>
         </div>
       </section>
-
-      <section id="gatheringMenuSection" class="menu-section gathering-page" aria-label="Available dishes">
-        <div class="menu-heading">
-          <h2>Menu</h2>
-          <button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button>
-        </div>
-        <div id="menuGrid" class="menu-grid"></div>
-      </section>
-
-    </main>
-
-    <footer>
-      <address>
-        <b>The Meyers</b><br />
-        221 W China Grade Loop<br />
-        Bakersfield CA 93225
-      </address>
-    </footer>
-
-    <nav id="eventDock" class="event-dock" aria-label="Event navigation" hidden>
-      <div id="eventSwitchButtons" class="event-switch-buttons"></div>
-    </nav>
-
-    <dialog id="gatheringColorsDialog"><form method="dialog" class="modal-card" id="gatheringColorsForm">
-      <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
-      <h2>Gathering colors</h2><div id="gatheringColorInputs"></div>
-      <button type="button" id="resetGatheringColors">Reset colors</button>
-      <div class="modal-dialog-footer"><button class="primary-button" value="save">Save colors</button></div>
-    </form></dialog>
-    <dialog id="newGatheringDialog"><form method="dialog" class="modal-card" id="newGatheringForm">
-      <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
-      <h2>New gathering</h2>
-      <p>Uses the standard gathering layout with Notes, Menu, RSVP, and accounts. Wedding stays separate.</p>
-      <label>Name<input id="newGatheringName" required maxlength="100"></label>
-      <label>Gathering date<input id="newGatheringDate" type="date" required></label>
-      <label>Home address<textarea id="newGatheringAddress" rows="3"></textarea></label>
-      <div class="modal-dialog-footer"><button class="primary-button" value="create">Create gathering</button></div>
-    </form></dialog>
-
-    <dialog id="gatheringHistoryDialog"><div class="modal-card history-card">
-      <button id="closeGatheringHistory" class="modal-close" type="button" aria-label="Close">×</button>
-      <h2>Gathering history</h2>
-      <label>Past gathering date<select id="gatheringHistoryDate"></select></label>
-      <div id="gatheringHistoryContent"></div>
-      <form id="nextGatheringForm"><h3>Start the next gathering</h3>
-        <p>Keeps the layout and menu setup. Starts fresh with no RSVPs or claims; choose accounts to invite again.</p>
-        <label>Next date<input id="nextGatheringDate" type="date" required></label>
-        <p id="nextGatheringError" class="form-error" role="alert"></p>
-        
-      </form><div class="modal-dialog-footer"><button class="primary-button" type="submit" form="nextGatheringForm">Start next gathering</button></div>
-    </div></dialog>
-
-    <dialog id="weddingMediaDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="weddingMediaHeading">
-      <section id="weddingMediaSection" class="full-page-form" aria-labelledby="weddingMediaHeading">
-        <button class="modal-close" type="button" data-close-wedding-media aria-label="Close">×</button>
-        <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us through Dropbox.</p>
-        <h2 id="weddingMediaHeading">Upload Photos &amp; Videos</h2>
-        <nav id="weddingMediaTabs" class="wedding-party-tabs" role="tablist" aria-label="Wedding uploads">
-          <button type="button" role="tab" data-media-tab="upload" aria-controls="weddingMediaUpload" aria-selected="true">Upload</button>
-          <button type="button" role="tab" data-media-tab="view" aria-controls="weddingMediaView" aria-selected="false" tabindex="-1">View Photos &amp; Videos</button>
-        </nav>
-        <section id="weddingMediaUpload" class="perfect-experience-panel flow-panel" aria-label="Upload wedding photos and videos">
-          <p id="weddingMediaUploadNotice" class="wedding-upload-intro"><em>Keep this page open until uploading finishes.</em></p>
-          <div id="dropboxHostControls" hidden><button id="dropboxConnect" class="primary-button" type="button">Connect Dropbox</button></div>
-          <p id="dropboxConnectionStatus" role="status" aria-live="polite"></p>
-          <button id="dropboxCheckConnection" class="primary-button" type="button">Check connection</button>
-          <div id="dropboxInlineUpload" hidden>
-            <label for="dropboxFiles">Choose photos and videos</label>
-            <div class="dropbox-file-row">
-              <input id="dropboxFiles" type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/ogg,.heic,.heif,.mov">
-              <button id="dropboxUpload" class="primary-button" type="button">Upload</button>
-            </div>
-            <p id="dropboxUploadStatus" role="status" aria-live="polite"></p>
-          </div>
-          <h3>OR</h3>
-          <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
-          <input id="weddingMediaLink" type="url" placeholder="https://…">
-          <button id="weddingMediaSaveLink" class="primary-button" type="button">Save sharing link</button>
-          <p id="weddingMediaLinkStatus" role="status" aria-live="polite"></p>
-        </section>
-        <section id="weddingMediaView" class="perfect-experience-panel flow-panel" aria-label="Your wedding photos and videos" hidden>
-          <button id="weddingMediaRefresh" class="primary-button" type="button">Refresh</button>
-          <p>Photos and videos sent through Dropbox go directly to the hosts. This gallery shows upload confirmations, sharing links, and files previously shared on this website. New Dropbox uploads are stored in the hosts’ Dropbox.</p>
-          <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
-          <div id="weddingMediaGallery" class="wedding-media-gallery"></div>
-        </section>
-        <div class="modal-dialog-footer"><button class="sign-in-back" type="button" data-close-wedding-media>Back</button></div>
-      </section>
-    </dialog>
-
-    <dialog id="rsvpDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="rsvpHeading">
-      <form method="dialog" id="rsvpForm" class="modal-card full-page-form flow-panel" novalidate>
-        <button class="modal-close" type="button" aria-label="Close">×</button>
-        <p class="section-kicker">Save your seat</p>
-        <h2 id="rsvpHeading" tabindex="-1">RSVP</h2>
-        <p id="rsvpChildAge" hidden>Ages 17 and under</p>
-        <p id="rsvpDeadlineNotice" role="status" hidden></p>
-        <section id="rsvpEventConfirmation" aria-label="Confirm your gathering" hidden>
-          <div id="rsvpEventHeader">
-            <div class="header-art">
-              <img id="rsvpFirstPageImage" alt="" decoding="async" hidden />
-              <time id="rsvpFirstPageDate" class="event-date"></time>
-              <div id="rsvpFirstPageText" class="event-header-text"></div>
-              <div id="rsvpFirstPageDetails" class="event-header-text"></div>
-            </div>
-          </div>
-          <div class="rsvp-event-actions">
-            <button id="rsvpConfirmEvent" class="primary-button" type="button" data-rsvp-advance>RSVP to this event</button>
-            <button id="rsvpWrongEvent" class="primary-button" type="button">RSVP to a different event</button>
           </div>
         </section>
         <section id="rsvpAttire" hidden><div id="rsvpAttireColumns" class="rsvp-attire-columns"></div><button id="rsvpAttireAcknowledge" class="primary-button" type="button" data-rsvp-advance>I Agree</button></section>

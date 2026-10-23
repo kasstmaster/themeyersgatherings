@@ -1183,9 +1183,10 @@ function weddingDetailsWithoutHeaderAddress(value) {
 }
 function renderWeddingGathering(hostView) {
   const isWedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
+  document.querySelector('#rsvpWeddingPages').hidden=!isWedding;
   if(!isWedding){
     document.querySelector('#weddingMediaDialog').close();
-    for(const id of ['weddingPartyTabs','brideGroomSection','weddingPartySection','weddingTimelineSection','guestSection','weddingMediaSection','registrySection','registryAttireSection','whatToExpectSection'])document.getElementById(id).hidden=true;
+    for(const id of ['weddingHostTabs','weddingPartyTabs','brideGroomSection','weddingPartySection','weddingTimelineSection','guestSection','weddingMediaSection','registrySection','registryAttireSection','whatToExpectSection'])document.getElementById(id).hidden=true;
     return;
   }
   const registrySection = document.querySelector('#registrySection');
@@ -1197,16 +1198,23 @@ function renderWeddingGathering(hostView) {
   });
   if (!hostView && selectedWeddingTab === 'timeline') selectedWeddingTab = 'guest';
   if ((!hostView && !isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostView && selectedWeddingTab === 'couple')) selectedWeddingTab = 'guest';
-  const showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple';
+  const showingBrideGroomPage = isWedding && hostView && selectedWeddingTab !== 'timeline';
   const showingWeddingPartyPage = isWedding && (hostView || isWeddingPartyMember) && selectedWeddingTab === 'party';
   const showingTimelinePage = isWedding && hostView && selectedWeddingTab === 'timeline';
-  const showingGuestPage = isWedding && !isWeddingPartyMember && selectedWeddingTab === 'guest';
+  const publicWeddingTab = ['couple','timeline'].includes(selectedWeddingTab) ? 'guest' : selectedWeddingTab;
+  const showingGuestPage = isWedding && !isWeddingPartyMember && publicWeddingTab === 'guest';
   const showingPartyAttirePage = showingWeddingPartyPage && selectedMatronTab === 'attire';
   const showingAttirePage = (showingGuestPage && selectedGuestTab === 'attire') || showingPartyAttirePage;
   const showingWhatToExpectPage = showingGuestPage && selectedGuestTab === 'details';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
   document.querySelector('#weddingMediaSection').hidden = false;
   if (document.querySelector('#weddingMediaDialog').open) WeddingMedia.show({ base: SHARED_STATE_URL, host: hostView, password: hostView ? hostCredential : '', name: signedInPersonName || guestName, account: guestName, preview: false });
+  const hostTabs=document.querySelector('#weddingHostTabs');
+  hostTabs.hidden=!hostView;
+  hostTabs.querySelectorAll('[data-wedding-tab]').forEach(button=>{
+    const selected=button.dataset.weddingTab===(selectedWeddingTab==='timeline'?'timeline':'couple');
+    button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
+  });
   const weddingPartyTabs = document.querySelector('#weddingPartyTabs');
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
@@ -1214,7 +1222,7 @@ function renderWeddingGathering(hostView) {
     const partyMemberCanViewTab = ['party', 'registry'].includes(button.dataset.weddingTab);
     const guestCanViewTab = ['guest', 'registry'].includes(button.dataset.weddingTab);
     button.hidden = !(hostView ? hostCanViewTab : isWeddingPartyMember ? partyMemberCanViewTab : guestCanViewTab);
-    const isSelected = button.dataset.weddingTab === selectedWeddingTab;
+    const isSelected = button.dataset.weddingTab === publicWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
     button.tabIndex = isSelected ? 0 : -1;
   });
@@ -1512,7 +1520,7 @@ function renderInlineEditing() {
   SiteEditing.staticText(document.querySelector('#eventPage'));
   SiteEditing.staticText(document.querySelector('#rsvpDialog'));
   if(document.querySelector('#weddingMediaDialog').open)SiteEditing.staticText(document.querySelector('#weddingMediaDialog'));
-  document.querySelectorAll('#eventPage [role="tablist"],#weddingMediaDialog[open] [role="tablist"]').forEach(nav => {
+  document.querySelectorAll('#eventPage [role="tablist"],#rsvpWeddingPages [role="tablist"],#weddingMediaDialog[open] [role="tablist"]').forEach(nav => {
     if(nav.id==='gatheringTabs' ? !features.menu && !features.notes : !features.weddingPages)return;
     const config = { available: nav.id==='brideGroomTabs' && selectedWeddingTab==='couple' && viewedEventId==='wedding' };
     if (nav.id==='brideGroomTabs') Object.assign(config, { audience:'host',
@@ -1521,6 +1529,7 @@ function renderInlineEditing() {
       remove: tab => { state.brideGroomPages=state.brideGroomPages.filter(page=>page.id!==tab.dataset.brideGroomPage); }
     });
     if (nav.id==='matronInfoTabs') config.audience='party';
+    if (nav.id==='weddingHostTabs') config.audience='host';
     SiteEditing.tabs(nav,config);
   });
   renderRsvpInlineEditing();
@@ -1668,22 +1677,22 @@ document.querySelector('#eventDock').addEventListener('click', event => {
   if (!button || button.dataset.switchEvent === viewedEventId) return;
   enterEvent(button.dataset.switchEvent);
 });
-document.querySelector('#weddingPartyTabs').addEventListener('click', event => {
+document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav.addEventListener('click', event => {
   const button = event.target.closest('[data-wedding-tab]');
   if (!button) return;
   selectedWeddingTab = button.dataset.weddingTab;
   render();
-});
-document.querySelector('#weddingPartyTabs').addEventListener('keydown', event => {
+}));
+document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav.addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
   event.preventDefault();
-  const tabs = [...document.querySelectorAll('#weddingPartyTabs [data-wedding-tab]:not([hidden])')];
-  const currentIndex = tabs.findIndex(button => button.dataset.weddingTab === selectedWeddingTab);
+  const tabs = [...event.currentTarget.querySelectorAll('[data-wedding-tab]:not([hidden])')];
+  const currentIndex = tabs.findIndex(button => button.getAttribute('aria-selected') === 'true');
   const direction = event.key === 'ArrowRight' ? 1 : -1;
   selectedWeddingTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.weddingTab;
   render();
-  document.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
-});
+  event.currentTarget.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
+}));
 document.querySelector('#guestInfoTabs').addEventListener('click', event => {
   const button = event.target.closest('[data-guest-tab]');
   if (!button) return;

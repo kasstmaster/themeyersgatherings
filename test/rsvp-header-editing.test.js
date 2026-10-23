@@ -31,9 +31,9 @@ test('guest confirmation stays visible and interactive without editing controls'
 
 test('all first pages have one fixed image, date, two text slots and two buttons',async()=>{
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
- const section=html.slice(html.indexOf('<section id="rsvpEventConfirmation"'),html.indexOf('<section id="rsvpAttire"'));
+ const section=html.slice(html.indexOf('<section id="rsvpEventConfirmation"'),html.indexOf('<div id="rsvpWeddingPages"'));
  const ids=[...section.matchAll(/id="([^"]+)"/g)].map(match=>match[1]);
- assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','rsvpWrongEvent']);
+ assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','rsvpWrongEvent','uploadPhotosButton']);
  assert.doesNotMatch(headerCode,/cloneNode/);
  for(const id of ['wedding','thanksgiving','christmas','new-gathering']){
   const f=fixture(true,id);f.context.renderRsvpEventHeader();f.context.renderRsvpInlineEditing();
