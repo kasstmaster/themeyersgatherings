@@ -1334,6 +1334,7 @@ function render() {
   document.querySelector('#eventHeaderText').innerHTML = formatEditableText(expandEditableTextVariables(state.headerText || ''));
   const dateElement = document.querySelector('#eventDate');
   dateElement.dateTime = state.eventDate;
+  document.querySelector('#rsvpDeadline').hidden = !SiteEditing.enabled;
   document.querySelector('#rsvpDeadline').textContent = state.rsvpDate ? `Kindly RSVP by ${new Intl.DateTimeFormat('en-US', {month:'long',day:'numeric',year:'numeric'}).format(new Date(`${state.rsvpDate}T12:00:00`))}` : 'RSVP deadline not set';
   dateElement.textContent = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', '');
   document.querySelector('#eventAddress').textContent = gatheringHeaderAddress();
