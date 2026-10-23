@@ -380,7 +380,14 @@
         <p id="rsvpChildAge" hidden>Ages 17 and under</p>
         <p id="rsvpDeadlineNotice" role="status" hidden></p>
         <section id="rsvpEventConfirmation" aria-label="Confirm your gathering" hidden>
-          <div id="rsvpEventHeader"></div>
+          <div id="rsvpEventHeader">
+            <div class="header-art">
+              <img id="rsvpFirstPageImage" alt="" decoding="async" hidden />
+              <time id="rsvpFirstPageDate" class="event-date"></time>
+              <div id="rsvpFirstPageText" class="event-header-text"></div>
+              <div id="rsvpFirstPageDetails" class="event-header-text"></div>
+            </div>
+          </div>
           <div class="rsvp-event-actions">
             <button id="rsvpConfirmEvent" class="primary-button" type="button" data-rsvp-advance>RSVP to this event</button>
             <button id="rsvpWrongEvent" class="primary-button" type="button">RSVP to a different event</button>

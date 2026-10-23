@@ -402,6 +402,7 @@ main>.summary-strip:not([hidden])+.welcome{padding-top:40px}
 .inline-overlay-layer [hidden]{display:none!important}
 .inline-overlay-item.inline-editor,.inline-overlay-item.inline-meal-editor,.inline-overlay-item.inline-attire-edit-area{overflow:auto;overscroll-behavior:contain;background:var(--cream,#fffaf2);color:var(--navy)}
 .inline-edit-masked{visibility:hidden!important}
+.site-edit-mode .inline-empty-field{min-height:36px;min-width:80px;box-sizing:border-box}
 #editItemsButton{width:144px}
 @media(max-width:650px){#editItemsButton{width:auto}}
 @media print{.inline-overlay-layer{display:none!important}.inline-edit-masked{visibility:visible!important}}
@@ -732,7 +733,7 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpDialog .rsvp-attire-columns>article{padding:clamp(24px,4vw,32px);box-sizing:border-box}
 #rsvpDialog .modal-dialog-footer{background:transparent;box-shadow:none;border:0;border-radius:0;margin:24px 0 0;padding:0}
 
-/* RSVP event confirmation reuses the gathering's rendered header content. */
+/* All gatherings share the same RSVP first-page layout. */
 #rsvpEventHeader .header-art{width:100%}
 #rsvpEventHeader :is(.event-date,.event-address,.event-header-text){color:var(--flow-text);text-shadow:none}
 #rsvpEventHeader :is(.event-date,.event-address){text-align:center;overflow-wrap:anywhere}
@@ -771,3 +772,5 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpDishQuestionText:empty{display:none}
 .site-edit-mode #rsvpDialog #rsvpDishQuestionText:empty{display:block;min-height:32px}
 .site-edit-mode #rsvpDishQuestionText:empty::before{content:"Add explanatory text";color:var(--muted)}
+
+#rsvpEventHeader .event-header-text{width:100%;text-align:center;overflow-wrap:anywhere}

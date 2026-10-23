@@ -1419,7 +1419,7 @@ function renderInlineEditing() {
         if(page)tab.textContent=page.title;
       });
     }, format: value => formatEditableText(expandEditableTextVariables(value)), escape: escapeHtml });
-  if (state.gatheringName) SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
+  SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
   const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,
     keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date', min:key==='eventDate' && GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):undefined })),
     values => keys.forEach(([key], index) => { setGatheringDetail(key,values[index]); }));
@@ -1500,6 +1500,10 @@ function renderRsvpInlineEditing() {
   if (!SiteEditing.enabled) return;
   const header=document.querySelector('#rsvpEventHeader .header-art');
   if(header)SiteEditing.field(header,'header image',[{label:'RSVP first-page banner URL (empty to remove)',type:'url',value:state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header}],([value])=>{state.rsvpHeaderImage=value;},{key:'rsvp-first-page-banner'});
+  SiteEditing.field(document.querySelector('#rsvpFirstPageDate'),'date',[{label:'Gathering date',type:'date',value:state.eventDate,required:true}],([value])=>{setGatheringDetail('eventDate',value);});
+  for(const [selector,value,key] of rsvpFirstPageTextFields()) {
+    SiteEditing.field(document.querySelector(selector),'text',[{label:'Text (Markdown supported)',type:'textarea',value}],([text])=>{state[key]=text;},{key,placement:'text'});
+  }
   if (!GatheringFeatures.rsvp(viewedEventId).meals) return;
   const target = document.querySelector('#weddingRsvpMenu');
   if (target.hidden || document.querySelector('#rsvpDialog .inline-meal-editor')) return;
@@ -1899,22 +1903,30 @@ function openRsvp({fromEntry=false}={}) {ensureAccount(() => {
   if(SiteEditing.enabled)render();
   RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',editing:SiteEditing.enabled});
 });}
+// Every gathering uses these same two editable text slots and the same HTML layout.
+function rsvpFirstPageTextFields() {
+  const saved=state.siteText || {};
+  return [
+    ['#rsvpFirstPageText',state.rsvpIntroText ?? saved['#rsvpEventHeader>div:nth-of-type(1)>div:nth-of-type(1)>p:nth-of-type(1)'] ?? state.headerText ?? '','rsvpIntroText'],
+    ['#rsvpFirstPageDetails',state.rsvpDetailsText ?? saved['#rsvpEventHeader>div:nth-of-type(1)>p:nth-of-type(1)'] ?? gatheringHeaderAddress(),'rsvpDetailsText']
+  ];
+}
 function renderRsvpEventHeader() {
   const section=document.querySelector('#rsvpEventConfirmation');
   section.hidden=false;
   document.querySelector('#rsvpConfirmEvent').disabled=SiteEditing.enabled;
   document.querySelector('#rsvpWrongEvent').disabled=SiteEditing.enabled;
-  const header=document.querySelector('#eventPage .header-art').cloneNode(true);
-  header.querySelectorAll('.inline-edit-tools,.inline-editor,button').forEach(node=>node.remove());
-  const banner=header.querySelector('img');
-  if(banner && typeof state.rsvpHeaderImage==='string') {
-    banner.removeAttribute('src');banner.hidden=!state.rsvpHeaderImage;
-    if(state.rsvpHeaderImage)banner.src=state.rsvpHeaderImage;
+  const banner=document.querySelector('#rsvpFirstPageImage');
+  const source=state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header ?? '';
+  banner.removeAttribute('src');banner.hidden=!source;
+  if(source)banner.src=source;
+  banner.addEventListener('error',()=>{banner.hidden=true;},{once:true});
+  const date=document.querySelector('#rsvpFirstPageDate');
+  date.dateTime=state.eventDate;
+  date.textContent=document.querySelector('#eventDate').textContent;
+  for(const [selector,value] of rsvpFirstPageTextFields()) {
+    document.querySelector(selector).innerHTML=formatEditableText(expandEditableTextVariables(value));
   }
-  header.removeAttribute('id');
-  header.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
-  header.querySelectorAll('img[src]').forEach(image=>{image.hidden=false;image.addEventListener('error',()=>{image.hidden=true;},{once:true});});
-  document.querySelector('#rsvpEventHeader').replaceChildren(header);
   SiteEditing.applyStaticText(document.querySelector('#rsvpDialog'),state,value=>formatEditableText(expandEditableTextVariables(value)));
 }
 document.querySelector('#rsvpConfirmEvent').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));

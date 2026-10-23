@@ -125,6 +125,13 @@
     if (!enabled || !context.host) return;
     const key = `${context.eventId}:${options.key || target.id || title}`;
     if (document.querySelector(`[data-inline-field-key="${CSS.escape(key)}"]`)) return;
+    // Empty fields still need an anchor for their Edit control. Keep inactive
+    // pages hidden; only reveal a field itself when its values are empty.
+    const wasHidden=target.hidden;
+    const emptyValues=fields.every(spec=>spec.value === '' || spec.value == null);
+    if(wasHidden && emptyValues)target.hidden=false;
+    if(!target.getBoundingClientRect().height)target.classList.add('inline-empty-field');
+    cleanup.push(()=>{target.classList.remove('inline-empty-field');if(wasHidden && emptyValues)target.hidden=true;});
     const control = node('span', undefined, 'inline-edit-tools');
     control.dataset.inlineFieldKey = key;
     const placement = options.placement || (title === 'page' ? 'page' : 'after');
@@ -275,7 +282,7 @@
   function staticTextElements(root) {
     // Text blocks, headings and captions can be changed without changing links or controls.
     return [...root.querySelectorAll('h1,h2,h3,h4,p,footer address')].filter(element =>
-      !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.inline-editor,.inline-edit-tools,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,.inline-edit-masked,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
+      !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.inline-editor,.inline-edit-tools,#rsvpFirstPageText,#rsvpFirstPageDetails,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,.inline-edit-masked,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
       !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#rsvpDeadline,#signedInAccountName,#customGatheringHeading'));
   }
   function applyStaticText(root,state,format) {
