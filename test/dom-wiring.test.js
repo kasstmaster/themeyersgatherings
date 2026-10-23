@@ -59,7 +59,7 @@ test('invited adults show invitation and overall adult and child totals', async 
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
-  assert.match(html, /Adults invited<\/h2>[\s\S]*id="invitedPeopleTotal"/);
+  assert.match(html, /Invited<\/h2>[\s\S]*id="invitedPeopleTotal"/);
   assert.match(javascript, /const names=accountSignInNames\(account\.name\)/);
   assert.match(javascript, /\(account\.children \|\| \[\]\)\.length/);
   assert.match(javascript, /const invitedAccounts = appState\.accounts\.filter\(account => accountIsInvited\(account, viewedEventId\)\)/);
