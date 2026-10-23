@@ -764,3 +764,9 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #gatheringColorInputs .palette-row input[type=range]{height:30px;padding:0}
 .palette-row>button{padding:8px;border:1px solid var(--border);background:var(--cream);color:var(--ink);border-radius:4px}
 @media(max-width:520px){.palette-row{grid-template-columns:minmax(0,1fr) 90px}.palette-row>button{grid-column:1/-1;justify-self:end}}
+
+/* Host-editable explanation below the shared dish question. */
+#rsvpDialog #rsvpDishQuestionText{font-family:"Times New Roman",Times,serif;font-size:1.1rem;line-height:1.5;margin:12px 0 20px;overflow-wrap:anywhere}
+#rsvpDishQuestionText:empty{display:none}
+.site-edit-mode #rsvpDialog #rsvpDishQuestionText:empty{display:block;min-height:32px}
+.site-edit-mode #rsvpDishQuestionText:empty::before{content:"Add explanatory text";color:var(--muted)}
