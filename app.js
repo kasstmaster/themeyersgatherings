@@ -1105,7 +1105,8 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   // the exact option the guest just selected and leave this page stuck open.
   showSignedInDestination();
   render();
-  if(eventId==='wedding' && !isHostView() && !isSignedInWeddingPartyMember() && !hasSubmittedInvitationRsvp())openRsvp({fromEntry:true});
+  if(!isHostView() && !GatheringFeatures.forGathering(eventId).weddingPages)openRsvp({fromEntry:true});
+  else if(eventId==='wedding' && !isHostView() && !isSignedInWeddingPartyMember() && !hasSubmittedInvitationRsvp())openRsvp({fromEntry:true});
 }
 function ensureAccount(callback) {
   if (guestName) return callback();
