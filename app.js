@@ -581,11 +581,11 @@ function safeEditableLink(value) {
 function formatWeddingPartyDescription(value) {
   value = expandEditableTextVariables(value);
   if(!String(value || '').trim())return '';
-  // Older toolbar saves could wrap a whole multiline selection in one pair.
-  value=String(value).replace(/^(\*{1,3}|_{1,3})([\s\S]*\n[\s\S]*)\1$/,(_,marker,content)=>
-    content.split('\n')[0].endsWith(marker) || content.split('\n').at(-1).startsWith(marker)
-      ? `${marker}${content}${marker}`
-      : content.split('\n').map(line=>line.trim()?`${marker}${line}${marker}`:line).join('\n'));
+  // Emphasis can span lines anywhere in a text box, not only the whole field.
+  value=String(value).replace(/(?<![*_])(\*{1,3}|_{1,3})(?![*_])([\s\S]*?)\1(?![*_])/g,(original,marker,content)=>
+    content.includes('\n')
+      ? content.split('\n').map(line=>line.trim()?`${marker}${line}${marker}`:line).join('\n')
+      : original);
   const formatEmphasis = text => escapeHtml(text)
     .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
     .replace(/___(.+?)___/g, '<strong><em>$1</em></strong>')

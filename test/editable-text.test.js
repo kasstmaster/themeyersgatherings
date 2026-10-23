@@ -69,3 +69,10 @@ test('shared formatting handles mixed styles, literal code, lists, links, and un
   const html=format(markup);assert.ok(html.includes('<br>'));assert.doesNotMatch(html,/\*/);
  }
 });
+
+test('RSVP time and multiline address render formatting inside a larger text field',()=>{
+ const text="**TWO O'CLOCK IN THE AFTERNOON**\n*221 W China Grade Loop, Bldg A\nBakersfield CA 93308*\nKindly RSVP by DATE";
+ assert.equal(format(text),"<p><strong>TWO O'CLOCK IN THE AFTERNOON</strong></p><p><em>221 W China Grade Loop, Bldg A</em></p><p><em>Bakersfield CA 93308</em></p><p>Kindly RSVP by DATE</p>");
+ assert.equal(format('Before\n**First\nSecond**\nAfter'),'<p>Before</p><p><strong>First</strong></p><p><strong>Second</strong></p><p>After</p>');
+ assert.equal(format('Before\n_Address\n\nCity_\nAfter'),'<p>Before</p><p><em>Address</em></p><br><p><em>City</em></p><p>After</p>');
+});
