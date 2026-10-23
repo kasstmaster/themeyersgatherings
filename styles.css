@@ -789,34 +789,34 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpFirstPageDetails:not(:empty){margin-top:10px;line-height:1.5}
 
 /* Wedding pages live inside the RSVP introduction and inherit its palette. */
-#rsvpWeddingPages{margin-top:36px;color:var(--flow-text);text-align:left}
-#rsvpWeddingPages :is(.wedding-party-tabs,.matron-info-tabs){--tab-surface:transparent;--tab-text:var(--flow-text);--tab-border:currentColor;width:100%;margin:20px 0;max-width:100%}
-#rsvpWeddingPages :is(.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section,.registry-attire-section,.what-to-expect-section,.gathering-page){margin:24px 0 0;padding:0;min-height:0;background:transparent;color:var(--flow-text);border:0;border-radius:0;box-shadow:none}
-#rsvpWeddingPages :is(h2,h3,h4,h5,p,li,.section-kicker,.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.wedding-party-description,.affordable-attire,.affordable-attire-lead,.affordable-attire-closing,.attire-shop-links a,.attire-shop-links span){color:var(--flow-text);text-shadow:none}
-#rsvpWeddingPages :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.registry-gift-note){padding:0;background:transparent}
-#rsvpWeddingPages :is(.affordable-attire-guidance article,.wedding-party-card,.flow-panel){padding:18px;background:transparent;color:var(--flow-text);border-color:currentColor;box-shadow:none}
-#rsvpWeddingPages .affordable-attire-guidance{grid-template-columns:minmax(0,1fr);gap:20px}
-#rsvpWeddingPages :is(a,.registry-button,.registry-button-secondary){color:var(--flow-text)}
-#rsvpWeddingPages :is(.registry-button,.registry-button-secondary){background:transparent;border:1px solid currentColor;box-shadow:none}
-#rsvpWeddingPages :is(h2,h3){font-family:"Times New Roman",Times,serif;font-size:clamp(1.4rem,5vw,2rem);line-height:1.25}
-#rsvpWeddingPages .wedding-timeline-table{color:var(--flow-text);background:transparent}
-#rsvpWeddingPages [role="tab"][aria-selected="true"]{background:var(--flow-inner-background);color:var(--flow-text)}
-#rsvpWeddingPages :is(.wedding-timeline-table th,.wedding-timeline-table td){color:var(--flow-text);background:transparent;border-color:currentColor}
-#rsvpWeddingPages :is(.inline-editor,.inline-portal-editor){background:var(--flow-background);color:var(--flow-text)}
-#rsvpWeddingPages :is(section,article,.perfect-experience-panel,.bride-groom-content,.what-to-expect-content,.perfect-experience-content){box-sizing:border-box;max-width:100%;color:var(--flow-text)}
-#rsvpWeddingPages :is(.perfect-experience-panel,.wedding-party-card summary,.wedding-party-member-name,.wedding-party-role){color:var(--flow-text);background:transparent}
+#rsvpDialog #rsvpWeddingPages{margin-top:36px;color:var(--flow-text);text-align:left}
+#rsvpDialog #rsvpWeddingPages :is(.wedding-party-tabs,.matron-info-tabs){--tab-surface:transparent;--tab-text:var(--flow-text);--tab-border:currentColor;width:100%;margin:20px 0;max-width:100%}
+#rsvpDialog #rsvpWeddingPages :is(.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section,.registry-attire-section,.what-to-expect-section,.gathering-page){margin:24px 0 0;padding:0;min-height:0;background:transparent;color:var(--flow-text);border:0;border-radius:0;box-shadow:none}
+#rsvpDialog #rsvpWeddingPages :is(h2,h3,h4,h5,p,li,.section-kicker,.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.wedding-party-description,.affordable-attire,.affordable-attire-lead,.affordable-attire-closing,.attire-shop-links a,.attire-shop-links span){color:var(--flow-text);text-shadow:none}
+#rsvpDialog #rsvpWeddingPages :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.registry-gift-note){padding:0;background:transparent}
+#rsvpDialog #rsvpWeddingPages :is(.affordable-attire-guidance article,.wedding-party-card,.flow-panel){padding:18px;background:transparent;color:var(--flow-text);border-color:currentColor;box-shadow:none}
+#rsvpDialog #rsvpWeddingPages .affordable-attire-guidance{grid-template-columns:minmax(0,1fr);gap:20px}
+#rsvpDialog #rsvpWeddingPages :is(a,.registry-button,.registry-button-secondary){color:var(--flow-text)}
+#rsvpDialog #rsvpWeddingPages :is(.registry-button,.registry-button-secondary){background:transparent;border:1px solid currentColor;box-shadow:none}
+#rsvpDialog #rsvpWeddingPages :is(h2,h3){font-family:"Times New Roman",Times,serif;font-size:clamp(1.4rem,5vw,2rem);line-height:1.25}
+#rsvpDialog #rsvpWeddingPages .wedding-timeline-table{color:var(--flow-text);background:transparent}
+#rsvpDialog #rsvpWeddingPages [role="tab"][aria-selected="true"]{background:var(--flow-inner-background);color:var(--flow-text)}
+#rsvpDialog #rsvpWeddingPages :is(.wedding-timeline-table th,.wedding-timeline-table td){color:var(--flow-text);background:transparent;border-color:currentColor}
+#rsvpDialog #rsvpWeddingPages :is(.inline-editor,.inline-portal-editor){background:var(--flow-background);color:var(--flow-text)}
+#rsvpDialog #rsvpWeddingPages :is(section,article,.perfect-experience-panel,.bride-groom-content,.what-to-expect-content,.perfect-experience-content){box-sizing:border-box;max-width:100%;color:var(--flow-text)}
+#rsvpDialog #rsvpWeddingPages :is(.perfect-experience-panel,.wedding-party-card summary,.wedding-party-member-name,.wedding-party-role){color:var(--flow-text);background:transparent}
 
 /* Attire, Registry, and What to Expect share one information-page format. */
-#rsvpWeddingPages .rsvp-information-page{font-family:var(--page-font);font-size:1rem;line-height:var(--page-line-height);text-align:left}
-#rsvpWeddingPages .rsvp-information-content{box-sizing:border-box;width:100%;max-width:900px;min-height:120px;margin:0 auto;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;font-family:var(--page-font);font-size:1rem;line-height:var(--copy-line-height);text-align:left;overflow-wrap:anywhere;color:var(--flow-text)}
-#rsvpWeddingPages .rsvp-information-page h2{font-family:"Times New Roman",Times,serif;font-size:clamp(1.4rem,5vw,2rem);font-weight:700;line-height:1.25;letter-spacing:normal;text-transform:none;text-align:center;margin:0 0 28px}
-#rsvpWeddingPages .rsvp-information-page .section-kicker{margin:0 0 10px;line-height:var(--page-line-height);text-align:center}
-#rsvpWeddingPages .rsvp-information-content p:not(.section-kicker){font-family:var(--page-font);font-size:1rem;font-weight:400;line-height:var(--copy-line-height);text-align:left;margin:0 0 var(--copy-paragraph-gap)}
-#rsvpWeddingPages .rsvp-information-content p:last-child{margin-bottom:0}
-#rsvpWeddingPages .rsvp-information-content :is(ul,ol){padding-left:24px;line-height:inherit;margin:0 0 var(--copy-paragraph-gap)}
-#rsvpWeddingPages .rsvp-information-content li+li{margin-top:0}
-#rsvpWeddingPages .rsvp-information-content :is(h3,h4,h5){font-family:var(--page-font);font-size:1.125rem;line-height:1.5;letter-spacing:normal;text-transform:none;text-align:left;margin:24px 0 12px}
-#rsvpWeddingPages .rsvp-information-content .affordable-attire-guidance{display:block;margin:24px 0}
-#rsvpWeddingPages .rsvp-information-content .affordable-attire-guidance article{margin:0 0 24px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
-#rsvpWeddingPages .rsvp-information-content .attire-shop-links{display:block}
-#rsvpWeddingPages .rsvp-information-content .attire-shop-links span{display:inline;margin:0 7px}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-page{font-family:var(--page-font);font-size:1rem;line-height:var(--page-line-height);text-align:left}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content{box-sizing:border-box;width:100%;max-width:900px;min-height:120px;margin:0 auto;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;font-family:var(--page-font);font-size:1rem;line-height:var(--copy-line-height);text-align:left;overflow-wrap:anywhere;color:var(--flow-text)}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-page h2{font-family:"Times New Roman",Times,serif;font-size:clamp(1.4rem,5vw,2rem);font-weight:700;line-height:1.25;letter-spacing:normal;text-transform:none;text-align:center;margin:0 0 28px}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-page .section-kicker{margin:0 0 10px;line-height:var(--page-line-height);text-align:center}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content p:not(.section-kicker){font-family:var(--page-font);font-size:1rem;font-weight:400;line-height:var(--copy-line-height);text-align:left;margin:0 0 var(--copy-paragraph-gap)}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content p:last-child{margin-bottom:0}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content :is(ul,ol){padding-left:24px;line-height:inherit;margin:0 0 var(--copy-paragraph-gap)}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content li+li{margin-top:0}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content :is(h3,h4,h5){font-family:var(--page-font);font-size:1.125rem;line-height:1.5;letter-spacing:normal;text-transform:none;text-align:left;margin:24px 0 12px}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content .affordable-attire-guidance{display:block;margin:24px 0}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content .affordable-attire-guidance article{margin:0 0 24px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content .attire-shop-links{display:block}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content .attire-shop-links span{display:inline;margin:0 7px}
