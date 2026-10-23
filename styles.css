@@ -750,3 +750,17 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpDialog .rsvp-custom-person{display:flex;flex-direction:column;align-items:stretch;gap:4px;margin:12px 0}
 #rsvpDialog .rsvp-custom-person .rsvp-person-choice{margin:0}
 #rsvpDialog :is(#rsvpChildNames,#rsvpGuestsCounter) .rsvp-custom-person>input{width:100%;height:38px;padding:8px 10px;font-size:16px;line-height:20px}
+
+/* Detailed shared color controls, grouped and searchable for every gathering. */
+#gatheringColorsDialog .modal-card{width:min(920px,94vw)}
+.palette-editor{grid-column:1/-1;min-width:0}
+.palette-editor>p{line-height:1.5}
+#gatheringColorInputs .palette-editor input[type=search]{height:auto;padding:10px;font:inherit}
+.palette-section{border:1px solid var(--border);border-radius:5px;margin:12px 0;padding:12px}
+.palette-section>summary{cursor:pointer;font-weight:bold}
+.palette-row{display:grid;grid-template-columns:minmax(0,1fr) 130px auto;align-items:end;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.palette-row[hidden],.palette-section[hidden]{display:none}
+.palette-row>label{min-width:0;overflow-wrap:anywhere}
+#gatheringColorInputs .palette-row input[type=range]{height:30px;padding:0}
+.palette-row>button{padding:8px;border:1px solid var(--border);background:var(--cream);color:var(--ink);border-radius:4px}
+@media(max-width:520px){.palette-row{grid-template-columns:minmax(0,1fr) 90px}.palette-row>button{grid-column:1/-1;justify-self:end}}
