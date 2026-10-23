@@ -778,3 +778,5 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 .site-edit-mode #rsvpDishQuestionText:empty::before{content:"Add explanatory text";color:var(--muted)}
 
 #rsvpEventHeader .event-header-text{width:100%;text-align:center;overflow-wrap:anywhere}
+#rsvpEventHeader .event-header-text p{margin:0}
+#rsvpFirstPageDetails:not(:empty){margin-top:10px;line-height:1.5}
