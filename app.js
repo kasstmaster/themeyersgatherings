@@ -1105,8 +1105,7 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   // the exact option the guest just selected and leave this page stuck open.
   showSignedInDestination();
   render();
-  if(!isHostView() && !GatheringFeatures.forGathering(eventId).weddingPages)openRsvp({fromEntry:true});
-  else if(eventId==='wedding' && !isHostView() && !isSignedInWeddingPartyMember() && !hasSubmittedInvitationRsvp())openRsvp({fromEntry:true});
+  if(!isHostView())openRsvp({fromEntry:true});
 }
 function ensureAccount(callback) {
   if (guestName) return callback();
@@ -1622,8 +1621,7 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
   selectedWeddingTab = 'guest';
   document.querySelector('#accountPasswordError').textContent = '';
   showEventSelection();
-  const action = pendingAccountAction; pendingAccountAction = null;
-  if(GatheringFeatures.forGathering(viewedEventId).weddingPages && availableEventIds().includes(viewedEventId))action?.();
+  pendingAccountAction = null;
 });
 document.querySelector('#eventSelectionChoices').addEventListener('click', event => {
   const button = event.target.closest('[data-enter-event]');
@@ -1926,7 +1924,11 @@ document.querySelector('#rsvpAttireAcknowledge').addEventListener('click',()=>do
 document.querySelector('#rsvpDialog').addEventListener('close',()=>{
   const form=document.querySelector('#rsvpForm');
   const fromEntry=form.dataset.fromEntry==='true';form.dataset.fromEntry='false';
-  if(!isHostView() && !GatheringFeatures.forGathering(viewedEventId).weddingPages){showEventSelection();return;}
+  if(!isHostView()){
+    if(GatheringFeatures.forGathering(viewedEventId).weddingPages && form.dataset.saved==='true'){showSignedInDestination();render();}
+    else showEventSelection();
+    return;
+  }
   if(!fromEntry)return;
   if(form.dataset.saved==='true'){showSignedInDestination();render();}
   else showEventSelection();
