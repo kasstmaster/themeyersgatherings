@@ -54,6 +54,10 @@ test('child choices show No Children and a repeatable Another child, without a c
  assert.equal((container.innerHTML.match(/data-rsvp-add-child/g)||[]).length,1);
  assert.match(container.innerHTML,/Additional Child’s Name/);
  change('#rsvpChildNames','data-rsvp-add-child');assert.equal(node('#children').value,4);
+ assert.match(container.innerHTML,/type="checkbox" data-remove-rsvp-child="0" checked/);
+ assert.doesNotMatch(container.innerHTML,/×|<button/);
+ change('#rsvpChildNames','data-remove-rsvp-child',{removeRsvpChild:'0'},false);
+ assert.equal(node('#children').value,3);
  change('#rsvpChildNames','data-rsvp-no-children');
  assert.equal(node('#children').value,0);assert.deepEqual(Array.from(context.readRsvpChildNames()),[]);
 });
@@ -66,6 +70,10 @@ test('guest choice becomes a name field and leaves another-guest option',()=>{
  node('#rsvpGuestNames').handlers.input({target:{dataset:{rsvpGuestName:'0'},value:'Guest One',matches:()=>true}});
  change('#rsvpGuestNames','data-rsvp-add-guest');
  assert.equal(node('#extraGuests').value,2);assert.deepEqual(Array.from(context.readRsvpGuestNames()),['Guest One','']);
+ assert.match(container.innerHTML,/type="checkbox" data-remove-rsvp-guest="1" checked/);
+ assert.doesNotMatch(container.innerHTML,/×|<button/);
+ change('#rsvpGuestNames','data-remove-rsvp-guest',{removeRsvpGuest:'1'},false);
+ assert.equal(node('#extraGuests').value,1);assert.deepEqual(Array.from(context.readRsvpGuestNames()),['Guest One']);
  change('#rsvpGuestNames','data-rsvp-no-guests');
  assert.equal(node('#extraGuests').value,0);assert.deepEqual(Array.from(context.readRsvpGuestNames()),[]);
 });
