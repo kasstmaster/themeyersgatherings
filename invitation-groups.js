@@ -22,13 +22,13 @@
   const childMeals = selections => (selections || []).filter(selection => selection.type === 'child');
   const adultMeals = selections => (selections || []).filter(selection => selection.type !== 'child');
   function childBuckets(account, eventId, existing = {}) {
-    const source = existing.invitationResponses || { 1: { children: existing.children || 0, extraGuests: existing.extraGuests || 0, childNames: existing.childNames || [], menuSelections: childMeals(existing.menuSelections), savedMenuSelections: childMeals(existing.savedMenuSelections || existing.menuSelections) } };
+    const source = existing.invitationResponses || { 1: { children: existing.children || 0, extraGuests: existing.extraGuests || 0, extraGuestNames:existing.extraGuestNames || [], childNames: existing.childNames || [], menuSelections: childMeals(existing.menuSelections), savedMenuSelections: childMeals(existing.savedMenuSelections || existing.menuSelections) } };
     const buckets = {};
     for (const [key, response] of Object.entries(source)) {
       // If a numbered group is removed, preserve its child responses on the first remaining group.
       const groups=GuestPlanning.invitationNumbers(account,eventId);
       const target = groups.includes(Number(key)) ? key : String(groups[0] || 1);
-      const bucket = buckets[target] ||= { children: 0, extraGuests:0, childNames: [], menuSelections: [], savedMenuSelections: [] };
+      const bucket = buckets[target] ||= { children: 0, extraGuests:0, extraGuestNames:[], childNames: [], menuSelections: [], savedMenuSelections: [] };
       const offset = bucket.children;
       const shift = selections => childMeals(selections).map(selection => {
         const index=Number(selection.index || 0)+offset,childName=response.childNames?.[selection.index];
@@ -39,6 +39,7 @@
       bucket.childNames.push(...Array.from({length:Math.max(0,Number(response.children)||0)},(_,index)=>response.childNames?.[index] || ''));
       bucket.children += Math.max(0, Number(response.children) || 0);
       bucket.extraGuests += Math.max(0,Number(response.extraGuests)||0);
+      bucket.extraGuestNames.push(...Array.from({length:Math.max(0,Number(response.extraGuests)||0)},(_,index)=>response.extraGuestNames?.[index] || ''));
     }
     return buckets;
   }
@@ -49,7 +50,7 @@
     const own = selections => adultMeals(selections).filter(selection => identities.includes(normalize(selection.name)));
     const bucket = childBuckets(account, eventId, existing)[invitation] || { children: 0, menuSelections: [], savedMenuSelections: [] };
     const { invitationResponses: _responses, ...household } = existing;
-    return { ...household, people, adults: GuestPlanning.attendees(people).length+(bucket.extraGuests || 0), extraGuests:bucket.extraGuests || 0, children: bucket.children, childNames: bucket.childNames || [],
+    return { ...household, people, adults: GuestPlanning.attendees(people).length+(bucket.extraGuests || 0), extraGuests:bucket.extraGuests || 0, extraGuestNames:bucket.extraGuestNames || [], children: bucket.children, childNames: bucket.childNames || [],
       menuSelections: [...own(existing.menuSelections), ...bucket.menuSelections],
       savedMenuSelections: [...own(existing.savedMenuSelections || existing.menuSelections), ...bucket.savedMenuSelections] };
   }
@@ -62,13 +63,14 @@
     const others = selections => adultMeals(selections).filter(selection => !identities.includes(normalize(selection.name)));
     const people = [...(existing.people || []).filter(person => !ownsPerson(person)), ...ownPeople];
     const buckets = childBuckets(account, eventId, existing);
-    buckets[invitation] = { children: incoming.children, extraGuests:Math.max(0,Number(incoming.extraGuests)||0), childNames: Array.from({length:incoming.children},(_,index)=>incoming.childNames?.[index] || ''), menuSelections: childMeals(incoming.menuSelections), savedMenuSelections: childMeals(incoming.savedMenuSelections || incoming.menuSelections) };
+    buckets[invitation] = { children: incoming.children, extraGuests:Math.max(0,Number(incoming.extraGuests)||0), extraGuestNames:Array.from({length:Math.max(0,Number(incoming.extraGuests)||0)},(_,index)=>incoming.extraGuestNames?.[index] || ''), childNames: Array.from({length:incoming.children},(_,index)=>incoming.childNames?.[index] || ''), menuSelections: childMeals(incoming.menuSelections), savedMenuSelections: childMeals(incoming.savedMenuSelections || incoming.menuSelections) };
     const childrenFor = key => Object.entries(buckets).flatMap(([id, bucket]) => (bucket[key] || []).map(selection => ({ ...selection, invitationNumber: Number(id) })));
     const attendingNames=GuestPlanning.attendees(ownPeople).map(normalize);
     const adultSelections = adultMeals(incoming.menuSelections).filter(selection=>attendingNames.includes(normalize(selection.name))).map(selection => ({ ...selection, invitationNumber: invitation }));
     const adultArchive = adultMeals(incoming.savedMenuSelections || incoming.menuSelections).filter(selection=>identities.includes(normalize(selection.name))).map(selection => ({ ...selection, invitationNumber: invitation }));
     return { ...existing, ...incoming, people, adults: GuestPlanning.attendees(people).length+Object.values(buckets).reduce((sum,bucket)=>sum+(bucket.extraGuests||0),0),
       extraGuests:Object.values(buckets).reduce((sum,bucket)=>sum+(bucket.extraGuests||0),0),
+      extraGuestNames:Object.values(buckets).flatMap(bucket=>bucket.extraGuestNames || []),
       childNames:Object.values(buckets).flatMap(bucket=>bucket.childNames || []),
       children: Object.values(buckets).reduce((sum, bucket) => sum + (Number(bucket.children) || 0), 0), invitationResponses: buckets,
       menuSelections: [...others(existing.menuSelections), ...adultSelections, ...childrenFor('menuSelections')],
@@ -81,7 +83,7 @@
       // Keep their totals once rather than duplicating them across invitations.
       const projected=rsvp ? rsvp.people?.length || rsvp.invitationResponses
         ? response(account,eventId,names,invitation,rsvp)
-        : index===0 ? {...rsvp} : {...rsvp,adults:0,children:0,extraGuests:0,childNames:[],menuSelections:[],savedMenuSelections:[],attending:null}
+        : index===0 ? {...rsvp} : {...rsvp,adults:0,children:0,extraGuests:0,extraGuestNames:[],childNames:[],menuSelections:[],savedMenuSelections:[],attending:null}
         : null;
       return {invitation,names:ownNames,rsvp:projected};
     });

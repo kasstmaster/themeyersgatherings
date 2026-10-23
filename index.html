@@ -391,10 +391,10 @@
         <div id="rsvpPeople"></div>
         <div id="rsvpAdultsCounter" class="counter-row" hidden><div><strong>Adults</strong><span>Age 18+</span></div><div class="stepper"><button type="button" data-step="-1" data-target="adults">−</button><output id="adults">1</output><button type="button" data-step="1" data-target="adults">+</button></div></div>
         <section id="rsvpChildrenQuestion" aria-label="Children attending">
-        <div id="rsvpChildrenCounter" class="counter-row"><div><strong>How many children?</strong></div><div class="stepper"><button type="button" data-step="-1" data-target="children">−</button><output id="children">0</output><button type="button" data-step="1" data-target="children">+</button></div></div>
-        <div id="rsvpChildNames" hidden></div>
+        <output id="children" hidden>0</output>
+        <div id="rsvpChildNames"></div>
         </section>
-        <div id="rsvpGuestsCounter" class="counter-row" hidden><div><strong>How many?</strong></div><div class="stepper"><button type="button" data-step="-1" data-target="extraGuests">−</button><output id="extraGuests">0</output><button type="button" data-step="1" data-target="extraGuests">+</button></div></div>
+        <section id="rsvpGuestsCounter" aria-label="Guests attending" hidden><output id="extraGuests" hidden>0</output><div id="rsvpGuestNames"></div></section>
         </fieldset>
         <section id="weddingRsvpMenu" class="wedding-rsvp-menu" aria-labelledby="weddingRsvpMenuHeading" hidden>
           <h3 id="weddingRsvpMenuHeading">Menu</h3>
