@@ -581,18 +581,28 @@ function safeEditableLink(value) {
 function formatWeddingPartyDescription(value) {
   value = expandEditableTextVariables(value);
   if(!String(value || '').trim())return '';
-  const formatMarkdown = text => escapeHtml(text)
+  // Older toolbar saves could wrap a whole multiline selection in one pair.
+  value=String(value).replace(/^(\*{1,3}|_{1,3})([\s\S]*\n[\s\S]*)\1$/,(_,marker,content)=>
+    content.split('\n')[0].endsWith(marker) || content.split('\n').at(-1).startsWith(marker)
+      ? `${marker}${content}${marker}`
+      : content.split('\n').map(line=>line.trim()?`${marker}${line}${marker}`:line).join('\n'));
+  const formatEmphasis = text => escapeHtml(text)
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/___(.+?)___/g, '<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/__(.+?)__/g, '<strong>$1</strong>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
     .replace(/\*([^*]+?)\*/g, '<em>$1</em>')
     .replace(/_([^_]+?)_/g, '<em>$1</em>');
+  const formatMarkdown = text => text.split(/(`[^`]+`)/g).map(part=>part.length>1 && part.startsWith('`') && part.endsWith('`')
+    ? `<code>${escapeHtml(part.slice(1,-1))}</code>` : formatEmphasis(part)).join('');
   const formatInline = line => {
     const parts = [];
     let cursor = 0;
-    for (const match of line.matchAll(/\[([^\]\r\n]+)\]\(([^)\r\n]+)\)|<([^<>\r\n]+)>/g)) {
+    for (const match of line.matchAll(/\[([^\]\r\n]+)\]\(([^)\r\n]+)\)|<([^<>\r\n]+)>|`([^`\r\n]+)`/g)) {
       parts.push(formatMarkdown(line.slice(cursor, match.index)));
-      if (match[1] !== undefined) {
+      if (match[4] !== undefined) {
+        parts.push(`<code>${escapeHtml(match[4])}</code>`);
+      } else if (match[1] !== undefined) {
         const href = safeEditableLink(match[2]);
         parts.push(href
           ? `<a href="${escapeAttribute(href)}">${formatMarkdown(match[1])}</a>`

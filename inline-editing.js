@@ -274,7 +274,16 @@
     if(kind==='bullets'||kind==='numbers')return (selected||'List item').split('\n').map((line,index)=>`${kind==='bullets'?'-':`${index+1}.`} ${line}`).join('\n');
     if(kind==='link')return `[${selected||'Link text'}](https://example.com)`;
     const marker={bold:'**',italic:'*',code:'`'}[kind];
-    return `${marker}${selected||'Text'}${marker}`;
+    // The renderer formats each line separately; markers must not span lines.
+    return (selected||'Text').split('\n').map(line=>{
+      if(!line.trim())return line;
+      const whitespace=line.match(/^(\s*)(.*?)(\s*)$/);
+      const text=whitespace[2];
+      const formatted=text.startsWith(marker) && text.endsWith(marker) && text.length>marker.length*2
+        && !(kind==='italic' && text.startsWith('**') && !text.startsWith('***'))
+        ? text.slice(marker.length,-marker.length) : `${marker}${text}${marker}`;
+      return whitespace[1]+formatted+whitespace[3];
+    }).join('\n');
   }
   function editTitle(tab, anchor, value, commit) {
     if (tab.dataset.editingTitle) return;
