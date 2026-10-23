@@ -1054,6 +1054,7 @@ function showEventSelection() {
   document.querySelector('#eventSelectionPage').hidden = false;
   document.body.className = 'theme-wedding';
   updateSignedInAccountBanner();
+  window.scrollTo({top:0,left:0,behavior:'auto'});
 }
 function videoEmbedUrl(url) {
   try {
@@ -1620,7 +1621,8 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
   selectedWeddingTab = 'guest';
   document.querySelector('#accountPasswordError').textContent = '';
   showEventSelection();
-  const action = pendingAccountAction; pendingAccountAction = null; action?.();
+  const action = pendingAccountAction; pendingAccountAction = null;
+  if(GatheringFeatures.forGathering(viewedEventId).weddingPages && availableEventIds().includes(viewedEventId))action?.();
 });
 document.querySelector('#eventSelectionChoices').addEventListener('click', event => {
   const button = event.target.closest('[data-enter-event]');
@@ -1923,6 +1925,7 @@ document.querySelector('#rsvpAttireAcknowledge').addEventListener('click',()=>do
 document.querySelector('#rsvpDialog').addEventListener('close',()=>{
   const form=document.querySelector('#rsvpForm');
   const fromEntry=form.dataset.fromEntry==='true';form.dataset.fromEntry='false';
+  if(!isHostView() && !GatheringFeatures.forGathering(viewedEventId).weddingPages){showEventSelection();return;}
   if(!fromEntry)return;
   if(form.dataset.saved==='true'){showSignedInDestination();render();}
   else showEventSelection();
