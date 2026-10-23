@@ -8,7 +8,7 @@ function fixture(host=true) {
   const accounts=['Awaiting','Attending','Declined','Legacy','Unanswered draft','Other event','The Host'].map(name=>({name,invitedEvents:{thanksgiving:name!=='Other event'}}));
   const state={rsvps:[{name:'Attending',people:[{attending:true}]},{name:'Declined',people:[{attending:false}]},{name:'Legacy',adults:0,children:0},{name:'Unanswered draft',people:[{attending:null}]}]};
   const list={innerHTML:'private'};
-  const context=vm.createContext({state,appState:{accounts},viewedEventId:'thanksgiving',HOST_DISPLAY_NAME:'The Host',accountIsInvited:(account,id)=>account.invitedEvents[id]===true,isHostView:()=>host,escapeHtml:value=>value,document:{querySelector:()=>list}});
+  const context=vm.createContext({state,appState:{accounts},viewedEventId:'thanksgiving',HOST_DISPLAY_NAME:'The Host',accountIsInvited:(account,id)=>account.invitedEvents[id]===true,renderPeopleSection:(id,total,totals,html)=>{list.innerHTML=html;},peopleTotalsLabel:()=>'totals',accountPeopleTotals:()=>({adults:0,children:0}),invitedInvitationGroups:account=>[account],invitationEntryHtml:account=>account.name,isHostView:()=>host,escapeHtml:value=>value,document:{querySelector:()=>list}});
   vm.runInContext(helpers,context);
   return {context,state,list};
 }
