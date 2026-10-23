@@ -1361,7 +1361,7 @@ function render() {
   const invitedAdults=invitedAccounts.reduce((sum,account)=>sum+invitedAdultCount(account),0);
   document.querySelector('#invitedCount').textContent = invitedAdults;
   document.querySelector('#notAttendingCount').textContent = GuestPlanning.attendanceGroups(state.rsvps).notAttending.length;
-  document.querySelector('#accountCount').textContent = appState.accounts.length;
+  document.querySelector('#noResponseCount').textContent = noResponseAccounts().length;
   document.querySelector('#remainingCount').textContent = needed;
   const guestListButton = document.querySelector('#guestListButton');
   guestListButton.disabled = !hostView;
@@ -1374,6 +1374,7 @@ function render() {
   renderInlineEditing();
   document.querySelectorAll('[data-gathering-tool]').forEach(button => { button.hidden=!isHostView(); });
   if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
+  if (document.querySelector('#noResponseDialog').open) renderNoResponseAccounts();
   PageActions.sync();
 }
 
@@ -2179,6 +2180,23 @@ function invitationAttendanceRsvps() {
     return InvitationGroups.groups(account,viewedEventId,accountSignInNames(account.name),rsvp).map(group=>({...group.rsvp,invitationTitle:invitationGroupTitle(group)}));
   });
 }
+function noResponseAccounts() {
+  const responded = new Set(state.rsvps.filter(rsvp => !rsvp.people?.length || rsvp.people.some(person => person.attending === true || person.attending === false)).map(rsvp => rsvp.name));
+  return appState.accounts.filter(account => account.name !== HOST_DISPLAY_NAME && accountIsInvited(account, viewedEventId) && !responded.has(account.name))
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+function renderNoResponseAccounts() {
+  if (!isHostView()) return;
+  const accounts = noResponseAccounts();
+  document.querySelector('#noResponseList').innerHTML = accounts.length
+    ? accounts.map(account => `<div class="guest-entry"><strong>${escapeHtml(account.name)}</strong></div>`).join('')
+    : '<p class="guest-empty">All invited accounts have responded.</p>';
+}
+document.querySelector('#noResponseButton').addEventListener('click', () => {
+  if (!isHostView()) return;
+  renderNoResponseAccounts();
+  document.querySelector('#noResponseDialog').showModal();
+});
 function renderGuestAttendance() {
   if (!hostAuthenticated) return;
   const totalsSection = document.querySelector('#guestListTotals');
