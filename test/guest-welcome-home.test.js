@@ -16,32 +16,33 @@ test('all non-Wedding guests return to the welcome home on RSVP cancel or comple
   const result=close({event,saved,fromEntry});assert.deepEqual(result.destinations,['welcome']);assert.equal(result.form.dataset.fromEntry,'false');
  }
 });
-test('host and Wedding RSVP close behavior stays unchanged',()=>{
+test('Wedding saves return to its main page and cancellations return home; hosts are unchanged',()=>{
  assert.deepEqual(close({host:true,saved:true}).destinations,[]);
  assert.deepEqual(close({host:true,saved:true,fromEntry:true}).destinations,['gathering','render']);
  assert.deepEqual(close({event:'wedding',saved:true,fromEntry:true}).destinations,['gathering','render']);
  assert.deepEqual(close({event:'wedding',saved:false,fromEntry:true}).destinations,['welcome']);
- assert.deepEqual(close({event:'wedding',saved:true}).destinations,[]);
+ assert.deepEqual(close({event:'wedding',saved:true}).destinations,['gathering','render']);
+ assert.deepEqual(close({event:'wedding',saved:false}).destinations,['welcome']);
 });
-test('non-Wedding sign-in stays at welcome instead of immediately resuming a pending RSVP',()=>{
- const start=source.indexOf('  showEventSelection();\n  const action = pendingAccountAction');
+test('guest sign-in stays at welcome for all gatherings instead of resuming a pending RSVP',()=>{
+ const start=source.indexOf('  showEventSelection();\n  pendingAccountAction = null;');
  const code=source.slice(start,source.indexOf('\n});',start));
  for(const event of ['thanksgiving','christmas','new-gathering','wedding']){
   const calls=[];
   const context=vm.createContext({viewedEventId:event,GatheringFeatures,availableEventIds:()=>[event],pendingAccountAction:()=>calls.push('action'),showEventSelection:()=>calls.push('welcome')});
   vm.runInContext(code,context);
-  assert.deepEqual(calls,event==='wedding'?['welcome','action']:['welcome']);
+  assert.deepEqual(calls,['welcome']);
   assert.equal(context.pendingAccountAction,null);
  }
 });
 
-test('choosing any standard gathering opens RSVP directly, including already submitted responses',()=>{
+test('choosing any gathering opens RSVP directly, including wedding party and submitted responses',()=>{
  const code=source.slice(source.indexOf('function enterEvent('),source.indexOf('function ensureAccount('));
- for(const event of ['thanksgiving','christmas','new-gathering','wedding'])for(const host of [false,true])for(const submitted of [false,true]){
+ for(const event of ['thanksgiving','christmas','new-gathering','wedding'])for(const host of [false,true])for(const submitted of [false,true])for(const partyMember of [false,true]){
   const calls=[];
-  const context=vm.createContext({appState:{events:{[event]:{}}},EVENT_DETAILS:{[event]:{}},GatheringFeatures,selectedGatheringTab:null,viewedEventId:'',state:{},isHostView:()=>host,isSignedInWeddingPartyMember:()=>false,hasSubmittedInvitationRsvp:()=>submitted,showSignedInDestination:()=>calls.push('gathering'),render:()=>calls.push('render'),openRsvp:()=>calls.push('rsvp')});
+  const context=vm.createContext({appState:{events:{[event]:{}}},EVENT_DETAILS:{[event]:{}},GatheringFeatures,selectedGatheringTab:null,viewedEventId:'',state:{},isHostView:()=>host,isSignedInWeddingPartyMember:()=>partyMember,hasSubmittedInvitationRsvp:()=>submitted,showSignedInDestination:()=>calls.push('gathering'),render:()=>calls.push('render'),openRsvp:()=>calls.push('rsvp')});
   vm.runInContext(code,context);context.enterEvent(event);
-  const opens=!host&&(event!=='wedding'||!submitted);
+  const opens=!host;
   assert.deepEqual(calls,opens?['gathering','render','rsvp']:['gathering','render']);
  }
 });
