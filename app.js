@@ -2182,11 +2182,11 @@ function invitationAttendanceRsvps() {
     return InvitationGroups.groups(account,viewedEventId,accountSignInNames(account.name),rsvp).map(group=>({...group.rsvp,invitationTitle:invitationGroupTitle(group)}));
   });
 }
-function peopleTotalsLabel({adults,children}) {
-  return `${adults} adult${adults===1?'':'s'} · ${children} child${children===1?'':'ren'} total`;
+function peopleTotalsLabel({adults,children,households}) {
+  return `${households} household${households===1?'':'s'} · ${adults} adult${adults===1?'':'s'} · ${children} child${children===1?'':'ren'} total`;
 }
 function accountPeopleTotals(accounts) {
-  return accounts.reduce((sum,account)=>({adults:sum.adults+invitedAdultCount(account),children:sum.children+(account.children || []).length}),{adults:0,children:0});
+  return accounts.reduce((sum,account)=>({adults:sum.adults+invitedAdultCount(account),children:sum.children+(account.children || []).length,households:sum.households+1}),{adults:0,children:0,households:0});
 }
 function declinedChildren(rsvp) {
   const account=appState.accounts.find(account=>account.name===rsvp.name);
@@ -2199,8 +2199,9 @@ function attendanceSummaryCounts() {
   const noResponse=accountPeopleTotals(noResponseAccounts());
   const responses=GuestPlanning.guestResponses(state.rsvps);
   const totals=GuestPlanning.rsvpTotals(responses);
-  const notAttending={adults:GuestPlanning.attendanceGroups(responses).notAttending.length,children:responses.reduce((sum,rsvp)=>sum+declinedChildren(rsvp),0)};
-  return {attending:{adults:totals.adults,children:totals.children},notAttending,noResponse,invited};
+  const groups=GuestPlanning.attendanceGroups(responses);
+  const notAttending={adults:groups.notAttending.length,children:responses.reduce((sum,rsvp)=>sum+declinedChildren(rsvp),0),households:new Set(groups.notAttending.map(person=>person.household)).size};
+  return {attending:{adults:totals.adults,children:totals.children,households:new Set(groups.attending.map(rsvp=>rsvp.name)).size},notAttending,noResponse,invited};
 }
 function attendanceEntryHtml(title,adults,children,rows) {
   return invitationEntryHtml({title,adults,children,names:[]},{headings:rows});
@@ -2235,7 +2236,7 @@ function renderGuestAttendance() {
   document.querySelector('#guestListMealTotals').innerHTML=GatheringFeatures.rsvp(viewedEventId).meals?`<dl class="meal-totals">${meals.map(([label,count])=>`<div><dt>${escapeHtml(label)}</dt><dd>${count}</dd></div>`).join('')}</dl>`:'';
   const groupedRsvps=invitationAttendanceRsvps();
   const { attending: attendingRsvps } = GuestPlanning.attendanceGroups(groupedRsvps);
-  renderPeopleSection('guestList','guestListTotals',totals,attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
+  renderPeopleSection('guestList','guestListTotals',attendanceSummaryCounts().attending,attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
     const wedding=GatheringFeatures.rsvp(viewedEventId).meals;
     const adultNames=GuestPlanning.attendees(rsvp.people || []);
     if(!adultNames.length && !rsvp.people?.length && rsvp.adults>0){
@@ -2279,9 +2280,10 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
     .filter(account => accountIsInvited(account, viewedEventId))
     .sort((left, right) => left.name.localeCompare(right.name));
   const totals = invitedAccounts.reduce((sum, account) => ({
+    households: sum.households + 1,
     adults: sum.adults + invitedAdultCount(account),
     children: sum.children + (account.children || []).length
-  }), { adults: 0, children: 0 });
+  }), { adults: 0, children: 0, households: 0 });
   renderPeopleSection('invitedList','invitedPeopleTotal',totals,invitedAccounts.length
     ? invitedAccounts.flatMap(account=>invitedInvitationGroups(account).map(group=>invitationEntryHtml(group))).join('')
     : '<p class="guest-empty">No one is currently invited.</p>');
