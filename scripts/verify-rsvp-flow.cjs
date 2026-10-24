@@ -40,9 +40,9 @@ for(const width of [1280,390]){
   await on('#rsvpDishQuestion');assert.equal(await page.locator('#rsvpHeading').textContent(),'Will you be bringing a dish?');assert.equal(await page.evaluate(()=>state.rsvps.length),0);assert.equal(await page.locator('#rsvpNext').isVisible(),false);await page.locator('[data-rsvp-dish-answer="no"]').click();
   assert.equal(await page.locator('#rsvpDialog').isVisible(),false);
   assert.deepEqual(await page.evaluate(()=>{const r=state.rsvps[0];return [r.adults,r.children,r.extraGuests,r.people.map(p=>p.attending)]}),[2,1,1,[true,false]]);
-  assert.equal(await page.locator('#rsvpButton').textContent(),'Change RSVP & Dishes');
+  assert.equal(await page.locator('#rsvpButton').textContent(),'RSVP');
   await page.evaluate(()=>{signedInPersonName='Michael Jones';render()});assert.equal(await page.locator('#rsvpButton').textContent(),'RSVP');
-  await page.evaluate(()=>{signedInPersonName='Jane Smith';render()});assert.equal(await page.locator('#rsvpButton').textContent(),'Change RSVP & Dishes');
+  await page.evaluate(()=>{signedInPersonName='Jane Smith';render()});assert.equal(await page.locator('#rsvpButton').textContent(),'RSVP');
 
   await openRsvpJourney();assert.equal(await page.locator('[data-rsvp-person="Jane Smith"] [data-person-attending][value="yes"]').isChecked(),true);await page.locator('#rsvpDialog .modal-close').click();
  }

@@ -202,7 +202,7 @@ let guestName = '';
 let signedInPersonName = '';
 let selectedGatheringTab = null;
 let selectedWeddingTab = 'guest';
-let selectedGuestTab = 'attire';
+let selectedGuestTab = 'details';
 let selectedMatronTab = 'duties';
 let selectedBrideGroomPage = 'main';
 let hostWeddingPartyViewName = '';
@@ -1220,6 +1220,7 @@ function renderWeddingGathering(hostView) {
     return;
   }
   for(const page of state.sitePages || [])if(page.nav==='guestInfoTabs'){page.nav='weddingPartyTabs';if(!page.audience||page.audience==='all')page.audience='guests';}
+  for(const page of state.sitePages || [])if(page.nav==='weddingPartyTabs' && /^(?:what to expect|details)$/i.test(String(page.title || '').trim()))page.weddingDefault='details';
   const registrySection = document.querySelector('#registrySection');
   const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => weddingPartyPersonMatches(member.name, signedInPersonName));
   const isWeddingPartyMember = isWedding && !hostView && Boolean(signedInWeddingPartyMember);
@@ -1255,7 +1256,7 @@ function renderWeddingGathering(hostView) {
     button.hidden = !(hostView ? hostCanViewTab : isWeddingPartyMember ? partyMemberCanViewTab : guestCanViewTab);
     const isSelected = button.dataset.weddingTab === publicWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
-    button.tabIndex = isSelected ? 0 : -1;
+    button.tabIndex=0;button.setAttribute('aria-pressed',String(isSelected));
   });
   const guestSection = document.querySelector('#guestSection');
   guestSection.hidden = true;
@@ -1379,6 +1380,7 @@ function renderGatheringPages(features,hostView) {
   document.querySelector('#copyMenuButton').hidden=state.items.length===0;
 }
 function render() {
+  ElementAppearance.restore();
   if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}
   SiteEditing.beforeRender();
   syncGatheringDefinitions(appState.events);
@@ -1394,7 +1396,7 @@ function render() {
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
   document.querySelector('#uploadPhotosButton').hidden=!isWedding;
   document.querySelector('#weddingRsvpUploadToolbar').hidden=!isWedding;
-  document.querySelector('#rsvpButton').textContent=features.rsvp.contributions && hasSubmittedInvitationRsvp()?'Change RSVP & Dishes':'RSVP';
+  document.querySelector('#rsvpButton').textContent='RSVP';
   renderSyncStatus();
   updateHostToolsPanel();
   document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Edit Details';
@@ -1467,6 +1469,9 @@ function render() {
     for(const [name,value] of Object.entries({'background':panel.background,'border':panel.border,'radius':panel.borderRadius,'text':panel.color}))hostMain.style.setProperty(`--host-panel-${name}`,value);
   }
   PageActions.sync();
+  renderWeddingPageToolbar();
+  ElementAppearance.render({state,eventId:viewedEventId,host:hostView,enabled:SiteEditing.enabled,
+    save:()=>saveState({refresh:false}),upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url});
 }
 
 function renderInlineEditing() {
@@ -1571,10 +1576,12 @@ function renderInlineEditing() {
   SiteEditing.staticText(document.querySelector('#eventPage'));
   SiteEditing.staticText(document.querySelector('#rsvpDialog'));
   if(document.querySelector('#weddingMediaDialog').open)SiteEditing.staticText(document.querySelector('#weddingMediaDialog'));
-  document.querySelectorAll('#eventPage [role="tablist"],#rsvpWeddingPages [role="tablist"],#weddingMediaDialog[open] [role="tablist"]').forEach(nav => {
+  document.querySelectorAll('#eventPage [role="tablist"],#rsvpWeddingPages [role="tablist"],#weddingPartyTabs,#weddingMediaDialog[open] [role="tablist"]').forEach(nav => {
     if(nav.id==='gatheringTabs' ? !features.menu && !features.notes : !features.weddingPages)return;
     const config = { available: nav.id==='brideGroomTabs' && selectedWeddingTab==='couple' && viewedEventId==='wedding' };
-    if(nav.id==='weddingPartyTabs')config.replacement=weddingRsvpTabReplacement;
+    if(nav.id==='weddingPartyTabs')Object.assign(config,{toolbar:true,allowNoSelection:true,pageHost:document.querySelector('#rsvpWeddingPages'),panelIds:['whatToExpectSection'],scroll:true,
+      hidePage:page=>page.weddingDefault==='details',
+      defaultPage:['details','guest'].includes(selectedWeddingTab) && selectedGuestTab==='details'?page=>page.weddingDefault==='details':null});
     if (nav.id==='brideGroomTabs') Object.assign(config, { audience:'host',
       add: () => { state.brideGroomPages.push({id:crypto.randomUUID(),title:'New page',content:''});selectedBrideGroomPage=state.brideGroomPages.at(-1).id; },
       rename: (tab,title) => { state.brideGroomPages.find(page=>page.id===tab.dataset.brideGroomPage).title=title; },
@@ -1623,6 +1630,14 @@ function renderRsvpInlineEditing() {
   SiteEditing.field(add,'new meal',[{label:'Meal name',value:'',required:true},{label:'Available to',value:audiences[0],options:audiences}],([name,audience])=>{saveMeals([...meals,{id:crypto.randomUUID(),name,audience}]);},{key:'new-meal',placement:'inline'});
 }
 
+function renderWeddingPageToolbar(){
+  const icons={party:'M8 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm8 1a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM1 22v-6a6 6 0 0 1 12 0v6H1Zm14 0v-6c0-2-.5-3.5-1.5-5A5 5 0 0 1 23 16v6h-8Z',attire:'M8 2h8l-2 5 4 13-6 4-6-4 4-13-2-5Zm2 1 2 3 2-3h-4Z',registry:'M2 8h20v5h-9v9h-2v-9H2V8Zm2 7h5v7H4v-7Zm11 0h5v7h-5v-7ZM7 1c3 0 5 5 5 5s2-5 5-5a3 3 0 0 1 0 6H7a3 3 0 0 1 0-6Zm0 2a1 1 0 0 0 0 2h3S8 3 7 3Zm10 0c-1 0-3 2-3 2h3a1 1 0 0 0 0-2Z',custom:'M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z'};
+  document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{
+    const title=button.textContent.trim(),selected=button.getAttribute('aria-selected')==='true';
+    button.setAttribute('aria-pressed',String(selected));button.tabIndex=0;
+    button.innerHTML=`<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons[button.dataset.weddingTab] || icons.custom}"/></svg><span>${escapeHtml(title)}</span>`;
+  });
+}
 function renderEventDock() {
   const dock = document.querySelector('#eventDock');
   const switchButtons = document.querySelector('#eventSwitchButtons');
@@ -1743,8 +1758,10 @@ document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav
   const button = event.target.closest('[data-wedding-tab]');
   if (!button) return;
   selectedWeddingTab = button.dataset.weddingTab;
+  if(nav.id==='weddingPartyTabs')SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
   if(['attire','details'].includes(selectedWeddingTab))selectedGuestTab=selectedWeddingTab;
   render();
+  if(nav.id==='weddingPartyTabs')document.getElementById(button.getAttribute('aria-controls'))?.scrollIntoView({block:'start',behavior:'auto'});
 }));
 document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav.addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -1752,9 +1769,12 @@ document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav
   const tabs = [...event.currentTarget.querySelectorAll('[data-wedding-tab]:not([hidden])')];
   const currentIndex = tabs.findIndex(button => button.getAttribute('aria-selected') === 'true');
   const direction = event.key === 'ArrowRight' ? 1 : -1;
+  if(!tabs.length)return;
   selectedWeddingTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.weddingTab;
+  if(event.currentTarget.id==='weddingPartyTabs')SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
   render();
-  event.currentTarget.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`).focus();
+  const selected=event.currentTarget.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`);selected.focus();
+  if(event.currentTarget.id==='weddingPartyTabs')document.getElementById(selected.getAttribute('aria-controls'))?.scrollIntoView({block:'start',behavior:'auto'});
 }));
 document.querySelector('#guestInfoTabs').addEventListener('click', event => {
   const button = event.target.closest('[data-guest-tab]');
@@ -1972,8 +1992,13 @@ document.querySelector('#uploadPhotosButton').addEventListener('click',()=>ensur
 document.querySelectorAll('[data-close-wedding-media]').forEach(button=>button.addEventListener('click',()=>document.querySelector('#weddingMediaDialog').close()));
 document.querySelector('#weddingMediaDialog').addEventListener('close',()=>render());
 document.querySelector('#rsvpButton').addEventListener('click',()=>openRsvp());
-function openRsvp({fromEntry=false}={}) {ensureAccount(() => {
+function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   if(document.querySelector('#rsvpDialog').open)return;
+  if(GatheringFeatures.forGathering(viewedEventId).weddingPages){
+    selectedWeddingTab=page || (isSignedInWeddingPartyMember()?'party':'details');selectedGuestTab='details';
+    if(selectedWeddingTab==='party'){selectedMatronTab='duties';SiteEditing.resetTabSelection('matronInfoTabs',viewedEventId);}
+    SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
+  }
   document.querySelector('#rsvpForm').dataset.fromEntry=String(fromEntry);
   document.querySelector('#rsvpForm').dataset.saved='false';
   document.querySelector('#rsvpForm').dataset.eventId = viewedEventId;
@@ -2002,7 +2027,7 @@ function openRsvp({fromEntry=false}={}) {ensureAccount(() => {
   document.querySelector('#rsvpDialog').showModal();
   // Apply saved tab ordering and custom pages on the first open for guests too.
   render();
-  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',editing:SiteEditing.enabled});
+  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',editing:SiteEditing.enabled,pageChanged:()=>ElementAppearance.refreshControls()});
 });}
 // Every gathering uses these same two editable text slots and the same HTML layout.
 function rsvpFirstPageTextFields() {
@@ -2045,8 +2070,8 @@ document.querySelector('#rsvpDialog').addEventListener('close',()=>{
     selectedWeddingTab='registry';
     SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
     showSignedInDestination();
-    openRsvp();
-    document.querySelector('#weddingPartyTabs').scrollIntoView({block:'start',behavior:'auto'});
+    openRsvp({page:'registry'});
+    document.querySelector('#registrySection').scrollIntoView({block:'start',behavior:'auto'});
     return;
   }
   if(!isHostView()){
@@ -2076,6 +2101,16 @@ document.querySelectorAll('.stepper button').forEach(button => button.addEventLi
   else renderWeddingRsvpMenu(meals);
 }));
 function rsvpFlowSteps() {
+  if(SiteEditing.enabled){
+    const pages=[{key:'event-confirmation',element:document.querySelector('#rsvpEventConfirmation'),title:'Gathering page'}];
+    const features=GatheringFeatures.rsvp(viewedEventId);
+    document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>pages.push({key:`person-${index}`,element:row.querySelector('.rsvp-attendance-options'),title:row.dataset.rsvpPerson}));
+    pages.push({key:'children',element:document.querySelector('#rsvpChildrenQuestion'),title:'Any children attending?'});
+    if(features.guestCounter)pages.push({key:'guests',element:document.querySelector('#rsvpGuestsCounter'),title:'Any guests?'});
+    if(features.meals){const element=document.querySelector('#weddingRsvpMenu');element.hidden=false;pages.push({key:'meal-options',element,title:'Meal options'});}
+    if(features.contributions)pages.push({key:'bringing-dish',element:document.querySelector('#rsvpDishQuestion'),title:'Will you be bringing a dish?'});
+    return pages;
+  }
   const steps=[];
   const add=(key,element,title)=>{if(element)steps.push({key,element,title});};
   if(!SiteEditing.enabled)add('event-confirmation',document.querySelector('#rsvpEventConfirmation'),'Confirm your gathering');
@@ -3659,32 +3694,6 @@ for (let index = 0; index < 40; index += 1) {
 }
 
 // Gathering management stays available in the host toolbar in both modes.
-document.querySelector('#gatheringColorsButton').addEventListener('click', () => {
-  if (!isHostView()) return;
-  const defaults={gold:'#d6a45d',secondary:'#0c1e32',accent:'#c96734',background:'#132841',header:'#f6f0e3',page:'#fffaf1',inner:'#fdf8f0',text:'#17283b',border:'#ded7ca'};
-  const style=getComputedStyle(document.body);
-  document.querySelector('#gatheringColorsDialog').dataset.eventId=viewedEventId;
-  document.querySelector('#gatheringColorInputs').innerHTML=GATHERING_COLORS.map(([key,label,variable])=>{
-    const current=style.getPropertyValue(variable).trim();
-    const color=/^#[0-9a-f]{6}$/i.test(current)?current:defaults[key];
-    return `<label>${label}<input type="color" data-gathering-color="${key}" value="${color}"></label>`;
-  }).join('');
-  GatheringPalette.mount(document.querySelector('#gatheringColorInputs'),state.gatheringColors?.details || {});
-  document.querySelector('#gatheringColorsDialog').showModal();
-});
-document.querySelector('#gatheringColorsForm').addEventListener('input', event => { if(event.target.matches('[data-gathering-color]'))event.target.dataset.changed='true'; });
-document.querySelector('#gatheringColorsForm').addEventListener('submit', event => {
-  if(event.submitter?.value==='cancel')return;
-  if(!isHostView() || document.querySelector('#gatheringColorsDialog').dataset.eventId!==viewedEventId){event.preventDefault();return;}
-  state.gatheringColors ??= {};
-  document.querySelectorAll('[data-gathering-color][data-changed]').forEach(input=>{state.gatheringColors[input.dataset.gatheringColor]=input.value;});
-  state.gatheringColors.details=GatheringPalette.edits(document.querySelector('#gatheringColorInputs'),state.gatheringColors.details || {});
-  applyGatheringColors();saveState({refresh:false});
-});
-document.querySelector('#resetGatheringColors').addEventListener('click',()=>{
-  if(!isHostView())return;
-  delete state.gatheringColors; document.querySelector('#gatheringColorsDialog').close();applyGatheringColors();saveState({refresh:false});
-});
 document.querySelector('#newGatheringButton').addEventListener('click',()=>{
   if(!isHostView())return;
   document.querySelector('#newGatheringForm').reset();

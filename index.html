@@ -134,7 +134,6 @@
         <button id="editItemsButton" type="button">Wedding Details</button>
         <button id="previewWeddingPartyButton" type="button">Sign in to account</button>
         <button id="invitationTemplatesButton" type="button">Templates</button>
-        <button id="gatheringColorsButton" data-gathering-tool type="button">Colors</button>
         <button id="gatheringHistoryButton" type="button">History</button>
         <button id="newGatheringButton" data-gathering-tool type="button">New Gathering</button>
       </div>
@@ -215,12 +214,6 @@
       <div id="eventSwitchButtons" class="event-switch-buttons"></div>
     </nav>
 
-    <dialog id="gatheringColorsDialog"><form method="dialog" class="modal-card" id="gatheringColorsForm">
-      <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
-      <h2>Gathering colors</h2><div id="gatheringColorInputs"></div>
-      <button type="button" id="resetGatheringColors">Reset colors</button>
-      <div class="modal-dialog-footer"><button class="primary-button" value="save">Save colors</button></div>
-    </form></dialog>
     <dialog id="newGatheringDialog"><form method="dialog" class="modal-card" id="newGatheringForm">
       <button class="modal-close" value="cancel" formnovalidate aria-label="Close">×</button>
       <h2>New gathering</h2>
@@ -306,16 +299,6 @@
             <button id="rsvpWrongEvent" class="primary-button" type="button">All Meyer Gatherings</button>
           </div>
           <div id="rsvpWeddingPages" hidden>
-      <nav id="weddingPartyTabs" class="wedding-party-tabs" aria-label="Wedding pages" role="tablist" hidden>
-        <button type="button" role="tab" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
-        <button type="button" role="tab" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="true">Attire</button>
-        <button type="button" role="tab" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
-        <button type="button" role="tab" data-wedding-tab="details" aria-controls="whatToExpectSection" aria-selected="false">What to Expect</button>
-      </nav>
-
-
-
-
       <section id="weddingPartySection" class="wedding-tab-page wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
         <p id="weddingPartyKicker" class="section-kicker">The people by our side</p>
         <h2 id="weddingPartyHeading">Wedding Party</h2>
@@ -405,6 +388,11 @@
       </section>
           </div>
           <div id="weddingRsvpUploadToolbar" class="event-dock wedding-upload-toolbar" role="toolbar" aria-label="RSVP page actions" hidden>
+      <nav id="weddingPartyTabs" class="toolbar-page-navigation" aria-label="Wedding pages" role="toolbar" hidden>
+        <button type="button" role="button" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
+        <button type="button" role="button" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="false">Attire</button>
+        <button type="button" role="button" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
+      </nav>
             <div class="wedding-upload-toolbar-content">
               <button id="uploadPhotosButton" class="toolbar-upload-action" type="button" aria-label="Upload Photos &amp; Videos" hidden>
                 <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg>
@@ -762,6 +750,7 @@
     <script src="shared-details.js" defer></script>
     <script src="text-styles.js" defer></script>
     <script src="inline-editing.js" defer></script>
+    <script src="element-appearance.js" defer></script>
     <script src="page-actions.js" defer></script>
     <script src="gathering-history.js" defer></script>
     <script src="rsvp-flow.js" defer></script>
