@@ -41,8 +41,7 @@
     const selected=surface.querySelector('[role="tab"][aria-selected="true"]');
     const controlled=selected && document.getElementById(selected.getAttribute('aria-controls'));
     const content=controlled && surface.contains(controlled) && visible(controlled)?controlled:surface;
-    const externalHeading=globalThis.PageHeadings?.headingFor(surface);
-    const heading=externalHeading || document.getElementById(surface.getAttribute('aria-labelledby')) || surface.querySelector('h1,h2,h3') || (surface.closest('#rsvpForm')?document.getElementById('rsvpHeading'):null);
+    const heading=document.getElementById(surface.getAttribute('aria-labelledby')) || surface.querySelector('h1,h2,h3') || (surface.closest('#rsvpForm')?document.getElementById('rsvpHeading'):null);
     const title=selected?.textContent.trim() || heading?.textContent.trim() || surface.getAttribute('aria-label') || 'Page';
     const copy=content.cloneNode(true);
     const originals=[content,...content.querySelectorAll('*')],clones=[copy,...copy.querySelectorAll('*')];
@@ -75,7 +74,7 @@
       for(const attribute of [...node.attributes])if(attribute.name.startsWith('on'))node.removeAttribute(attribute.name);
     }
     const firstHeading=copy.querySelector('h1,h2,h3');
-    if(firstHeading && !externalHeading && firstHeading.textContent.trim()===title)firstHeading.remove();
+    if(firstHeading && firstHeading.textContent.trim()===title)firstHeading.remove();
     const holder=document.createElement('div');holder.className='page-export-preview';
     const textCopy=copy.cloneNode(true);
     textCopy.querySelectorAll('a[href]').forEach(link=>{link.append(` (${link.href})`);});
