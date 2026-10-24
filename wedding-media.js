@@ -32,7 +32,7 @@
   function show(ctx) {
     ctx = { ...ctx, base:ctx.base.replace(/\/$/,'') };
     if (!current || key(current) !== key(ctx)) {
-      current = ctx; node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();selectTab('upload');
+      current = ctx; node('weddingMediaLinkForm').hidden=true;node('weddingMediaShareLink').setAttribute('aria-expanded','false');node('weddingMediaLinkStatus').textContent='';node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();selectTab('upload');
     } else current=ctx;
     DropboxUpload.show(ctx, api);
   }
@@ -60,6 +60,9 @@
   function initialize() {
     document.querySelectorAll('[data-media-tab]').forEach(button=>button.addEventListener('click',()=>selectTab(button.dataset.mediaTab)));
     node('weddingMediaTabs').addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();selectTab(event.key==='Home'?'upload':event.key==='End'?'view':tab==='upload'?'view':'upload');document.querySelector(`[data-media-tab="${tab}"]`).focus();});
+    node('weddingMediaShareLink').addEventListener('click',()=>{
+      node('weddingMediaLinkForm').hidden=false;node('weddingMediaShareLink').setAttribute('aria-expanded','true');node('weddingMediaLink').focus();
+    });
     node('weddingMediaSaveLink').addEventListener('click',async()=>{
       const ctx=current,button=node('weddingMediaSaveLink'),status=node('weddingMediaLinkStatus');
       let url;try{url=new URL(node('weddingMediaLink').value.trim());if(!['http:','https:'].includes(url.protocol))throw new Error();}catch{status.textContent='Enter a full http or https photo-sharing link.';return;}

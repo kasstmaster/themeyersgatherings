@@ -14,6 +14,11 @@
       if(surface)surfaces.add(surface);
     });
     for(const surface of surfaces) {
+      if(surface.closest('#weddingMediaSection,#weddingMediaDialog')) {
+        surface.querySelectorAll(':scope > [data-page-actions]').forEach(actions=>actions.remove());
+        surface.classList.remove('page-action-surface');
+        continue;
+      }
       surface.classList.add('page-action-surface');
       if(surface.querySelector(':scope > [data-page-actions]'))continue;
       const actions=document.createElement('div');
