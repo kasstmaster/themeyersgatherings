@@ -28,11 +28,11 @@
     for(const id of navs){
       const nav=document.getElementById(id);
       if(!visible(nav))continue;
-      const tab=nav.querySelector('[role="tab"][aria-selected="true"]');
+      const tab=nav.querySelector('[aria-selected="true"]');
       const panel=tab && document.getElementById(tab.getAttribute('aria-controls'));
       if(visible(panel))return panel;
     }
-    return inRsvp?document.getElementById('rsvpEventConfirmation'):[...document.querySelectorAll(pageSelector)].find(visible) || document.querySelector('#eventPage main > .welcome');
+    return inRsvp?([...document.querySelectorAll('#rsvpWeddingPages>section')].find(visible) || document.getElementById('rsvpEventConfirmation')):[...document.querySelectorAll(pageSelector)].find(visible) || document.querySelector('#eventPage main > .welcome');
   }
 
   function exportPage(surface) {

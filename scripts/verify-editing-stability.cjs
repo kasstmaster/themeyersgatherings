@@ -40,6 +40,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   holdNext=true;const started=new Promise(resolve=>{loadStarted=resolve;});
   await page.evaluate(()=>{window.pendingLoad=loadSharedState();});await started;
   await page.locator('#editItemsButton').click();releaseLoad();await page.evaluate(()=>pendingLoad);
+  await page.locator('#rsvpButton').click();await page.locator('#weddingPartyTabs [data-wedding-tab="party"]').click();
   assert.equal(await page.locator('#weddingPartyDetails').isVisible(),false);
   assert.equal(await page.locator('.inline-members-edit-area #weddingPartyAdmin').isVisible(),true);
   assert.equal(await page.getByRole('button',{name:'Edit party members',exact:true}).count(),0);
@@ -51,17 +52,20 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   assert.equal(await page.evaluate(()=>state.weddingPartyMembers[0].responsibilities),'Responsibilities saved while typing');
   assert.equal(await input.evaluate(el=>el===window.memberInput && document.activeElement===el && el.selectionStart===7),true,'autosave preserves input identity, focus, and cursor');
   assert.equal(await page.evaluate(()=>renderCount),await page.evaluate(()=>rendersBeforeTyping));
-  await page.locator('#gatheringColorsButton').click();await page.locator('[data-gathering-color="gold"]').fill('#aabb22');await page.getByRole('button',{name:'Save colors',exact:true}).click();
+  await page.evaluate(()=>ElementAppearance.open(document.querySelector('.summary-strip strong')));await page.locator('.appearance-editor').getByLabel('Text hex code',{exact:true}).fill('#aabb22');await page.locator('.appearance-editor').getByRole('button',{name:'Save appearance',exact:true}).click();
   assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('.summary-strip strong')).color),'rgb(170, 187, 34)');
   assert.equal(await input.evaluate(el=>el===window.memberInput),true,'changing colors does not rebuild member inputs');
   fixture.events.wedding.weddingPartyMembers[0].responsibilities='Remote stale text';
   await page.evaluate(()=>loadSharedState());
   assert.equal(await input.inputValue(),'Responsibilities saved while typing');
   assert.equal(await page.getByRole('button',{name:'Done editing Melissa Raudman',exact:true}).isVisible(),true);
+  await page.locator('#rsvpDialog .modal-close').click();
   await page.locator('#editItemsButton').click();
+  await page.locator('#rsvpButton').click();await page.locator('#weddingPartyTabs [data-wedding-tab="party"]').click();
   assert.equal(await page.locator('#weddingPartyDetails').isVisible(),true);
   assert.equal(await page.locator('.inline-members-edit-area').count(),0);
   assert.ok((await page.locator('#weddingPartyDetails').textContent()).includes('Responsibilities saved while typing'));
+  await page.locator('#rsvpDialog .modal-close').click();
   // Deferred refreshes cannot replace a direct editor, and pagehide flushes it without rebuilding.
   await page.evaluate(()=>{selectedWeddingTab='couple';render();});await page.locator('#editItemsButton').click();
   await page.locator('#brideGroomContent').scrollIntoViewIfNeeded();await page.waitForTimeout(40);
@@ -84,8 +88,8 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   // Opening and closing another editor must not write stale hidden Bride & Groom controls back.
   await page.evaluate(()=>{selectedWeddingTab='party';selectedMatronTab='duties';render();});await page.locator('#editItemsButton').click();await page.locator('#editItemsButton').click();
   assert.equal(await page.evaluate(()=>state.brideGroomPages[0].content),'One-click transition');
-  await page.setViewportSize({width:390,height:900});await page.locator('#editItemsButton').click();
+  await page.setViewportSize({width:390,height:900});await page.locator('#editItemsButton').click();await page.locator('#rsvpButton').click();await page.locator('#weddingPartyTabs [data-wedding-tab="party"]').click();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'member editor fits mobile viewport');
-  await page.locator('#editItemsButton').click();
+  await page.locator('#rsvpDialog .modal-close').click();await page.locator('#editItemsButton').click();
   assert.deepEqual(errors,[]);console.log('Unchanged refresh, active drafts, portal autosave focus/cursor, automatic member editor, lifecycle flush, and stale hidden controls passed.');await browser.close();
 })().catch(error=>{console.error(error);process.exit(1);});

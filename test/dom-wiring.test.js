@@ -164,7 +164,7 @@ test('wedding party access is tied to the individual sign-in name', async () => 
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /id="weddingPartyTabs"[\s\S]*>Wedding Party<[\s\S]*>Attire<[\s\S]*>Registry<[\s\S]*>What to Expect</);
+  assert.match(html, /id="weddingPartyTabs"[\s\S]*>Wedding Party<[\s\S]*>Attire<[\s\S]*>Registry</);
   assert.match(javascript, /signedInPersonName = accountPersonName\(accountName, account\)/);
   assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => weddingPartyPersonMatches\(member\.name, signedInPersonName\)\)/);
   assert.match(javascript, /const isWeddingPartyMember = isWedding && !hostView && Boolean\(signedInWeddingPartyMember\)/);
@@ -177,14 +177,14 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   assert.match(javascript, /hostReturnSession=\{eventId:viewedEventId[\s\S]*guestName=account\.name[\s\S]*enterEvent\(events\.includes/);
 });
 
-test('Wedding public navigation is flat with Attire selected by default', async () => {
+test('Wedding main page navigation is in the toolbar with Details selected on open', async () => {
   const [html, styles] = await Promise.all([
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
   assert.ok(html.indexOf('id="registryAttireSection"') < html.indexOf('id="registrySection"'));
-  assert.match(html, /data-wedding-tab="attire"[^>]*aria-selected="true">Attire/);
+  assert.match(html, /data-wedding-tab="attire"[^>]*aria-selected="false">Attire/);
   assert.match(html, /data-wedding-tab="registry"[^>]*aria-selected="false">Registry/);
   assert.match(styles, /\.wedding-party-tabs\{[^}]*--tab-text:#fff/);
   assert.match(styles, /:is\(\.wedding-party-tabs,\.matron-info-tabs\) button\[aria-selected="true"\]\{[^}]*background:var\(--orange\)[^}]*color:#fff/);
@@ -193,7 +193,7 @@ test('Wedding public navigation is flat with Attire selected by default', async 
 test('Wedding guest pages stay editable inside RSVP without an extra Guest container', async () => {
   const [html,javascript]=await Promise.all(['index.html','app.js'].map(file=>readFile(new URL('../'+file,import.meta.url),'utf8')));
   const tabs=html.match(/<nav id="weddingPartyTabs"[\s\S]*?<\/nav>/)?.[0] || '';
-  assert.match(tabs,/data-wedding-tab="attire"[\s\S]*data-wedding-tab="registry"[\s\S]*data-wedding-tab="details"/);
+  assert.match(tabs,/data-wedding-tab="attire"[\s\S]*data-wedding-tab="registry"/);
   assert.match(html,/id="guestSection" class="legacy-guest-navigation"/);
   assert.match(html,/id="rsvpWeddingPages"[\s\S]*id="registryAttireSection"[\s\S]*id="whatToExpectSection"/);
   assert.match(html,/id="adminWhatToExpectContent"/);

@@ -33,9 +33,11 @@ test('public Wedding pages follow RSVP buttons and uploads use a first-page tool
  assert.equal(visibility(false,false,'guest','christmas').nodes['#rsvpWeddingPages'].hidden,true);
 });
 
-test('Wedding public pages use one flat tab bar without an extra Guest layer',()=>{
+test('Wedding main pages are toolbar options without a Details option',()=>{
  const nav=html.slice(html.indexOf('<nav id="weddingPartyTabs"'),html.indexOf('</nav>',html.indexOf('<nav id="weddingPartyTabs"')));
- assert.deepEqual([...nav.matchAll(/data-wedding-tab="([^"]+)"/g)].map(m=>m[1]),['party','attire','registry','details']);
+ assert.deepEqual([...nav.matchAll(/data-wedding-tab="([^"]+)"/g)].map(m=>m[1]),['party','attire','registry']);
+ assert.match(nav,/class="toolbar-page-navigation"/);assert.match(nav,/role="toolbar"/);
+ assert.ok(html.indexOf('id="weddingPartyTabs"')>html.indexOf('id="weddingRsvpUploadToolbar"'));
  assert.match(html,/<nav id="guestInfoTabs" hidden/);
  assert.equal(visibility(false,false,'attire').result.showingAttirePage,true);
  assert.equal(visibility(false,false,'details').result.showingWhatToExpectPage,true);

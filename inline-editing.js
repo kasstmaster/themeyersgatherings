@@ -24,12 +24,12 @@
     }
     return layers.get(owner);
   }
-  function overlay(element, target, kind = 'after') {
+  function overlay(element, target, kind = 'after', deferred = false) {
     layerFor(target).append(element);
     element.classList.add('inline-overlay-item');element.dataset.inlineAnchor=target.id || '';
     const entry={element,target,kind};overlays.push(entry);
     cleanup.push(() => { const index=overlays.indexOf(entry);if(index>=0)overlays.splice(index,1);element.remove(); });
-    positionOverlays();
+    if(!deferred)positionOverlays();
     if (!frame) frame=requestAnimationFrame(tick);
     return element;
   }
@@ -86,6 +86,13 @@
         left=rect.right-element.offsetWidth-8;top=rect.top+8;
         const actions=target.querySelector(':scope > [data-page-actions]');
         if(actions?.getClientRects().length)top=Math.max(top,actions.getBoundingClientRect().bottom+6);
+      }
+      if(kind==='appearance'){
+        left=target.matches('body,dialog,nav,header,form,main,section,div,footer')?rect.left+4:rect.right-element.offsetWidth-3;top=rect.top+3;
+        const dock=target.closest('.event-dock'),action=target.closest('button,a');
+        if(dock)top=dock.getBoundingClientRect().top-element.offsetHeight-3;
+        else if(action && action!==target)top=action.getBoundingClientRect().top-element.offsetHeight-3;
+        else if(action && rect.width<40){left=rect.left-element.offsetWidth-3;top=rect.top;}
       }
       if(kind==='plus'){left=rect.right-element.offsetWidth;top=rect.top-element.offsetHeight-3;}
       place(Math.max(4,Math.min(left,width-element.offsetWidth-4)),top);
@@ -176,7 +183,7 @@
           event.preventDefault(); actions.querySelector('button').click();
         }
       });
-      form.append(actions);replaceInPlace(form,target);
+      form.append(actions);if(target.closest('.event-dock'))overlay(form,target.closest('dialog') || target.closest('.event-dock'),'editor');else replaceInPlace(form,target);
       control.hidden = true;
       inputs[0]?.focus();
     };
@@ -366,12 +373,12 @@
   function tabs(nav, config = {}) {
     if (!nav || !nav.id) return;
     const state = context.state;
-    const buttons = [...nav.querySelectorAll(':scope > [role="tab"]')];
+    const buttons = [...nav.querySelectorAll(':scope > button')];
     const tabKeys = new Map();
     const moveControls = [];
     const titleFields = [];
     const titleSavers = [];
-    const visibleTabs = () => [...nav.querySelectorAll(':scope > [role="tab"]')].filter(tab => !tab.hidden);
+    const visibleTabs = () => [...nav.querySelectorAll(':scope > button')].filter(tab => !tab.hidden);
     function moveControlsFor(tab, tools) {
       for (const [direction, arrow, label] of [[-1, '←', 'left'], [1, '→', 'right']]) {
         const control = button(arrow, () => {
@@ -381,7 +388,7 @@
           if (direction < 0) nav.insertBefore(tab, neighbor);
           else nav.insertBefore(neighbor, tab);
           state.siteTabOrder ??= {};
-          state.siteTabOrder[nav.id] = [...nav.querySelectorAll(':scope > [role="tab"]')].map(item => tabKeys.get(item));
+          state.siteTabOrder[nav.id] = [...nav.querySelectorAll(':scope > button')].map(item => tabKeys.get(item));
           context.save();
         }, tools, `Move ${tab.textContent} ${label}`);
         moveControls.push({ tab, direction, control });
@@ -390,7 +397,7 @@
     // Restore built-in DOM order before the next render so positional tab keys stay stable.
     cleanup.push(() => buttons.forEach(tab => nav.append(tab)));
     const hiddenTabs = state.siteHiddenTabs || [];
-    const panelIds = buttons.map(tab => tab.getAttribute('aria-controls')).filter(Boolean);
+    const panelIds = [...new Set([...buttons.map(tab=>tab.getAttribute('aria-controls')),...(config.panelIds || [])].filter(Boolean))];
     let active = false;
     const navOriginallyHidden = nav.hidden;
     const visible = !nav.parentElement.closest('[hidden]') && (!nav.hidden || config.available);
@@ -454,24 +461,26 @@
     });
     function clearCustom() { selectedCustom.delete(`${context.eventId}:${nav.id}`); }
     const selectionKey = `${context.eventId}:${nav.id}`;
+    if(!selectedCustom.has(selectionKey) && config.defaultPage){const page=extraPages.find(config.defaultPage);if(page)selectedCustom.set(selectionKey,page.id);}
     const selected = extraPages.find(page => page.id === selectedCustom.get(selectionKey));
     if (selected) {
       buttons.forEach(tab => tab.setAttribute('aria-selected', 'false'));
       panelIds.forEach(id => { const panel = document.getElementById(id); if (panel) { const hidden = panel.hidden; panel.hidden = true; cleanup.push(() => { panel.hidden = hidden; }); } });
     }
     extraPages.forEach(page => {
-      const tab = node('button', page.title); tab.type = 'button'; tab.setAttribute('role', 'tab'); tab.setAttribute('aria-selected', String(selected?.id === page.id));
+      const tab = node('button', page.title); tab.type = 'button'; tab.setAttribute('role',config.toolbar?'button':'tab'); tab.setAttribute('aria-selected', String(selected?.id === page.id));
       tab.setAttribute('aria-controls', `custom-page-${page.id}`);
+      tab.hidden=Boolean(config.hidePage?.(page));
       tabKeys.set(tab, `custom:${page.id}`);
       nav.append(tab); cleanup.push(() => tab.remove());
-      tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh(); });
+      tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh();if(config.scroll)document.getElementById(`custom-page-${page.id}`)?.scrollIntoView({block:'start',behavior:'auto'}); });
       if (enabled && context.host) {
         titleFields.push({label:page.title,value:page.title,required:true});
         titleSavers.push(title => { page.title=title; });
         const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
         overlay(tools,tab,'above');
         moveControlsFor(tab, tools);
-        button('Edit title', () => editTitle(tab, nav.nextElementSibling, page.title, title => { page.title=title; }), tools);
+        button('Edit title', () => editTitle(tab, config.pageHost || nav.nextElementSibling, page.title, title => { page.title=title; }), tools);
         button('×', () => { if (window.confirm(`Delete the “${page.title}” page?`)) { state.sitePages = state.sitePages.filter(item => item.id !== page.id); context.save(); } }, tools, `Delete ${page.title} page`);
       }
       if (selected?.id === page.id) {
@@ -485,14 +494,14 @@
         if(context.eventId==='wedding')panel.querySelector('.bride-groom-content').classList.add('wedding-tab-content');
         const intro=panel.querySelector('.section-kicker');
         if(intro)intro.innerHTML=formatTextForTarget(intro,page.intro || '');
-        nav.after(panel); cleanup.push(() => panel.remove());
+        if(config.pageHost)config.pageHost.append(panel);else nav.after(panel); cleanup.push(() => panel.remove());
         field(intro, 'text', [{label:'Text above title',type:'textarea',value:page.intro || ''}], ([value]) => { page.intro=value; }, {key:`${page.id}:intro`,placement:'text'});
         if(config.externalHeading)field(panel,'page',[{label:'Content',type:'textarea',value:page.content}],([content])=>{page.content=content;},{key:page.id});
         else field(panel, 'page', [{ label: 'Title', value: page.title, required: true }, { label: 'Content', type: 'textarea', value: page.content }], ([title, content]) => { page.title = title; page.content = content; }, { key: page.id });
       }
     });
     const order = state.siteTabOrder?.[nav.id] || [];
-    const orderedTabs = [...nav.querySelectorAll(':scope > [role="tab"]')];
+    const orderedTabs = [...nav.querySelectorAll(':scope > button')];
     const rank = tab => { const index = order.indexOf(tabKeys.get(tab)); return index < 0 ? order.length : index; };
     orderedTabs.sort((a, b) => rank(a) - rank(b)).forEach(tab => nav.append(tab));
     config.onSelect?.(selected || null);
@@ -502,7 +511,7 @@
     positionOverlays();
     if (enabled && context.host) {
       const addTools=node('span',undefined,'inline-tab-tools');
-      const anchor=nav.getClientRects().length?nav:nav.nextElementSibling;
+      const anchor=nav.getClientRects().length?nav:config.pageHost || nav.nextElementSibling;
       if(anchor)overlay(addTools,anchor,'plus');
       addTools.dataset.inlineAnchor=nav.id;
       button('+', () => {
@@ -513,7 +522,7 @@
       }, addTools, 'Add page');
     }
     if (extraPages.length && !nav.parentElement.closest('[hidden]')) { nav.hidden = false; cleanup.push(() => { nav.hidden = navOriginallyHidden; }); }
-    if (!active && !selected && buttons.some(tab => !tab.hidden)) {
+    if (!config.allowNoSelection && !active && !selected && buttons.some(tab => !tab.hidden)) {
       const first = visibleTabs().find(tab => buttons.includes(tab));
       if (first.getAttribute('aria-selected') !== 'true') queueMicrotask(() => { if (first.isConnected) first.click(); });
     }
@@ -528,8 +537,15 @@
     else overlay(element,target,kind);
     return element;
   }
+  function appearance(target,action,label){
+    if(!target || !enabled || !context.host)return;
+    const tools=node('span',undefined,'inline-appearance-tools');overlay(tools,target,'appearance',true);
+    const control=button('Appearance',action,tools,`Edit appearance: ${label}`);control.title=`Edit appearance: ${label}`;
+    control.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20h2a3 3 0 0 0 0-6h-1a1 1 0 0 1 0-2h3a6 6 0 0 0 6-6c0-4-5-6-10-6Zm-5 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm5-4a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm5 3a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/></svg>';
+    return ()=>{const index=overlays.findIndex(entry=>entry.element===tools);if(index>=0)overlays.splice(index,1);tools.remove();};
+  }
   const selectedCustom = new Map();
-  globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, applyStaticText, tabs, button, mount, hide,
+  globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, applyStaticText, tabs, button, mount, hide, appearance, positionOverlays,
     resetTabSelection(navId,eventId=context?.eventId) { selectedCustom.delete(`${eventId}:${navId}`); },
     flush() { flushing=true;try { [...savers].forEach(save=>save()); } finally { flushing=false; } },
     get flushing() { return flushing; },
