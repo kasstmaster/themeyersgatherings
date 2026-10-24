@@ -2043,6 +2043,14 @@ document.querySelector('#rsvpAttireAcknowledge').addEventListener('click',()=>do
 document.querySelector('#rsvpDialog').addEventListener('close',()=>{
   const form=document.querySelector('#rsvpForm');
   const fromEntry=form.dataset.fromEntry==='true';form.dataset.fromEntry='false';
+  if(form.dataset.saved==='true' && GatheringFeatures.forGathering(viewedEventId).weddingPages){
+    selectedWeddingTab='registry';
+    SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
+    showSignedInDestination();
+    openRsvp();
+    document.querySelector('#weddingPartyTabs').scrollIntoView({block:'start',behavior:'auto'});
+    return;
+  }
   if(!isHostView()){
     showEventSelection();
     return;

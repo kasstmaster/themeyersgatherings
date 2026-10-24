@@ -86,3 +86,5 @@ Upload Photos & Videos does not show Print Page or Email Page actions. Only the 
 RSVP and Upload Photos & Videos share the `.fullscreen-flow` color variables and `.flow-panel` container component. Their background, foreground, card surface, and card border colors are defined once; upload sub-tabs and gallery cards consume those same variables.
 
 Print and Email are icon actions in the existing gatherings toolbar and the first Wedding RSVP page’s upload toolbar. They export the selected main page or sub-page, including custom pages. There are no separate page buttons, added toolbars, or export actions on RSVP question steps. Host main-page containers mirror the corresponding RSVP panel colors, borders, and corner radius without changing RSVP container styles.
+
+After successfully submitting a Wedding RSVP, the first RSVP page reopens with Registry selected and scrolled into view. Closing without submitting keeps the existing exit behavior. Gatherings without Wedding pages retain their completion destination.

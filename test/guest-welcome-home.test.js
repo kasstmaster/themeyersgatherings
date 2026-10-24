@@ -8,21 +8,22 @@ const closeCode=source.slice(source.indexOf("document.querySelector('#rsvpDialog
 function close({event='thanksgiving',host=false,saved=false,fromEntry=false}={}){
  const destinations=[],form={dataset:{saved:String(saved),fromEntry:String(fromEntry)}};
  let handler;
- const context=vm.createContext({viewedEventId:event,GatheringFeatures,isHostView:()=>host,document:{querySelector:selector=>selector==='#rsvpForm'?form:{addEventListener:(type,callback)=>{handler=callback;}}},showEventSelection:()=>destinations.push('welcome'),showSignedInDestination:()=>destinations.push('gathering'),render:()=>destinations.push('render')});
+ const context=vm.createContext({viewedEventId:event,GatheringFeatures,SiteEditing:{resetTabSelection(){}},openRsvp:()=>destinations.push('registry'),isHostView:()=>host,document:{querySelector:selector=>selector==='#rsvpForm'?form:{scrollIntoView(){},addEventListener:(type,callback)=>{handler=callback;}}},showEventSelection:()=>destinations.push('welcome'),showSignedInDestination:()=>destinations.push('gathering'),render:()=>destinations.push('render')});
  vm.runInContext(closeCode,context);handler();return {destinations,form};
 }
-test('all gathering guests return to the welcome home on RSVP cancel or completion',()=>{
- for(const event of ['wedding','thanksgiving','christmas','new-gathering'])for(const saved of [false,true])for(const fromEntry of [false,true]){
+test('non-Wedding gathering guests return home on RSVP cancel or completion',()=>{
+ for(const event of ['thanksgiving','christmas','new-gathering'])for(const saved of [false,true])for(const fromEntry of [false,true]){
   const result=close({event,saved,fromEntry});assert.deepEqual(result.destinations,['welcome']);assert.equal(result.form.dataset.fromEntry,'false');
  }
 });
-test('Wedding guests return home after saves or cancellation; hosts retain the gathering page',()=>{
+test('Wedding completion opens Registry for guests and hosts; cancellation keeps existing destinations',()=>{
  assert.deepEqual(close({host:true,saved:true}).destinations,[]);
  assert.deepEqual(close({host:true,saved:true,fromEntry:true}).destinations,['gathering','render']);
- assert.deepEqual(close({event:'wedding',saved:true,fromEntry:true}).destinations,['welcome']);
+ assert.deepEqual(close({event:'wedding',saved:true,fromEntry:true}).destinations,['gathering','registry']);
  assert.deepEqual(close({event:'wedding',saved:false,fromEntry:true}).destinations,['welcome']);
- assert.deepEqual(close({event:'wedding',saved:true}).destinations,['welcome']);
+ assert.deepEqual(close({event:'wedding',saved:true}).destinations,['gathering','registry']);
  assert.deepEqual(close({event:'wedding',saved:false}).destinations,['welcome']);
+ assert.deepEqual(close({event:'wedding',host:true,saved:true}).destinations,['gathering','registry']);
 });
 test('guest sign-in stays at welcome for all gatherings instead of resuming a pending RSVP',()=>{
  const start=source.indexOf('  showEventSelection();\n  pendingAccountAction = null;');
