@@ -13,21 +13,29 @@
       const surface=panel && surfaceFor(panel);
       if(surface)surfaces.add(surface);
     });
-    for(const surface of surfaces) {
-      if(surface.closest('#weddingMediaSection,#weddingMediaDialog')) {
-        surface.querySelectorAll(':scope > [data-page-actions]').forEach(actions=>actions.remove());
-        surface.classList.remove('page-action-surface');
-        continue;
-      }
-      surface.classList.add('page-action-surface');
-      if(surface.querySelector(':scope > [data-page-actions]'))continue;
-      const actions=document.createElement('div');
-      actions.className='page-actions';actions.dataset.pageActions='';
-      actions.setAttribute('role','group');actions.setAttribute('aria-label','Page actions');
-      actions.innerHTML='<button type="button" data-page-print>Print Page</button><a href="mailto:" data-page-email>Email Page</a>';
-      surface.append(actions);
+    document.querySelectorAll('[data-page-actions]').forEach(actions=>actions.remove());
+    for(const surface of surfaces) surface.classList.toggle('page-action-surface',!surface.closest('#weddingMediaDialog'));
+    for(const toolbar of document.querySelectorAll('#eventDock,#weddingRsvpUploadToolbar')){
+      if(toolbar.querySelector('[data-toolbar-page-actions]'))continue;
+      const actions=document.createElement('div');actions.dataset.toolbarPageActions='';actions.className='toolbar-page-actions';
+      const icons={print:'M6 2h12v5H6V2Zm-2 6h16a2 2 0 0 1 2 2v8h-4v4H6v-4H2v-8a2 2 0 0 1 2-2Zm4 8v4h8v-4H8Zm10-5v2h2v-2h-2Z',email:'M2 4h20v16H2V4Zm2 2v1l8 6 8-6V6l-8 6-8-6Z'};
+      actions.innerHTML=`<button type="button" data-page-print aria-label="Print page"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons.print}"/></svg><span>Print</span></button><a href="mailto:" data-page-email aria-label="Email page"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons.email}"/></svg><span>Email</span></a>`;
+      toolbar.append(actions);
     }
   }
+  function toolbarSurface(control){
+    const inRsvp=Boolean(control.closest('#weddingRsvpUploadToolbar'));
+    const navs=inRsvp?['weddingPartyTabs']:['weddingHostTabs','gatheringTabs'];
+    for(const id of navs){
+      const nav=document.getElementById(id);
+      if(!visible(nav))continue;
+      const tab=nav.querySelector('[role="tab"][aria-selected="true"]');
+      const panel=tab && document.getElementById(tab.getAttribute('aria-controls'));
+      if(visible(panel))return panel;
+    }
+    return inRsvp?document.getElementById('rsvpEventConfirmation'):[...document.querySelectorAll(pageSelector)].find(visible) || document.querySelector('#eventPage main > .welcome');
+  }
+
   function exportPage(surface) {
     if(!visible(surface))return null;
     if(surface.id === 'gatheringMenuSection' && api.menuExport)return api.menuExport();
@@ -35,14 +43,14 @@
     const controlled=selected && document.getElementById(selected.getAttribute('aria-controls'));
     const content=controlled && surface.contains(controlled) && visible(controlled)?controlled:surface;
     const externalHeading=globalThis.PageHeadings?.headingFor(surface);
-    const heading=externalHeading || document.getElementById(surface.getAttribute('aria-labelledby')) || surface.querySelector('h1,h2,h3');
+    const heading=externalHeading || document.getElementById(surface.getAttribute('aria-labelledby')) || surface.querySelector('h1,h2,h3') || (surface.closest('#rsvpForm')?document.getElementById('rsvpHeading'):null);
     const title=selected?.textContent.trim() || heading?.textContent.trim() || surface.getAttribute('aria-label') || 'Page';
     const copy=content.cloneNode(true);
     const originals=[content,...content.querySelectorAll('*')],clones=[copy,...copy.querySelectorAll('*')];
     originals.forEach((original,index)=>{
       if(index && original.tagName!=='SOURCE' && (original.hidden || getComputedStyle(original).display==='none' || getComputedStyle(original).visibility==='hidden'))clones[index].remove();
     });
-    copy.querySelectorAll('[hidden],[data-page-actions],button,nav,script,style,form,input,select,textarea,.inline-edit-control,.inline-tab-tools,.inline-editor').forEach(node=>node.remove());
+    copy.querySelectorAll('[hidden],[data-page-actions],.event-dock,button,nav,script,style,form,input,select,textarea,.inline-edit-control,.inline-tab-tools,.inline-editor').forEach(node=>node.remove());
     copy.querySelectorAll('details').forEach(node=>{node.open=true;});
     // Never put a gallery's bearer session URL into a printable/email document.
     const privateFile = raw => {
@@ -68,7 +76,7 @@
       for(const attribute of [...node.attributes])if(attribute.name.startsWith('on'))node.removeAttribute(attribute.name);
     }
     const firstHeading=copy.querySelector('h1,h2,h3');
-    if(firstHeading && !externalHeading && (content===surface || firstHeading.textContent.trim()===title))firstHeading.remove();
+    if(firstHeading && !externalHeading && firstHeading.textContent.trim()===title)firstHeading.remove();
     const holder=document.createElement('div');holder.className='page-export-preview';
     const textCopy=copy.cloneNode(true);
     textCopy.querySelectorAll('a[href]').forEach(link=>{link.append(` (${link.href})`);});
@@ -91,7 +99,7 @@
   document.addEventListener('click',event=>{
     const control=event.target.closest('[data-page-print],[data-page-email]');
     if(!control)return;
-    const page=exportPage(control.closest('.page-action-surface'));
+    const page=exportPage(toolbarSurface(control));
     if(!page){event.preventDefault();return;}
     if(control.hasAttribute('data-page-print'))api.printPage(page);
     else control.href=`mailto:?subject=${encodeURIComponent(`The Meyers — ${page.title}`)}&body=${encodeURIComponent(`${page.title}\n\n${page.text}`)}`;

@@ -84,3 +84,5 @@ Wedding **Upload Photos & Videos** is a camera action in the fixed toolbar at th
 Upload Photos & Videos does not show Print Page or Email Page actions. Only the host sees Check connection. Under OR, Share Dropbox Link reveals the sharing-link input and Share action.
 
 RSVP and Upload Photos & Videos share the `.fullscreen-flow` color variables and `.flow-panel` container component. Their background, foreground, card surface, and card border colors are defined once; upload sub-tabs and gallery cards consume those same variables.
+
+Print and Email are icon actions in the existing gatherings toolbar and the first Wedding RSVP page’s upload toolbar. They export the selected main page or sub-page, including custom pages. There are no separate page buttons, added toolbars, or export actions on RSVP question steps. Host main-page containers mirror the corresponding RSVP panel colors, borders, and corner radius without changing RSVP container styles.
