@@ -40,3 +40,22 @@ test('Wedding public pages use one flat tab bar without an extra Guest layer',()
  assert.equal(visibility(false,false,'details').result.showingWhatToExpectPage,true);
  assert.equal(visibility(false,false,'registry').result.showingRegistryPage,true);
 });
+
+test('Attire places its kicker and title before the shared content container',()=>{
+ const start=html.indexOf('<section id="registryAttireSection"');
+ const attire=html.slice(start,html.indexOf('<section id="registryAttireVideosSection"',start));
+ assert.ok(attire.indexOf('id="registryAttireKicker"')<attire.indexOf('id="registryAffordableAttire"'));
+ assert.ok(attire.indexOf('id="registryAttireHeading"')<attire.indexOf('id="registryAffordableAttire"'));
+ assert.match(attire,/<div id="registryAffordableAttire" class="wedding-tab-content/);
+});
+test('moving Attire headings preserves saved edits and migration is repeatable',()=>{
+ const saved={siteText:{'#registryAffordableAttire>p:nth-of-type(1)':'Edited kicker','#registryAffordableAttire>p:nth-of-type(2)':'Edited introduction','#registryAffordableAttire>p:nth-of-type(5)':'Edited closing'}};
+ const start=source.indexOf('function renderInlineEditing()');
+ const c=vm.createContext({state:saved,viewedEventId:'wedding'});
+ vm.runInContext(source.slice(start,source.indexOf('  SiteEditing.render(',start))+'}',c);
+ c.renderInlineEditing();c.renderInlineEditing();
+ assert.equal(saved.siteText['#registryAttireKicker'],'Edited kicker');
+ assert.equal(saved.siteText['#registryAttireLead'],'Edited introduction');
+ assert.equal(saved.siteText['#registryAttireClosing'],'Edited closing');
+ assert.ok(!Object.hasOwn(saved.siteText,'#registryAffordableAttire>p:nth-of-type(1)'));
+});

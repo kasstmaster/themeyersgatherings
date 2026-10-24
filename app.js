@@ -1433,7 +1433,9 @@ function render() {
 function renderInlineEditing() {
   // Preserve edited copy when relocating the upload introduction out of its panel.
   if(viewedEventId==='wedding' && state.siteText) {
-    for(const [oldKey,newKey] of [['#weddingMediaUpload>p:nth-of-type(1)','#weddingMediaIntro'],['#weddingMediaUpload>p:nth-of-type(2)','#weddingMediaUploadNotice']]) {
+    const attireTextIds=['registryAttireKicker','registryAttireLead','registryAttireBudgetNote','registryAttireShoppingIntro','registryAttireClosing'];
+    const movedText=[['#weddingMediaUpload>p:nth-of-type(1)','#weddingMediaIntro'],['#weddingMediaUpload>p:nth-of-type(2)','#weddingMediaUploadNotice'],...attireTextIds.map((id,index)=>[`#registryAffordableAttire>p:nth-of-type(${index+1})`,`#${id}`])];
+    for(const [oldKey,newKey] of movedText) {
       if(Object.hasOwn(state.siteText,oldKey)) {
         state.siteText[newKey] ??= state.siteText[oldKey];delete state.siteText[oldKey];
       }
