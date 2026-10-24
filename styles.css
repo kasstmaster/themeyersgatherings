@@ -807,7 +807,6 @@ body.theme-wedding #eventPage .wedding-tab-content .affordable-attire-guidance{d
 body.theme-wedding #eventPage .wedding-tab-content .affordable-attire-guidance article{box-sizing:border-box;margin:0 0 24px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
 body.theme-wedding #eventPage .wedding-tab-content .attire-shop-links{display:block}
 body.theme-wedding #eventPage .wedding-tab-content .attire-shop-links span{display:inline;margin:0 7px;color:var(--wedding-tab-text)}
-body.theme-wedding #eventPage .wedding-tab-page :is(.registry-button,.registry-button-secondary){background:var(--wedding-tab-selected-background);color:var(--wedding-tab-text);border:1px solid var(--wedding-tab-border);box-shadow:none}
 body.theme-wedding #eventPage .wedding-tab-page :is(.wedding-party-card,.wedding-timeline-table){background:var(--wedding-tab-selected-background);color:var(--wedding-tab-text);border:1px solid var(--wedding-tab-border);border-radius:var(--wedding-tab-radius)}
 body.theme-wedding #eventPage .wedding-tab-page :is(.wedding-timeline-table th,.wedding-timeline-table td){color:var(--wedding-tab-text);background:transparent;border-color:var(--wedding-tab-border)}
 @media(max-width:650px){body.theme-wedding{--wedding-tab-padding:18px}}
@@ -824,3 +823,12 @@ body.theme-wedding #eventPage .matron-info-tabs~.wedding-tab-page,
 body.theme-wedding #eventPage #weddingPartyAttirePanel>.wedding-tab-page{margin-top:0}
 body.theme-wedding #eventPage .registry-actions.rsvp-event-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:28px;align-items:stretch}
 body.theme-wedding #eventPage .registry-actions>.registry-button{box-sizing:border-box;width:100%;min-width:0;margin:0;text-align:center}
+
+/* RSVP actions and Wedding page actions share one button style. */
+body.theme-wedding #eventPage .rsvp-event-actions>.primary-button,
+body.theme-wedding #eventPage .wedding-tab-page .primary-button,
+body.theme-wedding #eventPage .wedding-tab-page .registry-button,
+body.theme-wedding #eventPage .wedding-tab-page .affordable-attire-toggle,
+body.theme-wedding #eventPage .wedding-tab-page .sign-in-back,
+body.theme-wedding #eventPage .wedding-tab-page .page-actions button,
+body.theme-wedding #eventPage .wedding-tab-page .page-actions a{box-sizing:border-box;display:block;width:100%;min-width:0;margin:0;padding:15px 22px;border:0;border-radius:4px;background:var(--orange);color:white;box-shadow:none;font-family:Arial,Helvetica,sans-serif;font-size:1rem;font-weight:700;line-height:1.5;letter-spacing:normal;text-align:center;text-transform:none;text-decoration:none;cursor:pointer}
