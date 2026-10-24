@@ -458,9 +458,11 @@
         const isSubpage = nav.classList.contains('matron-info-tabs');
         const panel = node('section', undefined, `gathering-page inline-custom-page${isSubpage ? ' gathering-subpage' : ''}`);
         if(nav.closest('.fullscreen-flow'))panel.classList.add('flow-panel');
+        if(context.eventId==='wedding')panel.classList.add('wedding-tab-page');
         panel.id = `custom-page-${page.id}`; panel.setAttribute('role','tabpanel');
         const heading = isSubpage ? 'h3' : 'h2';
         panel.innerHTML = `<p class="section-kicker"></p><${heading}>${context.escape(page.title)}</${heading}><div class="bride-groom-content">${context.format(page.content)}</div>`;
+        if(context.eventId==='wedding')panel.querySelector('.bride-groom-content').classList.add('wedding-tab-content');
         const intro=panel.querySelector('.section-kicker');
         intro.innerHTML=formatTextForTarget(intro,page.intro || '');
         nav.after(panel); cleanup.push(() => panel.remove());
