@@ -1427,6 +1427,9 @@ function render() {
   document.querySelectorAll('[data-gathering-tool]').forEach(button => { button.hidden=!isHostView(); });
   if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
   if (document.querySelector('#noResponseDialog').open) renderNoResponseAccounts();
+  // Static text editors can restore their original copy during a redraw.
+  // Reapply the active RSVP step's heading without restarting the journey.
+  RsvpFlow.refresh();
   PageActions.sync();
 }
 
