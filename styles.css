@@ -826,7 +826,6 @@ body.theme-wedding #eventPage .registry-actions>.registry-button{box-sizing:bord
 
 /* RSVP actions and Wedding page actions share one button style. */
 body.theme-wedding #eventPage .rsvp-event-actions>.primary-button,
-body.theme-wedding #eventPage .wedding-upload-toolbar .primary-button,
 body.theme-wedding #eventPage .wedding-tab-page .primary-button,
 body.theme-wedding #eventPage .wedding-tab-page .registry-button,
 body.theme-wedding #eventPage .wedding-tab-page .affordable-attire-toggle,
@@ -839,8 +838,8 @@ body.theme-wedding #eventPage .wedding-tab-page .page-actions a{box-sizing:borde
 #rsvpDialog>#rsvpForm>h2{font-size:2.25rem}
 
 /* Wedding uploads stay reachable while browsing the first RSVP page. */
-#weddingRsvpUploadToolbar{position:fixed;inset:auto 0 0;z-index:100;box-sizing:border-box;padding:12px 24px calc(12px + env(safe-area-inset-bottom,0px));background:var(--flow-panel-background);border-top:1px solid var(--flow-panel-border)}
-#weddingRsvpUploadToolbar .wedding-upload-toolbar-content{max-width:640px;margin:0 auto}
+#weddingRsvpUploadToolbar .wedding-upload-toolbar-content{display:contents}
+.event-dock .toolbar-icon{width:24px;height:24px;flex:none;fill:currentColor}
 #rsvpEventConfirmation:has(#weddingRsvpUploadToolbar:not([hidden])){padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{margin-bottom:24px}
 .inline-text-formatting .inline-text-style{display:inline-flex;min-width:0;margin:0}
