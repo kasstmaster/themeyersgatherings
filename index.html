@@ -314,7 +314,7 @@
 
 
       <section id="weddingPartySection" class="wedding-tab-page wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
-        <p class="section-kicker">The people by our side</p>
+        <p id="weddingPartyKicker" class="section-kicker">The people by our side</p>
         <h2 id="weddingPartyHeading">Wedding Party</h2>
         <nav id="matronInfoTabs" class="matron-info-tabs" aria-label="Wedding party information" role="tablist" hidden>
           <button type="button" role="tab" data-matron-tab="experience" aria-controls="perfectExperiencePanel" aria-selected="true">The Perfect Experience</button>
@@ -350,9 +350,9 @@
           <p id="registryAttireKicker" class="section-kicker"><strong>Dress for the occasion</strong></p>
           <h2 id="registryAttireHeading">Formal Attire Required</h2>
         <div id="registryAffordableAttire" class="attire-content-group affordable-attire">
-          <p id="registryAttireLead" data-party-attire-extra class="affordable-attire-lead"><em>Formal attire does not have to mean an expensive outfit.</em></p>
-          <p id="registryAttireBudgetNote" data-party-attire-extra>We want everyone to dress up and enjoy the occasion, but we absolutely do not expect our guests to spend a fortune to do so. There are wonderful options for affordable, discounted, vintage, and pre-loved formalwear.</p>
-          <p id="registryAttireShoppingIntro" data-party-attire-extra>We've gathered a few of our favorite places to help make finding something easy.</p>
+          <div id="weddingPartyAttireIntro" class="wedding-tab-content" hidden>
+            <div id="weddingPartyAttireIntroText"></div>
+          </div>
           <div id="weddingAttireGuidance" class="affordable-attire-guidance">
             <article class="wedding-tab-content">
               <h4>For the Ladies</h4>

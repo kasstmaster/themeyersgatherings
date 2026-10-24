@@ -144,7 +144,7 @@
       if (showing) return; showing = true;
       if (['text','page','notes'].includes(title)) {
         control.hidden = true;
-        directFields(target, fields, values => { commit(values); fields.forEach((spec,index)=>{spec.value=values[index];}); drafts.delete(key); context.save(); showing=false;control.hidden=false; }, key);
+        directFields(target, fields, values => { commit(values); fields.forEach((spec,index)=>{spec.value=values[index];}); drafts.delete(key); context.save(); showing=false;control.hidden=false; }, key, options.titleTarget);
         return;
       }
       const form = node('div', undefined, 'inline-editor');
@@ -188,11 +188,11 @@
     target.classList.add('inline-edit-replaced');
     cleanup.push(() => { editor.remove(); target.classList.remove('inline-edit-replaced'); });
   }
-  function directFields(target, fields, commit, key) {
+  function directFields(target, fields, commit, key, titleTarget) {
     const editors = [], anchors = [], toolbars = [];
     let wrappedBody;
     let pageBody = target.matches('section') ? target.querySelector('.bride-groom-content,.what-to-expect-content') || target : target;
-    const heading = target.closest('section')?.querySelector('h2,h3');
+    const heading = titleTarget || target.closest('section')?.querySelector('h2,h3');
     if (pageBody === target && target.matches('section') && heading && fields.length > 1) {
       const body = node('div');wrappedBody=body;
       const children = [...target.childNodes].filter(child => child !== heading);
@@ -320,7 +320,7 @@
     // Text blocks, headings and captions can be changed without changing links or controls.
     return [...root.querySelectorAll('h1,h2,h3,h4,p,footer address')].filter(element =>
       !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.inline-editor,.inline-edit-tools,#rsvpFirstPageText,#rsvpFirstPageDetails,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,.inline-edit-masked,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
-      !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#rsvpDeadline,#signedInAccountName,#customGatheringHeading'));
+      !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#rsvpDeadline,#signedInAccountName,#customGatheringHeading,#weddingPartyHeading,#weddingPartyKicker'));
   }
   function applyStaticText(root,state,format) {
     const data=state.siteText || {};
@@ -461,19 +461,21 @@
         if(context.eventId==='wedding')panel.classList.add('wedding-tab-page');
         panel.id = `custom-page-${page.id}`; panel.setAttribute('role','tabpanel');
         const heading = isSubpage ? 'h3' : 'h2';
-        panel.innerHTML = `<p class="section-kicker"></p><${heading}>${context.escape(page.title)}</${heading}><div class="bride-groom-content">${context.format(page.content)}</div>`;
+        panel.innerHTML = (config.externalHeading?'':`<p class="section-kicker"></p><${heading}>${context.escape(page.title)}</${heading}>`)+`<div class="bride-groom-content">${context.format(page.content)}</div>`;
         if(context.eventId==='wedding')panel.querySelector('.bride-groom-content').classList.add('wedding-tab-content');
         const intro=panel.querySelector('.section-kicker');
-        intro.innerHTML=formatTextForTarget(intro,page.intro || '');
+        if(intro)intro.innerHTML=formatTextForTarget(intro,page.intro || '');
         nav.after(panel); cleanup.push(() => panel.remove());
         field(intro, 'text', [{label:'Text above title',type:'textarea',value:page.intro || ''}], ([value]) => { page.intro=value; }, {key:`${page.id}:intro`,placement:'text'});
-        field(panel, 'page', [{ label: 'Title', value: page.title, required: true }, { label: 'Content', type: 'textarea', value: page.content }], ([title, content]) => { page.title = title; page.content = content; }, { key: page.id });
+        if(config.externalHeading)field(panel,'page',[{label:'Content',type:'textarea',value:page.content}],([content])=>{page.content=content;},{key:page.id});
+        else field(panel, 'page', [{ label: 'Title', value: page.title, required: true }, { label: 'Content', type: 'textarea', value: page.content }], ([title, content]) => { page.title = title; page.content = content; }, { key: page.id });
       }
     });
     const order = state.siteTabOrder?.[nav.id] || [];
     const orderedTabs = [...nav.querySelectorAll(':scope > [role="tab"]')];
     const rank = tab => { const index = order.indexOf(tabKeys.get(tab)); return index < 0 ? order.length : index; };
     orderedTabs.sort((a, b) => rank(a) - rank(b)).forEach(tab => nav.append(tab));
+    config.onSelect?.(selected || null);
     const displayedTabs = visibleTabs();
     moveControls.forEach(({tab, direction, control}) => { control.disabled = !displayedTabs[displayedTabs.indexOf(tab) + direction]; });
     positionOverlays();
