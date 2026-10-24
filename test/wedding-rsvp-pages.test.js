@@ -46,7 +46,8 @@ test('Attire places its kicker and title before the shared content container',()
  const attire=html.slice(start,html.indexOf('<section id="registryAttireVideosSection"',start));
  assert.ok(attire.indexOf('id="registryAttireKicker"')<attire.indexOf('id="registryAffordableAttire"'));
  assert.ok(attire.indexOf('id="registryAttireHeading"')<attire.indexOf('id="registryAffordableAttire"'));
- assert.match(attire,/<div id="registryAffordableAttire" class="wedding-tab-content/);
+ assert.match(attire,/<div id="registryAffordableAttire" class="attire-content-group/);
+ assert.equal([...attire.matchAll(/<article class="wedding-tab-content">/g)].length,2);
 });
 test('moving Attire headings preserves saved edits and migration is repeatable',()=>{
  const saved={siteText:{'#registryAffordableAttire>p:nth-of-type(1)':'Edited kicker','#registryAffordableAttire>p:nth-of-type(2)':'Edited introduction','#registryAffordableAttire>p:nth-of-type(5)':'Edited closing'}};
