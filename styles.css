@@ -861,3 +861,7 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 
 
 .event-dock .toolbar-upload-action span{white-space:normal;line-height:1.1}
+
+.page-export-options{width:min(360px,calc(100% - 32px));box-sizing:border-box;padding:24px;border:1px solid var(--border);border-radius:6px;background:var(--cream);color:var(--ink)}
+.page-export-options h2{margin:0 0 20px;font:700 1.4rem/1.25 "Times New Roman",Times,serif}
+.page-export-options :is(button,a){display:block;box-sizing:border-box;width:100%;margin:12px 0 0;padding:12px;border:0;border-radius:4px;background:var(--orange);color:white;text-align:center;text-decoration:none;font:700 1rem/1.4 Arial,sans-serif;cursor:pointer}
