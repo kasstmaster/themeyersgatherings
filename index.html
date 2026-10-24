@@ -167,24 +167,24 @@
         <button type="button" role="tab" data-gathering-tab="notes" aria-controls="hostNotesSection" aria-selected="false" hidden>Notes</button>
         <button type="button" role="tab" data-gathering-tab="menu" aria-controls="gatheringMenuSection" aria-selected="true">Menu</button>
       </nav>
-      <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent" class="bride-groom-content"></div></section>
+      <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent" class="wedding-tab-content bride-groom-content"></div></section>
 
 
       <nav id="weddingHostTabs" class="wedding-party-tabs" aria-label="Host Wedding pages" role="tablist" hidden>
         <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="true">Bride &amp; Groom</button>
         <button type="button" role="tab" data-wedding-tab="timeline" aria-controls="weddingTimelineSection" aria-selected="false">Timeline</button>
       </nav>
-      <section id="brideGroomSection" class="bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
+      <section id="brideGroomSection" class="wedding-tab-page bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
         <p class="section-kicker">A private space for the couple</p>
         <h2 id="brideGroomHeading">Bride &amp; Groom</h2>
         <nav id="brideGroomTabs" class="matron-info-tabs bride-groom-tabs" aria-label="Bride and Groom pages" role="tablist" hidden></nav>
-        <div id="brideGroomContent" class="bride-groom-content"></div>
+        <div id="brideGroomContent" class="wedding-tab-content bride-groom-content"></div>
       </section>
-      <section id="weddingTimelineSection" class="wedding-timeline-section" aria-labelledby="weddingTimelineHeading" hidden>
+      <section id="weddingTimelineSection" class="wedding-tab-page wedding-timeline-section" aria-labelledby="weddingTimelineHeading" hidden>
         <p class="section-kicker">The wedding day at a glance</p>
         <h2 id="weddingTimelineHeading">Wedding Timeline</h2>
         <div id="weddingTimelineAboveContent" class="wedding-timeline-copy"></div>
-        <div class="wedding-timeline-table-wrap">
+        <div class="wedding-tab-content wedding-timeline-table-wrap">
           <table class="wedding-timeline-table">
             <thead><tr><th scope="col">Time</th><th scope="col">What Happens</th><th scope="col">Notes</th></tr></thead>
             <tbody id="weddingTimelineBody"></tbody>
@@ -245,7 +245,7 @@
     </div></dialog>
 
     <dialog id="weddingMediaDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="weddingMediaHeading">
-      <section id="weddingMediaSection" class="full-page-form" aria-labelledby="weddingMediaHeading">
+      <section id="weddingMediaSection" class="wedding-tab-page full-page-form" aria-labelledby="weddingMediaHeading">
         <button class="modal-close" type="button" data-close-wedding-media aria-label="Close">×</button>
         <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us through Dropbox.</p>
         <h2 id="weddingMediaHeading">Upload Photos &amp; Videos</h2>
@@ -253,7 +253,7 @@
           <button type="button" role="tab" data-media-tab="upload" aria-controls="weddingMediaUpload" aria-selected="true">Upload</button>
           <button type="button" role="tab" data-media-tab="view" aria-controls="weddingMediaView" aria-selected="false" tabindex="-1">View Photos &amp; Videos</button>
         </nav>
-        <section id="weddingMediaUpload" class="perfect-experience-panel flow-panel" aria-label="Upload wedding photos and videos">
+        <section id="weddingMediaUpload" class="wedding-tab-content perfect-experience-panel flow-panel" aria-label="Upload wedding photos and videos">
           <p id="weddingMediaUploadNotice" class="wedding-upload-intro"><em>Keep this page open until uploading finishes.</em></p>
           <div id="dropboxHostControls" hidden><button id="dropboxConnect" class="primary-button" type="button">Connect Dropbox</button></div>
           <p id="dropboxConnectionStatus" role="status" aria-live="polite"></p>
@@ -272,7 +272,7 @@
           <button id="weddingMediaSaveLink" class="primary-button" type="button">Save sharing link</button>
           <p id="weddingMediaLinkStatus" role="status" aria-live="polite"></p>
         </section>
-        <section id="weddingMediaView" class="perfect-experience-panel flow-panel" aria-label="Your wedding photos and videos" hidden>
+        <section id="weddingMediaView" class="wedding-tab-content perfect-experience-panel flow-panel" aria-label="Your wedding photos and videos" hidden>
           <button id="weddingMediaRefresh" class="primary-button" type="button">Refresh</button>
           <p>Photos and videos sent through Dropbox go directly to the hosts. This gallery shows upload confirmations, sharing links, and files previously shared on this website. New Dropbox uploads are stored in the hosts’ Dropbox.</p>
           <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
@@ -314,7 +314,7 @@
 
 
 
-      <section id="weddingPartySection" class="wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
+      <section id="weddingPartySection" class="wedding-tab-page wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
         <p class="section-kicker">The people by our side</p>
         <h2 id="weddingPartyHeading">Wedding Party</h2>
         <nav id="matronInfoTabs" class="matron-info-tabs" aria-label="Wedding party information" role="tablist" hidden>
@@ -323,10 +323,10 @@
           <button type="button" role="tab" data-matron-tab="attire" aria-controls="registryAttireSection" aria-selected="false">Attire</button>
         </nav>
         <div id="weddingPartyDetails" class="wedding-party-details"></div>
-        <section id="perfectExperiencePanel" class="perfect-experience-panel" aria-label="The Perfect Experience" hidden>
+        <section id="perfectExperiencePanel" class="wedding-tab-content perfect-experience-panel" aria-label="The Perfect Experience" hidden>
           <div id="perfectExperienceContent" class="perfect-experience-content"></div>
         </section>
-        <section id="weddingPartyPersonalPage" class="perfect-experience-panel" aria-label="Personal wedding party page" hidden></section>
+        <section id="weddingPartyPersonalPage" class="wedding-tab-content perfect-experience-panel" aria-label="Personal wedding party page" hidden></section>
         <div id="weddingPartyAttirePanel"></div>
       </section>
 
@@ -341,8 +341,8 @@
         </nav>
 
         <div id="guestAttireAnchor"></div>
-        <section id="registryAttireSection" class="registry-attire-section rsvp-information-page" aria-labelledby="registryAttireHeading" hidden>
-        <section id="registryAffordableAttire" class="affordable-attire rsvp-information-content">
+        <section id="registryAttireSection" class="wedding-tab-page registry-attire-section rsvp-information-page" aria-labelledby="registryAttireHeading" hidden>
+        <section id="registryAffordableAttire" class="wedding-tab-content affordable-attire rsvp-information-content">
           <p class="section-kicker"><strong>Dress for the occasion</strong></p>
           <h2 id="registryAttireHeading">Formal Attire Required</h2>
           <p data-party-attire-extra class="affordable-attire-lead"><em>Formal attire does not have to mean an expensive outfit.</em></p>
@@ -375,17 +375,17 @@
         </section>
         </section>
 
-        <section id="whatToExpectSection" class="what-to-expect-section rsvp-information-page" aria-labelledby="whatToExpectHeading" hidden>
+        <section id="whatToExpectSection" class="wedding-tab-page what-to-expect-section rsvp-information-page" aria-labelledby="whatToExpectHeading" hidden>
           <p class="section-kicker">Plan for the celebration</p>
           <h2 id="whatToExpectHeading">What to Expect</h2>
-          <div id="whatToExpectContent" class="what-to-expect-content rsvp-information-content"></div>
+          <div id="whatToExpectContent" class="wedding-tab-content what-to-expect-content rsvp-information-content"></div>
         </section>
       </section>
 
-      <section id="registrySection" class="registry-section rsvp-information-page" aria-labelledby="registryHeading" hidden>
+      <section id="registrySection" class="wedding-tab-page registry-section rsvp-information-page" aria-labelledby="registryHeading" hidden>
         <p class="section-kicker">Your presence is the greatest gift</p>
         <h2 id="registryHeading">Wedding Registry</h2>
-        <div class="registry-gift-note rsvp-information-content">
+        <div class="wedding-tab-content registry-gift-note rsvp-information-content">
           <h3 class="registry-gift-note-heading">Please read before viewing our registry</h3>
           <p>We’re incredibly grateful for anything you choose to give us as we begin this next chapter together.</p>
           <p>Our Amazon registry includes a few things we know we would love and use, but much of what makes a home feel like <em>ours</em> is a little harder to put on a traditional registry. We love pieces with history, character, and charm.</p>

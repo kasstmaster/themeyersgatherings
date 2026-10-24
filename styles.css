@@ -479,7 +479,7 @@ body>.inline-overlay-layer{position:absolute;inset:0 0 auto;height:0}
 :is(#eventPage,#weddingMediaDialog) main>:is(.gathering-page,.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section)>h2,
 :is(#eventPage,#weddingMediaDialog) #gatheringMenuSection .menu-heading{margin-bottom:var(--page-heading-gap)}
 :is(#eventPage,#weddingMediaDialog) main>section>h2,:is(#eventPage,#weddingMediaDialog) #gatheringMenuSection .menu-heading h2{font-family:var(--page-title-font);font-size:var(--page-title-size);line-height:1.15;text-align:center;color:var(--navy);margin-top:0}
-:is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.perfect-experience-panel,.what-to-expect-content,#registryAttireSection,.gathering-subpage){box-sizing:border-box;width:min(900px,100%);padding:var(--panel-padding)}
+:is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.perfect-experience-panel,.what-to-expect-content,.registry-attire-section,.gathering-subpage){box-sizing:border-box;width:min(900px,100%);padding:var(--panel-padding)}
 :is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content){font-family:var(--page-font);font-size:1rem;color:var(--muted);line-height:var(--copy-line-height);text-align:left;overflow-wrap:anywhere}
 :is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) p{margin:0 0 var(--copy-paragraph-gap)}
 :is(#eventPage,#weddingMediaDialog) :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content) p:last-child{margin-bottom:0}
@@ -788,43 +788,30 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpEventHeader .event-header-text p{margin:0}
 #rsvpFirstPageDetails:not(:empty){margin-top:10px;line-height:1.5}
 
-/* Wedding pages live inside the RSVP introduction and inherit its palette. */
-#rsvpDialog #rsvpWeddingPages{margin-top:36px;color:var(--flow-text);text-align:left}
-#rsvpDialog #rsvpWeddingPages :is(.wedding-party-tabs,.matron-info-tabs){--tab-surface:transparent;--tab-text:var(--flow-text);--tab-border:currentColor;width:100%;margin:20px 0;max-width:100%}
-#rsvpDialog #rsvpWeddingPages :is(.bride-groom-section,.wedding-party-section,.wedding-timeline-section,.registry-section,.registry-attire-section,.what-to-expect-section,.gathering-page){margin:24px 0 0;padding:0;min-height:0;background:transparent;color:var(--flow-text);border:0;border-radius:0;box-shadow:none}
-#rsvpDialog #rsvpWeddingPages :is(h2,h3,h4,h5,p,li,.section-kicker,.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.wedding-party-description,.affordable-attire,.affordable-attire-lead,.affordable-attire-closing,.attire-shop-links a,.attire-shop-links span){color:var(--flow-text);text-shadow:none}
-#rsvpDialog #rsvpWeddingPages :is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.registry-gift-note){padding:0;background:transparent}
-#rsvpDialog #rsvpWeddingPages :is(.affordable-attire-guidance article,.wedding-party-card,.flow-panel){padding:18px;background:transparent;color:var(--flow-text);border-color:currentColor;box-shadow:none}
-#rsvpDialog #rsvpWeddingPages .affordable-attire-guidance{grid-template-columns:minmax(0,1fr);gap:20px}
-#rsvpDialog #rsvpWeddingPages :is(a,.registry-button,.registry-button-secondary){color:var(--flow-text)}
-#rsvpDialog #rsvpWeddingPages :is(.registry-button,.registry-button-secondary){background:transparent;border:1px solid currentColor;box-shadow:none}
-#rsvpDialog #rsvpWeddingPages :is(h2,h3){font-family:"Times New Roman",Times,serif;font-size:clamp(1.4rem,5vw,2rem);line-height:1.25}
-#rsvpDialog #rsvpWeddingPages .wedding-timeline-table{color:var(--flow-text);background:transparent}
-#rsvpDialog #rsvpWeddingPages [role="tab"][aria-selected="true"]{background:var(--flow-inner-background);color:var(--flow-text)}
-#rsvpDialog #rsvpWeddingPages :is(.wedding-timeline-table th,.wedding-timeline-table td){color:var(--flow-text);background:transparent;border-color:currentColor}
-#rsvpDialog #rsvpWeddingPages :is(.inline-editor,.inline-portal-editor){background:var(--flow-background);color:var(--flow-text)}
-#rsvpDialog #rsvpWeddingPages :is(section,article,.perfect-experience-panel,.bride-groom-content,.what-to-expect-content,.perfect-experience-content){box-sizing:border-box;max-width:100%;color:var(--flow-text)}
-#rsvpDialog #rsvpWeddingPages :is(.perfect-experience-panel,.wedding-party-card summary,.wedding-party-member-name,.wedding-party-role){color:var(--flow-text);background:transparent}
-
-/* Attire, Registry, and What to Expect share one information-page format. */
-#rsvpDialog #rsvpWeddingPages .rsvp-information-page{font-family:var(--page-font);font-size:1rem;line-height:var(--page-line-height);text-align:left}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content{box-sizing:border-box;width:100%;max-width:900px;min-height:120px;margin:0 auto;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;font-family:var(--page-font);font-size:1rem;line-height:var(--copy-line-height);text-align:left;overflow-wrap:anywhere;color:var(--flow-text)}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-page h2{font-family:"Times New Roman",Times,serif;font-size:clamp(1.4rem,5vw,2rem);font-weight:700;line-height:1.25;letter-spacing:normal;text-transform:none;text-align:center;margin:0 0 28px}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-page .section-kicker{margin:0 0 10px;line-height:var(--page-line-height);text-align:center}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content p:not(.section-kicker){font-family:var(--page-font);font-size:1rem;font-weight:400;line-height:var(--copy-line-height);text-align:left;margin:0 0 var(--copy-paragraph-gap)}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content p:last-child{margin-bottom:0}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content :is(ul,ol){padding-left:24px;line-height:inherit;margin:0 0 var(--copy-paragraph-gap)}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content li+li{margin-top:0}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content :is(h3,h4,h5){font-family:var(--page-font);font-size:1.125rem;line-height:1.5;letter-spacing:normal;text-transform:none;text-align:left;margin:24px 0 12px}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content .affordable-attire-guidance{display:block;margin:24px 0}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content .affordable-attire-guidance article{margin:0 0 24px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content .attire-shop-links{display:block}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content .attire-shop-links span{display:inline;margin:0 7px}
-
-/* Match the original blue What to Expect panel across Wedding information pages. */
-#rsvpDialog #rsvpWeddingPages :is(.rsvp-information-page,.gathering-page){background:var(--flow-inner-background);color:var(--flow-text);border:1px solid var(--flow-panel-border);border-radius:6px;padding:18px}
-#rsvpDialog #rsvpWeddingPages .rsvp-information-content,#rsvpDialog #rsvpWeddingPages .gathering-page>.bride-groom-content{background:transparent;color:var(--flow-text);border:1px solid var(--flow-panel-border);border-radius:6px;padding:var(--panel-padding)}
-
-/* The main guest Attire page contains only the dress code. */
-#rsvpDialog #registryAttireSection.guest-dress-code-only [data-party-attire-extra],
-#rsvpDialog #registryAttireSection.guest-dress-code-only #registryAttireVideosSection{display:none}
+/* One Wedding tab component, including built-in and newly created pages. */
+body.theme-wedding{--wedding-tab-selected-background:rgba(50,73,101,.94);--wedding-tab-page-background:rgba(19,40,65,.90);--wedding-tab-text:#fff;--wedding-tab-border:var(--summary-border);--wedding-tab-padding:24px;--wedding-tab-radius:6px}
+#rsvpWeddingPages{margin-top:36px;text-align:left}
+body.theme-wedding #eventPage :is(.wedding-party-tabs,.matron-info-tabs){--tab-surface:var(--wedding-tab-page-background);--tab-text:var(--wedding-tab-text);--tab-border:var(--wedding-tab-border);width:100%;max-width:100%;margin:20px auto}
+body.theme-wedding #eventPage :is(.wedding-party-tabs,.matron-info-tabs) button[aria-selected="true"]{background:var(--wedding-tab-selected-background);color:var(--wedding-tab-text)}
+body.theme-wedding #eventPage .wedding-tab-page{box-sizing:border-box;width:100%;max-width:900px;min-height:0;margin:24px auto 0;padding:var(--wedding-tab-padding);border:1px solid var(--wedding-tab-border);border-radius:var(--wedding-tab-radius);background:var(--wedding-tab-page-background);color:var(--wedding-tab-text);box-shadow:none;text-shadow:none;font-family:var(--page-font);font-size:1rem;line-height:var(--page-line-height);overflow-wrap:anywhere;text-align:left}
+body.theme-wedding #eventPage .wedding-tab-content{box-sizing:border-box;width:100%;max-width:100%;min-height:120px;margin:0 auto;padding:var(--wedding-tab-padding);border:1px solid var(--wedding-tab-border);border-radius:var(--wedding-tab-radius);background:var(--wedding-tab-selected-background);color:var(--wedding-tab-text);box-shadow:none;font-family:var(--page-font);font-size:1rem;line-height:var(--copy-line-height);text-align:left;overflow-wrap:anywhere}
+body.theme-wedding #eventPage .wedding-tab-page :is(h2,h3,h4,h5,p,li,a,.section-kicker,.wedding-party-description,.perfect-experience-content,.wedding-party-card summary,.wedding-party-member-name,.wedding-party-role){color:var(--wedding-tab-text);text-shadow:none}
+body.theme-wedding #eventPage .wedding-tab-page h2,body.theme-wedding #eventPage .wedding-tab-page h3{font-family:"Times New Roman",Times,serif;font-size:1.6rem;font-weight:700;line-height:1.25;letter-spacing:normal;text-transform:none;text-align:center;margin:0 0 28px}
+body.theme-wedding #eventPage .wedding-tab-page .section-kicker{margin:0 0 10px;line-height:var(--page-line-height);text-align:center}
+body.theme-wedding #eventPage .wedding-tab-content p:not(.section-kicker){font-family:var(--page-font);font-size:1rem;font-weight:400;line-height:var(--copy-line-height);text-align:left;margin:0 0 var(--copy-paragraph-gap)}
+body.theme-wedding #eventPage .wedding-tab-content p:last-child{margin-bottom:0}
+body.theme-wedding #eventPage .wedding-tab-content :is(ul,ol){padding-left:24px;line-height:inherit;margin:0 0 var(--copy-paragraph-gap)}
+body.theme-wedding #eventPage .wedding-tab-content li+li{margin-top:0}
+body.theme-wedding #eventPage .wedding-tab-content :is(h4,h5){font-family:var(--page-font);font-size:1.125rem;line-height:1.5;letter-spacing:normal;text-transform:none;text-align:left;margin:24px 0 12px}
+body.theme-wedding #eventPage .wedding-tab-content .affordable-attire-guidance{display:block;margin:24px 0}
+body.theme-wedding #eventPage .wedding-tab-content .affordable-attire-guidance article{box-sizing:border-box;margin:0 0 24px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+body.theme-wedding #eventPage .wedding-tab-content .attire-shop-links{display:block}
+body.theme-wedding #eventPage .wedding-tab-content .attire-shop-links span{display:inline;margin:0 7px;color:var(--wedding-tab-text)}
+body.theme-wedding #eventPage .wedding-tab-page :is(.registry-button,.registry-button-secondary){background:var(--wedding-tab-selected-background);color:var(--wedding-tab-text);border:1px solid var(--wedding-tab-border);box-shadow:none}
+body.theme-wedding #eventPage .wedding-tab-page :is(.wedding-party-card,.wedding-timeline-table){background:var(--wedding-tab-selected-background);color:var(--wedding-tab-text);border:1px solid var(--wedding-tab-border);border-radius:var(--wedding-tab-radius)}
+body.theme-wedding #eventPage .wedding-tab-page :is(.wedding-timeline-table th,.wedding-timeline-table td){color:var(--wedding-tab-text);background:transparent;border-color:var(--wedding-tab-border)}
+@media(max-width:650px){body.theme-wedding{--wedding-tab-padding:18px}}
+/* The main guest Attire page contains the dress code and shopping links. */
+body.theme-wedding #eventPage #registryAttireSection.guest-dress-code-only [data-party-attire-extra],
+body.theme-wedding #eventPage #registryAttireSection.guest-dress-code-only #registryAttireVideosSection{display:none}
+body.theme-wedding #eventPage .wedding-tab-content :is(.bride-groom-content,.perfect-experience-content){min-height:0;margin:0;padding:0;border:0;background:transparent;color:var(--wedding-tab-text)}
