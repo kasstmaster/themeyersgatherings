@@ -815,3 +815,6 @@ body.theme-wedding #eventPage .wedding-tab-page :is(.wedding-timeline-table th,.
 body.theme-wedding #eventPage #registryAttireSection.guest-dress-code-only [data-party-attire-extra],
 body.theme-wedding #eventPage #registryAttireSection.guest-dress-code-only #registryAttireVideosSection{display:none}
 body.theme-wedding #eventPage .wedding-tab-content :is(.bride-groom-content,.perfect-experience-content){min-height:0;margin:0;padding:0;border:0;background:transparent;color:var(--wedding-tab-text)}
+/* Attire has one shared content panel for each dress-code group. */
+body.theme-wedding #eventPage .attire-content-group{margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+body.theme-wedding #eventPage .attire-content-group>.affordable-attire-guidance{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;margin:0}
