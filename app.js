@@ -1461,6 +1461,13 @@ function render() {
   // Reapply the active RSVP step's heading without restarting the journey.
   RsvpFlow.refresh();
   PageHeadings.sync();
+  const hostMain=document.querySelector('#eventPage>main');
+  document.querySelector('#eventPage').dataset.hostHome=String(hostView);
+  if(hostView){
+    const source=document.querySelector(isWedding?'#rsvpWeddingPages .wedding-tab-content':'#rsvpForm');
+    const panel=getComputedStyle(source);
+    for(const [name,value] of Object.entries({'background':panel.background,'border':panel.border,'radius':panel.borderRadius,'text':panel.color}))hostMain.style.setProperty(`--host-panel-${name}`,value);
+  }
   PageActions.sync();
 }
 
