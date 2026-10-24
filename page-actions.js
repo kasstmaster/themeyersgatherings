@@ -18,8 +18,7 @@
     for(const toolbar of document.querySelectorAll('#eventDock,#weddingRsvpUploadToolbar')){
       if(toolbar.querySelector('[data-toolbar-page-actions]'))continue;
       const actions=document.createElement('div');actions.dataset.toolbarPageActions='';actions.className='toolbar-page-actions';
-      const icons={print:'M6 2h12v5H6V2Zm-2 6h16a2 2 0 0 1 2 2v8h-4v4H6v-4H2v-8a2 2 0 0 1 2-2Zm4 8v4h8v-4H8Zm10-5v2h2v-2h-2Z',email:'M2 4h20v16H2V4Zm2 2v1l8 6 8-6V6l-8 6-8-6Z'};
-      actions.innerHTML=`<button type="button" data-page-print aria-label="Print page"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons.print}"/></svg><span>Print</span></button><a href="mailto:" data-page-email aria-label="Email page"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons.email}"/></svg><span>Email</span></a>`;
+      actions.innerHTML='<button type="button" data-page-export aria-label="Print or email page" aria-haspopup="dialog"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12v5H6V2Zm-2 6h16a2 2 0 0 1 2 2v8h-4v4H6v-4H2v-8a2 2 0 0 1 2-2Zm4 8v4h8v-4H8Zm10-5v2h2v-2h-2Z"/></svg><span>Print</span></button>';
       toolbar.append(actions);
     }
   }
@@ -97,12 +96,21 @@
   }
   const api={sync,exportPage,printPage};
   document.addEventListener('click',event=>{
-    const control=event.target.closest('[data-page-print],[data-page-email]');
+    const control=event.target.closest('[data-page-export]');
     if(!control)return;
+    event.preventDefault();
     const page=exportPage(toolbarSurface(control));
-    if(!page){event.preventDefault();return;}
-    if(control.hasAttribute('data-page-print'))api.printPage(page);
-    else control.href=`mailto:?subject=${encodeURIComponent(`The Meyers — ${page.title}`)}&body=${encodeURIComponent(`${page.title}\n\n${page.text}`)}`;
+    if(!page)return;
+    const dialog=document.createElement('dialog');dialog.className='page-export-options';
+    dialog.setAttribute('aria-label','Print or email page');
+    dialog.innerHTML='<h2>Print or email this page</h2><button type="button" data-export-print>Print</button><a data-export-email>Email</a><button type="button" data-export-cancel>Cancel</button>';
+    dialog.querySelector('[data-export-print]').addEventListener('click',()=>{dialog.close();api.printPage(page);});
+    const email=dialog.querySelector('[data-export-email]');
+    email.href=`mailto:?subject=${encodeURIComponent(`The Meyers — ${page.title}`)}&body=${encodeURIComponent(`${page.title}\n\n${page.text}`)}`;
+    email.addEventListener('click',()=>dialog.close());
+    dialog.querySelector('[data-export-cancel]').addEventListener('click',()=>dialog.close());
+    dialog.addEventListener('close',()=>{dialog.remove();control.focus({preventScroll:true});},{once:true});
+    document.body.append(dialog);dialog.showModal();
   });
   globalThis.PageActions=api;
 })();
