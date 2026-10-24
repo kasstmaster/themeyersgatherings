@@ -1181,6 +1181,10 @@ function weddingDetailsWithoutHeaderAddress(value) {
     return true;
   }).join('\n');
 }
+function weddingRsvpTabReplacement(tab,pages) {
+  if(tab.dataset.weddingTab!=='details')return null;
+  return pages.find(page=>String(page.title||'').trim().replace(/\s+/g,' ').toLowerCase()==='what to expect');
+}
 function renderWeddingGathering(hostView) {
   const isWedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
   document.querySelector('#rsvpWeddingPages').hidden=!isWedding;
@@ -1524,6 +1528,7 @@ function renderInlineEditing() {
   document.querySelectorAll('#eventPage [role="tablist"],#rsvpWeddingPages [role="tablist"],#weddingMediaDialog[open] [role="tablist"]').forEach(nav => {
     if(nav.id==='gatheringTabs' ? !features.menu && !features.notes : !features.weddingPages)return;
     const config = { available: nav.id==='brideGroomTabs' && selectedWeddingTab==='couple' && viewedEventId==='wedding' };
+    if(nav.id==='weddingPartyTabs')config.replacement=weddingRsvpTabReplacement;
     if (nav.id==='brideGroomTabs') Object.assign(config, { audience:'host',
       add: () => { state.brideGroomPages.push({id:crypto.randomUUID(),title:'New page',content:''});selectedBrideGroomPage=state.brideGroomPages.at(-1).id; },
       rename: (tab,title) => { state.brideGroomPages.find(page=>page.id===tab.dataset.brideGroomPage).title=title; },
