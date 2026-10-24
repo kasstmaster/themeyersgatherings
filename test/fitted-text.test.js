@@ -2,15 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-const code=await readFile(new URL('../date-text.js',import.meta.url),'utf8');
+const code=await readFile(new URL('../fitted-text.js',import.meta.url),'utf8');
 function fixture(){
  let width=220;const callbacks={};
  const element={textContent:'Wednesday September 30 2026',style:{removeProperty(){delete this.fontSize;}}};
  Object.defineProperties(element,{clientWidth:{get:()=>width},scrollWidth:{get:()=>Math.ceil(element.textContent.length*(parseFloat(element.style.fontSize)||13.12)*.75)}});
  class ResizeObserver{constructor(fn){callbacks.resize=fn;}observe(target){assert.equal(target,element);}}
  class MutationObserver{constructor(fn){callbacks.change=fn;}observe(){}}
- const c=vm.createContext({ResizeObserver,MutationObserver,getComputedStyle:e=>({fontSize:e.style.fontSize||'13.12px'}),document:{body:{},querySelectorAll:selector=>{assert.equal(selector,'#rsvpFirstPageDate');return [element];}},window:{addEventListener:(name,fn)=>{callbacks[name]=fn;}}});
- vm.runInContext(code,c);return {element,callbacks,setWidth:value=>{width=value;},fit:()=>c.DateText.fit(element)};
+ const c=vm.createContext({ResizeObserver,MutationObserver,getComputedStyle:e=>({fontSize:e.style.fontSize||'13.12px'}),document:{body:{},querySelectorAll:selector=>{assert.ok(selector.includes('#rsvpFirstPageDate'));assert.ok(selector.includes('#rsvpDialog h2'));assert.ok(selector.includes('#rsvpDialog legend'));return [element];}},window:{addEventListener:(name,fn)=>{callbacks[name]=fn;}}});
+ vm.runInContext(code,c);return {element,callbacks,setWidth:value=>{width=value;},fit:()=>c.FittedText.fit(element)};
 }
 test('shared first-page date fits narrow containers without changing its text',()=>{
  const f=fixture(),text=f.element.textContent;
@@ -31,5 +31,14 @@ test('date uses the largest fitting size and changes smoothly as the container n
   assert.ok(size<=previous+.05);assert.ok(previous===Infinity||previous-size<1.1);
   if(size<13.12){f.element.style.fontSize=`${size+.1}px`;assert.ok(f.element.scrollWidth>width,'a larger size must overflow');}
   previous=size;
+ }
+});
+
+test('the shared fitter also keeps long RSVP headings and legends at the largest fitting size',()=>{
+ for(const tagName of ['H1','H2','H3','H4','H5','H6','LEGEND']){
+  const f=fixture();f.element.tagName=tagName;f.element.textContent='Will you be bringing a dish to share?';f.setWidth(210);f.fit();
+  const fitted=parseFloat(f.element.style.fontSize);assert.ok(f.element.scrollWidth<=210,tagName);
+  f.element.style.fontSize=`${fitted+.1}px`;assert.ok(f.element.scrollWidth>210,tagName);
+  f.setWidth(900);f.fit();assert.equal(f.element.style.fontSize,undefined);
  }
 });

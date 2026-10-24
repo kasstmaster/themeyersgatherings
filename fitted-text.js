@@ -1,8 +1,9 @@
-// All gatherings share one first-page RSVP date sizing rule.
+// All gatherings share one sizing rule for RSVP titles and the first-page date.
 (() => {
-  const selector='#rsvpFirstPageDate';
+  const selector='#rsvpFirstPageDate,#rsvpDialog h1,#rsvpDialog h2,#rsvpDialog h3,#rsvpDialog h4,#rsvpDialog h5,#rsvpDialog h6,#rsvpDialog legend';
   const observed=new WeakSet();
   function fit(element) {
+    if(element.closest?.('.inline-editor,.inline-edit-tools'))return;
     element.style.removeProperty('font-size');
     const width=element.clientWidth;
     if(!width || !element.textContent.trim())return;
@@ -28,6 +29,6 @@
   changes.observe(document.body,{subtree:true,childList:true,characterData:true});
   window.addEventListener('resize',fitAll);
   document.fonts?.ready.then(fitAll);
-  globalThis.DateText={fit,fitAll};
+  globalThis.FittedText={fit,fitAll};
   fitAll();
 })();
