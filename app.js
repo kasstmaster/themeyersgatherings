@@ -459,10 +459,11 @@ let sharedSavePending = (() => {
 })();
 let sharedSaveInProgress = false;
 let sharedSaveError = false;
+let sharedSaveErrorDetail = '';
 let sharedSaveRetryCount = 0;
-function fetchWithTimeout(url, options = {}) {
+function fetchWithTimeout(url, { timeoutMs = NETWORK_TIMEOUT_MS, ...options } = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 function renderSyncStatus() {
@@ -477,8 +478,13 @@ function renderSyncStatus() {
   status.hidden = !sharedSaveError;
   status.className = `sync-status${sharedSaveError ? ' error' : ''}`;
   status.innerHTML = sharedSaveError
-    ? '<strong>Cross-device sync needs attention</strong>The latest change is safe on this device and will be retried after the connection is restored.'
+    ? '<strong>Cross-device sync needs attention</strong>Your latest change is waiting to sync. Automatic retries are running.'
     : '';
+  if(sharedSaveError){
+    const detail=document.createElement('p');detail.textContent=sharedSaveErrorDetail;status.append(detail);
+    const retry=document.createElement('button');retry.type='button';retry.textContent='Retry now';
+    retry.disabled=sharedSaveInProgress;retry.addEventListener('click',()=>{clearTimeout(sharedSaveTimer);saveSharedState();});status.append(retry);
+  }
 }
 function queueSharedStateSave() {
   if (!SHARED_STATE_URL) return;
@@ -501,10 +507,15 @@ async function saveSharedState() {
   try {
     const response = await fetchWithTimeout(SHARED_STATE_URL, {
       method: 'PUT',
+      timeoutMs: 30000,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(appState)
     });
-    if (!response.ok) throw new Error(`Shared state save failed (${response.status})`);
+    if (!response.ok) {
+      const detail=(await response.text()).trim();
+      const safeDetail=detail.length<=200 && !/[<>]/.test(detail)?detail:'';
+      throw new Error(`Shared save failed (HTTP ${response.status}).${safeDetail?' '+safeDetail:''}`);
+    }
     sharedSaveError = false;
     sharedSaveRetryCount = 0;
     if (!sharedSavePending) {
@@ -513,6 +524,7 @@ async function saveSharedState() {
   } catch (error) {
     console.error(error);
     saveFailed = true;
+    sharedSaveErrorDetail=error.name==='AbortError'?'The shared service took too long to respond.':error instanceof TypeError?'The shared service could not be reached. Check your connection and try again.':error.message;
     sharedSaveError = true;
     sharedSavePending = true;
     showToast('This change is saved on this device, but could not sync to other devices.');
@@ -3594,7 +3606,11 @@ render();
 if (sharedSavePending) queueSharedStateSave();
 startApp().finally(() => window.MeyersLoading?.finish());
 singleColumnMenu.addEventListener('change', () => { commitAllPendingEditorInputs();render(); });
-window.addEventListener('focus', loadSharedState);
+function resumeSharedSync() {
+  if(sharedSavePending && !sharedSaveInProgress){clearTimeout(sharedSaveTimer);return saveSharedState();}
+  return loadSharedState();
+}
+window.addEventListener('focus', resumeSharedSync);
 window.addEventListener('online', () => {
   if (sharedSavePending && !sharedSaveInProgress) {
     clearTimeout(sharedSaveTimer);
