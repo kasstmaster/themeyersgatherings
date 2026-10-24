@@ -1232,7 +1232,7 @@ function renderWeddingGathering(hostView) {
     button.tabIndex = isSelected ? 0 : -1;
   });
   const guestSection = document.querySelector('#guestSection');
-  guestSection.hidden = !showingGuestPage;
+  guestSection.hidden = true;
   guestSection.querySelectorAll('[data-guest-tab]').forEach(button => {
     const isSelected = button.dataset.guestTab === selectedGuestTab;
     button.setAttribute('aria-selected', String(isSelected));
