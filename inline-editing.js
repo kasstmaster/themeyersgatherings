@@ -398,6 +398,14 @@
       const originalText = tab.textContent;
       if (state.siteTabTitles?.[key]) tab.textContent = state.siteTabTitles[key];
       cleanup.push(() => { tab.hidden = originalHidden; tab.textContent = originalText; });
+      const replacement=config.replacement?.(tab,extraPages);
+      if(replacement){
+        tab.hidden=true;
+        const panel=document.getElementById(tab.getAttribute('aria-controls'));
+        if(panel){const hidden=panel.hidden;panel.hidden=true;cleanup.push(()=>{panel.hidden=hidden;});}
+        if(tab.getAttribute('aria-selected')==='true')selectedCustom.set(`${context.eventId}:${nav.id}`,replacement.id);
+        return;
+      }
       if (hiddenTabs.includes(key)) {
         tab.hidden = true;
         const panel = document.getElementById(tab.getAttribute('aria-controls'));
