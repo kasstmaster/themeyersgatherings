@@ -787,7 +787,7 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpEventHeader .event-header-text{width:100%;text-align:center;overflow-wrap:anywhere}
 #rsvpEventHeader .event-header-text p{margin:0}
 #rsvpFirstPageDetails:not(:empty){margin-top:10px;line-height:1.5}
-#rsvpFirstPageDate{box-sizing:border-box;display:block;width:100%;max-width:100%;min-width:0;white-space:nowrap;overflow-wrap:normal}
+#rsvpFirstPageDate{box-sizing:border-box;display:block;width:100%;max-width:100%;min-width:0;white-space:nowrap;overflow-wrap:normal;font-size:1.35rem;letter-spacing:.08em;word-spacing:.3em}
 
 /* One Wedding tab component, including built-in and newly created pages. */
 body.theme-wedding{--wedding-tab-selected-background:rgba(50,73,101,.94);--wedding-tab-page-background:rgba(19,40,65,.90);--wedding-tab-text:#fff;--wedding-tab-border:var(--summary-border);--wedding-tab-padding:24px;--wedding-tab-radius:6px}

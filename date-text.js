@@ -6,11 +6,16 @@
     element.style.removeProperty('font-size');
     const width=element.clientWidth;
     if(!width || !element.textContent.trim())return;
-    for(let pass=0;pass<3 && element.scrollWidth>width;pass++) {
-      const size=parseFloat(getComputedStyle(element).fontSize);
-      if(!Number.isFinite(size))return;
-      element.style.fontSize=`${Math.floor(size*(width-1)/element.scrollWidth*10)/10}px`;
+    const maximum=parseFloat(getComputedStyle(element).fontSize);
+    if(!Number.isFinite(maximum) || element.scrollWidth<=width)return;
+    // Find the largest fitting size rather than repeatedly scaling down.
+    let low=0,high=maximum;
+    for(let pass=0;pass<12 && high-low>.05;pass++) {
+      const size=(low+high)/2;
+      element.style.fontSize=`${size}px`;
+      if(element.scrollWidth<=width)low=size;else high=size;
     }
+    element.style.fontSize=`${low}px`;
   }
   const resize=typeof ResizeObserver==='function'?new ResizeObserver(entries=>entries.forEach(entry=>fit(entry.target))):null;
   function fitAll() {
