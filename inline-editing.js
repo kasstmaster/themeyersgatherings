@@ -5,6 +5,8 @@
   const savers = new Set();
   const cleanup = [];
   const drafts = new Map();
+  const editTargets=new Map();
+  const textRoots=new Set();
   let context;
   const originals = new Map();
   const node = (tag, text, className) => {
@@ -39,6 +41,7 @@
     const dock=document.querySelector('.event-dock');
     const height=dock && !dock.hidden ? Math.min(innerHeight,dock.getBoundingClientRect().top) : innerHeight;
     for (const {element,target,kind} of overlays) {
+      if(!element.parentElement)continue;
       const rect=target.getBoundingClientRect();
       const documentLayer=element.parentElement?.parentElement===document.body;
       const layerRect=element.parentElement.getBoundingClientRect();
@@ -87,7 +90,7 @@
         const actions=target.querySelector(':scope > [data-page-actions]');
         if(actions?.getClientRects().length)top=Math.max(top,actions.getBoundingClientRect().bottom+6);
       }
-      if(kind==='appearance'){
+      if(kind==='appearance'||kind==='element-edit'){
         left=target.matches('body,dialog,nav,header,form,main,section,div,footer')?rect.left+4:rect.right-element.offsetWidth-3;top=rect.top+3;
         const dock=target.closest('.event-dock'),action=target.closest('button,a');
         if(dock)top=dock.getBoundingClientRect().top-element.offsetHeight-3;
@@ -114,6 +117,7 @@
     return control;
   }
   function beforeRender() {
+    textRoots.clear();
     cancelAnimationFrame(frame);frame=0;
     cleaning = true;
     try { while (cleanup.length) cleanup.pop()(); } finally { cleaning = false; }
@@ -129,7 +133,8 @@
   }
   function field(target, title, fields, commit, options = {}) {
     if (!target) return;
-    if (!enabled || !context.host) return;
+    if(fields.some(spec=>spec.type==='textarea') && !target.matches('section'))textRoots.add(target);
+    if (!enabled || !context.host || editTargets.has(target)) return;
     const key = `${context.eventId}:${options.key || target.id || title}`;
     if (document.querySelector(`[data-inline-field-key="${CSS.escape(key)}"]`)) return;
     // Empty fields still need an anchor for their Edit control. Keep inactive
@@ -146,6 +151,8 @@
     if(placement==='page')control.classList.add('inline-page-tools');
     if(placement==='inline') { target.after(control);cleanup.push(()=>control.remove()); }
     else overlay(control,container,placement);
+    editTargets.set(target,{fields,title,textBlock:fields.some(spec=>spec.type==='textarea') && !target.matches('section')});
+    cleanup.push(()=>editTargets.delete(target));
     let showing = false;
     const open = () => {
       if (showing) return; showing = true;
@@ -166,7 +173,7 @@
         if (spec.min !== undefined) input.min = spec.min;
         if (input.tagName === 'TEXTAREA') input.rows = 10;
         input.addEventListener('input', () => drafts.set(key, inputs.map(element => element.value)));
-        label.append(input); form.append(label); return input;
+        input.setAttribute('aria-label',spec.label);label.append(input);form.append(label);if(input.tagName==='TEXTAREA')form.append(textToolbar(input,target,spec));return input;
       });
       const actions = node('div', undefined, 'inline-editor-actions');
       button('Save', () => {
@@ -178,6 +185,7 @@
         commit(inputs.map(input => input.value)); drafts.delete(key); context.save();
       }, actions, `Save ${title}`);
       button('Cancel', () => { drafts.delete(key); context.refresh(); }, actions, `Cancel editing ${title}`);
+      button('Appearance',()=>ElementAppearance.open(target),actions,'Edit element appearance');
       form.addEventListener('keydown', event => {
         if (event.key === 'Enter' && event.target.tagName !== 'TEXTAREA' && event.target.tagName !== 'BUTTON') {
           event.preventDefault(); actions.querySelector('button').click();
@@ -195,8 +203,47 @@
     target.classList.add('inline-edit-replaced');
     cleanup.push(() => { editor.remove(); target.classList.remove('inline-edit-replaced'); });
   }
+  function textToolbar(input,target,spec={}){
+        const toolbar=node('div',undefined,'inline-text-formatting');
+        toolbar.setAttribute('role','toolbar');toolbar.setAttribute('aria-label','Text formatting');
+        const apply=(kind,value)=>{
+          const start=input.selectionStart,end=input.selectionEnd,selected=input.value.slice(start,end);
+          if(spec.readonly && !selected)return;
+          if(['font','size','color','highlight','border'].includes(kind)&&!selected)return;
+          const replacement=formatTextSelection(kind,selected,value);
+          input.setRangeText(replacement,start,end,'select');
+          input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();
+          input.setSelectionRange(start,start+replacement.length);
+        };
+        for(const [kind,label] of [['bold','Bold'],['italic','Italic'],['code','Code'],['bullets','Bullets'],['numbers','Numbered list'],['link','Link']]) {
+          if((spec.readonly || input.tagName!=='TEXTAREA') && ['bullets','numbers','link'].includes(kind))continue;
+          const control=node('button',label,'inline-edit-control');control.type='button';
+          control.setAttribute('aria-label',`Format ${label.toLowerCase()}`);
+          control.addEventListener('mousedown',event=>event.preventDefault());
+          control.addEventListener('click',()=>apply(kind));toolbar.append(control);
+        }
+        for(const [kind,label,values] of [['font','Font',TextStyles.fonts],['size','Size',TextStyles.sizes]]) {
+          const wrapper=node('label',undefined,'inline-text-style');
+          const select=node('select');select.setAttribute('aria-label',kind==='font'?'Font family':'Font size in pixels');
+          const placeholder=node('option',label);placeholder.value='';placeholder.disabled=true;placeholder.selected=true;select.append(placeholder);
+          for(const value of values){const option=node('option',String(value));option.value=String(value);select.append(option);}
+          select.addEventListener('change',()=>apply(kind,select.value));wrapper.append(select);toolbar.append(wrapper);
+        }
+        const appearance=node('details',undefined,'inline-text-appearance');appearance.append(node('summary','Text appearance'));
+        for(const [kind,label] of [['color','Text color'],['highlight','Highlight color'],['border','Text border color']]){
+          const row=node('label');row.append(node('span',label));const picker=node('input'),hex=node('input');picker.type='color';hex.type='text';hex.value=picker.value='#000000';picker.setAttribute('aria-label',label);hex.setAttribute('aria-label',label+' hex');hex.pattern='#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?';
+          picker.addEventListener('change',()=>{hex.value=picker.value;apply(kind,hex.value);});hex.addEventListener('change',()=>{if(!hex.checkValidity())return;picker.value=hex.value.slice(0,7);apply(kind,hex.value);});row.append(picker,hex);appearance.append(row);
+        }
+        const surface=node('button','Element appearance','inline-edit-control');surface.type='button';surface.addEventListener('mousedown',event=>event.preventDefault());surface.addEventListener('click',()=>ElementAppearance.open(target.matches('label')?target.querySelector('input:not([type="checkbox"]):not([type="radio"]),textarea,select') || target:target));appearance.append(surface);toolbar.append(appearance);spec.actions?.(toolbar);
+        input.addEventListener('keydown',event=>{
+          if((event.ctrlKey||event.metaKey) && ['b','i'].includes(event.key.toLowerCase())) {
+            event.preventDefault();apply(event.key.toLowerCase()==='b'?'bold':'italic');
+          }
+        });
+    return toolbar;
+  }
   function directFields(target, fields, commit, key, titleTarget) {
-    const editors = [], anchors = [], toolbars = [];
+    const editors = [], anchors = [], toolbars = [],wrappers=[];
     let wrappedBody;
     let pageBody = target.matches('section') ? target.querySelector('.bride-groom-content,.what-to-expect-content') || target : target;
     const heading = titleTarget || target.closest('section')?.querySelector('h2,h3');
@@ -213,7 +260,7 @@
       input.className = 'inline-direct-input';
       input.setAttribute('aria-label', spec.label);
       input.value = drafts.get(key)?.[index] ?? spec.value ?? '';
-      input.required = Boolean(spec.required);
+      input.required = Boolean(spec.required);input.readOnly=Boolean(spec.readonly);
       const style = getComputedStyle(anchor), rect = anchor.getBoundingClientRect();
       for (const property of ['font','color','textAlign','letterSpacing','padding','margin','borderRadius','backgroundColor']) input.style[property] = style[property];
       input.style.lineHeight='var(--copy-line-height,1.65)';
@@ -225,56 +272,36 @@
       }
       input.addEventListener('input', () => { if (key) drafts.set(key,editors.map(editor=>editor.value)); });
       replaceInPlace(input,anchor); editors.push(input); anchors.push(anchor);
-      if(input.tagName==='TEXTAREA') {
-        const toolbar=node('div',undefined,'inline-text-formatting');
-        toolbar.setAttribute('role','toolbar');toolbar.setAttribute('aria-label','Text formatting');
-        const apply=(kind,value)=>{
-          const start=input.selectionStart,end=input.selectionEnd,selected=input.value.slice(start,end);
-          if((kind==='font'||kind==='size')&&!selected)return;
-          const replacement=formatTextSelection(kind,selected,value);
-          input.setRangeText(replacement,start,end,'select');
-          input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();
-          input.setSelectionRange(start,start+replacement.length);
-        };
-        for(const [kind,label] of [['bold','Bold'],['italic','Italic'],['code','Code'],['bullets','Bullets'],['numbers','Numbered list'],['link','Link']]) {
-          const control=node('button',label,'inline-edit-control');control.type='button';
-          control.setAttribute('aria-label',`Format ${label.toLowerCase()}`);
-          control.addEventListener('mousedown',event=>event.preventDefault());
-          control.addEventListener('click',()=>apply(kind));toolbar.append(control);
-        }
-        for(const [kind,label,values] of [['font','Font',TextStyles.fonts],['size','Size',TextStyles.sizes]]) {
-          const wrapper=node('label',undefined,'inline-text-style');
-          const select=node('select');select.setAttribute('aria-label',kind==='font'?'Font family':'Font size in pixels');
-          const placeholder=node('option',label);placeholder.value='';placeholder.disabled=true;placeholder.selected=true;select.append(placeholder);
-          for(const value of values){const option=node('option',String(value));option.value=String(value);select.append(option);}
-          select.addEventListener('change',()=>apply(kind,select.value));wrapper.append(select);toolbar.append(wrapper);
-        }
-        input.addEventListener('keydown',event=>{
-          if((event.ctrlKey||event.metaKey) && ['b','i'].includes(event.key.toLowerCase())) {
-            event.preventDefault();apply(event.key.toLowerCase()==='b'?'bold':'italic');
-          }
-        });
-        input.before(toolbar);toolbars.push(toolbar);cleanup.push(()=>toolbar.remove());
+      if(input.tagName==='TEXTAREA' || input.type==='text') {
+        const toolbar=textToolbar(input,anchor,spec);
+        const wrapper=node('div',undefined,'inline-text-editor');input.before(wrapper);wrapper.append(toolbar,input);toolbars.push(toolbar);wrappers.push(wrapper);cleanup.push(()=>wrapper.remove());
+        if(anchor.closest('.event-dock')){anchor.classList.remove('inline-edit-replaced');wrapper.classList.add('inline-editor');overlay(wrapper,anchor.closest('dialog') || anchor,'editor');}
       }
     });
     let saved = false;
     const save = () => {
       if (saved || cleaning) return;
-      if (!editors.every(editor => { editor.setCustomValidity(editor.required && !editor.value.trim() ? 'Enter a title.' : ''); return editor.reportValidity(); })) return;
+      if (!editors.every(editor => { const plain=node('span');plain.innerHTML=context.format(editor.value,{inline:true});editor.setCustomValidity(editor.required && !plain.textContent.trim() ? 'Enter a title.' : ''); return editor.reportValidity(); })) return;
       saved=true;
       const wasFlushing=flushing;flushing=true;
-      try { commit(editors.map(editor=>editor.value)); } finally { flushing=wasFlushing; }
+      try { commit(editors.map((editor,index)=>{
+        if(fields[index].visual){ElementAppearance.storeText(anchors[index],editor.value,undefined,!fields[index].readonly);return editor.value;}
+        if(fields[index].type!=='textarea'){
+          const plain=node('span');plain.innerHTML=context.format(editor.value,{inline:true});
+          ElementAppearance.storeText(anchors[index],editor.value,plain.textContent);return plain.textContent;
+        }
+        return editor.value;
+      })); } finally { flushing=wasFlushing; }
       // Restore only the edited content. Rebuilding the whole page here drops
       // the click that moved focus away and unnecessarily resets other editors.
       editors.forEach((editor,index) => {
         const anchor=anchors[index];
-        if(fields[index].type==='textarea') anchor.innerHTML=formatTextForTarget(anchor,editor.value);
-        else anchor.textContent=editor.value;
+        if(!fields[index].visual){if(fields[index].type==='textarea')anchor.innerHTML=formatTextForTarget(anchor,editor.value);else {const plain=node('span');plain.innerHTML=context.format(editor.value,{inline:true});anchor.textContent=plain.textContent;}}
         anchor.classList.remove('inline-edit-replaced');editor.remove();
       });
       if(wrappedBody?.parentNode)wrappedBody.replaceWith(...wrappedBody.childNodes);
-      toolbars.forEach(toolbar=>toolbar.remove());
-      savers.delete(save);context.directSaved?.();
+      toolbars.forEach(toolbar=>toolbar.remove());wrappers.forEach(wrapper=>{const index=overlays.findIndex(entry=>entry.element===wrapper);if(index>=0)overlays.splice(index,1);wrapper.remove();});
+      savers.delete(save);context.directSaved?.();ElementAppearance.applyText();
     };
     savers.add(save); cleanup.push(() => savers.delete(save));
     const insideEditor=element=>editors.includes(element)||toolbars.some(toolbar=>toolbar.contains(element));
@@ -288,7 +315,7 @@
     (editors.find(editor=>editor.tagName==='TEXTAREA') || editors[0])?.focus();
   }
   function formatTextSelection(kind,selected,value) {
-    if(kind==='font'||kind==='size')return TextStyles.mark(selected,{[kind]:value});
+    if(['font','size','color','highlight','border'].includes(kind))return TextStyles.mark(selected,{[kind]:value});
     if(kind==='bullets'||kind==='numbers')return (selected||'List item').split('\n').map((line,index)=>`${kind==='bullets'?'-':`${index+1}.`} ${line}`).join('\n');
     if(kind==='link')return `[${selected||'Link text'}](https://example.com)`;
     const marker={bold:'**',italic:'*',code:'`'}[kind];
@@ -303,12 +330,12 @@
       return whitespace[1]+formatted+whitespace[3];
     }).join('\n');
   }
-  function editTitle(tab, anchor, value, commit) {
+  function editTitle(tab, anchor, value, commit,actions) {
     if (tab.dataset.editingTitle) return;
     tab.dataset.editingTitle = 'true';
     // Hidden single-tab titles are edited at their visible page heading.
     const target = tab.getClientRects().length ? tab : anchor.querySelector('h2,h3') || anchor;
-    directFields(target, [{label:'Page title',value,required:true}], values => { commit(values[0].trim()); delete tab.dataset.editingTitle;context.save(); });
+    directFields(target, [{label:'Page title',value:ElementAppearance.textValue(tab) || value,required:true,actions}], values => { commit(values[0].trim()); delete tab.dataset.editingTitle;context.save(); });
     cleanup.push(() => delete tab.dataset.editingTitle);
   }
   function portal(target, title, sources, prepare, options = {}) {
@@ -342,14 +369,14 @@
   }
   function applyStaticText(root,state,format) {
     const data=state.siteText || {};
-    for(const element of staticTextElements(root)) {
+    for(const element of staticTextElements(root).filter(element=>!textOwner(element.parentElement))) {
       const path=selectorPath(element,root);
       if(Object.hasOwn(data,path))element.innerHTML=formatTextForTarget(element,data[path],format);
     }
   }
   function staticText(root) {
     const data = context.state.siteText || {};
-    const elements=staticTextElements(root);
+    const elements=staticTextElements(root).filter(element=>!textOwner(element.parentElement));
     for (const [element, path] of elements.map(element => [element, selectorPath(element, root)])) {
       if (!originals.has(path)) originals.set(path, element.innerHTML);
       const initial = element.innerHTML;
@@ -376,12 +403,11 @@
     const buttons = [...nav.querySelectorAll(':scope > button')];
     const tabKeys = new Map();
     const moveControls = [];
-    const titleFields = [];
-    const titleSavers = [];
     const visibleTabs = () => [...nav.querySelectorAll(':scope > button')].filter(tab => !tab.hidden);
     function moveControlsFor(tab, tools) {
       for (const [direction, arrow, label] of [[-1, '←', 'left'], [1, '→', 'right']]) {
         const control = button(arrow, () => {
+          globalThis.SiteEditing.flush();
           const current = visibleTabs();
           const index = current.indexOf(tab), neighbor = current[index + direction];
           if (!neighbor) return;
@@ -391,6 +417,7 @@
           state.siteTabOrder[nav.id] = [...nav.querySelectorAll(':scope > button')].map(item => tabKeys.get(item));
           context.save();
         }, tools, `Move ${tab.textContent} ${label}`);
+        control.disabled=!visibleTabs()[visibleTabs().indexOf(tab)+direction];
         moveControls.push({ tab, direction, control });
       }
     }
@@ -438,23 +465,21 @@
           if (config.rename) config.rename(tab, title);
           else { state.siteTabTitles ??= {}; state.siteTabTitles[key] = title; }
         };
-        titleFields.push({label:tab.textContent,value:tab.textContent,required:true});
-        titleSavers.push(rename);
         const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
         const anchor=tab.getClientRects().length?tab:nav.nextElementSibling;
         if(anchor)overlay(tools,anchor,'above');
-        moveControlsFor(tab, tools);
+        editTargets.set(tab,{visual:true});cleanup.push(()=>editTargets.delete(tab));
         button('Edit title', () => {
           editTitle(tab, anchor, tab.textContent, title => {
             rename(title);
-          });
-        }, tools);
-        button('×', () => {
+          },toolbar=>{moveControlsFor(tab,toolbar);button('×', () => {
+          globalThis.SiteEditing.flush();
           if (!window.confirm(`Delete the “${tab.textContent}” page?`)) return;
           if (config.remove) config.remove(tab);
           else { state.siteHiddenTabs ??= []; state.siteHiddenTabs.push(key); }
           context.save();
-        }, tools, `Delete ${tab.textContent} page`);
+          },toolbar,`Delete ${tab.textContent} page`);});
+        },tools);
       }
       tab.addEventListener('click', clearCustom);
       cleanup.push(() => tab.removeEventListener('click', clearCustom));
@@ -475,13 +500,10 @@
       nav.append(tab); cleanup.push(() => tab.remove());
       tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh();if(config.scroll)document.getElementById(`custom-page-${page.id}`)?.scrollIntoView({block:'start',behavior:'auto'}); });
       if (enabled && context.host) {
-        titleFields.push({label:page.title,value:page.title,required:true});
-        titleSavers.push(title => { page.title=title; });
         const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
         overlay(tools,tab,'above');
-        moveControlsFor(tab, tools);
-        button('Edit title', () => editTitle(tab, config.pageHost || nav.nextElementSibling, page.title, title => { page.title=title; }), tools);
-        button('×', () => { if (window.confirm(`Delete the “${page.title}” page?`)) { state.sitePages = state.sitePages.filter(item => item.id !== page.id); context.save(); } }, tools, `Delete ${page.title} page`);
+        editTargets.set(tab,{visual:true});cleanup.push(()=>editTargets.delete(tab));
+        button('Edit title',()=>editTitle(tab,config.pageHost || nav.nextElementSibling,page.title,title=>{page.title=title;},toolbar=>{moveControlsFor(tab,toolbar);button('×',()=>{if(window.confirm(`Delete the “${page.title}” page?`)){state.sitePages=state.sitePages.filter(item=>item.id!==page.id);context.save();}},toolbar,`Delete ${page.title} page`);}),tools);
       }
       if (selected?.id === page.id) {
         const isSubpage = nav.classList.contains('matron-info-tabs');
@@ -496,8 +518,8 @@
         if(intro)intro.innerHTML=formatTextForTarget(intro,page.intro || '');
         if(config.pageHost)config.pageHost.append(panel);else nav.after(panel); cleanup.push(() => panel.remove());
         field(intro, 'text', [{label:'Text above title',type:'textarea',value:page.intro || ''}], ([value]) => { page.intro=value; }, {key:`${page.id}:intro`,placement:'text'});
-        if(config.externalHeading)field(panel,'page',[{label:'Content',type:'textarea',value:page.content}],([content])=>{page.content=content;},{key:page.id});
-        else field(panel, 'page', [{ label: 'Title', value: page.title, required: true }, { label: 'Content', type: 'textarea', value: page.content }], ([title, content]) => { page.title = title; page.content = content; }, { key: page.id });
+        if(!config.externalHeading)field(panel.querySelector(heading),'text',[{label:'Title',value:page.title,required:true}],([title])=>{page.title=title;},{key:`${page.id}:title`,placement:'text'});
+        field(panel.querySelector('.bride-groom-content'),'text',[{label:'Content',type:'textarea',value:page.content}],([content])=>{page.content=content;},{key:page.id,placement:'text'});
       }
     });
     const order = state.siteTabOrder?.[nav.id] || [];
@@ -507,7 +529,6 @@
     config.onSelect?.(selected || null);
     const displayedTabs = visibleTabs();
     moveControls.forEach(({tab, direction, control}) => { control.disabled = !displayedTabs[displayedTabs.indexOf(tab) + direction]; });
-    if(titleFields.length)field(nav,'tab names',titleFields,values=>values.forEach((title,index)=>titleSavers[index](title.trim())),{key:`${nav.id}:titles`,placement:'inline'});
     positionOverlays();
     if (enabled && context.host) {
       const addTools=node('span',undefined,'inline-tab-tools');
@@ -537,6 +558,11 @@
     else overlay(element,target,kind);
     return element;
   }
+  function textOwner(element){for(let current=element;current;current=current.parentElement)if(textRoots.has(current) || editTargets.get(current)?.textBlock || editTargets.get(current)?.visual)return current;return null;}
+  function textElement(target,label){
+    field(target,'text',[{label:'Text',type:target.matches('button,a') && !ElementAppearance.isMultiline(target)?'text':'textarea',visual:true,readonly:!target.matches('button,a') || target.matches('.summary-item,.event-selection-choices>button'),value:ElementAppearance.textValue(target)}],()=>{},{key:`text-style:${ElementAppearance.selector(target)}`,placement:'element-edit'});
+    if(editTargets.has(target))editTargets.get(target).visual=true;
+  }
   function appearance(target,action,label){
     if(!target || !enabled || !context.host)return;
     const tools=node('span',undefined,'inline-appearance-tools');overlay(tools,target,'appearance',true);
@@ -545,7 +571,7 @@
     return ()=>{const index=overlays.findIndex(entry=>entry.element===tools);if(index>=0)overlays.splice(index,1);tools.remove();};
   }
   const selectedCustom = new Map();
-  globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, applyStaticText, tabs, button, mount, hide, appearance, positionOverlays,
+  globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, applyStaticText, tabs, button, mount, hide, appearance, positionOverlays, textElement, textOwner, hasEditor:element=>editTargets.has(element),
     resetTabSelection(navId,eventId=context?.eventId) { selectedCustom.delete(`${eventId}:${navId}`); },
     flush() { flushing=true;try { [...savers].forEach(save=>save()); } finally { flushing=false; } },
     get flushing() { return flushing; },

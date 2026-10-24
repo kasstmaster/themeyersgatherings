@@ -111,3 +111,15 @@ test('styled map addresses keep formatting out of their URL and title attributes
  assert.match(result,/href="geo:0,0\?q=123%20Main%20Street" title="Open 123 Main Street in your maps app"/);
  assert.match(result,/>123 <span[^>]+>Main Street<\/span><\/a>/);
 });
+
+test('selected text colors, highlights and borders use only safe hex styling',()=>{
+ const style=context.TextStyles.mark('Chosen',{color:'#123456',highlight:'#ffee0080',border:'#998877'});
+ const html=format('Before '+style+' after');
+ assert.match(html,/color:#123456/);assert.match(html,/background-color:#ffee0080/);assert.match(html,/border:1px solid #998877/);assert.match(html,/Before <span[^>]*>Chosen<\/span> after/);
+ assert.equal(context.TextStyles.mark('Safe',{color:'#fff;position:fixed'}),'Safe');
+});
+test('formatting on a count follows changing live numbers rather than saving the old value',()=>{
+ const mark=context.TextStyles.mark('13',{color:'#123456'})+'/2';
+ const next=context.TextStyles.rebase(mark,'13/2','142/8');assert.match(next,/142\{\{\/style\}\}\/8$/);assert.doesNotMatch(next,/>13|\}\}13/);
+ const all=context.TextStyles.mark('13/2',{font:'Georgia'});assert.match(context.TextStyles.rebase(all,'13/2','142/81'),/142\/81\{\{\/style\}\}$/);
+});
