@@ -231,7 +231,7 @@ never credentials, cookies, authorization headers, or token values.
 
 ### Wedding photos and videos
 
-Wedding's **Upload Photos** page lets guests select multiple photos and videos and upload directly to the hosts' connected Dropbox. Guests can also submit an external photo-sharing link.
+Wedding's **Upload Photos & Videos** page lets guests select multiple photos and videos and upload directly to the hosts' connected Dropbox. Guests can also submit an external photo-sharing link.
 
 The existing **View Photos & Videos** gallery retains files and sharing links previously submitted to the website, with its account/host access controls. New Dropbox submissions are managed in Dropbox and are not mirrored into the website gallery. Guests can still leave an external photo-sharing link on the website.
 
@@ -241,7 +241,7 @@ The existing **View Photos & Videos** gallery retains files and sharing links pr
 2. In the Dropbox app console, keep **App Folder** access and enable **files.content.write**. Under **Settings → Redirect URIs**, add exactly:
    `https://curly-sun-ef0f.kassandraraudman.workers.dev/dropbox/callback`
 3. In Cloudflare **Workers & Pages → curly-sun-ef0f → Settings → Variables and Secrets**, add two **Secret** values: `DROPBOX_APP_KEY` (the Dropbox app key) and `DROPBOX_APP_SECRET` (the Dropbox app secret). Save/deploy these settings. Never put the app secret or tokens in website code, GitHub files, or chat.
-4. Sign in as host, open Wedding → Upload Photos → Upload, and click **Connect Dropbox**. Approve access in Dropbox. Close the confirmation tab and return to the website. Connection status rechecks automatically; use **Check connection** if it is still shown. Connection buttons hide while connected and return if access is lost.
+4. Sign in as host, open Wedding → RSVP → Upload Photos & Videos → Upload, and click **Connect Dropbox**. Approve access in Dropbox. Close the confirmation tab and return to the website. Connection status rechecks automatically; use **Check connection** if it is still shown. Connection buttons hide while connected and return if access is lost.
 5. Test an upload from a phone. Files arrive under **Apps → The Meyers 2027 → Wedding Uploads → account name → uploader name**. This is separate from the existing file-request folder.
 
 The backend requests offline OAuth access with a one-time state and PKCE challenge, stores the renewable connection in the private R2 `dropbox-private/` namespace, and renews short-lived Dropbox access tokens server-side. Only the host can start the connection or inspect connection settings. Guests use their existing website sign-in and never authorize their own Dropbox accounts. Dropbox tokens, upload-session IDs, and destination paths are never returned to guests. Transfers use 8 MiB chunks to avoid the old 15 MB/50 MB website file-size limits; Dropbox storage and service limits still apply. The website gallery shows account-private upload confirmations and host attribution, rather than exposing Dropbox folder access. Download/preview access to new Dropbox file bytes is not requested by the write-only app permission.

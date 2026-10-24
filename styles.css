@@ -840,6 +840,10 @@ body.theme-wedding #eventPage .wedding-tab-page .page-actions a{box-sizing:borde
 /* Wedding uploads stay reachable while browsing the first RSVP page. */
 #weddingRsvpUploadToolbar .wedding-upload-toolbar-content{display:contents}
 .event-dock .toolbar-icon{width:24px;height:24px;flex:none;fill:currentColor}
+/* Enter creates a new line; only authored blank lines add a blank line. */
+:is(#eventPage,#weddingMediaDialog){--copy-paragraph-gap:0px}
+:is(#eventPage,#weddingMediaDialog) :is(.event-header-text,.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.wedding-party-description,.wedding-party-attire-note,.wedding-timeline-copy,.wedding-tab-content,#rsvpDishQuestionText,#weddingPartyAttireIntroText) :is(p,ul,ol){margin:0;line-height:inherit}
+:is(#eventPage,#weddingMediaDialog) textarea{line-height:var(--copy-line-height,1.65)}
 #rsvpEventConfirmation:has(#weddingRsvpUploadToolbar:not([hidden])){padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{margin-bottom:24px}
 .inline-text-formatting .inline-text-style{display:inline-flex;min-width:0;margin:0}

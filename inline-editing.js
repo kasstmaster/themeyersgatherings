@@ -208,7 +208,8 @@
       input.value = drafts.get(key)?.[index] ?? spec.value ?? '';
       input.required = Boolean(spec.required);
       const style = getComputedStyle(anchor), rect = anchor.getBoundingClientRect();
-      for (const property of ['font','color','textAlign','lineHeight','letterSpacing','padding','margin','borderRadius','backgroundColor']) input.style[property] = style[property];
+      for (const property of ['font','color','textAlign','letterSpacing','padding','margin','borderRadius','backgroundColor']) input.style[property] = style[property];
+      input.style.lineHeight='var(--copy-line-height,1.65)';
       input.style.width = `${rect.width}px`; input.style.maxWidth = '100%';
       if (input.tagName === 'TEXTAREA') {
         input.style.minHeight = `${Math.max(48,rect.height)}px`;

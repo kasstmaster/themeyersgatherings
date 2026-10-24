@@ -3,6 +3,7 @@
 Sign in as the host and choose **Edit website**. Only the host sees editing controls. **Done editing** returns to the normal page and hides editing tools; guests continue to see the normal site. Use **Save** within an editor to publish that edit, or **Cancel** to discard its draft.
 
 - Edit controls appear beside dates, addresses, the header image, footer, page text, notes, responsibilities, and menu items.
+- A single Enter creates one new line in shared text boxes. Blank lines you enter remain visible; automatic paragraph margins do not add extra spacing.
 - Highlight text in a text editor to apply bold, italic, links, a font family, or a font size. Font sizes are in pixels (8–96). The same toolbar and renderer are shared by all gatherings, and styled RSVP headings still shrink only when needed to fit their container.
 - To edit wedding-party members, open Wedding as host, choose **Edit website**, open **RSVP**, then **Wedding Party → Responsibilities**. Members enter this sub-page by default and see their own role and name above their responsibility text. Attire remains a main tab; its Ladies/Gentlemen panels follow each member's role, while hosts can edit both.
 - Use **+** beside a tab group to add a page. New pages include a title, page content, and editable text above the title. Blank text retains its Edit control while editing. Bride & Groom pages remain private to the host, and Wedding Party pages remain limited to the party audience. Other new pages are shared with the audience for that tab group.
@@ -75,6 +76,6 @@ Built-in and created pages use the shared page styles in styles.css for heading 
 
 A custom top-level Wedding page named **What to Expect** is assigned to guests and the host, excluding Wedding Party members. The guest audience is stored on the page so later title edits retain that visibility. Other shared pages retain their existing audience.
 
-Wedding **Upload Photos** is a button directly below RSVP. It opens the shared full-page dialog shell used by RSVP, with Upload and View Photos & Videos inside and Back/Close controls to return to the gathering. It retains the existing Dropbox and account-private gallery handlers; it is no longer a main Wedding tab.
+Wedding **Upload Photos & Videos** is a camera action in the fixed toolbar at the bottom of the first RSVP page. It opens the shared full-page dialog shell used by RSVP, with Upload and View Photos & Videos inside and Back/Close controls to return to RSVP. It retains the existing Dropbox and account-private gallery handlers; it is no longer a main Wedding tab.
 
-RSVP and Upload Photos share the `.fullscreen-flow` color variables and `.flow-panel` container component. Their background, foreground, card surface, and card border colors are defined once; upload sub-tabs and gallery cards consume those same variables.
+RSVP and Upload Photos & Videos share the `.fullscreen-flow` color variables and `.flow-panel` container component. Their background, foreground, card surface, and card border colors are defined once; upload sub-tabs and gallery cards consume those same variables.
