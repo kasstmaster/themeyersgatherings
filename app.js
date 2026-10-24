@@ -1321,12 +1321,14 @@ function renderWeddingGathering(hostView) {
   renderWeddingPartyAttireImages(showingPartyAttirePage);
   if (isWedding) renderAttireVideoCollection('#registryAttireVideosSection', '#registryAttireVideos');
   const registryButton = document.querySelector('#registryButton');
-  registryButton.href = state.registryUrl || '#';
+  if(state.registryUrl)registryButton.href=state.registryUrl;else registryButton.removeAttribute('href');
+  registryButton.setAttribute('tabindex',state.registryUrl?'0':'-1');
   registryButton.classList.toggle('disabled', !state.registryUrl);
   registryButton.setAttribute('aria-disabled', String(!state.registryUrl));
   registryButton.textContent = state.registryUrl ? 'View our registry' : (hostView ? 'Add registry link in host tools' : 'Registry coming soon');
   const monetaryGiftButton = document.querySelector('#monetaryGiftButton');
-  monetaryGiftButton.href = state.monetaryGiftUrl || '#';
+  if(state.monetaryGiftUrl)monetaryGiftButton.href=state.monetaryGiftUrl;else monetaryGiftButton.removeAttribute('href');
+  monetaryGiftButton.setAttribute('tabindex',state.monetaryGiftUrl?'0':'-1');
   monetaryGiftButton.classList.toggle('disabled', !state.monetaryGiftUrl);
   monetaryGiftButton.setAttribute('aria-disabled', String(!state.monetaryGiftUrl));
   monetaryGiftButton.textContent = state.monetaryGiftUrl ? 'Give a monetary gift' : (hostView ? 'Add monetary gift link in host tools' : 'Monetary gifts coming soon');
