@@ -13,8 +13,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
+  deploy:
+    name: Validate and deploy gatherings
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,22 +26,8 @@ jobs:
         run: node --test --test-isolation=none test/domain-migration.test.js test/site-icon.test.js test/state-worker.test.js test/wedding-media.test.js test/dropbox.test.js test/qr-access.test.js test/general-login-qr.test.js
       - name: Build gathering site from the shared frontend source
         run: node scripts/build-domain-site.js .domain-site
-      - uses: actions/upload-artifact@v4
-        with:
-          name: gathering-domain-site
-          path: .domain-site/
-          include-hidden-files: true
-          retention-days: 1
-
-  deploy_state_worker:
-    needs: validate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
       - name: Deploy existing service in its original Cloudflare account
+        timeout-minutes: 5
         uses: cloudflare/wrangler-action@v3
         with:
           wranglerVersion: "4.151.1"
@@ -48,14 +36,6 @@ jobs:
           workingDirectory: github-state-worker
           command: deploy
 
-  deploy_domain_site:
-    needs: [validate, deploy_state_worker]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
       - name: Check credentials for the account containing ilymmd.com
         env:
           CLOUDFLARE_DOMAIN_API_TOKEN: ${{ secrets.CLOUDFLARE_DOMAIN_API_TOKEN }}
@@ -67,11 +47,8 @@ jobs:
               exit 1
             fi
           done
-      - uses: actions/download-artifact@v4
-        with:
-          name: gathering-domain-site
-          path: .domain-site
       - name: Deploy website routes in the ilymmd.com Cloudflare account
+        timeout-minutes: 5
         uses: cloudflare/wrangler-action@v3
         with:
           wranglerVersion: "4.151.1"
@@ -80,4 +57,5 @@ jobs:
           workingDirectory: domain-site-worker
           command: deploy
       - name: Verify both public websites and legacy invitation address
+        timeout-minutes: 5
         run: node scripts/verify-live-domain.js
