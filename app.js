@@ -203,7 +203,7 @@ let signedInPersonName = '';
 let selectedGatheringTab = null;
 let selectedWeddingTab = 'guest';
 let selectedGuestTab = 'attire';
-let selectedMatronTab = 'experience';
+let selectedMatronTab = 'duties';
 let selectedBrideGroomPage = 'main';
 let hostWeddingPartyViewName = '';
 let hostReturnSession = null;
@@ -1129,7 +1129,8 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   if (eventId === 'wedding' && !preserveWeddingView) {
     const partyMember = isSignedInWeddingPartyMember();
     selectedWeddingTab = isHostView() ? 'couple' : partyMember ? 'party' : 'guest';
-    selectedMatronTab = 'experience';
+    selectedMatronTab = 'duties';
+    SiteEditing.resetTabSelection('matronInfoTabs',eventId);
   }
   // Close the chooser before doing the more involved event render. The
   // chooser only contains gatherings already authorized for this account;
@@ -1183,13 +1184,14 @@ function weddingDetailsWithoutHeaderAddress(value) {
     return true;
   }).join('\n');
 }
-function weddingPartyPageHeading(tab,page) {
+function weddingPartyPageHeading(tab,page,member) {
   if(page)return {kicker:'The people by our side',title:page.title};
+  if(tab==='duties' && member)return {kicker:member.title || 'Wedding Party',title:member.name};
   if(tab==='attire')return {kicker:'Dress for the occasion',title:'FORMAL ATTIRE REQUIRED'};
   return {kicker:'The people by our side',title:tab==='duties'?'Your Responsibilities':'The Perfect Experience'};
 }
-function renderWeddingPartyPageHeading(tab,page) {
-  const heading=weddingPartyPageHeading(tab,page);
+function renderWeddingPartyPageHeading(tab,page,member) {
+  const heading=weddingPartyPageHeading(tab,page,member);
   document.querySelector('#weddingPartyKicker').textContent=heading.kicker;
   document.querySelector('#weddingPartyHeading').textContent=heading.title;
 }
@@ -1220,7 +1222,7 @@ function renderWeddingGathering(hostView) {
   const showingTimelinePage = isWedding && hostView && selectedWeddingTab === 'timeline';
   const publicWeddingTab = ['couple','timeline','guest'].includes(selectedWeddingTab) ? selectedGuestTab : selectedWeddingTab;
   const showingGuestPage = isWedding && ['attire','details'].includes(publicWeddingTab);
-  const showingPartyAttirePage = (showingWeddingPartyPage && selectedMatronTab === 'attire') || (isWeddingPartyMember && publicWeddingTab === 'attire');
+  const showingPartyAttirePage = (hostView || isWeddingPartyMember) && publicWeddingTab === 'attire';
   const showingAttirePage = (showingGuestPage && publicWeddingTab === 'attire') || showingPartyAttirePage;
   const showingWhatToExpectPage = showingGuestPage && publicWeddingTab === 'details';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
@@ -1280,6 +1282,8 @@ function renderWeddingGathering(hostView) {
     ? WeddingParty.sortByRole(weddingPartyMembers, WEDDING_PARTY_TITLES.map(role => role.value))
     : [viewedWeddingPartyMember].filter(Boolean);
   const personalPages = WeddingParty.visiblePages(weddingPartyMembers, hostView, viewedWeddingPartyMember?.id);
+  const dutiesTitleKey='matronInfoTabs:matronTab=duties';
+  if(String(state.siteTabTitles?.[dutiesTitleKey] || '').trim().toLowerCase()==='duties')state.siteTabTitles[dutiesTitleKey]='Responsibilities';
   const matronInfoTabs = document.querySelector('#matronInfoTabs');
   matronInfoTabs.querySelectorAll('[data-member-page]').forEach(button => button.remove());
   personalPages.forEach(page => {
@@ -1290,7 +1294,7 @@ function renderWeddingGathering(hostView) {
     button.textContent = hostView ? `${page.memberName} — ${page.title}` : page.title;
     matronInfoTabs.append(button);
   });
-  if (!['experience', 'duties', 'attire', ...personalPages.map(page => page.key)].includes(selectedMatronTab)) selectedMatronTab = 'experience';
+  if (!['experience', 'duties', ...personalPages.map(page => page.key)].includes(selectedMatronTab)) selectedMatronTab = 'duties';
   matronInfoTabs.hidden = !showingWeddingPartyPage;
   matronInfoTabs.querySelectorAll('[data-matron-tab]').forEach(button => {
     const isSelected = button.dataset.matronTab === selectedMatronTab;
@@ -1298,7 +1302,7 @@ function renderWeddingGathering(hostView) {
     button.tabIndex = isSelected ? 0 : -1;
   });
   const personalPage = personalPages.find(page => page.key === selectedMatronTab);
-  renderWeddingPartyPageHeading(selectedMatronTab,personalPage);
+  renderWeddingPartyPageHeading(selectedMatronTab,personalPage,hostView?null:signedInWeddingPartyMember);
   const personalPanel = document.querySelector('#weddingPartyPersonalPage');
   personalPanel.hidden = !showingWeddingPartyPage || !personalPage;
   personalPanel.innerHTML = personalPage ? `${formatEditableText(personalPage.content) || '<p class="guest-empty">No details have been added yet.</p>'}` : '';
@@ -1316,20 +1320,17 @@ function renderWeddingGathering(hostView) {
         const content = description ? `<div class="wedding-party-description">${formatEditableText(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>';
         return `<details class="wedding-party-card" data-responsibilities-member="${escapeAttribute(member.id)}"><summary><span class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</span><span class="wedding-party-member-name">${escapeHtml(member.name)}</span></summary>${content}</details>`;
       }
-      return `<article class="wedding-party-card"><p class="wedding-party-role">${escapeHtml(member.title || 'Wedding Party')}</p><h3>${escapeHtml(member.name)}</h3>${description ? `<div class="wedding-party-description">${formatEditableText(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>'}</article>`;
+      return `<article class="wedding-party-card">${description ? `<div class="wedding-party-description">${formatEditableText(description)}</div>` : '<p class="guest-empty">No responsibilities have been assigned yet.</p>'}</article>`;
     }).join('')
     : '<p class="guest-empty">No wedding party details have been added yet.</p>';
   registrySection.hidden = !showingRegistryPage;
   const registryAttireSection = document.querySelector('#registryAttireSection');
-  const weddingPartyAttirePanel = document.querySelector('#weddingPartyAttirePanel');
   const guestAttireAnchor = document.querySelector('#guestAttireAnchor');
-  if (showingWeddingPartyPage && showingPartyAttirePage && registryAttireSection.parentElement !== weddingPartyAttirePanel) {
-    weddingPartyAttirePanel.append(registryAttireSection);
-  } else if (!(showingWeddingPartyPage && showingPartyAttirePage) && registryAttireSection.previousElementSibling !== guestAttireAnchor) {
-    guestAttireAnchor.after(registryAttireSection);
-  }
+  if(registryAttireSection.previousElementSibling!==guestAttireAnchor)guestAttireAnchor.after(registryAttireSection);
   registryAttireSection.classList.toggle('wedding-party-attire-section', showingPartyAttirePage);
   registryAttireSection.classList.toggle('guest-dress-code-only',!showingPartyAttirePage);
+  const attireGroups=WeddingParty.attireSections(isWeddingPartyMember?signedInWeddingPartyMember.title:'');
+  registryAttireSection.querySelectorAll('[data-attire-group]').forEach(panel=>{panel.hidden=!attireGroups.includes(panel.dataset.attireGroup);});
   document.querySelector('#weddingPartyAttireIntro').hidden=!showingPartyAttirePage || (!SiteEditing.enabled && !state.weddingPartyAttireIntro?.trim());
   document.querySelector('#weddingPartyAttireIntroText').innerHTML=formatEditableText(state.weddingPartyAttireIntro || '');
   registryAttireSection.hidden = !showingAttirePage;
@@ -1478,7 +1479,7 @@ function renderInlineEditing() {
       const personalPages=WeddingParty.visiblePages(state.weddingPartyMembers || [],isHostView(),state.weddingPartyMembers?.find(member=>weddingPartyPersonMatches(member.name,signedInPersonName))?.id);
       const selectedPartyTab=document.querySelector('#matronInfoTabs [role="tab"][aria-selected="true"]');
       const selectedCustom=state.sitePages?.find(page=>`custom-page-${page.id}`===selectedPartyTab?.getAttribute('aria-controls'));
-      renderWeddingPartyPageHeading(selectedMatronTab,selectedCustom || personalPages.find(page=>page.key===selectedMatronTab));
+      renderWeddingPartyPageHeading(selectedMatronTab,selectedCustom || personalPages.find(page=>page.key===selectedMatronTab),isHostView()?null:state.weddingPartyMembers?.find(member=>weddingPartyPersonMatches(member.name,signedInPersonName)));
       document.querySelectorAll('#matronInfoTabs [data-member-page]').forEach(tab => {
         const page=personalPages.find(page=>page.key===tab.dataset.memberPage);
         if(page)tab.textContent=isHostView()?`${page.memberName} — ${page.title}`:page.title;
@@ -1525,7 +1526,7 @@ function renderInlineEditing() {
       SiteEditing.field(document.querySelector('#weddingPartyPersonalPage'), 'page', [{label:'Title',value:page.title,required:true},{label:'Content',value:page.content,type:'textarea'}], ([title,content]) => { Object.assign(page,{title,content}); },{titleTarget:document.querySelector('#weddingPartyHeading')});
     });
   });
-  if (SiteEditing.enabled && viewedEventId==='wedding' && selectedWeddingTab==='party' && selectedMatronTab==='attire') {
+  if (SiteEditing.enabled && viewedEventId==='wedding' && selectedWeddingTab==='attire') {
     SiteEditing.hide(document.querySelector('#weddingAttireGuidance'));
     SiteEditing.hide(document.querySelector('#registryAffordableAttire .affordable-attire-closing'));
     SiteEditing.hide(document.querySelector('#registryAttireVideosSection'));
@@ -1664,7 +1665,7 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
     signedInPersonName = '';
     if (viewedEventId === 'wedding') {
       selectedWeddingTab = 'couple';
-      selectedMatronTab = 'experience';
+      selectedMatronTab = 'duties';
       hostWeddingPartyViewName = '';
     }
     updateHostToolsPanel();
@@ -3239,7 +3240,7 @@ document.querySelector('#cancelViewAsButton').addEventListener('click', () => {
   guestName=previous?.guestName || HOST_DISPLAY_NAME;signedInPersonName=previous?.signedInPersonName || '';
   viewedEventId=GuestPlanning.retainedEvent(previous?.eventId || viewedEventId,appState.events,viewedEventId);state=appState.events[viewedEventId];
   selectedGatheringTab=previous?.selectedGatheringTab ?? null;selectedWeddingTab=previous?.selectedWeddingTab || 'couple';
-  selectedMatronTab=previous?.selectedMatronTab || 'experience';selectedGuestTab=previous?.selectedGuestTab || 'attire';selectedBrideGroomPage=previous?.selectedBrideGroomPage || 'main';
+  selectedMatronTab=previous?.selectedMatronTab || 'duties';selectedGuestTab=previous?.selectedGuestTab || 'attire';selectedBrideGroomPage=previous?.selectedBrideGroomPage || 'main';
   showSignedInDestination();render();window.scrollTo({top:0,left:0,behavior:'auto'});
 });
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));

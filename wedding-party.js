@@ -46,5 +46,11 @@
     delete wedding.brideGroomContent;
     return wedding.brideGroomPages;
   }
-  globalThis.WeddingParty = { normalizeBrideGroomPages, normalizeMembers, visiblePages, sortByRole };
+  function attireSections(role) {
+    const normalized=String(role || '').trim().replace(/\s+/g,' ').toLowerCase();
+    if(['groomsman','groomsmen','best man','officiant'].includes(normalized))return ['gentlemen'];
+    if(['bridesmaid','bridesmaids','matron of honor'].includes(normalized))return ['ladies'];
+    return ['ladies','gentlemen'];
+  }
+  globalThis.WeddingParty = { normalizeBrideGroomPages, normalizeMembers, visiblePages, sortByRole, attireSections };
 })();

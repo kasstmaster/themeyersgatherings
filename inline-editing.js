@@ -519,6 +519,7 @@
   }
   const selectedCustom = new Map();
   globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, applyStaticText, tabs, button, mount, hide,
+    resetTabSelection(navId,eventId=context?.eventId) { selectedCustom.delete(`${eventId}:${navId}`); },
     flush() { flushing=true;try { [...savers].forEach(save=>save()); } finally { flushing=false; } },
     get flushing() { return flushing; },
     get portalOpen() { return Boolean(document.querySelector('.inline-portal-editor')); },

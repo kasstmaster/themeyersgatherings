@@ -820,8 +820,7 @@ body.theme-wedding #eventPage .attire-content-group{margin:0;padding:0;border:0;
 body.theme-wedding #eventPage .attire-content-group>.affordable-attire-guidance{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;margin:0}
 /* Sub-tabs meet their selected content without an extra vertical gap. */
 body.theme-wedding #eventPage .matron-info-tabs{margin-bottom:0}
-body.theme-wedding #eventPage .matron-info-tabs~.wedding-tab-page,
-body.theme-wedding #eventPage #weddingPartyAttirePanel>.wedding-tab-page{margin-top:0}
+body.theme-wedding #eventPage .matron-info-tabs~.wedding-tab-page{margin-top:0}
 body.theme-wedding #eventPage .registry-actions.rsvp-event-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:28px;align-items:stretch}
 body.theme-wedding #eventPage .registry-actions>.registry-button{box-sizing:border-box;width:100%;min-width:0;margin:0;text-align:center}
 
@@ -843,9 +842,6 @@ body.theme-wedding #eventPage .wedding-tab-page .page-actions a{box-sizing:borde
 #weddingRsvpUploadToolbar{position:fixed;inset:auto 0 0;z-index:100;box-sizing:border-box;padding:12px 24px calc(12px + env(safe-area-inset-bottom,0px));background:var(--flow-panel-background);border-top:1px solid var(--flow-panel-border)}
 #weddingRsvpUploadToolbar .wedding-upload-toolbar-content{max-width:640px;margin:0 auto}
 #rsvpEventConfirmation:has(#weddingRsvpUploadToolbar:not([hidden])){padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
-/* Party sub-page titles live in the shared header above the sub-tabs. */
-#weddingPartyAttirePanel #registryAttireSection>#registryAttireKicker,
-#weddingPartyAttirePanel #registryAttireSection>#registryAttireHeading{display:none}
 body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{margin-bottom:24px}
 .inline-text-formatting .inline-text-style{display:inline-flex;min-width:0;margin:0}
 :is(#eventPage,#weddingMediaDialog) .inline-text-formatting select{box-sizing:border-box;width:auto;max-width:180px;min-width:0;margin:0;padding:6px 8px;border:1px solid var(--border);border-radius:4px;background:var(--cream);color:var(--navy);font:400 .85rem Arial,Helvetica,sans-serif}
