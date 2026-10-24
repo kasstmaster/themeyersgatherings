@@ -1947,7 +1947,8 @@ function openRsvp({fromEntry=false}={}) {ensureAccount(() => {
   renderRsvpAttire();
   renderRsvpEventHeader();
   document.querySelector('#rsvpDialog').showModal();
-  if(SiteEditing.enabled)render();
+  // Apply saved tab ordering and custom pages on the first open for guests too.
+  render();
   RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',editing:SiteEditing.enabled});
 });}
 // Every gathering uses these same two editable text slots and the same HTML layout.
