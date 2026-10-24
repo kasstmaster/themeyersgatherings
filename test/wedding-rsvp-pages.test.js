@@ -48,7 +48,7 @@ test('Attire places its kicker and title before the shared content container',()
  assert.ok(attire.indexOf('id="registryAttireKicker"')<attire.indexOf('id="registryAffordableAttire"'));
  assert.ok(attire.indexOf('id="registryAttireHeading"')<attire.indexOf('id="registryAffordableAttire"'));
  assert.match(attire,/<div id="registryAffordableAttire" class="attire-content-group/);
- assert.equal([...attire.matchAll(/<article class="wedding-tab-content">/g)].length,2);
+ assert.equal([...attire.matchAll(/<article class="wedding-tab-content" data-attire-group=/g)].length,2);
 });
 test('moving Attire headings preserves saved edits and migration is repeatable',()=>{
  const saved={siteText:{'#registryAffordableAttire>p:nth-of-type(1)':'Edited kicker','#registryAffordableAttire>p:nth-of-type(2)':'Edited introduction','#registryAffordableAttire>p:nth-of-type(5)':'Edited closing'}};
@@ -83,4 +83,15 @@ test('party attire has one editable intro without a third container before the d
  const attire=html.slice(start,html.indexOf('id="registryAttireVideosSection"',start));
  assert.doesNotMatch(attire,/Formal attire does not have to mean an expensive outfit|We want everyone to dress up|We've gathered a few/);
  assert.match(source,/field\('#weddingPartyAttireIntroText','text',\[\['weddingPartyAttireIntro'/);
+});
+
+test('Responsibilities uses the signed-in member role and name in its header',()=>{
+ const start=source.indexOf('function weddingPartyPageHeading('),end=source.indexOf('function weddingRsvpTabReplacement(',start);
+ const nodes={'#weddingPartyKicker':{},'#weddingPartyHeading':{}};
+ const c=vm.createContext({document:{querySelector:selector=>nodes[selector]}});vm.runInContext(source.slice(start,end),c);
+ for(const member of [{name:'Casey Example',title:'Groomsman'},{name:'Jordan Example',title:'Matron of Honor'}]){
+  c.renderWeddingPartyPageHeading('duties',null,member);assert.equal(nodes['#weddingPartyKicker'].textContent,member.title);assert.equal(nodes['#weddingPartyHeading'].textContent,member.name);
+ }
+ const sub=html.match(/<nav id="matronInfoTabs"[\s\S]*?<\/nav>/)[0];assert.doesNotMatch(sub,/data-matron-tab="attire"/);assert.match(sub,/data-matron-tab="duties"[^>]*aria-selected="true">Responsibilities/);
+ assert.match(html,/<article class="wedding-tab-content" data-attire-group="ladies">/);assert.match(html,/<article class="wedding-tab-content" data-attire-group="gentlemen">/);
 });

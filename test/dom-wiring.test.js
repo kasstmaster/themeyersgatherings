@@ -288,22 +288,15 @@ test('wedding page tabs use guest-facing labels and audience-specific visibility
   assert.match(javascript, /registryAttireSection\.hidden = !showingAttirePage/);
 });
 
-test('wedding party attire retains its shared content and relocation behavior', async () => {
-  const [html, javascript] = await Promise.all([
-    readFile(new URL('../index.html', import.meta.url), 'utf8'),
-    readFile(new URL('../app.js', import.meta.url), 'utf8')
-  ]);
-
-  const pageTabs = html.match(/<nav id="weddingPartyTabs"[\s\S]*?<\/nav>/)?.[0] || '';
-  assert.ok(pageTabs.indexOf('data-wedding-tab="party"') < pageTabs.indexOf('data-wedding-tab="registry"'));
-  assert.ok(pageTabs.indexOf('data-wedding-tab="party"') < pageTabs.indexOf('data-wedding-tab="attire"'));
-  assert.match(html, /data-matron-tab="experience"[^>]*>The Perfect Experience<\/button>\s*<button[^>]*data-matron-tab="duties"[^>]*>Responsibilities<\/button>\s*<button[^>]*data-matron-tab="attire"[^>]*>Attire<\/button>/);
-  assert.match(javascript, /showingPartyAttirePage = \(showingWeddingPartyPage && selectedMatronTab === 'attire'\)/);
-  assert.match(javascript, /showingAttirePage = \(showingGuestPage && publicWeddingTab === 'attire'\) \|\| showingPartyAttirePage/);
-  assert.match(javascript, /renderWeddingPartyAttireImages\(showingPartyAttirePage\)/);
-  assert.match(javascript, /showingPartyAttirePage[\s\S]*weddingPartyAttirePanel\.append\(registryAttireSection\)/);
-  assert.match(javascript, /guestAttireAnchor\.after\(registryAttireSection\)/);
-  assert.match(html, /id="weddingPartyAttirePanel"[\s\S]*id="guestAttireAnchor"[\s\S]*id="registryAttireSection"/);
+test('party attire remains a main tab and is not duplicated as a sub-tab', async()=>{
+ const [html,javascript]=await Promise.all(['index.html','app.js'].map(file=>readFile(new URL('../'+file,import.meta.url),'utf8')));
+ const main=html.match(/<nav id="weddingPartyTabs"[\s\S]*?<\/nav>/)?.[0] || '';
+ const sub=html.match(/<nav id="matronInfoTabs"[\s\S]*?<\/nav>/)?.[0] || '';
+ assert.match(main,/data-wedding-tab="attire"/);assert.doesNotMatch(sub,/data-matron-tab="attire"/);
+ assert.match(sub,/data-matron-tab="duties"[^>]*aria-selected="true">Responsibilities/);
+ assert.match(javascript,/showingPartyAttirePage = \(hostView \|\| isWeddingPartyMember\) && publicWeddingTab === 'attire'/);
+ assert.match(javascript,/renderWeddingPartyAttireImages\(showingPartyAttirePage\)/);
+ assert.match(javascript,/guestAttireAnchor\.after\(registryAttireSection\)/);
 });
 
 test('selected wedding detail tabs use white text inside a visible tab', async () => {
@@ -318,7 +311,7 @@ test('all Wedding Party sub tabs are available to hosts and wedding party member
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /The Perfect Experience<\/button>[\s\S]*data-matron-tab="duties"[^>]*>Responsibilities<\/button>[\s\S]*data-matron-tab="attire"/);
+  assert.match(html, /The Perfect Experience<\/button>[\s\S]*data-matron-tab="duties"[^>]*>Responsibilities<\/button>/);
   assert.match(html, /id="perfectExperiencePanel"[^>]*aria-label="The Perfect Experience"/);
   assert.match(html, /id="adminPerfectExperienceContent"/);
   assert.match(javascript, /perfectExperienceContent: ''/);
@@ -636,7 +629,7 @@ test('wedding defaults match each signed-in audience', async () => {
   const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 
   assert.match(javascript, /eventId === 'wedding' && !preserveWeddingView[\s\S]*isHostView\(\) \? 'couple' : partyMember \? 'party' : 'guest'/);
-  assert.match(javascript, /selectedMatronTab = 'experience'/);
+  assert.match(javascript, /selectedMatronTab = 'duties'/);
   assert.match(javascript, /enterEvent\(events\.includes\(viewedEventId\)\?viewedEventId:events\[0\]\)/);
 });
 

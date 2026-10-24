@@ -83,3 +83,9 @@ test('retired member titles are cleared while retaining their content', () => {
   assert.ok(members.every(member => member.responsibilities === 'Keep these duties' && member.pages[0].content === 'Keep these details'));
   assert.deepEqual(normalizeMembers(members), members);
 });
+
+test('attire containers follow the requested role groups, with both for other roles',()=>{
+ for(const role of ['Groomsman','Groomsmen','Best Man','Officiant','  BEST   MAN  '])assert.deepEqual(WeddingParty.attireSections(role),['gentlemen']);
+ for(const role of ['Bridesmaid','Bridesmaids','Matron of Honor'])assert.deepEqual(WeddingParty.attireSections(role),['ladies']);
+ for(const role of ['Ushers','Usher','Other','',undefined])assert.deepEqual(WeddingParty.attireSections(role),['ladies','gentlemen']);
+});
