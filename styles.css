@@ -824,3 +824,7 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 /* Match the original blue What to Expect panel across Wedding information pages. */
 #rsvpDialog #rsvpWeddingPages :is(.rsvp-information-page,.gathering-page){background:var(--flow-inner-background);color:var(--flow-text);border:1px solid var(--flow-panel-border);border-radius:6px;padding:18px}
 #rsvpDialog #rsvpWeddingPages .rsvp-information-content,#rsvpDialog #rsvpWeddingPages .gathering-page>.bride-groom-content{background:transparent;color:var(--flow-text);border:1px solid var(--flow-panel-border);border-radius:6px;padding:var(--panel-padding)}
+
+/* The main guest Attire page contains only the dress code. */
+#rsvpDialog #registryAttireSection.guest-dress-code-only [data-party-attire-extra],
+#rsvpDialog #registryAttireSection.guest-dress-code-only #registryAttireVideosSection{display:none}
