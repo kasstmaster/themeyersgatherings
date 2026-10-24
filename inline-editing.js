@@ -220,17 +220,26 @@
       if(input.tagName==='TEXTAREA') {
         const toolbar=node('div',undefined,'inline-text-formatting');
         toolbar.setAttribute('role','toolbar');toolbar.setAttribute('aria-label','Text formatting');
-        const apply=kind=>{
+        const apply=(kind,value)=>{
           const start=input.selectionStart,end=input.selectionEnd,selected=input.value.slice(start,end);
-          const replacement=formatTextSelection(kind,selected);
+          if((kind==='font'||kind==='size')&&!selected)return;
+          const replacement=formatTextSelection(kind,selected,value);
           input.setRangeText(replacement,start,end,'select');
           input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();
+          input.setSelectionRange(start,start+replacement.length);
         };
         for(const [kind,label] of [['bold','Bold'],['italic','Italic'],['code','Code'],['bullets','Bullets'],['numbers','Numbered list'],['link','Link']]) {
           const control=node('button',label,'inline-edit-control');control.type='button';
           control.setAttribute('aria-label',`Format ${label.toLowerCase()}`);
           control.addEventListener('mousedown',event=>event.preventDefault());
           control.addEventListener('click',()=>apply(kind));toolbar.append(control);
+        }
+        for(const [kind,label,values] of [['font','Font',TextStyles.fonts],['size','Size',TextStyles.sizes]]) {
+          const wrapper=node('label',undefined,'inline-text-style');
+          const select=node('select');select.setAttribute('aria-label',kind==='font'?'Font family':'Font size in pixels');
+          const placeholder=node('option',label);placeholder.value='';placeholder.disabled=true;placeholder.selected=true;select.append(placeholder);
+          for(const value of values){const option=node('option',String(value));option.value=String(value);select.append(option);}
+          select.addEventListener('change',()=>apply(kind,select.value));wrapper.append(select);toolbar.append(wrapper);
         }
         input.addEventListener('keydown',event=>{
           if((event.ctrlKey||event.metaKey) && ['b','i'].includes(event.key.toLowerCase())) {
@@ -270,7 +279,8 @@
     });
     (editors.find(editor=>editor.tagName==='TEXTAREA') || editors[0])?.focus();
   }
-  function formatTextSelection(kind,selected) {
+  function formatTextSelection(kind,selected,value) {
+    if(kind==='font'||kind==='size')return TextStyles.mark(selected,{[kind]:value});
     if(kind==='bullets'||kind==='numbers')return (selected||'List item').split('\n').map((line,index)=>`${kind==='bullets'?'-':`${index+1}.`} ${line}`).join('\n');
     if(kind==='link')return `[${selected||'Link text'}](https://example.com)`;
     const marker={bold:'**',italic:'*',code:'`'}[kind];

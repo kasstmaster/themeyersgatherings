@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-const [app,editing]=await Promise.all(['app.js','inline-editing.js'].map(file=>readFile(new URL('../'+file,import.meta.url),'utf8')));
+const [app,editing,styles]=await Promise.all(['app.js','inline-editing.js','text-styles.js'].map(file=>readFile(new URL('../'+file,import.meta.url),'utf8')));
 const context=vm.createContext({expandEditableTextVariables:value=>value,escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),escapeAttribute:value=>value});
+vm.runInContext(styles,context);
 vm.runInContext(app.slice(app.indexOf('function safeEditableLink('),app.indexOf('function editableTextVariables()')),context);
 vm.runInContext(editing,context);
 const format=(value,options)=>context.formatEditableText(value,options);
@@ -83,4 +84,30 @@ test('one formatter handles both page blocks and inline text without changing bl
  assert.equal(format(copy,{inline:true}),'<strong>Time</strong><br><em>Street</em><br><em>City</em><br><br>Details');
  assert.equal(context.formatWeddingPartyDescription(copy),format(copy));
  assert.doesNotMatch(format('<script>',{inline:true}),/<script>/);
+});
+
+test('selected fonts and sizes share the safe renderer with Markdown and links',()=>{
+ const style=(text,values)=>context.TextStyles.mark(text,values);
+ assert.equal(format(style('Hello',{font:'Georgia'})),"<p><span style=\"font-family:'Georgia'\">Hello</span></p>");
+ assert.match(format(style('Hello',{size:'24'})),/font-size:calc\(24px \* var\(--fitted-text-scale,1\)\)/);
+ const nested=style(style('Word',{font:'Times New Roman'}),{size:20});
+ assert.match(format('**Before '+nested+' after**'),/<strong>Before <span[^>]+><span[^>]+>Word<\/span><\/span> after<\/strong>/);
+ assert.match(format('[Read '+style('this',{font:'Verdana'})+'](https://example.com)'),/<a href="https:\/\/example.com">Read <span[^>]+>this<\/span><\/a>/);
+ assert.match(format(style('[Link](https://example.com)',{font:'Arial'})),/<span[^>]+><a href="https:\/\/example.com">Link<\/a><\/span>/);
+ assert.match(format(style('First\n\nSecond',{font:'Georgia',size:18})),/<\/span><\/p><br><p><span/);
+ assert.equal(format('`{{style:font=Georgia}}literal{{/style}}`'),'<p><code>{{style:font=Georgia}}literal{{/style}}</code></p>');
+});
+test('font formatting refuses unsafe CSS and cannot inject markup into links',()=>{
+ for(const values of [{font:'Arial\" onmouseover=evil'},{size:'20;background:red'},{size:200},{color:'red'}])assert.equal(context.TextStyles.mark('Keep',values),'Keep');
+ const input='{{style:font=Arial\" onmouseover=evil}}Text{{/style}}';
+ assert.doesNotMatch(format(input),/<span|onmouseover="evil/);
+ assert.doesNotMatch(format('[Link](https://example.com/{{style:size=20}}x{{/style}})'),/<span/);
+ assert.equal(format('{{style:font=Georgia}}Text'),"<p><span style=\"font-family:'Georgia'\">Text</span></p>");
+});
+
+test('styled map addresses keep formatting out of their URL and title attributes',()=>{
+ const styled=context.TextStyles.mark('Main Street',{font:'Georgia',size:20});
+ const result=format('<123 '+styled+'>');
+ assert.match(result,/href="geo:0,0\?q=123%20Main%20Street" title="Open 123 Main Street in your maps app"/);
+ assert.match(result,/>123 <span[^>]+>Main Street<\/span><\/a>/);
 });

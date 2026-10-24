@@ -595,7 +595,7 @@ function formatEditableText(value, {inline=false} = {}) {
     .replace(/_([^_]+?)_/g, '<em>$1</em>');
   const formatMarkdown = text => text.split(/(`[^`]+`)/g).map(part=>part.length>1 && part.startsWith('`') && part.endsWith('`')
     ? `<code>${escapeHtml(part.slice(1,-1))}</code>` : formatEmphasis(part)).join('');
-  const formatInline = line => {
+  const formatPlainInline = (line,{plain=value=>value}={}) => {
     const parts = [];
     let cursor = 0;
     for (const match of line.matchAll(/\[([^\]\r\n]+)\]\(([^)\r\n]+)\)|<([^<>\r\n]+)>|`([^`\r\n]+)`/g)) {
@@ -609,7 +609,8 @@ function formatEditableText(value, {inline=false} = {}) {
           : formatMarkdown(match[0]));
       } else {
         const address = match[3].trim();
-        if (address) parts.push(`<a class="map-link" href="geo:0,0?q=${encodeURIComponent(address)}" title="Open ${escapeAttribute(address)} in your maps app">${escapeHtml(address)}</a>`);
+        const plainAddress=plain(address);
+        if (address) parts.push(`<a class="map-link" href="geo:0,0?q=${encodeURIComponent(plainAddress)}" title="Open ${escapeAttribute(plainAddress)} in your maps app">${formatMarkdown(address)}</a>`);
         else parts.push(formatMarkdown(match[0]));
       }
       cursor = match.index + match[0].length;
@@ -617,6 +618,7 @@ function formatEditableText(value, {inline=false} = {}) {
     parts.push(formatMarkdown(line.slice(cursor)));
     return parts.join('');
   };
+  const formatInline = line => TextStyles.render(line,formatPlainInline);
   const output = [];
   let openList = '';
   const closeList = () => {
@@ -1328,7 +1330,7 @@ function renderWeddingGathering(hostView) {
   }
   registryAttireSection.classList.toggle('wedding-party-attire-section', showingPartyAttirePage);
   registryAttireSection.classList.toggle('guest-dress-code-only',!showingPartyAttirePage);
-  document.querySelector('#weddingPartyAttireIntro').hidden=!showingPartyAttirePage;
+  document.querySelector('#weddingPartyAttireIntro').hidden=!showingPartyAttirePage || (!SiteEditing.enabled && !state.weddingPartyAttireIntro?.trim());
   document.querySelector('#weddingPartyAttireIntroText').innerHTML=formatEditableText(state.weddingPartyAttireIntro || '');
   registryAttireSection.hidden = !showingAttirePage;
   renderWeddingPartyAttireImages(showingPartyAttirePage);

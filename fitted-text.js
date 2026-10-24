@@ -5,6 +5,7 @@
   function fit(element) {
     if(element.closest?.('.inline-editor,.inline-edit-tools'))return;
     element.style.removeProperty('font-size');
+    element.style.removeProperty('--fitted-text-scale');
     const width=element.clientWidth;
     if(!width || !element.textContent.trim())return;
     const maximum=parseFloat(getComputedStyle(element).fontSize);
@@ -14,9 +15,11 @@
     for(let pass=0;pass<12 && high-low>.05;pass++) {
       const size=(low+high)/2;
       element.style.fontSize=`${size}px`;
+      element.style.setProperty('--fitted-text-scale',String(size/maximum));
       if(element.scrollWidth<=width)low=size;else high=size;
     }
     element.style.fontSize=`${low}px`;
+    element.style.setProperty('--fitted-text-scale',String(low/maximum));
   }
   const resize=typeof ResizeObserver==='function'?new ResizeObserver(entries=>entries.forEach(entry=>fit(entry.target))):null;
   function fitAll() {

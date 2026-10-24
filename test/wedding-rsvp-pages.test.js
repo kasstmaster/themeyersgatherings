@@ -75,11 +75,11 @@ test('Wedding Party page headings follow attire, duties, experience, and custom 
  ]){c.renderWeddingPartyPageHeading(tab,page);assert.equal(nodes['#weddingPartyKicker'].textContent,kicker);assert.equal(nodes['#weddingPartyHeading'].textContent,title);}
 });
 
-test('party attire has a separate editable intro panel before the dress-code panels',()=>{
+test('party attire has one editable intro without a third container before the dress-code panels',()=>{
  const start=html.indexOf('id="registryAffordableAttire"');
  const intro=html.indexOf('id="weddingPartyAttireIntro"',start),groups=html.indexOf('id="weddingAttireGuidance"',start);
  assert.ok(intro>start&&intro<groups);
- assert.match(html.slice(intro,groups),/class="wedding-tab-content"[\s\S]*id="weddingPartyAttireIntroText"/);
+ assert.match(html.slice(intro,groups),/class="party-attire-intro"[\s\S]*id="weddingPartyAttireIntroText"/);
  const attire=html.slice(start,html.indexOf('id="registryAttireVideosSection"',start));
  assert.doesNotMatch(attire,/Formal attire does not have to mean an expensive outfit|We want everyone to dress up|We've gathered a few/);
  assert.match(source,/field\('#weddingPartyAttireIntroText','text',\[\['weddingPartyAttireIntro'/);
