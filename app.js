@@ -1379,6 +1379,7 @@ function renderGatheringPages(features,hostView) {
   document.querySelector('#copyMenuButton').hidden=state.items.length===0;
 }
 function render() {
+  PageHeadings.restore();
   if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}
   SiteEditing.beforeRender();
   syncGatheringDefinitions(appState.events);
@@ -1459,6 +1460,7 @@ function render() {
   // Static text editors can restore their original copy during a redraw.
   // Reapply the active RSVP step's heading without restarting the journey.
   RsvpFlow.refresh();
+  PageHeadings.sync();
   PageActions.sync();
 }
 
