@@ -1471,7 +1471,7 @@ function render() {
   PageActions.sync();
   renderWeddingPageToolbar();
   ElementAppearance.render({state,eventId:viewedEventId,host:hostView,enabled:SiteEditing.enabled,
-    save:()=>saveState({refresh:false}),upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url});
+    save:()=>saveState({refresh:false}),format:(value,options)=>formatEditableText(value,options),upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url});
 }
 
 function renderInlineEditing() {
@@ -1506,10 +1506,11 @@ function renderInlineEditing() {
         const page=personalPages.find(page=>page.key===tab.dataset.memberPage);
         if(page)tab.textContent=isHostView()?`${page.memberName} — ${page.title}`:page.title;
       });
-      document.querySelectorAll('[role="tab"][aria-controls^="custom-page-"]').forEach(tab => {
+      document.querySelectorAll('[aria-controls^="custom-page-"]').forEach(tab => {
         const page=state.sitePages?.find(page=>`custom-page-${page.id}`===tab.getAttribute('aria-controls'));
         if(page)tab.textContent=page.title;
       });
+      renderWeddingPageToolbar();
     }, format: (value,options) => formatEditableText(value,options), escape: escapeHtml });
   SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
   const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,

@@ -125,7 +125,7 @@
     return parts.join(' > ') || 'body';
   }
   function scanInline(element){
-    if(!element.isConnected||!element.style||element.closest?.('.appearance-editor,.appearance-trigger')||globalThis.ElementAppearance?.manages(element))return;
+    if(!element.isConnected||!element.style||element.closest?.('.appearance-editor,.appearance-trigger,.text-selection-color,.inline-text-appearance-style')||globalThis.ElementAppearance?.manages(element))return;
     const previous=inlineValues.get(element)||new Map(),selector=elementPath(element);
     for(const property of Array.from(element.style)){
       if(property.startsWith('--'))continue;

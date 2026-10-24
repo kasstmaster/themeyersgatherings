@@ -2,9 +2,10 @@
 (() => {
   let context,editor,preview=null;
   const applied=new Map();
+  const styledText=new Map();
   const controls=[];
   const properties=['background-color','background-image','background-size','background-position','background-repeat','color','border-color','border-width','border-style','border-radius'];
-  const excluded='.inline-overlay-layer,.inline-editor,.inline-edit-tools,.inline-direct-input,.inline-portal-editor,.appearance-editor,.appearance-trigger,.inline-appearance-tools,script,style,link,meta';
+  const excluded='.inline-overlay-layer,.inline-editor,.inline-text-editor,.inline-text-formatting,.inline-edit-tools,.inline-direct-input,.inline-portal-editor,.inline-meal-editor,.appearance-editor,.appearance-trigger,.inline-appearance-tools,script,style,link,meta';
   function label(element){
     if(element===document.body)return 'Page background';
     if(element.tagName.toLowerCase()==='svg')return 'Icon';
@@ -17,9 +18,9 @@
     for(let current=element;current && current!==document.body;current=current.parentElement){
       if(current.id){parts.unshift(`#${CSS.escape(current.id)}`);break;}
       if(current.matches('.page-export-options')){parts.unshift('.page-export-options');break;}
-      const identity=['data-wedding-tab','data-gathering-tab','data-matron-tab','data-media-tab','data-member-page','data-attire-group','data-switch-event','data-enter-event','data-claim','aria-controls'].find(key=>current.hasAttribute(key));
+      const identity=['data-wedding-tab','data-gathering-tab','data-matron-tab','data-media-tab','data-bride-groom-page','data-member-page','data-attire-group','data-switch-event','data-enter-event','data-claim','aria-controls'].find(key=>current.hasAttribute(key));
       if(identity){parts.unshift(`${current.tagName.toLowerCase()}[${identity}="${CSS.escape(current.getAttribute(identity))}"]`);continue;}
-      const siblings=[...current.parentElement.children].filter(item=>item.tagName===current.tagName && !item.matches('.inline-overlay-layer,.appearance-trigger,.appearance-editor'));
+      const siblings=[...current.parentElement.querySelectorAll(':scope>*')].filter(item=>item.tagName===current.tagName && !item.matches('.inline-overlay-layer,.appearance-trigger,.appearance-editor'));
       parts.unshift(`${current.tagName.toLowerCase()}:nth-of-type(${siblings.indexOf(current)+1})`);
     }
     return parts.join('>');
@@ -38,7 +39,8 @@
     if(value==='')return '';
     try{const url=new URL(value,document.baseURI);return ['http:','https:'].includes(url.protocol)?url.href:null;}catch{return null;}
   }
-  function restore(){
+  function restore(includeText=true){
+    if(includeText){for(const [part,record] of styledText)if(part.innerHTML===record.applied)part.innerHTML=record.html;styledText.clear();}
     for(const [element,values] of applied){for(const [property,{value,priority}] of values){if(value)element.style.setProperty(property,value,priority);else element.style.removeProperty(property);}}
     applied.clear();
   }
@@ -59,24 +61,59 @@
     if(Number.isFinite(values.borderWidth) && values.borderWidth>=0 && values.borderWidth<=24){set(element,'border-width',values.borderWidth+'px');set(element,'border-style','solid');}
     if(Number.isFinite(values.borderRadius) && values.borderRadius>=0 && values.borderRadius<=100)set(element,'border-radius',values.borderRadius+'px');
   }
+  function textParts(target){
+    if(target.matches('label') && target.querySelector('input,select,textarea')){
+      for(const node of [...target.childNodes])if(node.nodeType===3 && node.textContent.trim()){const span=document.createElement('span');span.className='element-text-fragment';node.replaceWith(span);span.append(node);}
+      return [...target.querySelectorAll(':scope>span')];
+    }
+    if(target.matches('.summary-item,.summary-stat'))return [...target.querySelectorAll(':scope>strong,:scope>span')];
+    if(target.matches('.counter-row'))return [...target.querySelectorAll(':scope>div>strong,:scope>div>span,:scope>div>output')];
+    if(target.matches('.event-selection-choices>button'))return [...target.querySelectorAll('.event-selection-label>span,.event-selection-label>small')];
+    if(target.matches('[role="tab"],[data-wedding-tab],[data-switch-event],[data-page-export],.toolbar-upload-action') && target.querySelector(':scope>span'))return [target.querySelector(':scope>span:last-of-type')];
+    if(target.matches('button,a') && target.querySelector(':scope>svg,:scope>img'))return [...target.querySelectorAll(':scope>span')];
+    return [target];
+  }
+  function plainText(part){const copy=part.cloneNode(true);copy.querySelectorAll('br').forEach(line=>line.replaceWith('\n'));return copy.textContent;}
+  function isMultiline(target){const parts=textParts(target);return parts.length>1 || parts.some(part=>plainText(part).includes('\n'));}
+  function textValue(target){
+    const saved=context?.state.textAppearance?.[selector(target)];
+    return textParts(target).map((part,index)=>{const value=plainText(part);const entry=saved?.parts?.[index];return entry && typeof entry.markup==='string'?TextStyles.rebase(entry.markup,entry.source,entry.overrideText??value):value;}).join('\n');
+  }
+  function storeText(target,markup,source,override=false){
+    if(!context?.host)return;
+    const parts=textParts(target),lines=parts.length===1?[String(markup)]:String(markup).split('\n'),previous=context.state.textAppearance?.[selector(target)];
+    context.state.textAppearance??={};
+    context.state.textAppearance[selector(target)]={parts:parts.map((part,index)=>{const line=lines[index] || '';if(override){const holder=document.createElement('span');holder.innerHTML=context.format(line,{inline:true});return {source:plainText(holder),markup:line,overrideText:plainText(holder),original:previous?.parts?.[index]?.original??plainText(part)};}return {source:source??plainText(part),markup:line};})};
+  }
+  function applyText(){
+    if(!context?.format)return;
+    const desired=new Map();
+    for(const [path,entry] of Object.entries(context.state.textAppearance || {}))if(entry && Array.isArray(entry.parts))for(const target of find(path)){
+      textParts(target).forEach((part,index)=>{const saved=entry.parts?.[index];if(!saved || typeof saved.markup!=='string' || typeof saved.source!=='string')return;const markup=TextStyles.rebase(saved.markup,saved.source,saved.overrideText??plainText(part));desired.set(part,context.format(markup,{inline:true}));});
+    }
+    for(const [part,html] of desired){
+      const record=styledText.get(part);
+      if(!record || part.innerHTML!==record.applied)styledText.set(part,{html:part.innerHTML,applied:html});else record.applied=html;
+      if(part.innerHTML!==html)part.innerHTML=html;
+    }
+  }
   function apply(extra=null){
-    preview=extra;restore();
+    preview=extra;restore(false);
     for(const [path,values] of Object.entries(context?.state.elementAppearance || {}).sort(([a],[b])=>a.length-b.length))for(const element of find(path))paint(element,values);
     if(extra)for(const element of find(extra.path))paint(element,extra.values);
+    applyText();
   }
   function open(target){
     if(!context?.host || !context.enabled || !target)return;
     editor?.close();
-    const eventId=context.eventId,ancestors=[];
-    for(let element=target;element && element!==document.documentElement;element=element.parentElement)if(!element.matches(excluded))ancestors.push(element);
+    const eventId=context.eventId,path=selector(target);
     const dialog=document.createElement('dialog');editor=dialog;dialog.className='appearance-editor';dialog.setAttribute('aria-label','Edit appearance');
-    dialog.innerHTML='<form><h2>Edit appearance</h2><label>Element<select data-appearance-element></select></label><div data-appearance-fields></div><p role="status" aria-live="polite"></p><div class="appearance-actions"><button type="submit">Save appearance</button><button type="button" data-reset>Reset this element</button><button type="button" data-cancel>Cancel</button></div></form>';
-    const form=dialog.querySelector('form'),choices=dialog.querySelector('select'),fields=dialog.querySelector('[data-appearance-fields]'),status=dialog.querySelector('[role="status"]');
-    for(const element of target.querySelectorAll('*'))if(eligible(element) && !element.matches('svg,path,source,option') && !ancestors.includes(element))ancestors.push(element);
-    const paths=ancestors.map(selector);ancestors.forEach((element,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=label(element);choices.append(option);});
-    let path,draft,changed=new Set(),file;
+    dialog.innerHTML='<form><h2>Edit appearance</h2><p data-appearance-name></p><div data-appearance-fields></div><p role="status" aria-live="polite"></p><div class="appearance-actions"><button type="submit">Save appearance</button><button type="button" data-reset>Reset this element</button><button type="button" data-cancel>Cancel</button></div></form>';
+    const form=dialog.querySelector('form'),fields=dialog.querySelector('[data-appearance-fields]'),status=dialog.querySelector('[role="status"]');
+    dialog.querySelector('[data-appearance-name]').textContent=label(target);
+    let draft,changed=new Set(),file;
     function populate(){
-      apply();path=paths[Number(choices.value)];const element=find(path)[0];if(!element)return;
+      apply();const element=find(path)[0];if(!element)return;
       draft={...context.state.elementAppearance?.[path]};changed=new Set();file=null;fields.replaceChildren();status.textContent='';
       const computed=getComputedStyle(element);
       for(const [key,title,property,alpha] of [['backgroundColor','Background','background-color','backgroundAlpha'],['textColor','Text','color','textAlpha'],['borderColor','Border','border-color','borderAlpha']]){
@@ -99,9 +136,8 @@
       fit.addEventListener('change',()=>{draft.imageFit=fit.value;draft.backgroundImage=url.value.trim();changed.add('imageFit');changed.add('backgroundImage');apply({path,values:draft});});
       background.querySelector('[data-remove-image]').addEventListener('click',()=>{file=null;upload.value='';url.value='';status.textContent='';draft.backgroundImage='';changed.add('backgroundImage');apply({path,values:draft});});fields.append(background);
     }
-    choices.addEventListener('change',populate);
     dialog.querySelector('[data-cancel]').addEventListener('click',()=>dialog.close());
-    dialog.querySelector('[data-reset]').addEventListener('click',()=>{if(context.eventId!==eventId)return;delete context.state.elementAppearance?.[path];apply();context.save();dialog.close();});
+    dialog.querySelector('[data-reset]').addEventListener('click',()=>{if(context.eventId!==eventId)return;delete context.state.elementAppearance?.[path];const saved=context.state.textAppearance?.[path];textParts(target).forEach((part,index)=>{const entry=saved?.parts?.[index];if(entry)part.innerHTML=context.format(entry.overrideText!==undefined?entry.original:plainText(part),{inline:true});});delete context.state.textAppearance?.[path];apply();context.save();dialog.close();});
     form.addEventListener('submit',async event=>{
       event.preventDefault();if(!context.host || context.eventId!==eventId || !form.reportValidity())return;
       const button=form.querySelector('[type="submit"]');button.disabled=true;status.textContent='';
@@ -122,14 +158,25 @@
     document.body.classList.toggle('element-appearance-editing',ctx.host && ctx.enabled);
     refreshControls();
   }
+  function isSurface(target,root){
+    if(target===root || target.matches('img,video,input,textarea,select,table,figure'))return true;
+    const style=getComputedStyle(target);
+    return style.backgroundImage!=='none' || colorParts(style.backgroundColor).alpha>0 || ['Top','Right','Bottom','Left'].some(side=>parseFloat(style['border'+side+'Width'])>0 && style['border'+side+'Style']!=='none');
+  }
   function refreshControls(){
     while(controls.length)controls.pop()?.();
     if(!context?.host || !context.enabled)return;
     const root=[...document.querySelectorAll('dialog[open]')].at(-1) || document.querySelector('#eventPage:not([hidden])') || document.body;
-    const targets=[root,...root.querySelectorAll('*')].filter(target=>eligible(target) && !target.matches('svg,path,source,option,br,hr') && !target.closest('dialog:not([open])') && target.getClientRects().length);
-    for(const target of targets)controls.push(SiteEditing.appearance(target,()=>open(target),label(target)));
+    const targets=[root,...root.querySelectorAll('*')].filter(target=>eligible(target) && !target.closest('[aria-hidden="true"]') && !target.matches('svg,path,source,option,br,hr') && !(target.matches('span,strong,em,small') && !target.textContent.trim()) && !target.closest('dialog:not([open])') && target.getClientRects().length);
+    const groups=targets.filter(target=>target.matches('.summary-item,.summary-stat,.counter-row,button,label:has(input,select,textarea),[role="tab"],.event-selection-choices>button'));
+    for(const target of groups)if(!SiteEditing.hasEditor(target) && !SiteEditing.textOwner(target.parentElement))SiteEditing.textElement(target,label(target));
+    for(const target of targets){
+      if(SiteEditing.hasEditor(target) || SiteEditing.textOwner(target))continue;
+      if(target.matches('h1,h2,h3,h4,h5,h6,p,li,time,legend,address,span,strong,em,small,a,label,output,b,i,code') && target.textContent.trim())SiteEditing.textElement(target,label(target));
+      else if(isSurface(target,root))controls.push(SiteEditing.appearance(target,()=>open(target),label(target)));
+    }
     SiteEditing.positionOverlays();
   }
   if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply(preview);if(records.some(record=>record.type==='attributes'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
-  globalThis.ElementAppearance={render,restore,open,refreshControls,selector,colorParts,imageUrl,properties,manages:element=>applied.has(element)};
+  globalThis.ElementAppearance={render,restore,open,refreshControls,selector,colorParts,imageUrl,properties,textValue,storeText,applyText,isMultiline,manages:element=>applied.has(element)};
 })();
