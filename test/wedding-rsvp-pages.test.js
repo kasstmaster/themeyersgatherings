@@ -61,3 +61,26 @@ test('moving Attire headings preserves saved edits and migration is repeatable',
  assert.equal(saved.siteText['#registryAttireClosing'],'Edited closing');
  assert.ok(!Object.hasOwn(saved.siteText,'#registryAffordableAttire>p:nth-of-type(1)'));
 });
+
+test('Wedding Party page headings follow attire, duties, experience, and custom titles',()=>{
+ const start=source.indexOf('function weddingPartyPageHeading('),end=source.indexOf('function weddingRsvpTabReplacement(',start);
+ const nodes={'#weddingPartyKicker':{},'#weddingPartyHeading':{}};
+ const c=vm.createContext({document:{querySelector:selector=>nodes[selector]}});vm.runInContext(source.slice(start,end),c);
+ for(const [tab,page,kicker,title] of [
+  ['attire',null,'Dress for the occasion','FORMAL ATTIRE REQUIRED'],
+  ['duties',null,'The people by our side','Your Responsibilities'],
+  ['experience',null,'The people by our side','The Perfect Experience'],
+  ['custom',{title:'Travel Plans'},'The people by our side','Travel Plans'],
+  ['member-page',{title:'Personal Schedule'},'The people by our side','Personal Schedule']
+ ]){c.renderWeddingPartyPageHeading(tab,page);assert.equal(nodes['#weddingPartyKicker'].textContent,kicker);assert.equal(nodes['#weddingPartyHeading'].textContent,title);}
+});
+
+test('party attire has a separate editable intro panel before the dress-code panels',()=>{
+ const start=html.indexOf('id="registryAffordableAttire"');
+ const intro=html.indexOf('id="weddingPartyAttireIntro"',start),groups=html.indexOf('id="weddingAttireGuidance"',start);
+ assert.ok(intro>start&&intro<groups);
+ assert.match(html.slice(intro,groups),/class="wedding-tab-content"[\s\S]*id="weddingPartyAttireIntroText"/);
+ const attire=html.slice(start,html.indexOf('id="registryAttireVideosSection"',start));
+ assert.doesNotMatch(attire,/Formal attire does not have to mean an expensive outfit|We want everyone to dress up|We've gathered a few/);
+ assert.match(source,/field\('#weddingPartyAttireIntroText','text',\[\['weddingPartyAttireIntro'/);
+});
