@@ -21,14 +21,15 @@ test('private Wedding pages remain restricted after public pages move into RSVP'
  assert.equal(visibility(true,false,'guest').result.showingBrideGroomPage,true);
  assert.equal(visibility(false,true,'party').result.showingWeddingPartyPage,true);
 });
-test('public Wedding content and Upload Photos follow RSVP buttons; private pages stay in main',()=>{
+test('public Wedding pages follow RSVP buttons and uploads use a first-page toolbar; private pages stay in main',()=>{
  const rsvp=html.slice(html.indexOf('<section id="rsvpEventConfirmation"'),html.indexOf('<section id="rsvpAttire"'));
  for(const id of ['weddingPartyTabs','guestInfoTabs','registryAttireSection','whatToExpectSection','registrySection','weddingPartySection'])assert.ok(rsvp.includes(`id="${id}"`),id);
  const start=html.indexOf('<main',html.indexOf('id="eventPage"'));
  const main=html.slice(start,html.indexOf('</main>',start));
  for(const id of ['weddingHostTabs','brideGroomSection','weddingTimelineSection']){assert.ok(main.includes(`id="${id}"`));assert.ok(!rsvp.includes(`id="${id}"`));}
  assert.ok(rsvp.indexOf('id="uploadPhotosButton"')>rsvp.indexOf('id="rsvpWrongEvent"'));
- assert.ok(rsvp.indexOf('id="uploadPhotosButton"')<rsvp.indexOf('id="rsvpWeddingPages"'));
+ assert.ok(rsvp.indexOf('id="weddingRsvpUploadToolbar"')>rsvp.indexOf('id="rsvpWeddingPages"'));
+ assert.match(rsvp,/<div id="weddingRsvpUploadToolbar"[^>]*role="toolbar"[^>]*hidden>[\s\S]*id="uploadPhotosButton"/);
  assert.equal(visibility(false,false,'guest','christmas').nodes['#rsvpWeddingPages'].hidden,true);
 });
 
