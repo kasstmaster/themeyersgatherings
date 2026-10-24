@@ -820,3 +820,7 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 #rsvpDialog #rsvpWeddingPages .rsvp-information-content .affordable-attire-guidance article{margin:0 0 24px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
 #rsvpDialog #rsvpWeddingPages .rsvp-information-content .attire-shop-links{display:block}
 #rsvpDialog #rsvpWeddingPages .rsvp-information-content .attire-shop-links span{display:inline;margin:0 7px}
+
+/* Match the original blue What to Expect panel across Wedding information pages. */
+#rsvpDialog #rsvpWeddingPages :is(.rsvp-information-page,.gathering-page){background:var(--flow-inner-background);color:var(--flow-text);border:1px solid var(--flow-panel-border);border-radius:6px;padding:18px}
+#rsvpDialog #rsvpWeddingPages .rsvp-information-content,#rsvpDialog #rsvpWeddingPages .gathering-page>.bride-groom-content{background:transparent;color:var(--flow-text);border:1px solid var(--flow-panel-border);border-radius:6px;padding:var(--panel-padding)}
