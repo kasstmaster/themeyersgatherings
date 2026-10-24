@@ -848,3 +848,7 @@ body.theme-wedding #eventPage .wedding-tab-page .page-actions a{box-sizing:borde
 body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{margin-bottom:24px}
 .inline-text-formatting .inline-text-style{display:inline-flex;min-width:0;margin:0}
 :is(#eventPage,#weddingMediaDialog) .inline-text-formatting select{box-sizing:border-box;width:auto;max-width:180px;min-width:0;margin:0;padding:6px 8px;border:1px solid var(--border);border-radius:4px;background:var(--cream);color:var(--navy);font:400 .85rem Arial,Helvetica,sans-serif}
+
+/* Main page headings sit above tabs; page content still meets the tabs below. */
+#eventPage .tab-page-heading{margin:24px auto 0}
+#eventPage .tab-page-heading + .wedding-party-tabs{margin-top:0}
