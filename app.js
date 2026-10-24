@@ -1316,6 +1316,7 @@ function renderWeddingGathering(hostView) {
     guestAttireAnchor.after(registryAttireSection);
   }
   registryAttireSection.classList.toggle('wedding-party-attire-section', showingPartyAttirePage);
+  registryAttireSection.classList.toggle('guest-dress-code-only',!showingPartyAttirePage);
   registryAttireSection.hidden = !showingAttirePage;
   renderWeddingPartyAttireImages(showingPartyAttirePage);
   if (isWedding) renderAttireVideoCollection('#registryAttireVideosSection', '#registryAttireVideos');
