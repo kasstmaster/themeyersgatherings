@@ -94,7 +94,7 @@
   }
   function button(text, action, parent, label = text) {
     const isEdit = /^Edit(?: |$)/.test(text);
-    const control = node('button', isEdit ? 'Edit' : text, 'inline-edit-control');
+    const control = node('button', isEdit && text!=='Edit tab names' ? 'Edit' : text, 'inline-edit-control');
     if (isEdit) control.classList.add('inline-edit-action');
     control.type = 'button'; control.setAttribute('aria-label', label);
     control.addEventListener('click', event => {
@@ -369,6 +369,8 @@
     const buttons = [...nav.querySelectorAll(':scope > [role="tab"]')];
     const tabKeys = new Map();
     const moveControls = [];
+    const titleFields = [];
+    const titleSavers = [];
     const visibleTabs = () => [...nav.querySelectorAll(':scope > [role="tab"]')].filter(tab => !tab.hidden);
     function moveControlsFor(tab, tools) {
       for (const [direction, arrow, label] of [[-1, '←', 'left'], [1, '→', 'right']]) {
@@ -425,14 +427,19 @@
       }
       if (!tab.hidden && tab.getAttribute('aria-selected') === 'true') active = true;
       if (enabled && context.host && !tab.hidden) {
+        const rename = title => {
+          if (config.rename) config.rename(tab, title);
+          else { state.siteTabTitles ??= {}; state.siteTabTitles[key] = title; }
+        };
+        titleFields.push({label:tab.textContent,value:tab.textContent,required:true});
+        titleSavers.push(rename);
         const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
         const anchor=tab.getClientRects().length?tab:nav.nextElementSibling;
         if(anchor)overlay(tools,anchor,'above');
         moveControlsFor(tab, tools);
         button('Edit title', () => {
           editTitle(tab, anchor, tab.textContent, title => {
-            if (config.rename) config.rename(tab, title);
-            else { state.siteTabTitles ??= {}; state.siteTabTitles[key] = title; }
+            rename(title);
           });
         }, tools);
         button('×', () => {
@@ -459,6 +466,8 @@
       nav.append(tab); cleanup.push(() => tab.remove());
       tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh(); });
       if (enabled && context.host) {
+        titleFields.push({label:page.title,value:page.title,required:true});
+        titleSavers.push(title => { page.title=title; });
         const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
         overlay(tools,tab,'above');
         moveControlsFor(tab, tools);
@@ -489,6 +498,7 @@
     config.onSelect?.(selected || null);
     const displayedTabs = visibleTabs();
     moveControls.forEach(({tab, direction, control}) => { control.disabled = !displayedTabs[displayedTabs.indexOf(tab) + direction]; });
+    if(titleFields.length)field(nav,'tab names',titleFields,values=>values.forEach((title,index)=>titleSavers[index](title.trim())),{key:`${nav.id}:titles`,placement:'inline'});
     positionOverlays();
     if (enabled && context.host) {
       const addTools=node('span',undefined,'inline-tab-tools');

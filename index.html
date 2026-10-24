@@ -257,7 +257,7 @@
           <p id="weddingMediaUploadNotice" class="wedding-upload-intro"><em>Keep this page open until uploading finishes.</em></p>
           <div id="dropboxHostControls" hidden><button id="dropboxConnect" class="primary-button" type="button">Connect Dropbox</button></div>
           <p id="dropboxConnectionStatus" role="status" aria-live="polite"></p>
-          <button id="dropboxCheckConnection" class="primary-button" type="button">Check connection</button>
+          <button id="dropboxCheckConnection" class="primary-button" type="button" hidden>Check connection</button>
           <div id="dropboxInlineUpload" hidden>
             <label for="dropboxFiles">Choose photos and videos</label>
             <div class="dropbox-file-row">
@@ -267,10 +267,13 @@
             <p id="dropboxUploadStatus" role="status" aria-live="polite"></p>
           </div>
           <h3>OR</h3>
-          <label for="weddingMediaLink">Dropbox, Google Photos, or another photo-sharing link</label>
-          <input id="weddingMediaLink" type="url" placeholder="https://…">
-          <button id="weddingMediaSaveLink" class="primary-button" type="button">Save sharing link</button>
-          <p id="weddingMediaLinkStatus" role="status" aria-live="polite"></p>
+          <button id="weddingMediaShareLink" class="primary-button" type="button" aria-expanded="false" aria-controls="weddingMediaLinkForm">Share Dropbox Link</button>
+          <div id="weddingMediaLinkForm" hidden>
+            <label for="weddingMediaLink">Dropbox sharing link</label>
+            <input id="weddingMediaLink" type="url" placeholder="https://…">
+            <button id="weddingMediaSaveLink" class="primary-button" type="button">Share</button>
+            <p id="weddingMediaLinkStatus" role="status" aria-live="polite"></p>
+          </div>
         </section>
         <section id="weddingMediaView" class="wedding-tab-content perfect-experience-panel flow-panel" aria-label="Your wedding photos and videos" hidden>
           <button id="weddingMediaRefresh" class="primary-button" type="button">Refresh</button>

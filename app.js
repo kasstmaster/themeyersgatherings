@@ -1282,8 +1282,6 @@ function renderWeddingGathering(hostView) {
     ? WeddingParty.sortByRole(weddingPartyMembers, WEDDING_PARTY_TITLES.map(role => role.value))
     : [viewedWeddingPartyMember].filter(Boolean);
   const personalPages = WeddingParty.visiblePages(weddingPartyMembers, hostView, viewedWeddingPartyMember?.id);
-  const dutiesTitleKey='matronInfoTabs:matronTab=duties';
-  if(String(state.siteTabTitles?.[dutiesTitleKey] || '').trim().toLowerCase()==='duties')state.siteTabTitles[dutiesTitleKey]='Responsibilities';
   const matronInfoTabs = document.querySelector('#matronInfoTabs');
   matronInfoTabs.querySelectorAll('[data-member-page]').forEach(button => button.remove());
   personalPages.forEach(page => {
@@ -1563,7 +1561,17 @@ function renderInlineEditing() {
       rename: (tab,title) => { state.brideGroomPages.find(page=>page.id===tab.dataset.brideGroomPage).title=title; },
       remove: tab => { state.brideGroomPages=state.brideGroomPages.filter(page=>page.id!==tab.dataset.brideGroomPage); }
     });
-    if (nav.id==='matronInfoTabs') Object.assign(config,{audience:'party',externalHeading:true,onSelect:page=>{if(page)renderWeddingPartyPageHeading('custom',page);}});
+    if (nav.id==='matronInfoTabs') Object.assign(config,{audience:'party',externalHeading:true,
+      rename:(tab,title)=>{
+        if(tab.dataset.memberPage){
+          const [memberId,pageId]=JSON.parse(tab.dataset.memberPage.slice('member-page:'.length));
+          const page=state.weddingPartyMembers?.find(member=>member.id===memberId)?.pages?.find(page=>page.id===pageId);
+          if(page)page.title=title;
+        } else {
+          const key=`${nav.id}:${Object.entries(tab.dataset).filter(([key])=>key!=='editingTitle').map(([key,value])=>`${key}=${value}`).join('|')}`;
+          state.siteTabTitles??={};state.siteTabTitles[key]=title;
+        }
+      },onSelect:page=>{if(page)renderWeddingPartyPageHeading('custom',page);}});
     if (nav.id==='weddingHostTabs') config.audience='host';
     SiteEditing.tabs(nav,config);
   });

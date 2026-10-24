@@ -10,7 +10,7 @@
   }
   function updateControls() {
     node('dropboxHostControls').hidden=!current?.host||current.preview||connected===true;
-    node('dropboxCheckConnection').hidden=!current||current.preview||connected===true;
+    node('dropboxCheckConnection').hidden=!current?.host||current.preview||connected===true;
     node('dropboxConnectionStatus').hidden=connected===true;
   }
   async function status({silent=false}={}) {
@@ -34,7 +34,7 @@
     if(contextKey!==key(ctx)){connected=null;contextKey=key(ctx);jobs=[];node('dropboxFiles').value='';node('dropboxUploadStatus').textContent='';status();}
     updateControls();
   }
-  node('dropboxCheckConnection').addEventListener('click',()=>status());
+  node('dropboxCheckConnection').addEventListener('click',()=>{if(current?.host&&!current.preview)status();});
   function recheck(){if(current&&!busy&&!document.hidden&&node('weddingMediaSection').getClientRects().length>0)status({silent:true});}
   window.addEventListener('focus',recheck);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)recheck();});
