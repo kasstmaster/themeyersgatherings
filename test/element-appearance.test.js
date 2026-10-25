@@ -8,7 +8,7 @@ function fixture(){
  const element={style:{getPropertyValue:key=>values.get(key)?.value || '',getPropertyPriority:key=>values.get(key)?.priority || '',setProperty:(key,value,priority)=>values.set(key,{value,priority}),removeProperty:key=>values.delete(key)}};
  const body={classList:{toggle(){}}};
  const document={body,baseURI:'https://example.test/',addEventListener(){},querySelectorAll:path=>path==='#panel'?[element]:[]};
- const context=vm.createContext({document,URL,Element:class{},CSS:{escape:value=>value}});vm.runInContext(source,context);
+ const context=vm.createContext({ElementEditor:{render(){}},document,URL,Element:class{},CSS:{escape:value=>value}});vm.runInContext(source,context);
  return {api:context.ElementAppearance,element,values};
 }
 test('element colors, alpha and borders apply to guests and restore between gatherings',()=>{
@@ -24,4 +24,4 @@ test('background images use only safe web URLs and preserve image fitting',()=>{
 test('hex and computed colors preserve transparency',()=>{
  const {api}=fixture();assert.equal(api.colorParts('#123').hex,'#112233');assert.equal(api.colorParts('#12345680').alpha,50);assert.equal(api.colorParts('rgba(255, 128, 0, 0.25)').hex,'#ff8000');assert.equal(api.colorParts('rgba(255, 128, 0, 0.25)').alpha,25);assert.equal(api.colorParts('transparent').alpha,0);
 });
-test('guests cannot open appearance editors',()=>{const {api}=fixture();api.render({state:{},host:false,enabled:false});assert.doesNotThrow(()=>api.open({}));});
+test('guests cannot change appearance through the shared editor API',()=>{const f=fixture();const state={};f.api.render({state,host:false,enabled:false});f.api.update(f.element,{backgroundColor:'#abcdef'});assert.deepEqual(state,{});});

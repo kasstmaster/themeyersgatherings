@@ -53,14 +53,13 @@
     context = options;
     defaultHeading=heading.textContent;defaultKicker=kicker.textContent;
     active = true;
-    form.classList.toggle('rsvp-guided',active);form.classList.toggle('rsvp-page-editing',Boolean(options.editing));
+    form.classList.toggle('rsvp-guided',active);
     form.classList.remove('rsvp-direct-choice','rsvp-dish-selection','rsvp-choosing-attendance','rsvp-personal-meal','rsvp-attire-step');
     childAge.hidden=true;heading.hidden=false;
     form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));
     review.hidden=true;back.hidden=true;next.hidden=false;kicker.hidden=false;
-    next.textContent=active?'Next':'Save my RSVP';
-    key=active?steps()[0].key:'';
-    if (active) show(true);
+    next.textContent='Next';
+    key=steps()[0].key;show(true);
   }
   function submit(event) {
     if (!active) return form.reportValidity();

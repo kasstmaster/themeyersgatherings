@@ -339,8 +339,8 @@ test('host account sessions choose a household and person while preserving retur
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
-  assert.match(html, /<h2>Sign in to account<\/h2>/);
-  assert.match(html, /id="hostAccountPerson"/);
+  assert.doesNotMatch(html, /id="weddingPartyPreviewDialog"|id="hostAccountPerson"/);
+  assert.match(javascript,/data-host-account-person/);
   assert.match(javascript, /hostReturnSession=\{eventId:viewedEventId/);
   assert.match(javascript, /hostWeddingPartyViewName=account\.name;guestName=account\.name/);
   assert.match(javascript, /preview: false/);
@@ -435,10 +435,8 @@ test('all editable wedding party copy supports safe Markdown formatting', async 
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(javascript, /function formatWeddingPartyDescription\(value\)/);
   assert.match(javascript, /replace\(\/\\\*\\\*\(\.\+\?\)\\\*\\\*\/g, '<strong>\$1<\/strong>'\)/);
   assert.match(javascript, /output\.push\(`<li>\$\{formatInline/);
-  assert.match(javascript, /function formatWeddingPartyDescription\(value\) \{ return formatEditableText\(value\); \}/);
   assert.match(javascript, /output\.push\('<hr>'\)/, 'a standalone --- should render a divider');
   assert.match(javascript, /href="geo:0,0\?q=\$\{encodeURIComponent\(plainAddress\)\}"/, 'angle-bracketed addresses should use the device maps handler');
   assert.match(javascript, /function safeEditableLink\(value\)/, 'editable links should be checked before rendering');

@@ -1,92 +1,55 @@
 # Shared gathering implementation
 
-Gatherings have two behavior types. Thanksgiving, Christmas, and every newly
-created gathering use the same standard type. Wedding explicitly enables its
-special pages, ceremony/reception addresses, named children and plus-ones, and
-meal choices. `gathering-features.js` is the single definition of these choices;
-`EVENT_DETAILS` contains display metadata, not behavior switches.
+Thanksgiving, Christmas and all custom gatherings use the same standard feature
+object in `gathering-features.js`, renderers in `app.js`, RSVP journey in
+`rsvp-flow.js`, and layout rules in `styles.css`. Wedding enables additional
+pages, role visibility, named guests and meals through its feature definition.
+Accounts, children, invitations, attendance lists and editing remain shared.
 
-| Concern | Shared implementation | Wedding differences |
-| --- | --- | --- |
-| Pages | `renderGatheringPages`, common page/container styles; Notes and Menu are host-only on standard gatherings | `renderWeddingGathering` for couple, party, guest, timeline, registry and media content |
-| RSVP | `RsvpFlow` provides one full-page question at a time, Back, validation and review. Standard gatherings offer dish commitments at the end; No saves immediately. | Named children, named plus-ones and meals; regular gatherings use guest counts |
-| Attendance | `GuestPlanning`, invitation groups, one host list renderer | Individual names/meals; regular entries show surname and counts |
-| Accounts and invitations | One account manager, invitation assignments, QR/template/download flows | No separate manager or invitation implementation |
-| Editing and history | `SiteEditing`, `SharedDetails`, `GatheringHistory` | Wedding-only content editors enabled by features |
-| Design | Shared header, page shells, tabs, panels, toolbars and popup footers | Wedding-specific artwork/attire styling and content |
-| Themes | Palette and header-art variables, common layout rules | Wedding decorative header and its palette |
+Hosts select gatherings into the same first RSVP page as guests. Host counters
+sit below RSVP; All Pages exposes private planning pages. Wedding hosts start
+on Bride & Groom; guests retain their permitted default page. There is no
+separate host home layout.
 
-Names, dates, menus, invitations, palettes, and artwork are gathering data.
-Holiday-specific default menus and compatibility migrations do not select a
-different rendering or RSVP implementation.
+## Themes and new gatherings
 
-When adding a standard feature, update the common renderer or the standard
-feature definition once. Do not add Thanksgiving/Christmas/custom-gathering
-branches. When adding a Wedding-only feature, declare the capability and gate
-its rendering **and validation**; remove inactive required fields when switching
-gatherings. Keep geometry and typography in shared CSS rather than theme rules.
+The creation form stores `gatheringTheme: 'neutral'`. Its white/gray palette is
+CSS variables on `body.theme-neutral`, not another layout. Existing custom
+records without that marker retain their previous theme. Built-in holidays keep
+their palettes and artwork. Do not set the marker in `makeEvent`: normalization
+uses that factory for existing records as well as new ones.
 
-Regression checks include `verify-gathering-management.cjs` (creation, palettes,
-and permissions), `verify-gathering-consistency.cjs` (shared layouts and features),
-`verify-rsvp-child-names.cjs`, `verify-extra-guests.cjs`, `verify-edit-layout.cjs`,
-and `verify-popup-footers.cjs`. Browser checks block live writes and external
-requests. Run Node tests with `node --test --test-isolation=none`.
+Saved per-element styles remain scoped to each gathering. Legacy saved palette
+colors still render through `gathering-palette.js`; its old editing dialog has
+been removed. Retain legacy palette selector identities while those records
+remain supported.
 
+## One editor
 
-Editable content owns its Markdown formatting. Do not force a host-edited
-paragraph to regain its default emphasis or change its saved Markdown to make
-gatherings look alike. Shared layout, controls, and component styles are separate
-from those intentional content choices. Invitation/account list headings and
-adult counts share `invitedInvitationGroups`, `invitedAdultCount`,
-`adultCountLabel`, and `invitationHeadingHtml` in `app.js`.
+`inline-editing.js` registers editable field, text, tab and structured-form
+metadata. `element-editor.js` owns the fixed toolbar and selection behavior;
+`element-appearance.js` applies saved element styles. `text-styles.js` and the
+shared editable-text formatter preserve selected text formatting and line breaks.
+`gap-layout.js` manages editable spacing. The former overlay/textarea editor,
+separate appearance popup and palette popup are removed.
 
-RSVP questions reuse the existing form controls and saved-response model. The
-journey builds only the questions enabled by `GatheringFeatures.rsvp`, including
-any dynamically added guests and children. Save commits attendance and standard
-gathering dish claims together. Closing the journey discards unsaved changes.
-Dish selection uses the existing menu quantities and claim ownership; guests may
-also name another dish. At the deadline, dish changes and Wedding guest/meal
-changes are skipped and locked while attendance remains editable. Host edit mode
-keeps the structured form available for editing meal options.
+Keep layout and typography in shared rules. Theme-specific rules should hold
+colors and artwork; Wedding-only content can retain its specialized layouts.
+Host-authored text formatting is content and must not be reset by rendering.
 
-The guest landing page of a standard gathering leads into RSVP instead of
-showing its menu. Hosts keep their Notes/Menu pages for planning. Wedding pages
-remain separate. The sign-in and RSVP screens share `fullscreen-flow` and
-`full-page-form` styles. `scripts/verify-rsvp-flow.cjs` exercises the journey on
-desktop and mobile, including custom gatherings, invitation scope, validation,
-deadlines, and contribution updates.
+## Verification
 
-The RSVP page heading follows the current question; attendance shows the person’s name
-without repeating it below. Body text uses a simple sans-serif font and shared question-title
-sizes. The standard-gathering dish question uses Yes/No actions that advance or
-save directly, with the normal Next button hidden on that question.
-The welcome kicker appears only on attendance questions. RSVP omits the generic
-celebration introduction and page counts; later steps keep only relevant copy.
+Run `npm test`. Local Chromium scripts block external requests and live state
+writes, and expect the site served on port 8041:
 
-Standard RSVP dishes use checkboxes in separate full-width category groups.
-Category names are hidden in the RSVP menu, with spacing between the groups. A checked
-dish with multiple available portions reveals a required quantity selector;
-single-portion dishes use one automatically. Choices share a responsive grid
-that stacks on small screens. Saved quantities restore with their checkboxes.
+- `verify-gathering-consistency.cjs`: creation, neutral colors, legacy themes,
+  common desktop/mobile geometry, and isolated saved appearance edits.
+- `verify-host-rsvp-home.cjs`: host pages, counters, navigation and guest privacy.
+- `verify-element-ribbon.cjs`: shared toolbar and selected-text formatting.
+- `verify-host-toolbar.cjs`: host controls, account switching and creation.
+- `verify-gap-editing.cjs`, `verify-editor-offset.cjs`,
+  `verify-modal-scrolling.cjs`, `verify-rsvp-status-icon.cjs`: spacing, toolbar
+  layout, scrolling and response status.
 
-The children step places “Age 17 and under” directly below its page heading.
-Dish category groups keep a 64px vertical gap.
-
-Attendance uses mutually exclusive checkboxes for accepting and declining.
-Neither checked remains unanswered and cannot be submitted as a decline.
-
-Wedding collects all child names in one step after the children counter, with
-each name required before continuing. Other gatherings still use counts only.
-
-Guest and wedding-party RSVP screens show a child’s entered name without a
-numbered prefix, including name inputs, meal/dietary headings, and review. The
-Wedding review lists each named child as accepting instead of a child count and
-numbered name row. Host labels and stored meal identities remain compatible.
-
-Wedding RSVP begins with the attire acknowledgment. It reuses the Ladies and
-Gentlemen requirements from the existing attire page, displayed in responsive
-white-text containers. Selecting Wedding automatically starts RSVP only for a
-guest invitation without a submitted response. Completion opens the appropriate
-Wedding home page; cancellation returns to gathering selection. Saved responses
-prevent automatic reopening on later visits, while the RSVP button remains
-available for changes. Hosts can enter their planning view directly.
+Older optional browser scripts may describe superseded UI and should be updated
+before use; they are not part of `npm test`.

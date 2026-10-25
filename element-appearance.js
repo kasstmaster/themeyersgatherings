@@ -1,11 +1,8 @@
 /* Shared per-gathering appearance editing. Untouched declarations keep their defaults. */
 (() => {
-  let context,editor,preview=null;
+  let context;
   const applied=new Map();
   const styledText=new Map();
-  const controls=[];
-  const properties=['background-color','background-image','background-size','background-position','background-repeat','color','border-color','border-width','border-style','border-radius'];
-  const excluded='#hostToolsPanel,#editItemsButton,.element-editor-toolbar,.inline-overlay-layer,.inline-editor,.inline-text-editor,.inline-text-formatting,.inline-edit-tools,.inline-direct-input,.inline-portal-editor,.inline-meal-editor,.appearance-editor,.appearance-trigger,.inline-appearance-tools,script,style,link,meta';
   function label(element){
     if(element===document.body)return 'Page background';
     if(element.tagName.toLowerCase()==='svg')return 'Icon';
@@ -97,93 +94,23 @@
       if(part.innerHTML!==html)part.innerHTML=html;
     }
   }
-  function apply(extra=null){
-    preview=extra;restore(false);
+  function apply(){
+    restore(false);
     for(const [path,values] of Object.entries(context?.state.elementAppearance || {}).sort(([a],[b])=>a.length-b.length))for(const element of find(path))paint(element,values);
-    if(extra)for(const element of find(extra.path))paint(element,extra.values);
     applyText();
   }
-  function open(target){
-    if(globalThis.ElementEditor && context?.host && context.enabled){ElementEditor.select(target);return;}
-    if(!context?.host || !context.enabled || !target)return;
-    editor?.close();
-    const eventId=context.eventId,path=selector(target);
-    const dialog=document.createElement('dialog');editor=dialog;dialog.className='appearance-editor';dialog.setAttribute('aria-label','Edit appearance');
-    dialog.innerHTML='<form><h2>Edit appearance</h2><p data-appearance-name></p><div data-appearance-fields></div><p role="status" aria-live="polite"></p><div class="appearance-actions"><button type="submit">Save appearance</button><button type="button" data-reset>Reset this element</button><button type="button" data-cancel>Cancel</button></div></form>';
-    const form=dialog.querySelector('form'),fields=dialog.querySelector('[data-appearance-fields]'),status=dialog.querySelector('[role="status"]');
-    dialog.querySelector('[data-appearance-name]').textContent=label(target);
-    let draft,changed=new Set(),file;
-    function populate(){
-      apply();const element=find(path)[0];if(!element)return;
-      draft={...context.state.elementAppearance?.[path]};changed=new Set();file=null;fields.replaceChildren();status.textContent='';
-      const computed=getComputedStyle(element);
-      for(const [key,title,property,alpha] of [['backgroundColor','Background','background-color','backgroundAlpha'],['textColor','Text','color','textAlpha'],['borderColor','Border','border-color','borderAlpha']]){
-        const initial=colorParts(computed.getPropertyValue(property));
-        const group=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=title;group.append(legend);
-        group.innerHTML+='<label>Color<div class="appearance-color-row"><input type="color" aria-label="'+title+' color"><input type="text" aria-label="'+title+' hex code" placeholder="#RRGGBB" pattern="#[0-9a-fA-F]{6}"></div></label><label>Opacity<input type="range" min="0" max="100" aria-label="'+title+' opacity"><output></output></label>';
-        const picker=group.querySelector('[type="color"]'),hex=group.querySelector('[type="text"]'),range=group.querySelector('[type="range"]'),output=group.querySelector('output');
-        picker.value=hex.value=draft[key] || initial.hex;range.value=draft[alpha]??initial.alpha;output.textContent=range.value+'%';
-        function update(source){if(source===picker)hex.value=picker.value;if(!/^#[\da-f]{6}$/i.test(hex.value))return;picker.value=hex.value;if((source===picker || source===hex) && Number(range.value)===0 && !Object.hasOwn(draft,key))range.value=100;draft[key]=hex.value;draft[alpha]=Number(range.value);output.textContent=range.value+'%';changed.add(key);changed.add(alpha);apply({path,values:draft});}
-        picker.addEventListener('input',()=>update(picker));hex.addEventListener('input',()=>update(hex));range.addEventListener('input',()=>update(range));fields.append(group);
-      }
-      for(const [key,title,max,initial] of [['borderWidth','Border width',24,parseFloat(computed.borderTopWidth)||0],['borderRadius','Corner radius',100,parseFloat(computed.borderTopLeftRadius)||0]]){
-        const wrapper=document.createElement('label');wrapper.textContent=title+' (px)';const input=document.createElement('input');input.type='number';input.min='0';input.max=String(max);input.value=draft[key]??initial;input.addEventListener('input',()=>{if(!input.checkValidity())return;draft[key]=Number(input.value);changed.add(key);apply({path,values:draft});});wrapper.append(input);fields.append(wrapper);
-      }
-      const background=document.createElement('fieldset');background.innerHTML='<legend>Background image</legend><label>Image URL<input type="url" data-background-url placeholder="https://…"></label><label>Or upload an image<input type="file" accept="image/png,image/jpeg,image/webp"></label><label>Image fit<select><option value="cover">Fill the element</option><option value="contain">Show the whole image</option></select></label><button type="button" data-remove-image>Remove background image</button>';
-      const url=background.querySelector('[type="url"]'),upload=background.querySelector('[type="file"]'),fit=background.querySelector('select');
-      const currentImage=/^url\(["']?(.*?)["']?\)$/.exec(computed.backgroundImage || '');url.value=draft.backgroundImage??currentImage?.[1]??'';fit.value=draft.imageFit || 'cover';
-      url.addEventListener('input',()=>{const safe=imageUrl(url.value.trim());url.setCustomValidity(safe===null?'Use an http or https image URL.':'');if(safe===null)return;draft.backgroundImage=safe;changed.add('backgroundImage');file=null;apply({path,values:draft});});
-      upload.addEventListener('change',()=>{file=upload.files[0];if(file)url.setCustomValidity('');status.textContent=file?'The image will upload when you save.':'';});
-      fit.addEventListener('change',()=>{draft.imageFit=fit.value;draft.backgroundImage=url.value.trim();changed.add('imageFit');changed.add('backgroundImage');apply({path,values:draft});});
-      background.querySelector('[data-remove-image]').addEventListener('click',()=>{file=null;upload.value='';url.value='';status.textContent='';draft.backgroundImage='';changed.add('backgroundImage');apply({path,values:draft});});fields.append(background);
-    }
-    dialog.querySelector('[data-cancel]').addEventListener('click',()=>dialog.close());
-    dialog.querySelector('[data-reset]').addEventListener('click',()=>{if(context.eventId!==eventId)return;delete context.state.elementAppearance?.[path];const saved=context.state.textAppearance?.[path];textParts(target).forEach((part,index)=>{const entry=saved?.parts?.[index];if(entry)part.innerHTML=context.format(entry.overrideText!==undefined?entry.original:plainText(part),{inline:true});});delete context.state.textAppearance?.[path];apply();context.save();dialog.close();});
-    form.addEventListener('submit',async event=>{
-      event.preventDefault();if(!context.host || context.eventId!==eventId || !form.reportValidity())return;
-      const button=form.querySelector('[type="submit"]');button.disabled=true;status.textContent='';
-      try{
-        if(file){draft.backgroundImage=await context.upload(file);changed.add('backgroundImage');}
-        if(context.eventId!==eventId || editor!==dialog || !dialog.open)return;
-        const values={...context.state.elementAppearance?.[path]};for(const key of changed)values[key]=draft[key];
-        context.state.elementAppearance??={};if(Object.keys(values).length)context.state.elementAppearance[path]=values;
-        apply();context.save();dialog.close();
-      }catch(error){status.textContent=error.message;}finally{button.disabled=false;}
-    });
-    dialog.addEventListener('close',()=>{dialog.remove();if(editor===dialog)editor=null;apply();},{once:true});
-    document.body.append(dialog);populate();dialog.showModal();
-  }
-  function eligible(element){return element instanceof Element && !element.closest(excluded) && !element.closest('[hidden]') && !element.closest('dialog:not([open])') && !element.closest('#rsvpDialog [data-rsvp-flow-hidden]');}
-  function render(ctx){
-    if(editor && (context?.eventId!==ctx.eventId || !ctx.host || !ctx.enabled))editor.close();context=ctx;apply(preview);
-    document.body.classList.toggle('element-appearance-editing',ctx.host && ctx.enabled);
-    refreshControls();
-  }
+  function render(ctx){context=ctx;apply();refreshControls();}
   function isSurface(target,root){
     if(target===root || target.matches('img,video,input,textarea,select,table,figure'))return true;
     const style=getComputedStyle(target);
     return style.backgroundImage!=='none' || colorParts(style.backgroundColor).alpha>0 || ['Top','Right','Bottom','Left'].some(side=>parseFloat(style['border'+side+'Width'])>0 && style['border'+side+'Style']!=='none');
   }
-  function refreshControls(){
-    if(globalThis.ElementEditor){ElementEditor.render(context);return;}
-    while(controls.length)controls.pop()?.();
-    if(!context?.host || !context.enabled)return;
-    const root=[...document.querySelectorAll('dialog[open]')].at(-1) || document.querySelector('#eventPage:not([hidden])') || document.body;
-    const targets=[root,...root.querySelectorAll('*')].filter(target=>eligible(target) && !target.closest('[aria-hidden="true"]') && !target.matches('svg,path,source,option,br,hr') && !(target.matches('span,strong,em,small') && !target.textContent.trim()) && !target.closest('dialog:not([open])') && target.getClientRects().length);
-    const groups=targets.filter(target=>target.matches('.summary-item,.summary-stat,.counter-row,button,label:has(input,select,textarea),[role="tab"],.event-selection-choices>button'));
-    for(const target of groups)if(!SiteEditing.hasEditor(target) && !SiteEditing.textOwner(target.parentElement))SiteEditing.textElement(target,label(target));
-    for(const target of targets){
-      if(SiteEditing.hasEditor(target) || SiteEditing.textOwner(target))continue;
-      if(target.matches('h1,h2,h3,h4,h5,h6,p,li,time,legend,address,span,strong,em,small,a,label,output,b,i,code') && target.textContent.trim())SiteEditing.textElement(target,label(target));
-      else if(isSurface(target,root))controls.push(SiteEditing.appearance(target,()=>open(target),label(target)));
-    }
-    SiteEditing.positionOverlays();
-  }
-  if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply(preview);if(records.some(record=>record.type==='attributes'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
+  function refreshControls(){ElementEditor.render(context);}
+  if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply();if(records.some(record=>record.type==='attributes'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
   globalThis.ElementAppearance={
-    textParts,label,isSurface,eligible,
+    textParts,label,isSurface,
     values:target=>({...context?.state.elementAppearance?.[selector(target)]}),
     update(target,values){if(!context?.host || !context.enabled)return;context.state.elementAppearance??={};const path=selector(target);context.state.elementAppearance[path]={...context.state.elementAppearance[path],...values};apply();context.save();},
     upload:file=>context.upload(file),
-    render,restore,open,refreshControls,selector,colorParts,imageUrl,properties,textValue,storeText,applyText,isMultiline,manages:element=>applied.has(element)};
+    render,restore,refreshControls,selector,colorParts,imageUrl,textValue,storeText,applyText,isMultiline,manages:element=>applied.has(element)};
 })();
