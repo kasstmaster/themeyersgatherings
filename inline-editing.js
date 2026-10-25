@@ -128,9 +128,9 @@
     context = ctx;
     if (!ctx.host) { enabled = false; drafts.clear(); }
     const toggle = document.querySelector('#editItemsButton');
-    toggle.textContent = enabled ? 'Done editing' : 'Edit website';
+    toggle.textContent = 'Edit';
     toggle.setAttribute('aria-pressed', String(enabled));
-    document.querySelector('#invitationTemplatesButton').hidden = !ctx.host;
+    document.querySelector('#invitationTemplatesButton').hidden = !ctx.host || !enabled;
     document.body.classList.toggle('site-edit-mode', enabled && ctx.host);
   }
   function field(target, title, fields, commit, options = {}) {

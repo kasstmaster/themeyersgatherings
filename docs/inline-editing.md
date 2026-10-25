@@ -1,6 +1,6 @@
 # Editing the website
 
-Sign in as the host and choose **Edit website**. Click an element to select it. A red outline identifies the selected element, and one fixed toolbar stays at the top of the page. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
+Sign in as the host and choose the fixed **Edit** button at the top right. Click an element to select it. A red outline identifies the selected element, and one fixed toolbar stays at the top of the page. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
 
 The toolbar has four expandable groups:
 
@@ -24,3 +24,11 @@ Background images may be PNG, JPEG, or WebP, uploaded through the existing authe
 ## Browser verification
 
 Serve the repository locally on port 8041, then run `node scripts/verify-element-ribbon.cjs` with Playwright and Chromium available. The check blocks external requests and removes the live shared-state URL. It verifies unchanged page geometry, selection formatting, background and border saves, page navigation, Attire and Responsibilities layouts, meal editing, and persistence within the RSVP flow.
+
+## Host navigation and account sessions
+
+The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **Home** returns to gathering selection. **Accounts**, **History**, and the **+** new-gathering action stay in the same toolbar. Gathering shortcuts remain available to guests. **Templates** is in the top editing toolbar.
+
+In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. Host controls remain available during the account session; choosing a host management action restores the host context first. Accounts without gathering access have disabled sign-in icons.
+
+Run `node scripts/verify-host-toolbar.cjs` with the same local browser setup to check persistent controls across dialogs, Home, per-person sign-in, host return, Templates placement, and mobile layout.

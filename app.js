@@ -782,7 +782,7 @@ function accountContactsHtml(account) {
     return invitationEntryHtml(group, {
       className:'account-invitation-group',showCount:false,
       headings:'<div class="account-person-headings"><span></span><span>Inv #</span><span>+1</span></div>',
-      renderName:name=>`<div class="account-person-line"><span class="account-person-name">${escapeHtml(name)}</span>${invitationAssignmentHtml(account,name)}<label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(name)}" aria-label="Allow a guest for ${escapeAttribute(name)}" ${group.guestPeople.includes(name)?'checked':''}></label></div>`
+      renderName:name=>`<div class="account-person-line"><span class="account-person-name">${escapeHtml(name)}<button type="button" class="account-sign-in" data-host-account-person="${escapeAttribute(name)}" aria-label="Sign in as ${escapeAttribute(name)}" title="Sign in as ${escapeAttribute(name)}" ${Object.keys(EVENT_DETAILS).some(id=>accountCanSignIn(account,id))?'':'disabled'}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z"/></svg></button></span>${invitationAssignmentHtml(account,name)}<label class="account-guest-permission"><input type="checkbox" data-plus-one-person="${escapeAttribute(name)}" aria-label="Allow a guest for ${escapeAttribute(name)}" ${group.guestPeople.includes(name)?'checked':''}></label></div>`
     });
   }).join('');
   const children = (account.children || []).length
@@ -924,7 +924,7 @@ async function openInvitationPreview(account = invitationAccounts()[0] || null) 
   canvasWrap.hidden = true;
   downloadButton.disabled = true;
   document.querySelector('#configureInvitationTemplate').hidden = true;
-  if (!dialog.open) dialog.showModal();
+  if (!dialog.open) showSiteDialog(dialog);
   const gatheringTemplates = invitationTemplatesForEvent();
   let assignedTemplate = gatheringTemplates.find(template => template.id === state.invitationTemplateId);
   if (!assignedTemplate && gatheringTemplates.length === 1) {
@@ -1026,9 +1026,37 @@ function updateHeaderImage(event) {
 }
 function isViewingAsGuest() { return hostAuthenticated && Boolean(hostWeddingPartyViewName); }
 function isHostView() { return hostAuthenticated && !isViewingAsGuest(); }
+const hostDialogStack=[];
+const persistentHostControls=['hostToolsPanel','editItemsButton'].map(id=>document.getElementById(id));
+function activeHostDialog(){return hostDialogStack.filter(dialog=>dialog.open).at(-1) || [...document.querySelectorAll('dialog[open]')].at(-1);}
+function syncHostToolbar(records=[]) {
+  for(const record of records)if(record.target.matches('dialog')){
+    const index=hostDialogStack.indexOf(record.target);if(index>=0)hostDialogStack.splice(index,1);
+    if(record.target.open)hostDialogStack.push(record.target);
+  }
+  persistentHostControls[0].hidden=!hostAuthenticated;
+  const owner=activeHostDialog() || document.body;
+  for(const control of persistentHostControls)if(control.parentElement!==owner)owner.append(control);
+  const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
+  document.body.classList.toggle('has-host-toolbar',hostAuthenticated);
+  document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',hostAuthenticated);
+  document.querySelector('#eventDock').hidden=hostAuthenticated || !guestName;
+  const print=document.querySelector('#hostToolsPanel [data-page-export]');if(print)print.hidden=Boolean(document.querySelector('#rsvpDialog').open && document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden'));
+  if(SiteEditing.enabled)ElementEditor.refresh();
+}
+document.addEventListener('close',()=>syncHostToolbar(),true);
+new MutationObserver(records=>syncHostToolbar(records)).observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']});
+function showSiteDialog(dialog){if(dialog.id!=='rsvpDialog' && dialog.parentElement.closest('[hidden]'))document.body.append(dialog);dialog.showModal();}
+async function closeHostDialogs(){await Promise.all([...document.querySelectorAll('dialog[open]')].map(dialog=>new Promise(resolve=>{dialog.addEventListener('close',resolve,{once:true});dialog.close();})));}
+document.querySelector('#hostHomeButton').addEventListener('click',async()=>{
+  if(!hostAuthenticated)return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
+  await closeHostDialogs();if(isViewingAsGuest())restoreHostSession();showEventSelection();updateHostToolsPanel();
+});
 function updateHostToolsPanel() {
   const viewingAsGuest = isViewingAsGuest();
-  document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated || viewingAsGuest;
+  document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated;
+  document.querySelector('#editItemsButton').hidden = !hostAuthenticated;
+  syncHostToolbar();
   document.querySelector('#cancelViewAsButton').hidden = !viewingAsGuest;
 }
 let signInStep = 0;
@@ -1098,6 +1126,7 @@ function showEventSelection() {
   document.querySelector('#eventSelectionPage').hidden = false;
   document.body.className = 'theme-wedding';
   updateSignedInAccountBanner();
+  updateHostToolsPanel();
   window.scrollTo({top:0,left:0,behavior:'auto'});
 }
 function videoEmbedUrl(url) {
@@ -1398,9 +1427,7 @@ function render() {
   document.querySelector('#rsvpButton').textContent='RSVP';
   renderSyncStatus();
   updateHostToolsPanel();
-  document.querySelector('#editItemsButton').textContent = isWedding ? 'Wedding Details' : 'Edit Details';
-  document.querySelector('#previewWeddingPartyButton').hidden = false;
-  document.querySelector('#previewWeddingPartyButton').textContent = 'Sign in to account';
+  document.querySelector('#editItemsButton').textContent = 'Edit';
   renderEventDock();
   updateHeaderImage(event);
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
@@ -1468,6 +1495,7 @@ function render() {
     for(const [name,value] of Object.entries({'background':panel.background,'border':panel.border,'radius':panel.borderRadius,'text':panel.color}))hostMain.style.setProperty(`--host-panel-${name}`,value);
   }
   PageActions.sync();
+  syncHostToolbar();
   renderWeddingPageToolbar();
   ElementAppearance.render({state,eventId:viewedEventId,host:hostView,enabled:SiteEditing.enabled,
     save:()=>saveState({refresh:false}),format:(value,options)=>formatEditableText(value,options),upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url});
@@ -1635,7 +1663,7 @@ function renderEventDock() {
   const dock = document.querySelector('#eventDock');
   const switchButtons = document.querySelector('#eventSwitchButtons');
   const ids = availableEventIds();
-  dock.hidden = !guestName || ids.length === 0;
+  dock.hidden = hostAuthenticated || !guestName || ids.length === 0;
   switchButtons.innerHTML = ids.map(id => {
     const name = EVENT_DETAILS[id].name;
     const accessibleLabel = `${name}${id === viewedEventId ? ', current event' : ''}`;
@@ -1671,7 +1699,7 @@ function claimItem(id) {
         const quantity = index + 1;
         return `<option value="${quantity}">${formatQuantity(quantity, item)}</option>`;
       }).join('');
-      document.querySelector('#claimQuantityDialog').showModal();
+      showSiteDialog(document.querySelector('#claimQuantityDialog'));
       return;
     }
     item.claims.push(guestName);
@@ -1683,7 +1711,7 @@ function openCustomItem(category) {
   ensureAccount(() => {
     document.querySelector('#customItemCategory').value = category;
     document.querySelector('#customItemUnit').innerHTML = unitOptions();
-    document.querySelector('#customItemDialog').showModal();
+    showSiteDialog(document.querySelector('#customItemDialog'));
   });
 }
 
@@ -2012,7 +2040,7 @@ function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   document.querySelector('#rsvpDialog').showModal();
   // Apply saved tab ordering and custom pages on the first open for guests too.
   render();
-  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>ElementAppearance.refreshControls()});
+  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>{ElementAppearance.refreshControls();syncHostToolbar();}});
 });}
 // Every gathering uses these same two editable text slots and the same HTML layout.
 function rsvpFirstPageTextFields() {
@@ -2451,7 +2479,7 @@ function renderNoResponseAccounts() {
 document.querySelector('#noResponseButton').addEventListener('click', () => {
   if (!isHostView()) return;
   renderNoResponseAccounts();
-  document.querySelector('#noResponseDialog').showModal();
+  showSiteDialog(document.querySelector('#noResponseDialog'));
 });
 function renderGuestAttendance() {
   if (!hostAuthenticated) return;
@@ -2492,11 +2520,11 @@ function renderGuestAttendance() {
 document.querySelector('#guestListButton').addEventListener('click', () => {
   if (!isHostView()) return;
   renderGuestAttendance();
-  document.querySelector('#guestListDialog').showModal();
+  showSiteDialog(document.querySelector('#guestListDialog'));
 });
 document.querySelector('#notAttendingButton').addEventListener('click', () => {
   if (!isHostView()) return;
-  renderGuestAttendance(); document.querySelector('#notAttendingDialog').showModal();
+  renderGuestAttendance(); showSiteDialog(document.querySelector('#notAttendingDialog'));
 });
 document.querySelector('#invitedListButton').addEventListener('click', () => {
   if (!isHostView()) return;
@@ -2511,7 +2539,7 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
   renderPeopleSection('invitedList','invitedPeopleTotal',totals,invitedAccounts.length
     ? invitedAccounts.flatMap(account=>invitedInvitationGroups(account).map(group=>invitationEntryHtml(group))).join('')
     : '<p class="guest-empty">No one is currently invited.</p>');
-  document.querySelector('#invitedListDialog').showModal();
+  showSiteDialog(document.querySelector('#invitedListDialog'));
 });
 function openAdmin() {
   const isWedding = GatheringFeatures.forGathering(viewedEventId).weddingPages;
@@ -2753,6 +2781,7 @@ function openAccountsAdmin() {
   document.querySelectorAll('.account-row').forEach(row => {
     const access = row.querySelector('.account-access');
     const previewActions = row.querySelector('.account-preview-actions');
+    row.querySelectorAll('[data-host-account-person]').forEach(button=>button.addEventListener('click',()=>signIntoAccount(appState.accounts.find(account=>account.name===row.dataset.accountName),button.dataset.hostAccountPerson)));
     const viewQr = previewActions.querySelector('.account-qr-button');
     const viewInvitation = previewActions.querySelector('.account-invitation-button');
     row.addEventListener('change',event=>{
@@ -2766,6 +2795,7 @@ function openAccountsAdmin() {
       if(!account)return;
       account.selectedEvents ??= {};
       account.selectedEvents[accountEventId] = event.target.checked;
+      row.querySelectorAll('[data-host-account-person]').forEach(button=>{button.disabled=!Object.keys(EVENT_DETAILS).some(id=>accountCanSignIn(account,id));});
       if (!event.target.checked && guestName === account.name) guestName = '';
       saveState();
     });
@@ -2791,7 +2821,7 @@ function openAccountsAdmin() {
     viewQr.addEventListener('click', () => openQrCode(appState.accounts.find(account => account.name === row.dataset.accountName)));
     viewInvitation.addEventListener('click', () => openInvitationPreview(appState.accounts.find(account => account.name === row.dataset.accountName)));
   });
-  const dialog = document.querySelector('#accountsDialog'); if (!dialog.open) dialog.showModal();
+  const dialog = document.querySelector('#accountsDialog'); if (!dialog.open) showSiteDialog(dialog);
 }
 
 function renderWeddingPartyAdmin() {
@@ -2873,7 +2903,7 @@ function openQrCode(account) {
   signInLink.href = (account.generalLogin || account.qrToken) ? accountQrUrl(account) : '';
   signInLink.textContent = (account.generalLogin || account.qrToken) ? accountQrUrl(account) : '';
   buttons.forEach(button => { button.disabled = !(account.generalLogin || account.qrToken); });
-  document.querySelector('#qrCodeDialog').showModal();
+  showSiteDialog(document.querySelector('#qrCodeDialog'));
 }
 document.querySelector('#downloadQrPng').addEventListener('click', () => { if ((qrAdminAccount?.generalLogin || qrAdminAccount?.qrToken)) downloadQrPng(qrAdminAccount); });
 document.querySelector('#downloadQrSvg').addEventListener('click', () => { if ((qrAdminAccount?.generalLogin || qrAdminAccount?.qrToken)) downloadQrSvg(qrAdminAccount); });
@@ -2904,7 +2934,7 @@ document.querySelector('#configureInvitationTemplate').addEventListener('click',
   document.querySelector('#invitationPreviewDialog').close();
   document.querySelector('#accountsDialog').close();
   renderTemplateManager();
-  document.querySelector('#invitationTemplatesDialog').showModal();
+  showSiteDialog(document.querySelector('#invitationTemplatesDialog'));
 });
 let bulkInvitationAction = 'download';
 let bulkInvitationFiles = [];
@@ -2916,7 +2946,7 @@ function openBulkInvitationChoice(action) {
   document.querySelector('#bulkInvitationStatus').textContent = '';
   document.querySelector('#shareBulkInvitations').hidden = true;
   document.querySelector('#bulkInvitationChoices').hidden = false;
-  document.querySelector('#bulkInvitationDialog').showModal();
+  showSiteDialog(document.querySelector('#bulkInvitationDialog'));
 }
 document.querySelector('#downloadAllInvitations').addEventListener('click', () => openBulkInvitationChoice('download'));
 document.querySelector('#emailAllInvitations').addEventListener('click', () => openBulkInvitationChoice('email'));
@@ -3027,7 +3057,7 @@ function renderTemplateManager() {
     saveState(); renderTemplateManager();
   }));
 }
-function openTemplateManager() { renderTemplateManager(); document.querySelector('#invitationTemplatesDialog').showModal(); }
+function openTemplateManager() { renderTemplateManager(); showSiteDialog(document.querySelector('#invitationTemplatesDialog')); }
 document.querySelector('#invitationTemplatesButton').addEventListener('click', openTemplateManager);
 document.querySelector('#createTemplateButton').addEventListener('click', async () => {
   const error = document.querySelector('#templateManagerError'), name = document.querySelector('#newTemplateName').value.trim(), file = newTemplateBackgroundFile;
@@ -3149,7 +3179,7 @@ function openTemplateEditor(id, localFile = null) {
   document.querySelector('#templateFieldToolbox').innerHTML = Object.entries(window.Invitation.FIELD_DEFINITIONS).map(([key, definition]) => `<button type="button" data-field-key="${key}">${definition.label}</button>`).join('');
   document.querySelectorAll('[data-field-key]').forEach(button => button.addEventListener('click', () => { pendingTemplateFieldKey = button.dataset.fieldKey; document.querySelector('#placementHelp').textContent = `Click the invitation to place ${button.textContent}.`; }));
   document.querySelector('#templatePreviewAccount').innerHTML = '<option value="">General login QR</option>' + invitationAccounts().map(account => `<option value="${escapeAttribute(account.qrToken)}">${escapeHtml(account.name)}</option>`).join('');
-  document.querySelector('#invitationTemplatesDialog').close(); document.querySelector('#invitationEditorDialog').showModal();
+  document.querySelector('#invitationTemplatesDialog').close(); showSiteDialog(document.querySelector('#invitationEditorDialog'));
   if (templateEditorResizeObserver) templateEditorResizeObserver.disconnect();
   templateEditorResizeObserver = new ResizeObserver(sizeEditorStage);
   templateEditorResizeObserver.observe(document.querySelector('.template-canvas-column'));
@@ -3201,7 +3231,7 @@ document.querySelector('#previewEditedTemplateButton').addEventListener('click',
   const selectedToken = document.querySelector('#templatePreviewAccount').value;
   const account = appState.accounts.find(item => item.qrToken === selectedToken) || null, canvas = document.querySelector('#invitationCanvas');
   invitationPreviewAccount = account; const model = window.Invitation.invitationModel(templateDraft, state, invitationQrUrl(account));
-  await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl)); document.querySelector('#invitationPreviewHeading').textContent = templateDraft.name; document.querySelector('#invitationPreviewAccount').textContent = invitationQrUrl(account) === generalLoginUrl() ? 'Previewing the general login QR.' : `Previewing ${account.name}'s existing account QR. The name is not printed.`; document.querySelector('#invitationPreviewStatus').textContent = ''; document.querySelector('#invitationPreviewStatus').classList.remove('form-error'); document.querySelector('#invitationCanvasWrap').hidden = false; document.querySelector('#configureInvitationTemplate').hidden = true; document.querySelector('#downloadInvitationPng').disabled = false; document.querySelector('#invitationPreviewDialog').showModal();
+  await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl)); document.querySelector('#invitationPreviewHeading').textContent = templateDraft.name; document.querySelector('#invitationPreviewAccount').textContent = invitationQrUrl(account) === generalLoginUrl() ? 'Previewing the general login QR.' : `Previewing ${account.name}'s existing account QR. The name is not printed.`; document.querySelector('#invitationPreviewStatus').textContent = ''; document.querySelector('#invitationPreviewStatus').classList.remove('form-error'); document.querySelector('#invitationCanvasWrap').hidden = false; document.querySelector('#configureInvitationTemplate').hidden = true; document.querySelector('#downloadInvitationPng').disabled = false; showSiteDialog(document.querySelector('#invitationPreviewDialog'));
 });
 function updateClearClaimFamilies() {
   const item = state.items.find(entry => entry.id === document.querySelector('#clearClaimItem').value);
@@ -3246,13 +3276,14 @@ document.querySelector('#adminHostNotes').addEventListener('change', event => {
   if (!isHostView() || !GatheringFeatures.forGathering(viewedEventId).notes) return;
   state.hostNotes = event.target.value; saveState(); render();
 });
-document.querySelector('#editItemsButton').addEventListener('click', () => {
-  if (!isHostView()) return;
+document.querySelector('#editItemsButton').addEventListener('click', async () => {
+  if (!hostAuthenticated) return;
+  if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
   if (SiteEditing.enabled) commitAllPendingEditorInputs();
   SiteEditing.toggle(render);
 });
 
-document.querySelector('#editAccountsButton').addEventListener('click', () => { if (isHostView()) openAccountsAdmin(); });
+document.querySelector('#editAccountsButton').addEventListener('click', async () => { if(!hostAuthenticated)return;commitAllPendingEditorInputs();if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}if(!document.querySelector('#accountsDialog').open)openAccountsAdmin(); });
 function populateAccountSessionPeople() {
   const account=appState.accounts.find(account=>account.name===document.querySelector('#hostWeddingPartyView').value);
   const names=account ? accountSignInNames(account.name) : [];
@@ -3262,28 +3293,18 @@ function populateAccountSessionPeople() {
   const member=names.find(name=>state.weddingPartyMembers?.some(member=>weddingPartyPersonMatches(member.name,name)));
   if(member)select.value=member;
 }
-document.querySelector('#previewWeddingPartyButton').addEventListener('click', () => {
-  if (!isHostView()) return;
-  const accounts=appState.accounts.filter(account=>Object.keys(EVENT_DETAILS).some(id=>accountCanSignIn(account,id)));
-  document.querySelector('#viewAsDescription').textContent='Sign in to an account to manage its RSVP and contributions. Leave returns you to your host session.';
-  document.querySelector('#hostWeddingPartyView').innerHTML=accounts.map(account=>`<option value="${escapeAttribute(account.name)}">${escapeHtml(account.name)}</option>`).join('');
-  populateAccountSessionPeople();
-  document.querySelector('#hostWeddingPartyViewError').textContent=accounts.length?'':'No accounts have access to a gathering yet.';
-  document.querySelector('#openWeddingPartyPreview').disabled=!accounts.length;
-  document.querySelector('#weddingPartyPreviewDialog').showModal();
-});
-document.querySelector('#openWeddingPartyPreview').addEventListener('click', () => {
-  if (!isHostView()) return;
-  const account=appState.accounts.find(account=>account.name===document.querySelector('#hostWeddingPartyView').value);
-  if(!account)return;
+async function signIntoAccount(account,person) {
+  if(!hostAuthenticated || !account)return;
   const events=Object.keys(EVENT_DETAILS).filter(id=>accountCanSignIn(account,id));if(!events.length)return;
-  hostReturnSession={eventId:viewedEventId,guestName,signedInPersonName,selectedGatheringTab,selectedWeddingTab,selectedMatronTab,selectedGuestTab,selectedBrideGroomPage};
+  commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
+  if(!hostReturnSession)hostReturnSession={eventId:viewedEventId,guestName,signedInPersonName,selectedGatheringTab,selectedWeddingTab,selectedMatronTab,selectedGuestTab,selectedBrideGroomPage};
+  await closeHostDialogs();
   hostWeddingPartyViewName=account.name;guestName=account.name;
-  signedInPersonName=document.querySelector('#hostAccountPerson').value || accountSignInNames(account.name)[0] || account.name;
-  document.querySelector('#weddingPartyPreviewDialog').close();
+  signedInPersonName=person || accountSignInNames(account.name)[0] || account.name;
   enterEvent(events.includes(viewedEventId)?viewedEventId:events[0]);
-});
-document.querySelector('#cancelViewAsButton').addEventListener('click', () => {
+}
+document.querySelector('#openWeddingPartyPreview').addEventListener('click',()=>signIntoAccount(appState.accounts.find(account=>account.name===document.querySelector('#hostWeddingPartyView').value),document.querySelector('#hostAccountPerson').value));
+function restoreHostSession() {
   if(!hostAuthenticated)return;
   const previous=hostReturnSession;hostReturnSession=null;hostWeddingPartyViewName='';
   guestName=previous?.guestName || HOST_DISPLAY_NAME;signedInPersonName=previous?.signedInPersonName || '';
@@ -3291,7 +3312,8 @@ document.querySelector('#cancelViewAsButton').addEventListener('click', () => {
   selectedGatheringTab=previous?.selectedGatheringTab ?? null;selectedWeddingTab=previous?.selectedWeddingTab || 'couple';
   selectedMatronTab=previous?.selectedMatronTab || 'duties';selectedGuestTab=previous?.selectedGuestTab || 'attire';selectedBrideGroomPage=previous?.selectedBrideGroomPage || 'main';
   showSignedInDestination();render();window.scrollTo({top:0,left:0,behavior:'auto'});
-});
+}
+document.querySelector('#cancelViewAsButton').addEventListener('click',async()=>{await closeHostDialogs();restoreHostSession();});
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 function anyListSyncErrorMessage(status, errorCode) {
   if (status === 401 || errorCode === 'host_authentication_failed') return 'Unable to sync: the Worker host password secret does not match the website host password.';
@@ -3673,13 +3695,13 @@ for (let index = 0; index < 40; index += 1) {
 }
 
 // Gathering management stays available in the host toolbar in both modes.
-document.querySelector('#newGatheringButton').addEventListener('click',()=>{
-  if(!isHostView())return;
+document.querySelector('#newGatheringButton').addEventListener('click',async()=>{
+  if(!hostAuthenticated)return;if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
   document.querySelector('#newGatheringForm').reset();
   document.querySelector('#newGatheringAddress').value=SharedDetails.homeAddress(state);
-  document.querySelector('#newGatheringDialog').showModal();
+  showSiteDialog(document.querySelector('#newGatheringDialog'));
 });
-document.querySelector('#newGatheringForm').addEventListener('submit',event=>{
+document.querySelector('#newGatheringForm').addEventListener('submit',async event=>{
   if(event.submitter?.value==='cancel')return;
   if(!isHostView()){event.preventDefault();return;}
   const name=document.querySelector('#newGatheringName').value.trim();
@@ -3691,7 +3713,7 @@ document.querySelector('#newGatheringForm').addEventListener('submit',event=>{
     account.invitedEvents={...account.invitedEvents,[id]:false};
   }
   syncGatheringDefinitions(appState.events);
-  document.querySelector('#newGatheringDialog').close();
+  event.preventDefault();await closeHostDialogs();
   enterEvent(id);saveState();showToast('Gathering created. Add menu items and choose accounts to invite.');
 });
 
@@ -3717,8 +3739,8 @@ function renderGatheringHistory() {
     +section('Meals and dietary requests',rsvps.flatMap(rsvp=>(rsvp.menuSelections || []).map(meal=>`<p>${escapeHtml(meal.name || rsvp.name)}: ${escapeHtml(meal.meal || 'No meal selected')}${meal.dietaryRestrictions?` · ${escapeHtml(meal.dietaryRestrictions)}`:''}</p>`)).join(''))
     +section('Host notes',event.hostNotes?`<p class="history-notes">${escapeHtml(event.hostNotes)}</p>`:'');
 }
-document.querySelector('#gatheringHistoryButton').addEventListener('click',()=>{
-  if(!isHostView())return;
+document.querySelector('#gatheringHistoryButton').addEventListener('click',async()=>{
+  if(!hostAuthenticated)return;if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
   commitAllPendingEditorInputs();if(captureGatheringHistory())saveState({refresh:false});
   const dates=Object.keys(appState.gatheringHistory?.[viewedEventId] || {}).sort().reverse();
   document.querySelector('#gatheringHistoryDate').innerHTML=dates.map(date=>`<option>${escapeHtml(date)}</option>`).join('');
@@ -3726,7 +3748,7 @@ document.querySelector('#gatheringHistoryButton').addEventListener('click',()=>{
   document.querySelector('#nextGatheringForm').hidden=!GatheringHistory.completed(state);
   document.querySelector('#nextGatheringDate').min=new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10);
   document.querySelector('#nextGatheringDate').value='';document.querySelector('#nextGatheringError').textContent='';
-  renderGatheringHistory();document.querySelector('#gatheringHistoryDialog').showModal();
+  renderGatheringHistory();showSiteDialog(document.querySelector('#gatheringHistoryDialog'));
 });
 document.querySelector('#gatheringHistoryDate').addEventListener('change',renderGatheringHistory);
 document.querySelector('#closeGatheringHistory').addEventListener('click',()=>document.querySelector('#gatheringHistoryDialog').close());

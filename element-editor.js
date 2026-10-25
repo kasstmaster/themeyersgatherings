@@ -1,7 +1,7 @@
 /* One fixed, selection-based editor for every gathering. No page content is replaced. */
 (() => {
   let context,toolbar,target,entry,range,fieldDraft,dirty=false,panelName='',restores=[],portalRestores=[],editables=[],allowAction=false;
-  const excluded='.element-editor-toolbar,.editor-dialog,.appearance-editor,.inline-overlay-layer';
+  const excluded='#newGatheringDialog,#gatheringHistoryDialog,#invitationEditorDialog,#invitationPreviewDialog,.page-export-options,.element-editor-toolbar,.editor-dialog,.appearance-editor,.inline-overlay-layer';
   const node=(tag,text)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;return element;};
   const button=(text,action,parent)=>{const control=node('button',text);control.type='button';control.addEventListener('click',action);parent.append(control);return control;};
   function markup(root){
@@ -178,7 +178,7 @@
     const current=panelName;panelName='';showPanel(current || (fields?.length && !editables.length?'Text':''));
   }
   function pick(start){
-    const root=[...document.querySelectorAll('dialog[open]')].at(-1) || document.querySelector('#eventPage:not([hidden])') || document.body;
+    const root=(globalThis.activeHostDialog?.() || [...document.querySelectorAll('dialog[open]')].at(-1)) || document.querySelector('#eventPage:not([hidden])') || document.body;
     if(!root.contains(start) || start.closest(excluded))return null;
     const group=start.closest('button,.summary-item,.summary-stat,.counter-row,label:has(input,select,textarea)');
     if(group && root.contains(group))return group;
@@ -192,7 +192,7 @@
   function render(ctx){
     context=ctx;
     if(!ctx?.host || !ctx.enabled){beforeRender();return;}
-    const root=[...document.querySelectorAll('dialog[open]')].at(-1) || document.body;
+    const root=(globalThis.activeHostDialog?.() || [...document.querySelectorAll('dialog[open]')].at(-1)) || document.body;
     if(!toolbar){
       toolbar=node('div');toolbar.className='element-editor-toolbar';toolbar.setAttribute('role','toolbar');toolbar.setAttribute('aria-label','Element editor');
       const row=node('div');row.className='element-editor-row';toolbar.append(row);
@@ -208,13 +208,14 @@
       toolbar.addEventListener('pointerdown',event=>{rememberSelection();if(event.target.matches('button'))event.preventDefault();});
     }
     if(toolbar.parentElement!==root)root.append(toolbar);
+    const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=false;toolbar.querySelector('.element-editor-row').append(templates);}
     const chooser=toolbar.querySelector('[data-editor-chooser]');chooser.replaceChildren();const hint=node('option','Select an element');hint.value='';chooser.append(hint);
     for(const element of SiteEditing.editorTargets.filter(element=>root.contains(element) && !element.parentElement.closest('[hidden],[data-rsvp-flow-hidden],dialog:not([open])') && !element.hasAttribute('data-rsvp-flow-hidden') && (!element.hidden || SiteEditing.editorFor(element)?.fields?.every(spec=>!spec.value)))){const option=node('option',ElementAppearance.label(element));option.value=ElementAppearance.selector(element);chooser.append(option);}chooser.value=target?ElementAppearance.selector(target):'';
   }
-  function beforeRender(){release();toolbar?.remove();toolbar=null;panelName='';}
+  function beforeRender(){release();const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',rememberSelection);
   document.addEventListener('click',event=>{
-    if(!context?.host || !context.enabled || allowAction || event.target.closest(excluded) || event.target.closest('#editItemsButton,#hostToolsButton,#invitationTemplatesButton'))return;
+    if(!context?.host || !context.enabled || allowAction || event.target.closest(excluded) || event.target.closest('#editItemsButton,#hostToolsPanel,#hostToolsButton,#invitationTemplatesButton'))return;
     if(target && editables.some(part=>part.contains(event.target)))return;
     const element=pick(event.target);if(!element)return;
     event.preventDefault();event.stopImmediatePropagation();select(element);
@@ -222,5 +223,5 @@
     if(part){part.focus({preventScroll:true});const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY) || document.createRange();if(!part.contains(caret.startContainer)){caret.selectNodeContents(part);caret.collapse(false);}const selection=window.getSelection();selection.removeAllRanges();selection.addRange(caret);rememberSelection();}
   },true);
   document.addEventListener('keydown',event=>{if(event.key==='Escape' && target){event.preventDefault();event.stopImmediatePropagation();release();status('Selection cleared.');}},true);
-  globalThis.ElementEditor={render,beforeRender,flush,select};
+  globalThis.ElementEditor={render,beforeRender,flush,select,refresh:()=>render(context)};
 })();
