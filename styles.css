@@ -844,7 +844,7 @@ body.theme-wedding #eventPage .wedding-tab-page .page-actions a{box-sizing:borde
 :is(#eventPage,#weddingMediaDialog){--copy-paragraph-gap:0px}
 :is(#eventPage,#weddingMediaDialog) :is(.event-header-text,.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.wedding-party-description,.wedding-party-attire-note,.wedding-timeline-copy,.wedding-tab-content,#rsvpDishQuestionText,#weddingPartyAttireIntroText) :is(p,ul,ol){margin:0;line-height:inherit}
 :is(#eventPage,#weddingMediaDialog) textarea{line-height:var(--copy-line-height,1.65)}
-#rsvpEventConfirmation:has(#weddingRsvpUploadToolbar:not([hidden])){padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+
 body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{margin-bottom:24px}
 .inline-text-formatting .inline-text-style{display:inline-flex;min-width:0;margin:0}
 :is(#eventPage,#weddingMediaDialog) .inline-text-formatting select{box-sizing:border-box;width:auto;max-width:180px;min-width:0;margin:0;padding:6px 8px;border:1px solid var(--border);border-radius:4px;background:var(--cream);color:var(--navy);font:400 .85rem Arial,Helvetica,sans-serif}
@@ -905,3 +905,14 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 .inline-edit-tools,.inline-tab-tools{z-index:2}
 .inline-text-editor{position:relative;z-index:202}
 .inline-overlay-item.inline-editor{z-index:4}
+
+/* First-page actions share the RSVP button layout and keep their icons. */
+#rsvpDialog .modal-close{font-size:2.6rem;width:52px;height:52px;line-height:1;padding:0;z-index:2;cursor:pointer}
+#rsvpConfirmEvent,#weddingRsvpUploadToolbar button{display:flex;align-items:center;justify-content:center;gap:12px}
+#rsvpDialog .toolbar-icon{width:24px;height:24px;flex:none;fill:currentColor}
+#weddingRsvpUploadToolbar{display:grid;gap:12px;margin-top:12px}
+#weddingRsvpUploadToolbar[hidden]{display:none}
+#weddingRsvpUploadToolbar .toolbar-page-navigation button{max-width:none}
+#weddingRsvpUploadToolbar button{box-sizing:border-box;width:100%;min-width:0;margin:0;padding:15px 22px;border:0;border-radius:4px;background:var(--orange);color:white;box-shadow:none;font:700 1rem/1.5 Arial,Helvetica,sans-serif;text-align:center;cursor:pointer}
+#weddingRsvpUploadToolbar button[aria-pressed="true"]{background:var(--orange);color:white;outline:2px solid currentColor;outline-offset:-5px}
+#weddingRsvpUploadToolbar button[hidden]{display:none}

@@ -19,21 +19,21 @@ test('first RSVP page is visible and banner is editable in every regular gatheri
  for(const eventId of ['wedding','thanksgiving','christmas','new-gathering']){
   const f=fixture(true,eventId);f.context.renderRsvpEventHeader();f.context.renderRsvpInlineEditing();
   assert.equal(f.section.hidden,false);assert.equal(f.image.src,'rsvp.png');
-  assert.equal(f.confirm.disabled,true);assert.equal(f.wrong.disabled,true);
+  assert.equal(f.confirm.disabled,true);
   assert.equal(f.fields[0].options.key,'rsvp-first-page-banner');
   f.fields[0].commit(['new-rsvp.png']);f.context.renderRsvpEventHeader();assert.equal(f.image.src,'new-rsvp.png');
  }
 });
 test('guest confirmation stays visible and interactive without editing controls',()=>{
  const f=fixture(false);f.context.renderRsvpEventHeader();f.context.renderRsvpInlineEditing();
- assert.equal(f.section.hidden,false);assert.equal(f.confirm.disabled,false);assert.equal(f.wrong.disabled,false);assert.equal(f.fields.length,0);
+ assert.equal(f.section.hidden,false);assert.equal(f.confirm.disabled,false);assert.equal(f.fields.length,0);
 });
 
-test('all first pages have one fixed image, date, two text slots and two buttons',async()=>{
+test('all first pages have one fixed image, date, two text slots and shared first-page actions',async()=>{
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
  const section=html.slice(html.indexOf('<section id="rsvpEventConfirmation"'),html.indexOf('<div id="rsvpWeddingPages"'));
  const ids=[...section.matchAll(/id="([^"]+)"/g)].map(match=>match[1]);
- assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','rsvpWrongEvent']);
+ assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','weddingRsvpUploadToolbar','weddingPartyTabs','uploadPhotosButton']);
  assert.doesNotMatch(headerCode,/cloneNode/);
  for(const id of ['wedding','thanksgiving','christmas','new-gathering']){
   const f=fixture(true,id);f.context.renderRsvpEventHeader();f.context.renderRsvpInlineEditing();

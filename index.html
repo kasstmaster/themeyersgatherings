@@ -58,7 +58,6 @@
         <img class="event-selection-icon" src="assets/icons/meyers-512.png" width="144" height="144" alt="Our wedding rose" decoding="async" />
         <h1 id="eventSelectionHeading">Welcome to The Meyers Gatherings</h1>
         <p class="event-selection-intro">It is our pleasure to share these special occasions with the people we hold dear.</p>
-        <p>Please select a gathering to start with. You can switch gatherings at any time.</p>
         <div id="eventSelectionChoices" class="event-selection-choices"></div>
         <p id="eventSelectionEmpty" class="event-selection-empty" hidden>You do not have sign-in access to a gathering yet.</p>
       </div>
@@ -295,8 +294,20 @@
             </div>
           </div>
           <div class="rsvp-event-actions">
-            <button id="rsvpConfirmEvent" class="primary-button" type="button" data-rsvp-advance>RSVP</button>
-            <button id="rsvpWrongEvent" class="primary-button" type="button">All Meyer Gatherings</button>
+            <button id="rsvpConfirmEvent" class="primary-button" type="button" data-rsvp-advance><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16 4 11l-2 2 7 7L22 7l-2-2L9 16Z"/></svg><span>RSVP</span></button>
+          </div>
+          <div id="weddingRsvpUploadToolbar" class="rsvp-front-page-actions" role="toolbar" aria-label="RSVP page actions" hidden>
+      <nav id="weddingPartyTabs" class="toolbar-page-navigation" aria-label="Wedding pages" role="toolbar" hidden>
+        <button type="button" role="button" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
+        <button type="button" role="button" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="false">Attire</button>
+        <button type="button" role="button" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
+      </nav>
+            <div class="wedding-upload-toolbar-content">
+              <button id="uploadPhotosButton" class="toolbar-upload-action" type="button" aria-label="Upload Photos &amp; Videos" hidden>
+                <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg>
+                <span>Upload<br>Photos &amp; Videos</span>
+              </button>
+            </div>
           </div>
           <div id="rsvpWeddingPages" hidden>
       <section id="weddingPartySection" class="wedding-tab-page wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
@@ -387,19 +398,7 @@
         </div>
       </section>
           </div>
-          <div id="weddingRsvpUploadToolbar" class="event-dock wedding-upload-toolbar" role="toolbar" aria-label="RSVP page actions" hidden>
-      <nav id="weddingPartyTabs" class="toolbar-page-navigation" aria-label="Wedding pages" role="toolbar" hidden>
-        <button type="button" role="button" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
-        <button type="button" role="button" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="false">Attire</button>
-        <button type="button" role="button" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
-      </nav>
-            <div class="wedding-upload-toolbar-content">
-              <button id="uploadPhotosButton" class="toolbar-upload-action" type="button" aria-label="Upload Photos &amp; Videos" hidden>
-                <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg>
-                <span>Upload<br>Photos &amp; Videos</span>
-              </button>
-            </div>
-          </div>
+
         </section>
         <section id="rsvpAttire" hidden><div id="rsvpAttireColumns" class="rsvp-attire-columns"></div><button id="rsvpAttireAcknowledge" class="primary-button" type="button" data-rsvp-advance>I Agree</button></section>
         <fieldset id="rsvpAttendance" class="rsvp-attendance-box"><legend>Attending</legend>
