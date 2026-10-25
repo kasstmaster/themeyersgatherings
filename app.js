@@ -1215,7 +1215,6 @@ function renderWeddingGathering(hostView) {
   const isWedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
   document.querySelector('#rsvpWeddingPages').hidden=!isWedding;
   if(!isWedding){
-    document.querySelector('#weddingMediaDialog').close();
     for(const id of ['weddingHostTabs','weddingPartyTabs','brideGroomSection','weddingPartySection','weddingTimelineSection','guestSection','weddingMediaSection','registrySection','registryAttireSection','whatToExpectSection'])document.getElementById(id).hidden=true;
     return;
   }
@@ -1224,7 +1223,6 @@ function renderWeddingGathering(hostView) {
   const registrySection = document.querySelector('#registrySection');
   const signedInWeddingPartyMember = state.weddingPartyMembers?.find(member => weddingPartyPersonMatches(member.name, signedInPersonName));
   const isWeddingPartyMember = isWedding && !hostView && Boolean(signedInWeddingPartyMember);
-  if (selectedWeddingTab === 'media') selectedWeddingTab = hostView ? 'couple' : isWeddingPartyMember ? 'party' : 'guest';
   document.querySelectorAll('#registryAttireSection .guest-attire-requirements').forEach(requirements => {
     requirements.hidden = isWeddingPartyMember;
   });
@@ -1239,8 +1237,8 @@ function renderWeddingGathering(hostView) {
   const showingAttirePage = (showingGuestPage && publicWeddingTab === 'attire') || showingPartyAttirePage;
   const showingWhatToExpectPage = showingGuestPage && publicWeddingTab === 'details';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
-  document.querySelector('#weddingMediaSection').hidden = false;
-  if (document.querySelector('#weddingMediaDialog').open) WeddingMedia.show({ base: SHARED_STATE_URL, host: hostView, password: hostView ? hostCredential : '', name: signedInPersonName || guestName, account: guestName, preview: false });
+  document.querySelector('#weddingMediaSection').hidden = selectedWeddingTab !== 'media';
+  if (selectedWeddingTab === 'media') WeddingMedia.show({ base: SHARED_STATE_URL, host: hostView, password: hostView ? hostCredential : '', name: signedInPersonName || guestName, account: guestName, preview: false });
   const hostTabs=document.querySelector('#weddingHostTabs');
   hostTabs.hidden=!hostView;
   hostTabs.querySelectorAll('[data-wedding-tab]').forEach(button=>{
@@ -1251,8 +1249,8 @@ function renderWeddingGathering(hostView) {
   weddingPartyTabs.hidden = !isWedding;
   weddingPartyTabs.querySelectorAll('[data-wedding-tab]').forEach(button => {
     const hostCanViewTab = true;
-    const partyMemberCanViewTab = ['party', 'attire', 'registry'].includes(button.dataset.weddingTab);
-    const guestCanViewTab = ['attire', 'registry', 'details'].includes(button.dataset.weddingTab);
+    const partyMemberCanViewTab = ['party', 'attire', 'registry', 'media'].includes(button.dataset.weddingTab);
+    const guestCanViewTab = ['attire', 'registry', 'details', 'media'].includes(button.dataset.weddingTab);
     button.hidden = !(hostView ? hostCanViewTab : isWeddingPartyMember ? partyMemberCanViewTab : guestCanViewTab);
     const isSelected = button.dataset.weddingTab === publicWeddingTab;
     button.setAttribute('aria-selected', String(isSelected));
@@ -1577,8 +1575,7 @@ function renderInlineEditing() {
   ], ([header,rsvpHeader])=>{state.siteHeaderImage=header;state.rsvpHeaderImage=rsvpHeader;}, {replace:false});
   SiteEditing.staticText(document.querySelector('#eventPage'));
   SiteEditing.staticText(document.querySelector('#rsvpDialog'));
-  if(document.querySelector('#weddingMediaDialog').open)SiteEditing.staticText(document.querySelector('#weddingMediaDialog'));
-  document.querySelectorAll('#eventPage [role="tablist"],#rsvpWeddingPages [role="tablist"],#weddingPartyTabs,#weddingMediaDialog[open] [role="tablist"]').forEach(nav => {
+  document.querySelectorAll('#eventPage [role="tablist"],#rsvpWeddingPages [role="tablist"],#weddingPartyTabs').forEach(nav => {
     if(nav.id==='gatheringTabs' ? !features.menu && !features.notes : !features.weddingPages)return;
     const config = { available: nav.id==='brideGroomTabs' && selectedWeddingTab==='couple' && viewedEventId==='wedding' };
     if(nav.id==='weddingPartyTabs')Object.assign(config,{toolbar:true,allowNoSelection:true,pageHost:document.querySelector('#rsvpWeddingPages'),panelIds:['whatToExpectSection'],scroll:true,
@@ -1633,7 +1630,7 @@ function renderRsvpInlineEditing() {
 }
 
 function renderWeddingPageToolbar(){
-  const icons={party:'M8 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm8 1a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM1 22v-6a6 6 0 0 1 12 0v6H1Zm14 0v-6c0-2-.5-3.5-1.5-5A5 5 0 0 1 23 16v6h-8Z',attire:'M8 2h8l-2 5 4 13-6 4-6-4 4-13-2-5Zm2 1 2 3 2-3h-4Z',registry:'M2 8h20v5h-9v9h-2v-9H2V8Zm2 7h5v7H4v-7Zm11 0h5v7h-5v-7ZM7 1c3 0 5 5 5 5s2-5 5-5a3 3 0 0 1 0 6H7a3 3 0 0 1 0-6Zm0 2a1 1 0 0 0 0 2h3S8 3 7 3Zm10 0c-1 0-3 2-3 2h3a1 1 0 0 0 0-2Z',custom:'M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z'};
+  const icons={media:'M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',party:'M8 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm8 1a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM1 22v-6a6 6 0 0 1 12 0v6H1Zm14 0v-6c0-2-.5-3.5-1.5-5A5 5 0 0 1 23 16v6h-8Z',attire:'M8 2h8l-2 5 4 13-6 4-6-4 4-13-2-5Zm2 1 2 3 2-3h-4Z',registry:'M2 8h20v5h-9v9h-2v-9H2V8Zm2 7h5v7H4v-7Zm11 0h5v7h-5v-7ZM7 1c3 0 5 5 5 5s2-5 5-5a3 3 0 0 1 0 6H7a3 3 0 0 1 0-6Zm0 2a1 1 0 0 0 0 2h3S8 3 7 3Zm10 0c-1 0-3 2-3 2h3a1 1 0 0 0 0-2Z',custom:'M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z'};
   document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{
     const title=button.textContent.trim(),selected=button.getAttribute('aria-selected')==='true';
     button.setAttribute('aria-pressed',String(selected));button.tabIndex=0;
@@ -1985,14 +1982,6 @@ function captureRsvpMeals() {
   }
   return rsvpMealDraft;
 }
-document.querySelector('#uploadPhotosButton').addEventListener('click',()=>ensureAccount(()=>{
-  if(!GatheringFeatures.forGathering(viewedEventId).weddingPages)return;
-  const dialog=document.querySelector('#weddingMediaDialog');
-  if(!dialog.open)dialog.showModal();
-  render();
-}));
-document.querySelectorAll('[data-close-wedding-media]').forEach(button=>button.addEventListener('click',()=>document.querySelector('#weddingMediaDialog').close()));
-document.querySelector('#weddingMediaDialog').addEventListener('close',()=>render());
 document.querySelector('#rsvpButton').addEventListener('click',()=>openRsvp());
 function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   if(document.querySelector('#rsvpDialog').open)return;
