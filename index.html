@@ -236,10 +236,41 @@
       </form><div class="modal-dialog-footer"><button class="primary-button" type="submit" form="nextGatheringForm">Start next gathering</button></div>
     </div></dialog>
 
-    <dialog id="weddingMediaDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="weddingMediaHeading">
-      <section id="weddingMediaSection" class="wedding-tab-page full-page-form" aria-labelledby="weddingMediaHeading">
-        <button class="modal-close" type="button" data-close-wedding-media aria-label="Close">×</button>
-        <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us through Dropbox.</p>
+
+    <dialog id="rsvpDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="rsvpHeading">
+      <form method="dialog" id="rsvpForm" class="modal-card full-page-form flow-panel" novalidate>
+        <button class="modal-close" type="button" aria-label="Close">×</button>
+        <p class="section-kicker">Save your seat</p>
+        <h2 id="rsvpHeading" tabindex="-1">RSVP</h2>
+        <p id="rsvpChildAge" hidden>Ages 17 and under</p>
+        <p id="rsvpDeadlineNotice" role="status" hidden></p>
+        <section id="rsvpEventConfirmation" aria-label="Confirm your gathering" hidden>
+          <div id="rsvpEventHeader">
+            <div class="header-art">
+              <img id="rsvpFirstPageImage" alt="" decoding="async" hidden />
+              <time id="rsvpFirstPageDate" class="event-date"></time>
+              <div id="rsvpFirstPageText" class="event-header-text"></div>
+              <div id="rsvpFirstPageDetails" class="event-header-text"></div>
+            </div>
+          </div>
+          <div class="rsvp-event-actions">
+            <button id="rsvpConfirmEvent" class="primary-button" type="button" data-rsvp-advance><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16 4 11l-2 2 7 7L22 7l-2-2L9 16Z"/></svg><span>RSVP</span></button>
+          </div>
+          <div id="weddingRsvpUploadToolbar" class="rsvp-front-page-actions" role="toolbar" aria-label="RSVP page actions" hidden>
+      <nav id="weddingPartyTabs" class="toolbar-page-navigation" aria-label="Wedding pages" role="toolbar" hidden>
+        <button type="button" role="button" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
+        <button type="button" role="button" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="false">Attire</button>
+        <button type="button" role="button" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
+        <button id="uploadPhotosButton" data-wedding-tab="media" aria-controls="weddingMediaSection" aria-selected="false" class="toolbar-upload-action" type="button" aria-label="Upload Photos &amp; Videos" hidden>
+                <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg>
+                <span>Upload Photos &amp; Videos</span>
+              </button>
+      </nav>
+
+          </div>
+          <div id="rsvpWeddingPages" hidden>
+      <section id="weddingMediaSection" class="wedding-tab-page" hidden aria-labelledby="weddingMediaHeading">
+        <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us</p>
         <h2 id="weddingMediaHeading">Upload Photos &amp; Videos</h2>
         <nav id="weddingMediaTabs" class="wedding-party-tabs" role="tablist" aria-label="Wedding uploads">
           <button type="button" role="tab" data-media-tab="upload" aria-controls="weddingMediaUpload" aria-selected="true">Upload</button>
@@ -273,43 +304,8 @@
           <p id="weddingMediaGalleryStatus" role="status" aria-live="polite"></p>
           <div id="weddingMediaGallery" class="wedding-media-gallery"></div>
         </section>
-        <div class="modal-dialog-footer"><button class="sign-in-back" type="button" data-close-wedding-media>Back</button></div>
       </section>
-    </dialog>
 
-    <dialog id="rsvpDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="rsvpHeading">
-      <form method="dialog" id="rsvpForm" class="modal-card full-page-form flow-panel" novalidate>
-        <button class="modal-close" type="button" aria-label="Close">×</button>
-        <p class="section-kicker">Save your seat</p>
-        <h2 id="rsvpHeading" tabindex="-1">RSVP</h2>
-        <p id="rsvpChildAge" hidden>Ages 17 and under</p>
-        <p id="rsvpDeadlineNotice" role="status" hidden></p>
-        <section id="rsvpEventConfirmation" aria-label="Confirm your gathering" hidden>
-          <div id="rsvpEventHeader">
-            <div class="header-art">
-              <img id="rsvpFirstPageImage" alt="" decoding="async" hidden />
-              <time id="rsvpFirstPageDate" class="event-date"></time>
-              <div id="rsvpFirstPageText" class="event-header-text"></div>
-              <div id="rsvpFirstPageDetails" class="event-header-text"></div>
-            </div>
-          </div>
-          <div class="rsvp-event-actions">
-            <button id="rsvpConfirmEvent" class="primary-button" type="button" data-rsvp-advance><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16 4 11l-2 2 7 7L22 7l-2-2L9 16Z"/></svg><span>RSVP</span></button>
-          </div>
-          <div id="weddingRsvpUploadToolbar" class="rsvp-front-page-actions" role="toolbar" aria-label="RSVP page actions" hidden>
-      <nav id="weddingPartyTabs" class="toolbar-page-navigation" aria-label="Wedding pages" role="toolbar" hidden>
-        <button type="button" role="button" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
-        <button type="button" role="button" data-wedding-tab="attire" aria-controls="registryAttireSection" aria-selected="false">Attire</button>
-        <button type="button" role="button" data-wedding-tab="registry" aria-controls="registrySection" aria-selected="false">Registry</button>
-      </nav>
-            <div class="wedding-upload-toolbar-content">
-              <button id="uploadPhotosButton" class="toolbar-upload-action" type="button" aria-label="Upload Photos &amp; Videos" hidden>
-                <svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg>
-                <span>Upload Photos &amp; Videos</span>
-              </button>
-            </div>
-          </div>
-          <div id="rsvpWeddingPages" hidden>
       <section id="weddingPartySection" class="wedding-tab-page wedding-party-section" aria-labelledby="weddingPartyHeading" hidden>
         <p id="weddingPartyKicker" class="section-kicker">The people by our side</p>
         <h2 id="weddingPartyHeading">Wedding Party</h2>

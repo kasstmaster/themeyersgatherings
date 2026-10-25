@@ -276,8 +276,8 @@ test('wedding page tabs use guest-facing labels and audience-specific visibility
   assert.match(html, />Wedding Party<\/button>/);
   assert.match(html, />Responsibilities<\/button>/);
   assert.match(javascript, /hostCanViewTab = true/);
-  assert.match(javascript, /partyMemberCanViewTab = \['party', 'attire', 'registry'\]/);
-  assert.match(javascript, /guestCanViewTab = \['attire', 'registry', 'details'\]/);
+  assert.match(javascript, /partyMemberCanViewTab = \['party', 'attire', 'registry', 'media'\]/);
+  assert.match(javascript, /guestCanViewTab = \['attire', 'registry', 'details', 'media'\]/);
   assert.match(javascript, /button\.hidden = !\(hostView \? hostCanViewTab : isWeddingPartyMember \? partyMemberCanViewTab : guestCanViewTab\)/);
   assert.match(javascript, /showingWeddingPartyPage = isWedding && \(hostView \|\| isWeddingPartyMember\) && selectedWeddingTab === 'party'/);
   assert.match(javascript, /matronInfoTabs\.hidden = !showingWeddingPartyPage/);
@@ -561,7 +561,7 @@ test('Wedding Timeline is private to hosts and remains host-editable', async () 
   assert.match(html, /id="weddingTimelineAboveContent"[\s\S]*id="weddingTimelineBody"[\s\S]*id="weddingTimelineBelowContent"/);
   assert.match(html, /id="adminTimelineAboveContent"[\s\S]*id="adminTimelineContent"[\s\S]*id="adminTimelineBelowContent"/);
   assert.match(html, /id="adminTimelineContent"/);
-  assert.match(javascript, /partyMemberCanViewTab = \['party', 'attire', 'registry'\]/);
+  assert.match(javascript, /partyMemberCanViewTab = \['party', 'attire', 'registry', 'media'\]/);
   assert.match(javascript, /hostView && selectedWeddingTab === 'timeline'/);
   assert.match(javascript, /state\.timelineContent = event\.target\.value/);
   assert.match(javascript, /state\[`timeline\$\{position\}Content`\] = event\.target\.value/);

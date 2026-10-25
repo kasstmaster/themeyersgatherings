@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 await import('../gathering-features.js');
 const [source,html]=await Promise.all(['app.js','index.html'].map(f=>readFile(new URL('../'+f,import.meta.url),'utf8')));
-const prefix=source.slice(source.indexOf('function renderWeddingGathering('),source.indexOf("  document.querySelector('#weddingMediaSection').hidden = false;"));
+const prefix=source.slice(source.indexOf('function renderWeddingGathering('),source.indexOf("  document.querySelector('#weddingMediaSection').hidden = selectedWeddingTab !== 'media';"));
 function visibility(host,party,tab,event='wedding'){
  const nodes={};const node=id=>nodes[id]??={hidden:false,close(){}};
  const c=vm.createContext({viewedEventId:event,GatheringFeatures,selectedWeddingTab:tab,selectedGuestTab:'attire',selectedMatronTab:'experience',signedInPersonName:'Person',state:{weddingPartyMembers:party?[{name:'Person'}]:[]},weddingPartyPersonMatches:(a,b)=>a===b,document:{querySelector:node,querySelectorAll:()=>[],getElementById:node}});
@@ -35,7 +35,7 @@ test('public Wedding pages follow RSVP buttons and uploads use a first-page tool
 
 test('Wedding main pages are toolbar options without a Details option',()=>{
  const nav=html.slice(html.indexOf('<nav id="weddingPartyTabs"'),html.indexOf('</nav>',html.indexOf('<nav id="weddingPartyTabs"')));
- assert.deepEqual([...nav.matchAll(/data-wedding-tab="([^"]+)"/g)].map(m=>m[1]),['party','attire','registry']);
+ assert.deepEqual([...nav.matchAll(/data-wedding-tab="([^"]+)"/g)].map(m=>m[1]),['party','attire','registry','media']);
  assert.match(nav,/class="toolbar-page-navigation"/);assert.match(nav,/role="toolbar"/);
  assert.ok(html.indexOf('id="weddingPartyTabs"')>html.indexOf('id="weddingRsvpUploadToolbar"'));
  assert.match(html,/<nav id="guestInfoTabs" hidden/);
