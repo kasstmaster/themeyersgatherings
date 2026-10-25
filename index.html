@@ -126,18 +126,18 @@
       <strong id="signedInAccountName"></strong>
       <p id="rsvpDeadline" class="rsvp-deadline" hidden></p>
     </div>
-    <nav id="hostToolsPanel" class="host-tools-panel" aria-label="Host tools" hidden>
+    <nav id="hostToolsPanel" class="host-tools-panel event-dock" aria-label="Host tools" hidden>
       <div id="syncStatus" class="sync-status" role="status" aria-live="polite" hidden></div>
       <div class="host-tool-actions">
-        <button id="editAccountsButton" type="button">Accounts</button>
-        <button id="editItemsButton" type="button">Wedding Details</button>
-        <button id="previewWeddingPartyButton" type="button">Sign in to account</button>
-        <button id="invitationTemplatesButton" type="button">Templates</button>
-        <button id="gatheringHistoryButton" type="button">History</button>
-        <button id="newGatheringButton" data-gathering-tool type="button">New Gathering</button>
+        <button id="hostHomeButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 11 9-2 2-2-2v11h-5v-7h-4v7H5V11l-2 2-2-2 11-9Z"/></svg><span>Home</span></button>
+        <button id="editAccountsButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z"/></svg><span>Accounts</span></button>
+        <button id="gatheringHistoryButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9H1l4-5 4 5H6a6 6 0 1 0 6-6V3Zm-1 4h2v5l4 2-1 2-5-3V7Z"/></svg><span>History</span></button>
+        <button id="newGatheringButton" data-gathering-tool type="button" aria-label="New gathering" title="New gathering"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2h4v8h8v4h-8v8h-4v-8H2v-4h8V2Z"/></svg></button>
+        <button id="cancelViewAsButton" type="button" hidden>Leave account</button>
       </div>
     </nav>
-    <button id="cancelViewAsButton" class="cancel-view-as" type="button" hidden>Leave account</button>
+    <button id="editItemsButton" class="host-fixed-edit" type="button" hidden>Edit</button>
+    <button id="invitationTemplatesButton" type="button" hidden>Templates</button>
 
     <main>
       <section class="summary-strip" aria-label="Event summary">

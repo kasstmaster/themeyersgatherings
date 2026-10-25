@@ -15,7 +15,7 @@
     });
     document.querySelectorAll('[data-page-actions]').forEach(actions=>actions.remove());
     for(const surface of surfaces) surface.classList.toggle('page-action-surface',!surface.closest('#weddingMediaDialog'));
-    for(const toolbar of document.querySelectorAll('#eventDock,#rsvpPageToolbar')){
+    for(const toolbar of document.querySelectorAll('#eventDock,#rsvpPageToolbar,#hostToolsPanel')){
       if(toolbar.querySelector('[data-toolbar-page-actions]'))continue;
       const actions=document.createElement('div');actions.dataset.toolbarPageActions='';actions.className='toolbar-page-actions';
       actions.innerHTML='<button type="button" data-page-export aria-label="Print or email page" aria-haspopup="dialog"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12v5H6V2Zm-2 6h16a2 2 0 0 1 2 2v8h-4v4H6v-4H2v-8a2 2 0 0 1 2-2Zm4 8v4h8v-4H8Zm10-5v2h2v-2h-2Z"/></svg><span>Print Page</span></button>';
@@ -23,7 +23,8 @@
     }
   }
   function toolbarSurface(control){
-    const inRsvp=Boolean(control.closest('#rsvpPageToolbar'));
+    const inRsvp=Boolean(control.closest('#rsvpPageToolbar') || control.closest('#hostToolsPanel') && document.getElementById('rsvpDialog').open);
+    if(control.closest('#hostToolsPanel')){const chooser=document.querySelector('#eventSelectionPage:not([hidden])');if(visible(chooser) && !globalThis.activeHostDialog?.())return chooser;const dialog=globalThis.activeHostDialog?.();if(dialog && dialog.id!=='rsvpDialog')return dialog.querySelector('section,form') || dialog;}
     const navs=inRsvp?['weddingPartyTabs']:['weddingHostTabs','gatheringTabs'];
     for(const id of navs){
       const nav=document.getElementById(id);

@@ -953,3 +953,23 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 @media print{.element-editor-toolbar{display:none!important}.element-editor-selected{outline:none!important}}
 
 .element-editor-panel textarea{height:48px;resize:vertical}
+
+/* One host dock remains in the active modal's top layer on every page. */
+#hostToolsPanel{position:fixed;z-index:11000;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;padding:7px 8px calc(7px + env(safe-area-inset-bottom,0px));background:rgba(255,250,241,.98);border-top:1px solid #ddccb1;border-bottom:0;color:#77757a}
+#hostToolsPanel[hidden]{display:none}
+#hostToolsPanel .host-tool-actions{display:contents}
+#hostToolsPanel .host-tool-actions button{display:flex;flex:1 1 0;max-width:180px;min-width:0;min-height:56px;align-items:center;justify-content:center;flex-direction:column;gap:5px;padding:5px 10px;border:0;border-radius:0;background:transparent;color:inherit;font:600 .72rem/1 Arial,sans-serif}
+#hostToolsPanel .host-tool-actions button[hidden]{display:none}
+#hostToolsPanel .sync-status{position:absolute;bottom:100%;left:12px;right:12px;max-width:100%;margin:0}
+.host-fixed-edit{position:fixed;top:12px;right:14px;z-index:12000;margin:0;padding:9px 16px;border:1px solid #b89968;border-radius:4px;background:#fffaf1;color:#132841;font:700 14px Arial,sans-serif;cursor:pointer}
+.host-fixed-edit[hidden],.host-toolbar-replaced{display:none!important}
+.has-host-toolbar{padding-bottom:84px}
+.has-host-toolbar dialog.fullscreen-dialog{padding-bottom:84px}
+.has-host-toolbar .element-editor-toolbar{padding-right:85px}
+.account-sign-in{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-width:24px;margin:0 0 0 5px;padding:3px;border:0;background:transparent;color:inherit;vertical-align:middle;cursor:pointer}
+.account-sign-in svg{width:16px;height:16px;fill:currentColor}
+.account-sign-in:disabled{opacity:.35;cursor:default}
+@media(max-width:520px){#hostToolsPanel .host-tool-actions button{padding:5px 4px;font-size:.68rem}.host-fixed-edit{top:7px;right:8px;padding:7px 12px}}
+@media print{#hostToolsPanel,.host-fixed-edit{display:none!important}}
+
+.has-host-toolbar dialog .modal-close{right:88px}

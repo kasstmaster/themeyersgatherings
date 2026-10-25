@@ -5,7 +5,7 @@
   const styledText=new Map();
   const controls=[];
   const properties=['background-color','background-image','background-size','background-position','background-repeat','color','border-color','border-width','border-style','border-radius'];
-  const excluded='.element-editor-toolbar,.inline-overlay-layer,.inline-editor,.inline-text-editor,.inline-text-formatting,.inline-edit-tools,.inline-direct-input,.inline-portal-editor,.inline-meal-editor,.appearance-editor,.appearance-trigger,.inline-appearance-tools,script,style,link,meta';
+  const excluded='#hostToolsPanel,#editItemsButton,.element-editor-toolbar,.inline-overlay-layer,.inline-editor,.inline-text-editor,.inline-text-formatting,.inline-edit-tools,.inline-direct-input,.inline-portal-editor,.inline-meal-editor,.appearance-editor,.appearance-trigger,.inline-appearance-tools,script,style,link,meta';
   function label(element){
     if(element===document.body)return 'Page background';
     if(element.tagName.toLowerCase()==='svg')return 'Icon';
