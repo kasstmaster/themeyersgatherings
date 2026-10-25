@@ -1630,9 +1630,10 @@ function renderRsvpInlineEditing() {
 }
 
 function renderWeddingPageToolbar(){
-  const icons={media:'M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',party:'M8 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm8 1a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM1 22v-6a6 6 0 0 1 12 0v6H1Zm14 0v-6c0-2-.5-3.5-1.5-5A5 5 0 0 1 23 16v6h-8Z',attire:'M8 2h8l-2 5 4 13-6 4-6-4 4-13-2-5Zm2 1 2 3 2-3h-4Z',registry:'M2 8h20v5h-9v9h-2v-9H2V8Zm2 7h5v7H4v-7Zm11 0h5v7h-5v-7ZM7 1c3 0 5 5 5 5s2-5 5-5a3 3 0 0 1 0 6H7a3 3 0 0 1 0-6Zm0 2a1 1 0 0 0 0 2h3S8 3 7 3Zm10 0c-1 0-3 2-3 2h3a1 1 0 0 0 0-2Z',custom:'M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z'};
+  const icons={media:'M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',party:'M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z',attire:'M8 2h8l-2 5 4 13-6 4-6-4 4-13-2-5Zm2 1 2 3 2-3h-4Z',registry:'M2 8h20v5h-9v9h-2v-9H2V8Zm2 7h5v7H4v-7Zm11 0h5v7h-5v-7ZM7 1c3 0 5 5 5 5s2-5 5-5a3 3 0 0 1 0 6H7a3 3 0 0 1 0-6Zm0 2a1 1 0 0 0 0 2h3S8 3 7 3Zm10 0c-1 0-3 2-3 2h3a1 1 0 0 0 0-2Z',custom:'M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z'};
   document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{
-    const title=button.textContent.trim(),selected=button.getAttribute('aria-selected')==='true';
+    const firstName=signedInPersonName.trim().split(/\s+/)[0];
+    const title=button.dataset.weddingTab==='party' && firstName ? `${firstName}'s Information` : button.textContent.trim(),selected=button.getAttribute('aria-selected')==='true';
     button.setAttribute('aria-pressed',String(selected));button.tabIndex=0;
     button.innerHTML=`<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons[button.dataset.weddingTab] || icons.custom}"/></svg><span>${escapeHtml(title)}</span>`;
   });
