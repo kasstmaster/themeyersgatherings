@@ -991,3 +991,6 @@ gathering-gap{display:block;position:relative;box-sizing:border-box;flex-shrink:
 .site-edit-mode :is(section,article,h1,h2,h3,h4,p,time,.event-header-text,gathering-gap){scroll-margin-top:160px}
 
 .element-editor-row{flex-wrap:nowrap;overflow-x:auto}.element-editor-row>*{flex-shrink:0}.element-editor-row [data-editor-chooser]{max-width:160px}.element-editor-row>[data-editor-selection]{max-width:120px}.dragging-gap .element-editor-panel{display:none!important}
+
+.editor-ribbon-space{display:block;flex:none;width:100%;margin:0;padding:0;border:0;pointer-events:none}
+@media print{.editor-ribbon-space{display:none!important}}
