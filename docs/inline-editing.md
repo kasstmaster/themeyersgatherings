@@ -35,3 +35,11 @@ In **Accounts**, click the small person icon beside an adult's name to enter tha
 Run `node scripts/verify-host-toolbar.cjs` with the same local browser setup to check persistent controls across dialogs, Home, per-person sign-in, host return, Templates placement, and mobile layout.
 
 Run `node scripts/verify-gap-editing.cjs` to verify editable existing spacing, spacer drag/drop and sizing, saved placement, gathering isolation, and restored Bride & Groom / Timeline outer panels.
+
+## Host RSVP landing and pages
+
+Choosing a gathering as host opens its first RSVP page. The host counters appear directly below RSVP. The previous host home page is removed. Wedding hosts default to Bride & Groom; guests retain their normal Details or personal Wedding Party default.
+
+Use **All Pages** in the host toolbar to open Bride & Groom, Timeline, Details, Wedding Party, Attire, Registry, Upload Photos & Videos, and custom Wedding pages. Standard gatherings expose their host Notes and Menu there. All Pages and the counters are hidden in guest views. This navigation also works during editing; choose an original page label through Select an element to rename or reorder it.
+
+Run `node scripts/verify-host-rsvp-home.cjs` to check host landing, counter placement, page switching, standard gatherings, and guest privacy.

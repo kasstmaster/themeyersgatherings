@@ -209,7 +209,7 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
     readFile(new URL('../styles.css', import.meta.url), 'utf8')
   ]);
 
-  assert.ok(html.indexOf('data-wedding-tab="couple"') < html.indexOf('data-wedding-tab="party"'));
+  assert.ok(html.indexOf('id="brideGroomSection"') > html.indexOf('id="rsvpWeddingPages"'));
   assert.match(html, /id="weddingHostTabs"[^>]*hidden>[\s\S]*data-wedding-tab="couple"[^>]*>Bride &amp; Groom/);
   assert.match(html, /id="brideGroomHeading">Bride &amp; Groom/);
   const weddingEditor = html.match(/<div id="adminAttireFields"[\s\S]*?<div id="menuAdminFields">/)?.[0] || '';
@@ -227,7 +227,7 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   const editor = html.match(/<textarea id="adminBrideGroomContent"[^>]*>/)?.[0] || '';
   assert.doesNotMatch(editor, /maxlength/);
   assert.match(javascript, /hostCanViewTab = true/);
-  assert.match(javascript, /showingBrideGroomPage = isWedding && hostView && selectedWeddingTab !== 'timeline'/);
+  assert.match(javascript, /showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple'/);
   assert.match(javascript, /brideGroomContent\.innerHTML = formatEditableText\(activeBrideGroomPage\?\.content/);
   assert.match(javascript, /state\.brideGroomPages\?\.find/);
   assert.match(javascript, /page\.content = content\.value/);
@@ -647,7 +647,7 @@ test('host tools expose Home, Accounts, History, and new gathering', async () =>
   ]);
   const accountIndex = html.indexOf('id="signedInAccount"');
   const toolsIndex = html.indexOf('id="hostToolsPanel"');
-  const mainIndex = html.indexOf('<main>');
+  const mainIndex = html.indexOf('<main hidden>');
   assert.ok(accountIndex < toolsIndex);
   assert.ok(mainIndex>=0);
   assert.match(html, /id="hostToolsPanel"[\s\S]*id="hostHomeButton"[\s\S]*id="editAccountsButton"[\s\S]*id="gatheringHistoryButton"[\s\S]*id="newGatheringButton"/);

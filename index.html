@@ -129,6 +129,7 @@
     <nav id="hostToolsPanel" class="host-tools-panel event-dock" aria-label="Host tools" hidden>
       <div id="syncStatus" class="sync-status" role="status" aria-live="polite" hidden></div>
       <div class="host-tool-actions">
+        <details id="hostAllPages" hidden><summary><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2h14v3H6v14H3V2Zm5 5h13v15H8V7Zm3 3v2h7v-2h-7Zm0 5v2h7v-2h-7Z"/></svg><span>All Pages</span></summary><div id="hostAllPagesMenu"></div></details>
         <button id="hostHomeButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 11 9-2 2-2-2v11h-5v-7h-4v7H5V11l-2 2-2-2 11-9Z"/></svg><span>Home</span></button>
         <button id="editAccountsButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z"/></svg><span>Accounts</span></button>
         <button id="gatheringHistoryButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9H1l4-5 4 5H6a6 6 0 1 0 6-6V3Zm-1 4h2v5l4 2-1 2-5-3V7Z"/></svg><span>History</span></button>
@@ -139,67 +140,8 @@
     <button id="editItemsButton" class="host-fixed-edit" type="button" hidden>Edit</button>
     <button id="invitationTemplatesButton" type="button" hidden>Templates</button>
 
-    <main>
-      <section class="summary-strip" aria-label="Event summary">
-        <button class="summary-item" id="guestListButton" type="button"><strong id="guestCount">0/0</strong><span>Attending</span></button>
-        <button class="summary-item" id="notAttendingButton" type="button"><strong id="notAttendingCount">0/0</strong><span>Not attending</span></button>
-        <button class="summary-item" id="noResponseButton" type="button"><strong id="noResponseCount">0/0</strong><span>No Response</span></button>
-        <button class="summary-item" id="invitedListButton" type="button"><strong id="invitedCount">0/0</strong><span>Invited</span></button>
-        <div id="remainingSummary" class="summary-stat"><strong id="remainingCount">0</strong><span>Dishes needed</span></div>
-      </section>
-
-      <section class="welcome" aria-labelledby="welcome-title">
-        <div>
-          <p id="welcomeKicker" class="section-kicker">The Meyer's Table</p>
-          <h2 id="welcome-title">WE'D LOVE FOR YOU TO BRING A DISH TO SHARE</h2>
-          <p id="welcomeNote" class="welcome-note"><em>Choose something delicious to bring. If bringing something isn't practical, simply come and enjoy the evening with us.</em></p>
-        </div>
-        <div class="gathering-primary-actions">
-          <button class="rsvp-button" id="rsvpButton" type="button">RSVP</button>
-        </div>
-      </section>
-
-
-
-      <nav id="gatheringTabs" class="wedding-party-tabs" aria-label="Gathering pages" role="tablist" hidden>
-        <button type="button" role="tab" data-gathering-tab="notes" aria-controls="hostNotesSection" aria-selected="false" hidden>Notes</button>
-        <button type="button" role="tab" data-gathering-tab="menu" aria-controls="gatheringMenuSection" aria-selected="true">Menu</button>
-      </nav>
-      <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent" class="wedding-tab-content bride-groom-content"></div></section>
-
-
-      <nav id="weddingHostTabs" class="wedding-party-tabs" aria-label="Host Wedding pages" role="tablist" hidden>
-        <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="true">Bride &amp; Groom</button>
-        <button type="button" role="tab" data-wedding-tab="timeline" aria-controls="weddingTimelineSection" aria-selected="false">Timeline</button>
-      </nav>
-      <section id="brideGroomSection" class="wedding-tab-page host-outer-panel bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
-        <p class="section-kicker">A private space for the couple</p>
-        <h2 id="brideGroomHeading">Bride &amp; Groom</h2>
-        <nav id="brideGroomTabs" class="matron-info-tabs bride-groom-tabs" aria-label="Bride and Groom pages" role="tablist" hidden></nav>
-        <div id="brideGroomContent" class="wedding-tab-content bride-groom-content"></div>
-      </section>
-      <section id="weddingTimelineSection" class="wedding-tab-page host-outer-panel wedding-timeline-section" aria-labelledby="weddingTimelineHeading" hidden>
-        <p class="section-kicker">The wedding day at a glance</p>
-        <h2 id="weddingTimelineHeading">Wedding Timeline</h2>
-        <div id="weddingTimelineAboveContent" class="wedding-timeline-copy"></div>
-        <div class="wedding-tab-content wedding-timeline-table-wrap">
-          <table class="wedding-timeline-table">
-            <thead><tr><th scope="col">Time</th><th scope="col">What Happens</th><th scope="col">Notes</th></tr></thead>
-            <tbody id="weddingTimelineBody"></tbody>
-          </table>
-        </div>
-        <div id="weddingTimelineBelowContent" class="wedding-timeline-copy"></div>
-      </section>
-
-      <section id="gatheringMenuSection" class="menu-section gathering-page" aria-label="Available dishes">
-        <div class="menu-heading">
-          <h2>Menu</h2>
-          <button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button>
-        </div>
-        <div id="menuGrid" class="menu-grid"></div>
-      </section>
-
-    </main>
+    <main hidden></main>
+    <button id="rsvpButton" type="button" hidden>RSVP</button>
 
     <footer>
       <address>
@@ -256,6 +198,14 @@
           <div class="rsvp-event-actions">
             <button id="rsvpConfirmEvent" class="primary-button" type="button" data-rsvp-advance><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7h3a4 4 0 1 1 6 3.46C11.7 13.79 10.5 15.2 10.5 18h3c0-1.7.55-2.2 2-3.04A7 7 0 0 0 12 2Zm-1.5 18h3v3h-3v-3Z"/></svg><span>RSVP</span></button>
           </div>
+      <section id="hostRsvpCounters" class="summary-strip host-rsvp-counters" hidden aria-label="Event summary">
+        <button class="summary-item" id="guestListButton" type="button"><strong id="guestCount">0/0</strong><span>Attending</span></button>
+        <button class="summary-item" id="notAttendingButton" type="button"><strong id="notAttendingCount">0/0</strong><span>Not attending</span></button>
+        <button class="summary-item" id="noResponseButton" type="button"><strong id="noResponseCount">0/0</strong><span>No Response</span></button>
+        <button class="summary-item" id="invitedListButton" type="button"><strong id="invitedCount">0/0</strong><span>Invited</span></button>
+        <div id="remainingSummary" class="summary-stat"><strong id="remainingCount">0</strong><span>Dishes needed</span></div>
+      </section>
+
           <div id="weddingRsvpUploadToolbar" class="rsvp-front-page-actions" role="toolbar" aria-label="RSVP page actions" hidden>
       <nav id="weddingPartyTabs" class="toolbar-page-navigation" aria-label="Wedding pages" role="toolbar" hidden>
         <button type="button" role="button" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>
@@ -269,6 +219,44 @@
 
           </div>
           <div id="rsvpWeddingPages" hidden>
+      <nav id="gatheringTabs" class="wedding-party-tabs" aria-label="Gathering pages" role="tablist" hidden>
+        <button type="button" role="tab" data-gathering-tab="notes" aria-controls="hostNotesSection" aria-selected="false" hidden>Notes</button>
+        <button type="button" role="tab" data-gathering-tab="menu" aria-controls="gatheringMenuSection" aria-selected="true">Menu</button>
+      </nav>
+      <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent" class="wedding-tab-content bride-groom-content"></div></section>
+
+
+      <nav id="weddingHostTabs" class="wedding-party-tabs" aria-label="Host Wedding pages" role="tablist" hidden>
+        <button type="button" role="tab" data-wedding-tab="couple" aria-controls="brideGroomSection" aria-selected="true">Bride &amp; Groom</button>
+        <button type="button" role="tab" data-wedding-tab="timeline" aria-controls="weddingTimelineSection" aria-selected="false">Timeline</button>
+      </nav>
+      <section id="brideGroomSection" class="wedding-tab-page host-outer-panel bride-groom-section" aria-labelledby="brideGroomHeading" hidden>
+        <p class="section-kicker">A private space for the couple</p>
+        <h2 id="brideGroomHeading">Bride &amp; Groom</h2>
+        <nav id="brideGroomTabs" class="matron-info-tabs bride-groom-tabs" aria-label="Bride and Groom pages" role="tablist" hidden></nav>
+        <div id="brideGroomContent" class="wedding-tab-content bride-groom-content"></div>
+      </section>
+      <section id="weddingTimelineSection" class="wedding-tab-page host-outer-panel wedding-timeline-section" aria-labelledby="weddingTimelineHeading" hidden>
+        <p class="section-kicker">The wedding day at a glance</p>
+        <h2 id="weddingTimelineHeading">Wedding Timeline</h2>
+        <div id="weddingTimelineAboveContent" class="wedding-timeline-copy"></div>
+        <div class="wedding-tab-content wedding-timeline-table-wrap">
+          <table class="wedding-timeline-table">
+            <thead><tr><th scope="col">Time</th><th scope="col">What Happens</th><th scope="col">Notes</th></tr></thead>
+            <tbody id="weddingTimelineBody"></tbody>
+          </table>
+        </div>
+        <div id="weddingTimelineBelowContent" class="wedding-timeline-copy"></div>
+      </section>
+
+      <section id="gatheringMenuSection" class="menu-section gathering-page" aria-label="Available dishes">
+        <div class="menu-heading">
+          <h2>Menu</h2>
+          <button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button>
+        </div>
+        <div id="menuGrid" class="menu-grid"></div>
+      </section>
+
       <section id="weddingMediaSection" class="wedding-tab-page" hidden aria-labelledby="weddingMediaHeading">
         <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us</p>
         <h2 id="weddingMediaHeading">Upload Photos &amp; Videos</h2>

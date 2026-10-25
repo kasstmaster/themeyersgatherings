@@ -17,8 +17,8 @@ test('non-Wedding gathering guests return home on RSVP cancel or completion',()=
  }
 });
 test('Wedding completion opens Registry for guests and hosts; cancellation keeps existing destinations',()=>{
- assert.deepEqual(close({host:true,saved:true}).destinations,[]);
- assert.deepEqual(close({host:true,saved:true,fromEntry:true}).destinations,['gathering','render']);
+ assert.deepEqual(close({host:true,saved:true}).destinations,['welcome']);
+ assert.deepEqual(close({host:true,saved:true,fromEntry:true}).destinations,['welcome']);
  assert.deepEqual(close({event:'wedding',saved:true,fromEntry:true}).destinations,['gathering','registry']);
  assert.deepEqual(close({event:'wedding',saved:false,fromEntry:true}).destinations,['welcome']);
  assert.deepEqual(close({event:'wedding',saved:true}).destinations,['gathering','registry']);
@@ -43,7 +43,7 @@ test('choosing any gathering opens RSVP directly, including wedding party and su
   const calls=[];
   const context=vm.createContext({SiteEditing:{resetTabSelection(){}},appState:{events:{[event]:{}}},EVENT_DETAILS:{[event]:{}},GatheringFeatures,selectedGatheringTab:null,viewedEventId:'',state:{},isHostView:()=>host,isSignedInWeddingPartyMember:()=>partyMember,hasSubmittedInvitationRsvp:()=>submitted,showSignedInDestination:()=>calls.push('gathering'),render:()=>calls.push('render'),openRsvp:()=>calls.push('rsvp')});
   vm.runInContext(code,context);context.enterEvent(event);
-  const opens=!host;
+  const opens=true;
   assert.deepEqual(calls,opens?['gathering','render','rsvp']:['gathering','render']);
  }
 });

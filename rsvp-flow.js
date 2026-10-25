@@ -79,5 +79,5 @@
   back.addEventListener('click',()=>{const all=steps(),index=all.findIndex(step=>step.key===key);if(index>0){key=all[index-1].key;show(true);}});
   dialog.querySelector('.modal-close').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',()=>{active=false;heading.hidden=false;heading.textContent=defaultHeading;kicker.textContent=defaultKicker;kicker.hidden=false;childAge.hidden=true;form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));});
-  globalThis.RsvpFlow={start,submit,refresh:()=>show()};
+  globalThis.RsvpFlow={first:()=>{if(active && context){key=steps()[0].key;show(true);}},start,submit,refresh:()=>show()};
 })();
