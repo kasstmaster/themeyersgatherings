@@ -103,6 +103,7 @@
     }
   }
   function button(text, action, parent, label = text) {
+    if(globalThis.ElementEditor && parent.isConnected && !parent.closest('.element-editor-toolbar')){const entry=editTargets.get(parent) || {};entry.options??={};entry.options.actions??=[];entry.options.actions.push([label,action]);editTargets.set(parent,entry);cleanup.push(()=>editTargets.delete(parent));return node('button');}
     const isEdit = /^Edit(?: |$)/.test(text);
     const control = node('button', isEdit && text!=='Edit tab names' ? 'Edit' : text, 'inline-edit-control');
     if (isEdit) control.classList.add('inline-edit-action');
@@ -117,6 +118,7 @@
     return control;
   }
   function beforeRender() {
+    globalThis.ElementEditor?.beforeRender();
     textRoots.clear();
     cancelAnimationFrame(frame);frame=0;
     cleaning = true;
@@ -137,6 +139,10 @@
     if (!enabled || !context.host || editTargets.has(target)) return;
     const key = `${context.eventId}:${options.key || target.id || title}`;
     if (document.querySelector(`[data-inline-field-key="${CSS.escape(key)}"]`)) return;
+    if(globalThis.ElementEditor){
+      editTargets.set(target,{fields,title,commit,options,textBlock:fields.some(spec=>spec.type==='textarea') && !target.matches('section'),visual:Boolean(fields[0]?.visual)});
+      cleanup.push(()=>editTargets.delete(target));return;
+    }
     // Empty fields still need an anchor for their Edit control. Keep inactive
     // pages hidden; only reveal a field itself when its values are empty.
     const wasHidden=target.hidden;
@@ -340,6 +346,9 @@
   }
   function portal(target, title, sources, prepare, options = {}) {
     if (!target || !enabled || !context.host) return;
+    if(globalThis.ElementEditor){
+      const entry=editTargets.get(target) || {};entry.portal={title,sources,prepare};editTargets.set(target,entry);cleanup.push(()=>editTargets.delete(target));return;
+    }
     const control = node('span', undefined, 'inline-edit-tools');
     if(options.automatic)target.append(control);else overlay(control,target);
     cleanup.push(() => control.remove());
@@ -404,6 +413,11 @@
     const tabKeys = new Map();
     const moveControls = [];
     const visibleTabs = () => [...nav.querySelectorAll(':scope > button')].filter(tab => !tab.hidden);
+    function moveTab(tab,direction){
+      const neighbor=visibleTabs()[visibleTabs().indexOf(tab)+direction];if(!neighbor)return;
+      if(direction<0)nav.insertBefore(tab,neighbor);else nav.insertBefore(neighbor,tab);
+      state.siteTabOrder??={};state.siteTabOrder[nav.id]=[...nav.querySelectorAll(':scope>button')].map(item=>tabKeys.get(item));context.save();
+    }
     function moveControlsFor(tab, tools) {
       for (const [direction, arrow, label] of [[-1, '←', 'left'], [1, '→', 'right']]) {
         const control = button(arrow, () => {
@@ -465,21 +479,11 @@
           if (config.rename) config.rename(tab, title);
           else { state.siteTabTitles ??= {}; state.siteTabTitles[key] = title; }
         };
-        const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
-        const anchor=tab.getClientRects().length?tab:nav.nextElementSibling;
-        if(anchor)overlay(tools,anchor,'above');
-        editTargets.set(tab,{visual:true});cleanup.push(()=>editTargets.delete(tab));
-        button('Edit title', () => {
-          editTitle(tab, anchor, tab.textContent, title => {
-            rename(title);
-          },toolbar=>{moveControlsFor(tab,toolbar);button('×', () => {
-          globalThis.SiteEditing.flush();
-          if (!window.confirm(`Delete the “${tab.textContent}” page?`)) return;
-          if (config.remove) config.remove(tab);
-          else { state.siteHiddenTabs ??= []; state.siteHiddenTabs.push(key); }
-          context.save();
-          },toolbar,`Delete ${tab.textContent} page`);});
-        },tools);
+        const actions=[['Move left',()=>moveTab(tab,-1)],['Move right',()=>moveTab(tab,1)],['Delete page',()=>{
+          if(!window.confirm(`Delete the “${tab.textContent}” page?`))return;
+          if(config.remove)config.remove(tab);else{state.siteHiddenTabs??=[];state.siteHiddenTabs.push(key);}context.save();
+        }]];
+        field(tab,'text',[{label:'Page title',value:tab.textContent,required:true}],([title])=>rename(title),{actions});
       }
       tab.addEventListener('click', clearCustom);
       cleanup.push(() => tab.removeEventListener('click', clearCustom));
@@ -499,12 +503,7 @@
       tabKeys.set(tab, `custom:${page.id}`);
       nav.append(tab); cleanup.push(() => tab.remove());
       tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh();if(config.scroll)document.getElementById(`custom-page-${page.id}`)?.scrollIntoView({block:'start',behavior:'auto'}); });
-      if (enabled && context.host) {
-        const tools = node('span', undefined, 'inline-tab-tools');tools.dataset.inlineTabGroup=nav.id;
-        overlay(tools,tab,'above');
-        editTargets.set(tab,{visual:true});cleanup.push(()=>editTargets.delete(tab));
-        button('Edit title',()=>editTitle(tab,config.pageHost || nav.nextElementSibling,page.title,title=>{page.title=title;},toolbar=>{moveControlsFor(tab,toolbar);button('×',()=>{if(window.confirm(`Delete the “${page.title}” page?`)){state.sitePages=state.sitePages.filter(item=>item.id!==page.id);context.save();}},toolbar,`Delete ${page.title} page`);}),tools);
-      }
+      if (enabled && context.host) field(tab,'text',[{label:'Page title',value:page.title,required:true}],([title])=>{page.title=title;},{actions:[['Move left',()=>moveTab(tab,-1)],['Move right',()=>moveTab(tab,1)],['Delete page',()=>{if(window.confirm(`Delete the “${page.title}” page?`)){state.sitePages=state.sitePages.filter(item=>item.id!==page.id);context.save();}}]]});
       if (selected?.id === page.id) {
         const isSubpage = nav.classList.contains('matron-info-tabs');
         const panel = node('section', undefined, `gathering-page inline-custom-page${isSubpage ? ' gathering-subpage' : ''}`);
@@ -530,17 +529,12 @@
     const displayedTabs = visibleTabs();
     moveControls.forEach(({tab, direction, control}) => { control.disabled = !displayedTabs[displayedTabs.indexOf(tab) + direction]; });
     positionOverlays();
-    if (enabled && context.host) {
-      const addTools=node('span',undefined,'inline-tab-tools');
-      const anchor=nav.getClientRects().length?nav:config.pageHost || nav.nextElementSibling;
-      if(anchor)overlay(addTools,anchor,'plus');
-      addTools.dataset.inlineAnchor=nav.id;
-      button('+', () => {
-        if (config.add) { config.add(); context.save(); return; }
-        const title = window.prompt('New page title'); if (!title?.trim()) return;
-        const page = { id: crypto.randomUUID(), nav: nav.id, title: title.trim(), intro: '', content: '', audience: config.audience || 'all' };
-        state.sitePages ??= []; state.sitePages.push(page); selectedCustom.set(selectionKey, page.id); context.save();
-      }, addTools, 'Add page');
+    if(enabled && context.host){
+      const entry=editTargets.get(nav) || {};entry.addPage=title=>{
+        if(config.add){config.add();context.save();return;}
+        const page={id:crypto.randomUUID(),nav:nav.id,title,intro:'',content:'',audience:config.audience || 'all'};
+        state.sitePages??=[];state.sitePages.push(page);selectedCustom.set(selectionKey,page.id);context.save();
+      };editTargets.set(nav,entry);cleanup.push(()=>editTargets.delete(nav));
     }
     if (extraPages.length && !nav.parentElement.closest('[hidden]')) { nav.hidden = false; cleanup.push(() => { nav.hidden = navOriginallyHidden; }); }
     if (!config.allowNoSelection && !active && !selected && buttons.some(tab => !tab.hidden)) {
@@ -560,7 +554,7 @@
   }
   function textOwner(element){for(let current=element;current;current=current.parentElement)if(textRoots.has(current) || editTargets.get(current)?.textBlock || editTargets.get(current)?.visual)return current;return null;}
   function textElement(target,label){
-    field(target,'text',[{label:'Text',type:target.matches('button,a') && !ElementAppearance.isMultiline(target)?'text':'textarea',visual:true,readonly:!target.matches('button,a') || target.matches('.summary-item,.event-selection-choices>button'),value:ElementAppearance.textValue(target)}],()=>{},{key:`text-style:${ElementAppearance.selector(target)}`,placement:'element-edit'});
+    field(target,'text',[{label:'Text',type:target.matches('button,a') && !ElementAppearance.isMultiline(target)?'text':'textarea',visual:true,readonly:target.matches('.summary-item,.summary-stat,.counter-row,output,.event-selection-choices>button,label:has(input,select,textarea)'),value:ElementAppearance.textValue(target)}],()=>{},{key:`text-style:${ElementAppearance.selector(target)}`,placement:'element-edit'});
     if(editTargets.has(target))editTargets.get(target).visual=true;
   }
   function appearance(target,action,label){
@@ -571,9 +565,15 @@
     return ()=>{const index=overlays.findIndex(entry=>entry.element===tools);if(index>=0)overlays.splice(index,1);tools.remove();};
   }
   const selectedCustom = new Map();
-  globalThis.SiteEditing = { beforeRender, render, field, portal, staticText, applyStaticText, tabs, button, mount, hide, appearance, positionOverlays, textElement, textOwner, hasEditor:element=>editTargets.has(element),
+  globalThis.SiteEditing = {
+    settings(target,title,build){if(!target || !enabled || !context.host)return;const entry=editTargets.get(target) || {};entry.settings={title,build};editTargets.set(target,entry);cleanup.push(()=>editTargets.delete(target));},
+    editorFor:target=>editTargets.get(target),
+    get editorTargets(){return [...editTargets.keys()];},
+    persist(action){flushing=true;try{action?.();context.save();}finally{flushing=false;}},
+    get editorContext(){return context;},
+    beforeRender, render, field, portal, staticText, applyStaticText, tabs, button, mount, hide, appearance, positionOverlays, textElement, textOwner, hasEditor:element=>editTargets.has(element),
     resetTabSelection(navId,eventId=context?.eventId) { selectedCustom.delete(`${eventId}:${navId}`); },
-    flush() { flushing=true;try { [...savers].forEach(save=>save()); } finally { flushing=false; } },
+    flush() { globalThis.ElementEditor?.flush();flushing=true;try { [...savers].forEach(save=>save()); } finally { flushing=false; } },
     get flushing() { return flushing; },
     get portalOpen() { return Boolean(document.querySelector('.inline-portal-editor')); },
     get enabled() { return enabled && context?.host; },

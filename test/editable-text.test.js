@@ -123,3 +123,8 @@ test('formatting on a count follows changing live numbers rather than saving the
  const next=context.TextStyles.rebase(mark,'13/2','142/8');assert.match(next,/142\{\{\/style\}\}\/8$/);assert.doesNotMatch(next,/>13|\}\}13/);
  const all=context.TextStyles.mark('13/2',{font:'Georgia'});assert.match(context.TextStyles.rebase(all,'13/2','142/81'),/142\/81\{\{\/style\}\}$/);
 });
+
+test('underlined text uses the shared safe style renderer',()=>{
+ assert.match(format(context.TextStyles.mark('Underlined',{underline:'true'})),/text-decoration:underline/);
+ assert.equal(context.TextStyles.mark('Safe',{underline:'true;position:fixed'}),'Safe');
+});
