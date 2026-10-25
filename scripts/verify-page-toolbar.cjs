@@ -22,6 +22,14 @@ await page.locator('#rsvpFirstPageDate').scrollIntoViewIfNeeded();await page.loc
 await page.evaluate(()=>{const original=Element.prototype.scrollIntoView;window.scrolled=[];Element.prototype.scrollIntoView=function(...args){window.scrolled.push(this.id);return original.apply(this,args);};});
 await page.locator('#weddingPartyTabs [data-wedding-tab="attire"]').click();assert.equal(await page.locator('#registryAttireSection').isVisible(),true);assert.equal(await page.locator('#custom-page-saved-details').count(),0);assert.ok(await page.evaluate(()=>scrolled.includes('registryAttireSection')));assert.match(await page.locator('#weddingPartyTabs [data-wedding-tab="attire"] path').getAttribute('d'),/^M8 2h8/);
 await page.locator('#weddingPartyTabs [data-wedding-tab="registry"]').click();assert.equal(await page.locator('#registrySection').isVisible(),true);assert.ok(await page.evaluate(()=>scrolled.includes('registrySection')));
+await page.evaluate(()=>{state.rsvpIntroText='**TWO O\'CLOCK IN THE AFTERNOON**';state.rsvpDetailsText='*221 W China Grade Loop, Bldg A*\n*Bakersfield CA 93308*\nKindly RSVP by DATE';render();window.printedPage=null;PageActions.printPage=page=>{window.printedPage=page;};});
+await page.locator('#rsvpPageToolbar [data-page-export]').click();
+await page.locator('[data-export-print]').click();
+const printed=await page.evaluate(()=>window.printedPage);
+assert.match(printed.headerHtml,/<strong>TWO O&#39;CLOCK IN THE AFTERNOON<\/strong>|<strong>TWO O'CLOCK IN THE AFTERNOON<\/strong>/);
+assert.match(printed.headerHtml,/<em>221 W China Grade Loop, Bldg A<\/em>/);
+assert.match(printed.headerHtml,/Kindly RSVP by DATE/);
+assert.match(printed.html,/registry/i);
 await page.locator('#uploadPhotosButton').click();
 assert.equal(await page.locator('#weddingMediaSection').isVisible(),true);
 assert.equal(await page.locator('#registrySection').isVisible(),false);
