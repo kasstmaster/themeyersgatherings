@@ -973,3 +973,21 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 @media print{#hostToolsPanel,.host-fixed-edit{display:none!important}}
 
 .has-host-toolbar dialog .modal-close{right:88px}
+
+body.theme-wedding #eventPage[data-host-home="true"]>main>.host-outer-panel{padding:24px;background:var(--host-panel-background,var(--wedding-tab-selected-background));border:var(--host-panel-border,1px solid var(--wedding-tab-border));border-radius:var(--host-panel-radius,var(--wedding-tab-radius));color:var(--host-panel-text,var(--wedding-tab-text))}
+.site-edit-mode .host-fixed-edit{display:none!important}
+.has-host-toolbar.site-edit-mode .element-editor-toolbar{padding-right:10px}
+gathering-gap{display:block;position:relative;box-sizing:border-box;flex-shrink:0;width:100%;padding:0!important;margin:0!important;border:0;clear:both}
+.site-edit-mode gathering-gap{outline:1px dashed #d92525;outline-offset:-1px;cursor:grab}
+.site-edit-mode gathering-gap::after{content:attr(data-gap-label);position:absolute;top:0;left:4px;color:#b81717;background:#fff;font:11px/14px Arial,sans-serif;pointer-events:none}
+.gap-drop-marker{position:fixed;height:0;border-top:3px solid #d92525;z-index:15000;pointer-events:none}
+@media(max-width:650px){body.theme-wedding #eventPage[data-host-home="true"]>main>.host-outer-panel{padding:18px}}
+@media print{gathering-gap{outline:none!important}gathering-gap::after,.gap-drop-marker{display:none!important}}
+
+.existing-layout-gap{position:fixed;z-index:203;box-sizing:border-box;border:1px dashed rgba(217,37,37,.4);background:transparent;cursor:grab}
+.existing-layout-gap:hover{border-color:#d92525}
+@media print{.existing-layout-gap{display:none!important}}
+
+.site-edit-mode :is(section,article,h1,h2,h3,h4,p,time,.event-header-text,gathering-gap){scroll-margin-top:160px}
+
+.element-editor-row{flex-wrap:nowrap;overflow-x:auto}.element-editor-row>*{flex-shrink:0}.element-editor-row [data-editor-chooser]{max-width:160px}.element-editor-row>[data-editor-selection]{max-width:120px}.dragging-gap .element-editor-panel{display:none!important}

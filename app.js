@@ -1037,7 +1037,7 @@ function syncHostToolbar(records=[]) {
   persistentHostControls[0].hidden=!hostAuthenticated;
   const owner=activeHostDialog() || document.body;
   for(const control of persistentHostControls)if(control.parentElement!==owner)owner.append(control);
-  const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
+  const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated || SiteEditing.enabled;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
   document.body.classList.toggle('has-host-toolbar',hostAuthenticated);
   document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',hostAuthenticated);
   document.querySelector('#eventDock').hidden=hostAuthenticated || !guestName;
@@ -1055,7 +1055,7 @@ document.querySelector('#hostHomeButton').addEventListener('click',async()=>{
 function updateHostToolsPanel() {
   const viewingAsGuest = isViewingAsGuest();
   document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated;
-  document.querySelector('#editItemsButton').hidden = !hostAuthenticated;
+  document.querySelector('#editItemsButton').hidden = !hostAuthenticated || SiteEditing.enabled;
   syncHostToolbar();
   document.querySelector('#cancelViewAsButton').hidden = !viewingAsGuest;
 }
@@ -1127,6 +1127,7 @@ function showEventSelection() {
   document.body.className = 'theme-wedding';
   updateSignedInAccountBanner();
   updateHostToolsPanel();
+  GapLayout.refresh();
   window.scrollTo({top:0,left:0,behavior:'auto'});
 }
 function videoEmbedUrl(url) {
@@ -1409,6 +1410,7 @@ function renderGatheringPages(features,hostView) {
 function render() {
   ElementAppearance.restore();
   if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}
+  GapLayout.beforeRender();
   SiteEditing.beforeRender();
   syncGatheringDefinitions(appState.events);
   const event = EVENT_DETAILS[viewedEventId];
@@ -1494,6 +1496,7 @@ function render() {
     const panel=getComputedStyle(source);
     for(const [name,value] of Object.entries({'background':panel.background,'border':panel.border,'radius':panel.borderRadius,'text':panel.color}))hostMain.style.setProperty(`--host-panel-${name}`,value);
   }
+  GapLayout.render({state,eventId:viewedEventId,host:hostView,editing:SiteEditing.enabled,save:()=>saveState({refresh:false})});
   PageActions.sync();
   syncHostToolbar();
   renderWeddingPageToolbar();
@@ -2040,7 +2043,7 @@ function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   document.querySelector('#rsvpDialog').showModal();
   // Apply saved tab ordering and custom pages on the first open for guests too.
   render();
-  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>{ElementAppearance.refreshControls();syncHostToolbar();}});
+  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>{GapLayout.refresh();ElementAppearance.refreshControls();syncHostToolbar();}});
 });}
 // Every gathering uses these same two editable text slots and the same HTML layout.
 function rsvpFirstPageTextFields() {

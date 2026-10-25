@@ -1,13 +1,14 @@
 # Editing the website
 
-Sign in as the host and choose the fixed **Edit** button at the top right. Click an element to select it. A red outline identifies the selected element, and one fixed toolbar stays at the top of the page. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
+Sign in as the host and choose the fixed **Edit** button at the top right. Click an element to select it. A red outline identifies the selected element, and one fixed toolbar stays at the top of the page. The fixed Edit button hides while the toolbar is open and returns after Done editing. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
 
-The toolbar has four expandable groups:
+The toolbar has five expandable groups:
 
 - **Text:** bold, italic, underline, font, size, text color, highlight, and links. Highlight the text you want to format. Type directly in a selected text box or button label. Dates, URLs, and other structured values have compact fields in the toolbar.
 - **Lists:** bullets, numbering, indent, and outdent.
 - **Background:** color picker, hex code, opacity, image URL or upload, image fit, and image removal.
 - **Border:** color picker, hex code, opacity, width, and corner radius.
+- **Gap:** select existing spaces or padding to adjust their size, or drag Gap from the toolbar to add a spacer above/below an element. Drag an existing gap to move it. Gap sizes and placement are saved separately for each gathering.
 
 Each text box, button, count, or container is one logical element. A button's label, background, and border use the same toolbar. Counts remain calculated; formatting does not replace live totals. Text uses the same safe formatting renderer in all existing and newly created gatherings.
 
@@ -32,3 +33,5 @@ The fixed host toolbar is available on the gathering selection page, RSVP screen
 In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. Host controls remain available during the account session; choosing a host management action restores the host context first. Accounts without gathering access have disabled sign-in icons.
 
 Run `node scripts/verify-host-toolbar.cjs` with the same local browser setup to check persistent controls across dialogs, Home, per-person sign-in, host return, Templates placement, and mobile layout.
+
+Run `node scripts/verify-gap-editing.cjs` to verify editable existing spacing, spacer drag/drop and sizing, saved placement, gathering isolation, and restored Bride & Groom / Timeline outer panels.
