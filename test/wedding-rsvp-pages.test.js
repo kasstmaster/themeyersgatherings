@@ -27,8 +27,8 @@ test('public Wedding pages follow RSVP buttons and uploads use a first-page tool
  const start=html.indexOf('<main',html.indexOf('id="eventPage"'));
  const main=html.slice(start,html.indexOf('</main>',start));
  for(const id of ['weddingHostTabs','brideGroomSection','weddingTimelineSection']){assert.ok(main.includes(`id="${id}"`));assert.ok(!rsvp.includes(`id="${id}"`));}
- assert.ok(rsvp.indexOf('id="uploadPhotosButton"')>rsvp.indexOf('id="rsvpWrongEvent"'));
- assert.ok(rsvp.indexOf('id="weddingRsvpUploadToolbar"')>rsvp.indexOf('id="rsvpWeddingPages"'));
+ assert.ok(rsvp.indexOf('id="uploadPhotosButton"')>rsvp.indexOf('id="rsvpConfirmEvent"'));
+ assert.ok(rsvp.indexOf('id="weddingRsvpUploadToolbar"')<rsvp.indexOf('id="rsvpWeddingPages"'));
  assert.match(rsvp,/<div id="weddingRsvpUploadToolbar"[^>]*role="toolbar"[^>]*hidden>[\s\S]*id="uploadPhotosButton"/);
  assert.equal(visibility(false,false,'guest','christmas').nodes['#rsvpWeddingPages'].hidden,true);
 });

@@ -2042,7 +2042,6 @@ function renderRsvpEventHeader() {
   const section=document.querySelector('#rsvpEventConfirmation');
   section.hidden=false;
   document.querySelector('#rsvpConfirmEvent').disabled=SiteEditing.enabled;
-  document.querySelector('#rsvpWrongEvent').disabled=SiteEditing.enabled;
   const banner=document.querySelector('#rsvpFirstPageImage');
   const source=state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header ?? '';
   banner.removeAttribute('src');banner.hidden=!source;
@@ -2057,12 +2056,6 @@ function renderRsvpEventHeader() {
   SiteEditing.applyStaticText(document.querySelector('#rsvpDialog'),state,(value,options)=>formatEditableText(value,options));
 }
 document.querySelector('#rsvpConfirmEvent').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));
-document.querySelector('#rsvpWrongEvent').addEventListener('click',()=>{
-  document.querySelector('#rsvpForm').dataset.fromEntry='false';
-  const dialog=document.querySelector('#rsvpDialog');
-  dialog.addEventListener('close',showEventSelection,{once:true});
-  dialog.close();
-});
 document.querySelector('#rsvpAttireAcknowledge').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));
 document.querySelector('#rsvpDialog').addEventListener('close',()=>{
   const form=document.querySelector('#rsvpForm');

@@ -95,7 +95,7 @@
         const dock=target.closest('.event-dock'),action=target.closest('button,a');
         if(dock)top=dock.getBoundingClientRect().top-element.offsetHeight-3;
         else if(action && action!==target)top=action.getBoundingClientRect().top-element.offsetHeight-3;
-        else if(action && rect.width<40){left=rect.left-element.offsetWidth-3;top=rect.top;}
+        else if(action && (rect.width<40 || action.matches('.modal-close'))){left=rect.left-element.offsetWidth-3;top=rect.top;}
       }
       if(kind==='plus'){left=rect.right-element.offsetWidth;top=rect.top-element.offsetHeight-3;}
       place(Math.max(4,Math.min(left,width-element.offsetWidth-4)),top);
