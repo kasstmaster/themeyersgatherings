@@ -1396,6 +1396,7 @@ function render() {
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
   document.querySelector('#uploadPhotosButton').hidden=!isWedding;
   document.querySelector('#weddingRsvpUploadToolbar').hidden=!isWedding;
+  document.querySelector('#rsvpPageToolbar').hidden=!isWedding;
   document.querySelector('#rsvpButton').textContent='RSVP';
   renderSyncStatus();
   updateHostToolsPanel();

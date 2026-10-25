@@ -6,7 +6,10 @@ await page.locator('#editItemsButton').click();await page.locator('#rsvpButton')
 assert.equal(await page.locator('#rsvpWrongEvent').count(),0);
 assert.equal(await page.getByText('Please select a gathering to start with. You can switch gatherings at any time.',{exact:true}).count(),0);
 assert.equal(await page.locator('#rsvpConfirmEvent svg').count(),1);
-assert.equal(await page.locator('#weddingRsvpUploadToolbar [data-page-export]').textContent(),'Print Page');
+assert.equal(await page.locator('#weddingRsvpUploadToolbar [data-page-export]').count(),0);
+assert.equal(await page.locator('#rsvpPageToolbar').evaluate(e=>getComputedStyle(e).position),'fixed');
+assert.equal(await page.locator('#uploadPhotosButton br').count(),0);
+assert.equal(await page.locator('#rsvpPageToolbar [data-page-export]').textContent(),'Print Page');
 assert.ok(await page.locator('#rsvpDialog .modal-close').evaluate(e=>e.getBoundingClientRect().width>=48));
 assert.ok(await page.evaluate(()=>document.querySelector('#rsvpConfirmEvent').getBoundingClientRect().bottom<=document.querySelector('#weddingRsvpUploadToolbar').getBoundingClientRect().top));
 await page.locator('#rsvpFirstPageDate').scrollIntoViewIfNeeded();await page.locator('[data-inline-field-key="wedding:rsvpFirstPageDate"] button').click();await page.getByRole('button',{name:'Edit element appearance',exact:true}).click();assert.equal(await page.locator('.appearance-editor').isVisible(),true);await page.locator('.appearance-editor').getByRole('button',{name:'Cancel',exact:true}).click();await page.getByRole('button',{name:'Cancel editing date',exact:true}).click();
