@@ -6,12 +6,12 @@ const source=await readFile(new URL('../app.js',import.meta.url),'utf8');
 const headerCode=source.slice(source.indexOf('function rsvpFirstPageTextFields()'),source.indexOf("document.querySelector('#rsvpConfirmEvent').addEventListener"));
 const editorCode=source.slice(source.indexOf('function renderRsvpInlineEditing()'),source.indexOf('function renderEventDock()'));
 function fixture(editing,eventId='thanksgiving'){
- const fields=[],section={hidden:true},confirm={},wrong={},image={src:'main.png',hidden:false,removeAttribute(){this.src='';},addEventListener(){}};
+ const fields=[],section={hidden:true},confirm={dataset:{},setAttribute(key,value){this[key]=value;},querySelector(){return {setAttribute:(key,value)=>{this.icon=value;}};}},wrong={},image={src:'main.png',hidden:false,removeAttribute(){this.src='';},addEventListener(){}};
  const clone={removeAttribute(){},querySelector:()=>image,querySelectorAll:selector=>selector==='img[src]'&&image.src?[image]:[]};
  const container={replaceChildren(node){this.child=node;}};
  const nodes={'#rsvpEventConfirmation':section,'#rsvpConfirmEvent':confirm,'#rsvpWrongEvent':wrong,'#eventPage .header-art':{cloneNode:()=>clone},'#rsvpEventHeader':container,'#rsvpEventHeader .header-art':clone,'#rsvpFirstPageImage':image,'#rsvpFirstPageDate':{},'#eventDate':{textContent:'October 23 2026'},'#rsvpFirstPageText':{},'#rsvpFirstPageDetails':{}};
  const state={rsvpHeaderImage:'rsvp.png'};
- const context=vm.createContext({state,gatheringHeaderAddress:()=> 'Address',formatEditableText:value=>value,expandEditableTextVariables:value=>value,viewedEventId:eventId,EVENT_DETAILS:{[eventId]:{header:'main.png'}},GatheringFeatures:{rsvp:()=>({meals:false})},SiteEditing:{enabled:editing,applyStaticText(){},field:(target,title,specs,commit,options)=>fields.push({target,title,specs,commit,options})},document:{querySelector:selector=>nodes[selector]}});
+ const context=vm.createContext({state,gatheringRsvpStatus:()=>'',gatheringHeaderAddress:()=> 'Address',formatEditableText:value=>value,expandEditableTextVariables:value=>value,viewedEventId:eventId,EVENT_DETAILS:{[eventId]:{header:'main.png'}},GatheringFeatures:{rsvp:()=>({meals:false})},SiteEditing:{enabled:editing,applyStaticText(){},field:(target,title,specs,commit,options)=>fields.push({target,title,specs,commit,options})},document:{querySelector:selector=>nodes[selector]}});
  vm.runInContext(headerCode+editorCode,context);
  return {context,fields,section,confirm,wrong,image};
 }
@@ -51,4 +51,10 @@ test('previous first-page text edits carry into the shared text slots',()=>{
  };
  assert.equal(f.context.rsvpFirstPageTextFields()[0][1],'Saved intro');
  assert.equal(f.context.rsvpFirstPageTextFields()[1][1],'Saved details');
+});
+
+test('first-page RSVP icon follows the shared gathering response status',()=>{
+ const f=fixture(false);const paths=new Set();
+ for(const status of ['', 'attending', 'declined']){f.context.gatheringRsvpStatus=()=>status;f.context.renderRsvpEventHeader();assert.equal(f.confirm.dataset.rsvpStatus,status || 'pending');paths.add(f.confirm.icon);assert.ok(f.confirm['aria-description']);}
+ assert.equal(paths.size,3);
 });
