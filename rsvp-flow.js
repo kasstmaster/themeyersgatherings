@@ -26,6 +26,7 @@
     form.querySelectorAll(candidates).forEach(element=>element.setAttribute('data-rsvp-flow-hidden',''));
     review.hidden = step.key !== 'review';
     for (let element=step.element;element && element!==form;element=element.parentElement) element.removeAttribute('data-rsvp-flow-hidden');
+    if(context.editing && step.key==='meal-options')step.element.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));
     heading.textContent=step.title || defaultHeading;
     heading.hidden=step.key==='event-confirmation';
     const attendance=step.key.startsWith('person-');
@@ -36,11 +37,11 @@
     form.classList.toggle('rsvp-personal-meal',step.key.startsWith('meal-')||step.key.startsWith('dietary-'));
     if (step.key === 'review') context.review(review);
     back.hidden = index === 0;
-    next.hidden=!context.editing && Boolean(step.element.querySelector('[data-rsvp-advance]'));
+    next.hidden=Boolean(step.element.querySelector('[data-rsvp-advance]'));
     form.classList.toggle('rsvp-direct-choice',next.hidden);
     form.classList.toggle('rsvp-attire-step',step.key==='attire');
     form.classList.toggle('rsvp-dish-selection',step.key==='dishes'||step.key==='attire'||step.key==='event-confirmation');
-    next.textContent=context.editing?(index===all.length-1?'Back to first page':'Next page'):step.key==='review'||context.finishOn?.(step.key)?'Save my RSVP':'Next';
+    next.textContent=step.key==='review'||(!context.editing && context.finishOn?.(step.key))?'Save my RSVP':'Next';
     if (moveFocus) { dialog.scrollTop=0; form.scrollTop=0; focus(step.element);context.pageChanged?.(); }
   }
   function invalid(step) {

@@ -735,7 +735,7 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 /* Optional gathering header copy uses the shared formatted-text editor. */
 .event-header-text{font-family:"Times New Roman",Times,serif;width:100%;margin:18px auto 0;text-align:center;color:inherit;line-height:1.6;letter-spacing:.10em;overflow-wrap:anywhere}
 .event-header-text:empty{margin:0}
-.site-edit-mode .event-header-text:empty{min-height:24px}
+
 .event-header-text>:first-child{margin-top:0}
 .event-header-text>:last-child{margin-bottom:0}
 
@@ -781,8 +781,8 @@ body.theme-wedding :is(.welcome,.fullscreen-flow .full-page-form) :is(button,inp
 /* Host-editable explanation below the shared dish question. */
 #rsvpDialog #rsvpDishQuestionText{font-family:"Times New Roman",Times,serif;font-size:1.1rem;line-height:1.5;margin:12px 0 20px;overflow-wrap:anywhere}
 #rsvpDishQuestionText:empty{display:none}
-.site-edit-mode #rsvpDialog #rsvpDishQuestionText:empty{display:block;min-height:32px}
-.site-edit-mode #rsvpDishQuestionText:empty::before{content:"Add explanatory text";color:var(--muted)}
+
+
 
 #rsvpEventHeader .event-header-text{width:100%;text-align:center;overflow-wrap:anywhere}
 #rsvpEventHeader .event-header-text p{margin:0}
@@ -891,7 +891,7 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 .inline-appearance-tools .inline-edit-control{box-sizing:border-box;width:22px;height:22px;min-height:0;padding:2px;line-height:1;background:#fffaf1;color:#132841;border-color:#b89968;display:flex;align-items:center;justify-content:center}
 
 #weddingRsvpUploadToolbar{z-index:205}
-#rsvpDialog .rsvp-page-editing>.modal-dialog-footer{position:static;padding-bottom:100px}
+
 
 .inline-text-editor{min-width:0;max-width:100%}
 .inline-text-appearance{display:block;flex-basis:100%;padding:8px;border:1px solid var(--border);border-radius:4px}
@@ -926,3 +926,30 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 #rsvpConfirmEvent{box-sizing:border-box;padding-left:22px;padding-right:22px}
 #rsvpPageToolbar button{white-space:nowrap}
 @media(max-width:380px){#rsvpEventConfirmation #rsvpConfirmEvent,#weddingRsvpUploadToolbar button{column-gap:8px;padding-left:14px;padding-right:14px;font-size:.9rem}}
+
+/* A fixed, compact editing ribbon never replaces or resizes page elements. */
+.element-editor-toolbar{position:fixed;z-index:10000;top:0;left:0;right:0;box-sizing:border-box;max-width:100vw;padding:6px 10px;background:#fff;color:#172b43;border-bottom:1px solid #aab3be;box-shadow:0 2px 7px #0002;font:13px/1.35 Arial,sans-serif;text-align:left;isolation:isolate}
+.element-editor-row,.element-editor-panel{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.element-editor-row>[data-editor-selection]{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:6px;font-weight:700}
+.element-editor-toolbar button,.element-editor-toolbar select,.element-editor-toolbar input,.element-editor-toolbar textarea{box-sizing:border-box;width:auto;min-width:0;max-width:240px;margin:0;padding:5px 8px;border:1px solid #bbc3ce;border-radius:3px;background:white;color:#172b43;font:13px/1.35 Arial,sans-serif;box-shadow:none;text-transform:none;letter-spacing:normal}
+.element-editor-toolbar button{cursor:pointer;white-space:nowrap}
+.element-editor-toolbar button[aria-expanded="true"]{background:#e2ebf6;border-color:#476990}
+.element-editor-panel{max-height:132px;overflow:auto;padding:8px 0 2px;margin-top:6px;border-top:1px solid #d8dfe7}
+.element-editor-panel[hidden],.element-editor-toolbar [hidden]{display:none!important}
+.element-editor-panel label{display:inline-flex;align-items:center;gap:5px;width:auto;margin:0;font:12px Arial,sans-serif;color:inherit}
+.element-editor-panel input[type="color"]{width:32px;height:29px;padding:2px}
+.element-editor-panel input[type="range"]{width:85px;padding:0}
+.element-editor-panel input[type="number"]{width:62px}
+.element-editor-panel input[type="text"]{width:120px}
+.element-editor-panel input[type="file"]{width:200px}
+.element-editor-settings{display:flex;gap:12px;max-height:110px;overflow:auto;flex-basis:100%}
+.element-editor-settings :is(section,fieldset,div){max-width:100%;min-width:0}
+.element-editor-selected{outline:2px solid #d92525!important;outline-offset:2px}
+.element-editor-selected [contenteditable="true"],.element-editor-selected[contenteditable="true"]{outline:none;cursor:text}
+.element-editor-selected[contenteditable="true"]{outline:2px solid #d92525!important}
+.site-edit-mode .inline-overlay-layer{display:none!important}
+.element-editor-toolbar [data-editor-status]:empty{display:none}
+@media(max-width:600px){.element-editor-toolbar{padding:5px}.element-editor-row{gap:4px}.element-editor-row>[data-editor-selection]{max-width:100px}.element-editor-toolbar button{padding:5px}.element-editor-panel{max-height:110px}}
+@media print{.element-editor-toolbar{display:none!important}.element-editor-selected{outline:none!important}}
+
+.element-editor-panel textarea{height:48px;resize:vertical}

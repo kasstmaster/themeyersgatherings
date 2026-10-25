@@ -1548,17 +1548,8 @@ function renderInlineEditing() {
       SiteEditing.field(document.querySelector('#weddingPartyPersonalPage'), 'page', [{label:'Title',value:page.title,required:true},{label:'Content',value:page.content,type:'textarea'}], ([title,content]) => { Object.assign(page,{title,content}); },{titleTarget:document.querySelector('#weddingPartyHeading')});
     });
   });
-  if (SiteEditing.enabled && viewedEventId==='wedding' && selectedWeddingTab==='attire') {
-    SiteEditing.hide(document.querySelector('#weddingAttireGuidance'));
-    SiteEditing.hide(document.querySelector('#registryAffordableAttire .affordable-attire-closing'));
-    SiteEditing.hide(document.querySelector('#registryAttireVideosSection'));
-    const target=SiteEditing.mount(document.querySelector('#weddingAttireGuidance'),'inline-attire-edit-area','frame');
-    SiteEditing.portal(target,'images and videos',['#weddingPartyAttireAdmin','#guestAttireVideosAdmin'],prepare,{automatic:true});
-  } else SiteEditing.portal(document.querySelector('#registryAttireSection'), 'images and videos', ['#weddingPartyAttireAdmin','#guestAttireVideosAdmin'], prepare);
-  if (SiteEditing.enabled && viewedEventId==='wedding' && selectedWeddingTab==='party' && selectedMatronTab==='duties') {
-    const target=SiteEditing.mount(document.querySelector('#weddingPartyDetails'),'inline-members-edit-area','inline');
-    SiteEditing.portal(target,'party members',['#weddingPartyAdmin'],prepare,{automatic:true});
-  } else SiteEditing.portal(document.querySelector('#weddingPartyDetails'), 'party members', ['#weddingPartyAdmin'], prepare);
+  SiteEditing.portal(document.querySelector('#registryAttireSection'), 'images and videos', ['#weddingPartyAttireAdmin','#guestAttireVideosAdmin'], prepare);
+  SiteEditing.portal(document.querySelector('#weddingPartyDetails'), 'party members', ['#weddingPartyAdmin'], prepare);
   }
   if (features.menu) {
     document.querySelectorAll('#menuGrid [data-claim]').forEach(button => {
@@ -1603,7 +1594,7 @@ function renderInlineEditing() {
   renderRsvpInlineEditing();
 }
 function renderRsvpInlineEditing() {
-  if (!SiteEditing.enabled) return;
+  if (!SiteEditing.enabled) {document.querySelector('#weddingRsvpGuests')?.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());return;}
   const header=document.querySelector('#rsvpEventHeader .header-art');
   if(header)SiteEditing.field(header,'header image',[{label:'RSVP first-page banner URL (empty to remove)',type:'url',value:state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header}],([value])=>{state.rsvpHeaderImage=value;},{key:'rsvp-first-page-banner'});
   SiteEditing.field(document.querySelector('#rsvpFirstPageDate'),'date',[{label:'Gathering date',type:'date',value:state.eventDate,required:true}],([value])=>{setGatheringDetail('eventDate',value);});
@@ -1611,22 +1602,24 @@ function renderRsvpInlineEditing() {
     SiteEditing.field(document.querySelector(selector),'text',[{label:'Text (Markdown supported)',type:'textarea',value}],([text])=>{state[key]=text;},{key,placement:'text'});
   }
   if (!GatheringFeatures.rsvp(viewedEventId).meals) return;
-  const target = document.querySelector('#weddingRsvpMenu');
-  if (target.hidden || document.querySelector('#rsvpDialog .inline-meal-editor')) return;
-  const area = SiteEditing.mount(document.querySelector('#weddingRsvpGuests'), 'inline-meal-editor', 'inline');
-  const heading = document.createElement('h4');heading.textContent='Meal options';area.append(heading);
-  const meals=GuestPlanning.weddingMeals(state);
-  const audiences=['Adults and children','Adults only','Children only'];
-  const saveMeals = next => { const draft={menuSelections:captureRsvpMeals()};GuestPlanning.saveWeddingMeals(state,next,[draft]);renderWeddingRsvpMenu(draft.menuSelections); };
-  meals.forEach((meal,index) => {
-    const row=document.createElement('div');row.className='inline-meal-row';
-    const label=document.createElement('span');label.textContent=`${meal.name} — ${meal.audience}`;row.append(label);area.append(row);
-    SiteEditing.field(label,'meal',[{label:'Meal name',value:meal.name,required:true},{label:'Available to',value:meal.audience,options:audiences}],([name,audience])=>{saveMeals(meals.map((entry,i)=>i===index?{...entry,name,audience}:entry));},{key:meal.id,placement:'inline'});
-    SiteEditing.button('×',()=>{if(confirm(`Delete “${meal.name}” from the meal options?`)){saveMeals(meals.filter((_,i)=>i!==index));saveState();}},row,`Delete ${meal.name} meal`);
+  const preview=document.querySelector('#weddingRsvpGuests');
+  if(!SiteEditing.enabled)preview.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());
+  if(SiteEditing.enabled && !preview.childElementCount)preview.innerHTML=`<fieldset class="wedding-rsvp-guest" data-edit-meal-preview><legend>Meal options</legend><div class="wedding-meal-options">${GuestPlanning.weddingMeals(state).map(meal=>`<label class="wedding-meal-choice"><span>${escapeHtml(meal.name)}</span></label>`).join('')}</div></fieldset>`;
+  SiteEditing.settings(document.querySelector('#weddingRsvpMenu'),'meal options',area=>{
+    const audiences=['Adults and children','Adults only','Children only'];
+    const saveMeals=next=>{const draft={menuSelections:captureRsvpMeals()};GuestPlanning.saveWeddingMeals(state,next,[draft]);renderWeddingRsvpMenu(draft.menuSelections);saveState({refresh:false});};
+    const draw=()=>{
+      area.replaceChildren();const meals=GuestPlanning.weddingMeals(state);
+      const rowFor=(meal,index)=>{
+        const row=document.createElement('div');row.className='inline-meal-row';area.append(row);
+        const input=document.createElement('input');input.value=meal.name;input.setAttribute('aria-label',index<0?'New meal name':`Meal name: ${meal.name}`);row.append(input);
+        const audience=document.createElement('select');audience.setAttribute('aria-label','Meal audience');for(const value of audiences){const option=document.createElement('option');option.value=option.textContent=value;audience.append(option);}audience.value=meal.audience;row.append(audience);
+        const action=document.createElement('button');action.type='button';action.textContent=index<0?'Add meal':'Remove meal';row.append(action);
+        const update=()=>{if(index<0 || !input.value.trim())return;saveMeals(GuestPlanning.weddingMeals(state).map(entry=>entry.id===meal.id?{...entry,name:input.value.trim(),audience:audience.value}:entry));};input.addEventListener('change',update);audience.addEventListener('change',update);
+        action.addEventListener('click',()=>{if(index<0){if(!input.value.trim())return;saveMeals([...GuestPlanning.weddingMeals(state),{id:crypto.randomUUID(),name:input.value.trim(),audience:audience.value}]);}else if(confirm(`Delete “${meal.name}” from the meal options?`))saveMeals(GuestPlanning.weddingMeals(state).filter(entry=>entry.id!==meal.id));draw();});
+      };meals.forEach(rowFor);rowFor({name:'',audience:audiences[0]},-1);
+    };draw();
   });
-  const addRow=document.createElement('div');addRow.className='inline-meal-row';area.append(addRow);
-  const add=document.createElement('span');add.textContent='Add meal option';addRow.append(add);
-  SiteEditing.field(add,'new meal',[{label:'Meal name',value:'',required:true},{label:'Available to',value:audiences[0],options:audiences}],([name,audience])=>{saveMeals([...meals,{id:crypto.randomUUID(),name,audience}]);},{key:'new-meal',placement:'inline'});
 }
 
 function renderWeddingPageToolbar(){
@@ -2019,7 +2012,7 @@ function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   document.querySelector('#rsvpDialog').showModal();
   // Apply saved tab ordering and custom pages on the first open for guests too.
   render();
-  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',editing:SiteEditing.enabled,pageChanged:()=>ElementAppearance.refreshControls()});
+  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>ElementAppearance.refreshControls()});
 });}
 // Every gathering uses these same two editable text slots and the same HTML layout.
 function rsvpFirstPageTextFields() {
@@ -2032,7 +2025,7 @@ function rsvpFirstPageTextFields() {
 function renderRsvpEventHeader() {
   const section=document.querySelector('#rsvpEventConfirmation');
   section.hidden=false;
-  document.querySelector('#rsvpConfirmEvent').disabled=SiteEditing.enabled;
+  document.querySelector('#rsvpConfirmEvent').disabled=false;
   const banner=document.querySelector('#rsvpFirstPageImage');
   const source=state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header ?? '';
   banner.removeAttribute('src');banner.hidden=!source;
@@ -2109,7 +2102,7 @@ function rsvpFlowSteps() {
   });
   add('children',document.querySelector('#rsvpChildrenQuestion'),'Any children attending?');
   if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Any guests?');
-  if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest').forEach(card=>{
+  if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest:not([data-edit-meal-preview])').forEach(card=>{
     const id=`${card.dataset.guestType}-${card.dataset.guestIndex}`;
     const name=card.dataset.rsvpDisplayName || card.querySelector('[data-rsvp-guest-name]').value;
     add(`meal-${id}`,card.querySelector('.wedding-meal-options'),`Choose ${name}'s meal`);
@@ -2298,7 +2291,7 @@ document.querySelector('#rsvpPeople').addEventListener('input', event => {
   const selections = captureRsvpMeals(); updateRsvpPeople(); renderWeddingRsvpMenu(selections);
 });
 function readWeddingMenuSelections() {
-  return [...document.querySelectorAll('.wedding-rsvp-guest')].map(card => ({
+  return [...document.querySelectorAll('.wedding-rsvp-guest:not([data-edit-meal-preview])')].map(card => ({
     type: card.dataset.guestType,
     index: Number(card.dataset.guestIndex),
     name: card.querySelector('[data-rsvp-guest-name]').value,
@@ -2323,6 +2316,7 @@ function renderWeddingRsvpMenu(selections = []) {
     const none = type === 'child' ? `<label class="wedding-meal-choice"><input type="radio" data-rsvp-meal name="${radioName}" value="none" ${saved.meal === 'none' ? 'checked' : ''} required><span>My child is too young</span></label>` : '';
     return `<fieldset class="wedding-rsvp-guest" data-guest-type="${type}" data-guest-index="${index}" data-rsvp-display-name="${escapeAttribute(displayName)}"><legend>${escapeHtml(displayName)}</legend><input type="hidden" data-rsvp-guest-name value="${escapeAttribute(personName)}"><input type="hidden" data-rsvp-custom-name value=""><div class="wedding-meal-options">${radios}${none || (!mealOptions.length ? '<p class="form-error">Meal options have not been added yet.</p>' : '')}</div><label><span>Please note any dietary restrictions or food allergies.</span><textarea data-rsvp-dietary maxlength="500" placeholder="Optional">${escapeHtml(saved.dietaryRestrictions || '')}</textarea></label></fieldset>`;
   }));
+  if(SiteEditing.enabled && !cards.length)cards.push(`<fieldset class="wedding-rsvp-guest" data-edit-meal-preview><legend>Meal options</legend><div class="wedding-meal-options">${GuestPlanning.weddingMeals(state).map(meal=>`<label class="wedding-meal-choice"><span>${escapeHtml(meal.name)}</span></label>`).join('')}</div></fieldset>`);
   document.querySelector('#weddingRsvpGuests').innerHTML = cards.join('');
   applyRsvpDeadline();
   renderRsvpInlineEditing();

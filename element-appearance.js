@@ -5,7 +5,7 @@
   const styledText=new Map();
   const controls=[];
   const properties=['background-color','background-image','background-size','background-position','background-repeat','color','border-color','border-width','border-style','border-radius'];
-  const excluded='.inline-overlay-layer,.inline-editor,.inline-text-editor,.inline-text-formatting,.inline-edit-tools,.inline-direct-input,.inline-portal-editor,.inline-meal-editor,.appearance-editor,.appearance-trigger,.inline-appearance-tools,script,style,link,meta';
+  const excluded='.element-editor-toolbar,.inline-overlay-layer,.inline-editor,.inline-text-editor,.inline-text-formatting,.inline-edit-tools,.inline-direct-input,.inline-portal-editor,.inline-meal-editor,.appearance-editor,.appearance-trigger,.inline-appearance-tools,script,style,link,meta';
   function label(element){
     if(element===document.body)return 'Page background';
     if(element.tagName.toLowerCase()==='svg')return 'Icon';
@@ -89,7 +89,7 @@
     if(!context?.format)return;
     const desired=new Map();
     for(const [path,entry] of Object.entries(context.state.textAppearance || {}))if(entry && Array.isArray(entry.parts))for(const target of find(path)){
-      textParts(target).forEach((part,index)=>{const saved=entry.parts?.[index];if(!saved || typeof saved.markup!=='string' || typeof saved.source!=='string')return;const markup=TextStyles.rebase(saved.markup,saved.source,saved.overrideText??plainText(part));desired.set(part,context.format(markup,{inline:true}));});
+      textParts(target).forEach((part,index)=>{if(part.isContentEditable)return;const saved=entry.parts?.[index];if(!saved || typeof saved.markup!=='string' || typeof saved.source!=='string')return;const markup=TextStyles.rebase(saved.markup,saved.source,saved.overrideText??plainText(part));desired.set(part,context.format(markup,{inline:true}));});
     }
     for(const [part,html] of desired){
       const record=styledText.get(part);
@@ -104,6 +104,7 @@
     applyText();
   }
   function open(target){
+    if(globalThis.ElementEditor && context?.host && context.enabled){ElementEditor.select(target);return;}
     if(!context?.host || !context.enabled || !target)return;
     editor?.close();
     const eventId=context.eventId,path=selector(target);
@@ -164,6 +165,7 @@
     return style.backgroundImage!=='none' || colorParts(style.backgroundColor).alpha>0 || ['Top','Right','Bottom','Left'].some(side=>parseFloat(style['border'+side+'Width'])>0 && style['border'+side+'Style']!=='none');
   }
   function refreshControls(){
+    if(globalThis.ElementEditor){ElementEditor.render(context);return;}
     while(controls.length)controls.pop()?.();
     if(!context?.host || !context.enabled)return;
     const root=[...document.querySelectorAll('dialog[open]')].at(-1) || document.querySelector('#eventPage:not([hidden])') || document.body;
@@ -178,5 +180,10 @@
     SiteEditing.positionOverlays();
   }
   if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply(preview);if(records.some(record=>record.type==='attributes'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
-  globalThis.ElementAppearance={render,restore,open,refreshControls,selector,colorParts,imageUrl,properties,textValue,storeText,applyText,isMultiline,manages:element=>applied.has(element)};
+  globalThis.ElementAppearance={
+    textParts,label,isSurface,eligible,
+    values:target=>({...context?.state.elementAppearance?.[selector(target)]}),
+    update(target,values){if(!context?.host || !context.enabled)return;context.state.elementAppearance??={};const path=selector(target);context.state.elementAppearance[path]={...context.state.elementAppearance[path],...values};apply();context.save();},
+    upload:file=>context.upload(file),
+    render,restore,open,refreshControls,selector,colorParts,imageUrl,properties,textValue,storeText,applyText,isMultiline,manages:element=>applied.has(element)};
 })();

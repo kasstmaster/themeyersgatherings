@@ -4,8 +4,8 @@
   const sizes=[8,10,11,12,14,16,18,20,24,28,32,40,48,64,72,96];
   function properties(values) {
     const entries=Object.entries(values);
-    if(!entries.length || entries.some(([key,value])=>key==='font'?!fonts.includes(value):key==='size'?!(Number.isInteger(Number(value)) && Number(value)>=8 && Number(value)<=96):['color','highlight','border'].includes(key)?!/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value):true))return null;
-    return entries.map(([key,value])=>key==='font'?`font-family:'${value}'`:key==='size'?`font-size:calc(${Number(value)}px * var(--fitted-text-scale,1))`:key==='color'?`color:${value};--selection-text-color:${value}`:key==='highlight'?`background-color:${value}`:`border:1px solid ${value}`).join(';');
+    if(!entries.length || entries.some(([key,value])=>key==='font'?!fonts.includes(value):key==='size'?!(Number.isInteger(Number(value)) && Number(value)>=8 && Number(value)<=96):key==='underline'?value!=='true':['color','highlight','border'].includes(key)?!/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value):true))return null;
+    return entries.map(([key,value])=>key==='font'?`font-family:'${value}'`:key==='size'?`font-size:calc(${Number(value)}px * var(--fitted-text-scale,1))`:key==='color'?`color:${value};--selection-text-color:${value}`:key==='highlight'?`background-color:${value}`:key==='underline'?'text-decoration:underline':`border:1px solid ${value}`).join(';');
   }
   function mark(text,values) {
     if(!properties(values))return text;

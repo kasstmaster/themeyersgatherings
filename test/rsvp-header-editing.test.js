@@ -19,7 +19,7 @@ test('first RSVP page is visible and banner is editable in every regular gatheri
  for(const eventId of ['wedding','thanksgiving','christmas','new-gathering']){
   const f=fixture(true,eventId);f.context.renderRsvpEventHeader();f.context.renderRsvpInlineEditing();
   assert.equal(f.section.hidden,false);assert.equal(f.image.src,'rsvp.png');
-  assert.equal(f.confirm.disabled,true);
+  assert.equal(f.confirm.disabled,false);
   assert.equal(f.fields[0].options.key,'rsvp-first-page-banner');
   f.fields[0].commit(['new-rsvp.png']);f.context.renderRsvpEventHeader();assert.equal(f.image.src,'new-rsvp.png');
  }
