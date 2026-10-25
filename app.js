@@ -2053,10 +2053,19 @@ function rsvpFirstPageTextFields() {
     ['#rsvpFirstPageDetails',state.rsvpDetailsText ?? saved['#rsvpEventHeader>div:nth-of-type(1)>p:nth-of-type(1)'] ?? gatheringHeaderAddress(),'rsvpDetailsText']
   ];
 }
+function renderRsvpStatusIcon() {
+  const button=document.querySelector('#rsvpConfirmEvent');
+  const status=gatheringRsvpStatus(viewedEventId) || 'pending';
+  const icons={pending:'M12 2a7 7 0 0 0-7 7h3a4 4 0 1 1 6 3.46C11.7 13.79 10.5 15.2 10.5 18h3c0-1.7.55-2.2 2-3.04A7 7 0 0 0 12 2Zm-1.5 18h3v3h-3v-3Z',attending:'M9 16 4 11l-2 2 7 7L22 7l-2-2L9 16Z',declined:'M5 3 3 5l7 7-7 7 2 2 7-7 7 7 2-2-7-7 7-7-2-2-7 7-7-7Z'};
+  const description={pending:'Not yet responded',attending:'Attending',declined:'Not attending'}[status];
+  button.dataset.rsvpStatus=status;button.setAttribute('aria-description',description);
+  button.querySelector('svg path').setAttribute('d',icons[status]);
+}
 function renderRsvpEventHeader() {
   const section=document.querySelector('#rsvpEventConfirmation');
   section.hidden=false;
   document.querySelector('#rsvpConfirmEvent').disabled=false;
+  renderRsvpStatusIcon();
   const banner=document.querySelector('#rsvpFirstPageImage');
   const source=state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header ?? '';
   banner.removeAttribute('src');banner.hidden=!source;
