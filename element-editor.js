@@ -1,7 +1,7 @@
 /* One fixed, selection-based editor for every gathering. No page content is replaced. */
 (() => {
   let context,toolbar,target,entry,range,fieldDraft,dirty=false,panelName='',restores=[],portalRestores=[],editables=[],allowAction=false;
-  const excluded='#newGatheringDialog,#gatheringHistoryDialog,#invitationEditorDialog,#invitationPreviewDialog,.page-export-options,.element-editor-toolbar,.editor-dialog,.appearance-editor,.inline-overlay-layer';
+  const excluded='.gap-drop-marker,#newGatheringDialog,#gatheringHistoryDialog,#invitationEditorDialog,#invitationPreviewDialog,.page-export-options,.element-editor-toolbar,.editor-dialog,.appearance-editor,.inline-overlay-layer';
   const node=(tag,text)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;return element;};
   const button=(text,action,parent)=>{const control=node('button',text);control.type='button';control.addEventListener('click',action);parent.append(control);return control;};
   function markup(root){
@@ -119,6 +119,10 @@
     const panel=toolbar.querySelector('[data-editor-panel]');panel.replaceChildren();panel.hidden=!panelName;
     toolbar.querySelectorAll('[data-editor-group]').forEach(control=>control.setAttribute('aria-expanded',String(control.dataset.editorGroup===panelName)));
     if(!panelName || !target)return;
+    if(name==='Gap'){
+      if(GapLayout.isGap(target)){const current=GapLayout.getSize(target);const number=labelInput(panel,'Gap size (px)','number',current,value=>GapLayout.setSize(target,value));number.min=0;number.max=1000;const slider=labelInput(panel,'Gap size','range',Math.min(current,300),value=>{number.value=value;GapLayout.setSize(target,value);});slider.min=0;slider.max=300;button('Remove gap',()=>{GapLayout.remove(target);release();},panel);}
+      else{button('Add gap after selection',()=>{const gap=GapLayout.addAfter(target);if(gap)select(gap);else status('Drag Gap from the toolbar between page elements.');},panel);panel.append(node('span','Drag Gap from the toolbar to place a new spacer.'));}
+    }
     if(name==='Text'){
       for(const [title,command] of [['Bold','bold'],['Italic','italic'],['Underline','underline'],['Remove formatting','removeFormat']])button(title,()=>textCommand(command),panel);
       selectInput(panel,'Font',TextStyles.fonts,'Times New Roman',value=>textStyle('font',value));
@@ -175,9 +179,10 @@
       }
     }
     toolbar.querySelector('[data-editor-open]').hidden=!target.matches('button,a,[role="tab"],summary');
-    const current=panelName;panelName='';showPanel(current || (fields?.length && !editables.length?'Text':''));
+    const current=GapLayout.isGap(target)?'Gap':panelName;panelName='';showPanel(current || (fields?.length && !editables.length?'Text':''));
   }
   function pick(start){
+    const gap=start.closest('gathering-gap,.existing-layout-gap');if(gap)return gap;
     const root=(globalThis.activeHostDialog?.() || [...document.querySelectorAll('dialog[open]')].at(-1)) || document.querySelector('#eventPage:not([hidden])') || document.body;
     if(!root.contains(start) || start.closest(excluded))return null;
     const group=start.closest('button,.summary-item,.summary-stat,.counter-row,label:has(input,select,textarea)');
@@ -198,19 +203,19 @@
       const row=node('div');row.className='element-editor-row';toolbar.append(row);
       const chooser=node('select');chooser.dataset.editorChooser='';chooser.setAttribute('aria-label','Select an element');row.append(chooser);chooser.addEventListener('change',()=>{const element=document.querySelector(chooser.value);if(element)select(element);});
       const selection=node('span','Click an element to edit');selection.dataset.editorSelection='';row.append(selection);
-      for(const title of ['Text','Lists','Background','Border']){const control=button(title,()=>showPanel(title),row);control.dataset.editorGroup=title;control.setAttribute('aria-expanded','false');}
+      for(const title of ['Text','Lists','Background','Border','Gap']){const control=button(title,()=>showPanel(title),row);control.dataset.editorGroup=title;control.setAttribute('aria-expanded','false');if(title==='Gap'){control.draggable=true;control.dataset.newGap='';control.title='Drag a new gap between elements';}}
       const parent=button('Select container',()=>{if(target?.parentElement && !target.matches('body,dialog')){flush();select(target.parentElement);}},row);parent.title='Select the container around this element';
       const open=button('Open page / use button',()=>{if(!target)return;const current=target;release();allowAction=true;try{current.click();}finally{allowAction=false;}},row);open.dataset.editorOpen='';open.hidden=true;
       button('Save',()=>{const structured=flush();if(structured)SiteEditing.editorContext.refresh();status('Saved.');},row);
       button('Done editing',()=>SiteEditing.toggle(()=>SiteEditing.editorContext.refresh()),row);
       const panel=node('div');panel.dataset.editorPanel='';panel.className='element-editor-panel';panel.hidden=true;toolbar.append(panel);
       const live=node('span');live.dataset.editorStatus='';live.setAttribute('role','status');toolbar.append(live);
-      toolbar.addEventListener('pointerdown',event=>{rememberSelection();if(event.target.matches('button'))event.preventDefault();});
+      toolbar.addEventListener('pointerdown',event=>{rememberSelection();if(event.target.matches('button:not([draggable="true"])'))event.preventDefault();});
     }
     if(toolbar.parentElement!==root)root.append(toolbar);
     const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=false;toolbar.querySelector('.element-editor-row').append(templates);}
     const chooser=toolbar.querySelector('[data-editor-chooser]');chooser.replaceChildren();const hint=node('option','Select an element');hint.value='';chooser.append(hint);
-    for(const element of SiteEditing.editorTargets.filter(element=>root.contains(element) && !element.parentElement.closest('[hidden],[data-rsvp-flow-hidden],dialog:not([open])') && !element.hasAttribute('data-rsvp-flow-hidden') && (!element.hidden || SiteEditing.editorFor(element)?.fields?.every(spec=>!spec.value)))){const option=node('option',ElementAppearance.label(element));option.value=ElementAppearance.selector(element);chooser.append(option);}chooser.value=target?ElementAppearance.selector(target):'';
+    for(const element of [...SiteEditing.editorTargets,...GapLayout.elements()].filter(element=>root.contains(element) && !element.parentElement.closest('[hidden],[data-rsvp-flow-hidden],dialog:not([open])') && !element.hasAttribute('data-rsvp-flow-hidden') && (!element.hidden || SiteEditing.editorFor(element)?.fields?.every(spec=>!spec.value)))){const option=node('option',ElementAppearance.label(element));option.value=ElementAppearance.selector(element);chooser.append(option);}chooser.value=target?ElementAppearance.selector(target):'';
   }
   function beforeRender(){release();const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',rememberSelection);
