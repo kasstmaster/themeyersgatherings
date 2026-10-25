@@ -994,3 +994,9 @@ gathering-gap{display:block;position:relative;box-sizing:border-box;flex-shrink:
 
 .editor-ribbon-space{display:block;flex:none;width:100%;margin:0;padding:0;border:0;pointer-events:none}
 @media print{.editor-ribbon-space{display:none!important}}
+
+/* A modal owns page scrolling; its card grows naturally within that scroll area. */
+html:has(dialog:modal),body:has(dialog:modal){overflow:hidden}
+dialog:modal{overflow-y:auto;overscroll-behavior:contain}
+dialog:modal:not(.fullscreen-dialog){max-height:calc(100dvh - 32px);box-sizing:border-box}
+dialog:modal>.modal-card{max-height:none;overflow:visible}
