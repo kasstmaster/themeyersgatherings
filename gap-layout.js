@@ -2,7 +2,7 @@
 (() => {
   let context,dragging,marker,placement,movingSpace;
   const nodes=new Map(),virtuals=new Map(),virtualInfo=new WeakMap(),originalStyles=[];
-  const excluded='#hostToolsPanel,.element-editor-toolbar,.host-fixed-edit,.gap-drop-marker,.existing-layout-gap,.editor-dialog,#newGatheringDialog,#gatheringHistoryDialog';
+  const excluded='.editor-ribbon-space,#hostToolsPanel,.element-editor-toolbar,.host-fixed-edit,.gap-drop-marker,.existing-layout-gap,.editor-dialog,#newGatheringDialog,#gatheringHistoryDialog';
   const find=selector=>{try{return document.querySelector(selector);}catch{return null;}};
   const size=value=>Math.max(0,Math.min(1000,Math.round(Number(value)||0)));
   function enabled(){return context?.host && context.editing;}
