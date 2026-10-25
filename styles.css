@@ -908,7 +908,7 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 
 /* First-page actions share the RSVP button layout and keep their icons. */
 #rsvpDialog .modal-close{font-size:2.6rem;width:52px;height:52px;line-height:1;padding:0;z-index:2;cursor:pointer}
-#rsvpConfirmEvent,#weddingRsvpUploadToolbar button{display:flex;align-items:center;justify-content:center;gap:12px}
+#rsvpEventConfirmation #rsvpConfirmEvent,#weddingRsvpUploadToolbar button{display:flex;align-items:center;justify-content:center;gap:12px}
 #rsvpDialog .toolbar-icon{width:24px;height:24px;flex:none;fill:currentColor}
 #weddingRsvpUploadToolbar{display:grid;gap:12px;margin-top:12px}
 #weddingRsvpUploadToolbar[hidden]{display:none}
@@ -920,9 +920,9 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 /* Keep page export in the fixed toolbar, separate from the RSVP buttons. */
 #rsvpEventConfirmation:has(#rsvpPageToolbar:not([hidden])){padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 #rsvpPageToolbar{z-index:205}
-#rsvpConfirmEvent,#weddingRsvpUploadToolbar button{display:grid;grid-template-columns:24px minmax(0,1fr) 24px;align-items:center;column-gap:12px;white-space:nowrap}
+#rsvpEventConfirmation #rsvpConfirmEvent,#weddingRsvpUploadToolbar button{display:grid;grid-template-columns:24px minmax(0,1fr) 24px;align-items:center;column-gap:12px;white-space:nowrap}
 #rsvpConfirmEvent>svg,#weddingRsvpUploadToolbar button>svg{grid-column:1;justify-self:start}
 #rsvpConfirmEvent>span,#weddingRsvpUploadToolbar button>span{grid-column:2;white-space:nowrap}
 #rsvpConfirmEvent{box-sizing:border-box;padding-left:22px;padding-right:22px}
 #rsvpPageToolbar button{white-space:nowrap}
-@media(max-width:380px){#rsvpConfirmEvent,#weddingRsvpUploadToolbar button{column-gap:8px;padding-left:14px;padding-right:14px;font-size:.9rem}}
+@media(max-width:380px){#rsvpEventConfirmation #rsvpConfirmEvent,#weddingRsvpUploadToolbar button{column-gap:8px;padding-left:14px;padding-right:14px;font-size:.9rem}}
