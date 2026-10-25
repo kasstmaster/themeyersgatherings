@@ -90,7 +90,7 @@ function syncGatheringDefinitions(events) {
   for (const id of Object.keys(EVENT_DETAILS)) if (!['thanksgiving','christmas','wedding'].includes(id)) delete EVENT_DETAILS[id];
   for (const [id,event] of Object.entries(events || {})) {
     if (['thanksgiving','christmas','wedding'].includes(id) || !event?.gatheringName) continue;
-    EVENT_DETAILS[id] = { name: String(event.gatheringName), theme:'thanksgiving', header:'' };
+    EVENT_DETAILS[id] = { name: String(event.gatheringName), theme:event.gatheringTheme==='neutral'?'neutral':'thanksgiving', header:'' };
   }
 }
 const GATHERING_COLORS = [
@@ -660,7 +660,6 @@ function formatEditableText(value, {inline=false} = {}) {
   const html=output.join('');
   return inline ? html.replace(/<p>([\s\S]*?)<\/p>/g,'$1<br>').replace(/<br>$/,'') : html;
 }
-function formatWeddingPartyDescription(value) { return formatEditableText(value); }
 function editableTextVariables() {
   const eventDate = new Date(`${state.eventDate}T12:00:00`);
   const locationLines = keys => keys.map(key => state[key] || '').join('\n');
@@ -1237,10 +1236,6 @@ function renderWeddingPartyPageHeading(tab,page,member) {
   document.querySelector('#weddingPartyKicker').textContent=heading.kicker;
   document.querySelector('#weddingPartyHeading').textContent=heading.title;
 }
-function weddingRsvpTabReplacement(tab,pages) {
-  if(tab.dataset.weddingTab!=='details')return null;
-  return pages.find(page=>String(page.title||'').trim().replace(/\s+/g,' ').toLowerCase()==='what to expect');
-}
 function renderWeddingGathering(hostView) {
   const isWedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
   document.querySelector('#rsvpWeddingPages').hidden=!isWedding && !hostView;
@@ -1425,7 +1420,6 @@ function render() {
   document.querySelector('#uploadPhotosButton').hidden=!isWedding;
   document.querySelector('#weddingRsvpUploadToolbar').hidden=!isWedding;
   document.querySelector('#rsvpPageToolbar').hidden=!isWedding;
-  document.querySelector('#rsvpButton').textContent='RSVP';
   renderSyncStatus();
   updateHostToolsPanel();
   document.querySelector('#editItemsButton').textContent = 'Edit';
@@ -1892,7 +1886,6 @@ document.querySelector('#adminWhatToExpectContent').addEventListener('change', e
   saveState();
   showToast('What to Expect page updated.');
 });
-document.querySelector('#hostWeddingPartyView').addEventListener('change', populateAccountSessionPeople);
 document.querySelector('#customItemForm').addEventListener('submit', event => {
   event.preventDefault();
   const name = document.querySelector('#customItemName').value.trim();
@@ -2028,7 +2021,6 @@ function captureRsvpMeals() {
   }
   return rsvpMealDraft;
 }
-document.querySelector('#rsvpButton').addEventListener('click',()=>openRsvp());
 function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   if(document.querySelector('#rsvpDialog').open)return;
   if(document.querySelector('#eventPage').hidden)showSignedInDestination();
@@ -2293,14 +2285,6 @@ function currentInvitationNumber() { return InvitationGroups.number(rsvpAccount(
 function rsvpNames() {
   const account=rsvpAccount();
   return account ? InvitationGroups.members(account,viewedEventId,accountSignInNames(account.name),signedInPersonName) : [guestName];
-}
-function hasSubmittedInvitationRsvp() {
-  const saved=state.rsvps.find(rsvp=>rsvp.name===guestName);
-  if(!saved)return false;
-  if(saved.people?.length)return currentInvitationRsvp().people.some(person=>person.attending===true || person.attending===false);
-  // Older count-only RSVPs belong to the account's first invitation.
-  const account=rsvpAccount();
-  return !account || currentInvitationNumber()===(GuestPlanning.invitationNumbers(account,viewedEventId)[0] || 1);
 }
 function currentInvitationRsvp() {
   const existing=state.rsvps.find(rsvp=>rsvp.name===guestName),account=rsvpAccount();
@@ -3316,15 +3300,6 @@ document.querySelector('#editItemsButton').addEventListener('click', async () =>
 });
 
 document.querySelector('#editAccountsButton').addEventListener('click', async () => { if(!hostAuthenticated)return;commitAllPendingEditorInputs();if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}if(!document.querySelector('#accountsDialog').open)openAccountsAdmin(); });
-function populateAccountSessionPeople() {
-  const account=appState.accounts.find(account=>account.name===document.querySelector('#hostWeddingPartyView').value);
-  const names=account ? accountSignInNames(account.name) : [];
-  const select=document.querySelector('#hostAccountPerson');
-  select.innerHTML=names.map(name=>`<option value="${escapeAttribute(name)}">${escapeHtml(name)}</option>`).join('');
-  select.closest('label').hidden=names.length<2;
-  const member=names.find(name=>state.weddingPartyMembers?.some(member=>weddingPartyPersonMatches(member.name,name)));
-  if(member)select.value=member;
-}
 async function signIntoAccount(account,person) {
   if(!hostAuthenticated || !account)return;
   const events=Object.keys(EVENT_DETAILS).filter(id=>accountCanSignIn(account,id));if(!events.length)return;
@@ -3335,7 +3310,6 @@ async function signIntoAccount(account,person) {
   signedInPersonName=person || accountSignInNames(account.name)[0] || account.name;
   enterEvent(events.includes(viewedEventId)?viewedEventId:events[0]);
 }
-document.querySelector('#openWeddingPartyPreview').addEventListener('click',()=>signIntoAccount(appState.accounts.find(account=>account.name===document.querySelector('#hostWeddingPartyView').value),document.querySelector('#hostAccountPerson').value));
 function restoreHostSession() {
   if(!hostAuthenticated)return;
   const previous=hostReturnSession;hostReturnSession=null;hostWeddingPartyViewName='';
@@ -3739,7 +3713,7 @@ document.querySelector('#newGatheringForm').addEventListener('submit',async even
   const name=document.querySelector('#newGatheringName').value.trim();
   if(!name){event.preventDefault();document.querySelector('#newGatheringName').focus();return;}
   const id=`gathering-${crypto.randomUUID()}`;
-  appState.events[id]={...makeEvent([],document.querySelector('#newGatheringDate').value),gatheringName:name,homeAddress:document.querySelector('#newGatheringAddress').value.trim()};
+  appState.events[id]={...makeEvent([],document.querySelector('#newGatheringDate').value),gatheringName:name,gatheringTheme:'neutral',homeAddress:document.querySelector('#newGatheringAddress').value.trim()};
   for(const account of appState.accounts){
     account.selectedEvents={...account.selectedEvents,[id]:false};
     account.invitedEvents={...account.invitedEvents,[id]:false};

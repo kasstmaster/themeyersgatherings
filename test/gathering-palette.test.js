@@ -55,13 +55,6 @@ test('per-gathering color and opacity changes clear on switching gatherings, inc
  f.api.apply({});assert.equal(f.html.style.values.size,0);assert.equal(f.body.style.values.size,0);
  assert.equal(f.created.find(node=>node.id==='gatheringPaletteOverrides').textContent,'');
 });
-test('saving color/alpha edits preserves other settings and supports individual resets',()=>{
- const {api}=fixture();
- const row=(key,kind,hex,alpha,reset=false)=>({dataset:{paletteKey:key,paletteKind:kind,...reset?{reset:'true'}:{}},querySelector:selector=>({value:selector==='[data-palette-color]'?hex:alpha})});
- const values=api.edits({querySelectorAll:()=>[row('pcolor','color','#102030','35'),row('popacity','opacity','', '50'),row('preset','color','',0,true)]},{preset:'#fff',pother:'#abc'});
- assert.deepEqual(JSON.parse(JSON.stringify(values)),{pcolor:'rgba(16,32,48,0.35)',popacity:'0.5',pother:'#abc'});
-});
-
 test('animation overrides preserve the complete keyframes including transforms',()=>{
  const {api}=fixture();
  const frame=(keyText,values)=>({keyText,style:declaration(values),cssText:keyText+'{}'});

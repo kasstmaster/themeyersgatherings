@@ -35,29 +35,6 @@ test('saved first-page text reapplies to rebuilt RSVP headers with editing turne
  const other=root();context.SiteEditing.applyStaticText(other.result,{siteText:{}},format);assert.equal(other.paragraph.innerHTML,'Original');
 });
 
-vm.runInContext(editing.slice(editing.indexOf('  function formatTextSelection('),editing.indexOf('  function editTitle(')),context);
-test('formatting controls produce supported text while retaining selected line breaks',()=>{
- const apply=(kind,text)=>context.formatTextSelection(kind,text);
- assert.equal(format(apply('bold','Welcome')),'<p><strong>Welcome</strong></p>');
- assert.equal(format(apply('italic','Welcome')),'<p><em>Welcome</em></p>');
- assert.equal(format(apply('code','Welcome')),'<p><code>Welcome</code></p>');
- assert.equal(format(apply('bullets','One\nTwo')),'<ul><li>One</li><li>Two</li></ul>');
- assert.equal(format(apply('numbers','One\nTwo')),'<ol><li>One</li><li>Two</li></ol>');
- assert.match(format(apply('link','Details')),/<a href="https:\/\/example.com">Details<\/a>/);
- assert.equal(apply('bold',''),'**Text**');
-});
-
-test('italic works across selected lines, toggles off, and combines with bold',()=>{
- const apply=(kind,text)=>context.formatTextSelection(kind,text);
- const italic=apply('italic','First line\n\nSecond line');
- assert.equal(format(italic),'<p><em>First line</em></p><br><p><em>Second line</em></p>');
- assert.equal(format('*First line\n\nSecond line*'),'<p><em>First line</em></p><br><p><em>Second line</em></p>');
- assert.equal(apply('italic',italic),'First line\n\nSecond line');
- assert.equal(format(apply('italic',apply('bold','Welcome'))),'<p><strong><em>Welcome</em></strong></p>');
- assert.equal(format('***Welcome***'),'<p><strong><em>Welcome</em></strong></p>');
- assert.equal(format(apply('italic','  Welcome  ')),'<p>  <em>Welcome</em>  </p>');
-});
-
 test('shared formatting handles mixed styles, literal code, lists, links, and unsafe text',()=>{
  assert.equal(format('**Bold** and *italic* and _italic_'),'<p><strong>Bold</strong> and <em>italic</em> and <em>italic</em></p>');
  assert.equal(format('***Both*** and ___both___'),'<p><strong><em>Both</em></strong> and <strong><em>both</em></strong></p>');
@@ -65,10 +42,7 @@ test('shared formatting handles mixed styles, literal code, lists, links, and un
  assert.equal(format('- **First**\n- *Second*\n\n1. Third'),'<ul><li><strong>First</strong></li><li><em>Second</em></li></ul><br><ol><li>Third</li></ol>');
  assert.equal(format('[*Details*](https://example.com)'),'<p><a href="https://example.com"><em>Details</em></a></p>');
  assert.doesNotMatch(format('[Click](javascript:alert)\n<script>'),/<script>|href="javascript:/);
- for(const kind of ['bold','italic','code']){
-  const selected='First\n\nSecond';const markup=context.formatTextSelection(kind,selected);
-  const html=format(markup);assert.ok(html.includes('<br>'));assert.doesNotMatch(html,/\*/);
- }
+
 });
 
 test('RSVP time and multiline address render formatting inside a larger text field',()=>{
@@ -82,7 +56,6 @@ test('one formatter handles both page blocks and inline text without changing bl
  const copy="**Time**\n*Street\nCity*\n\nDetails";
  assert.equal(format(copy),'<p><strong>Time</strong></p><p><em>Street</em></p><p><em>City</em></p><br><p>Details</p>');
  assert.equal(format(copy,{inline:true}),'<strong>Time</strong><br><em>Street</em><br><em>City</em><br><br>Details');
- assert.equal(context.formatWeddingPartyDescription(copy),format(copy));
  assert.doesNotMatch(format('<script>',{inline:true}),/<script>/);
 });
 

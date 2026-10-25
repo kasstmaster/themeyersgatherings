@@ -4,7 +4,6 @@
   const namedColors=new Set('aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow springgreen steelblue tan teal thistle tomato transparent turquoise violet wheat white whitesmoke yellow yellowgreen'.split(' '));
   const validColor = value => typeof CSS !== 'undefined' && CSS.supports('color',value);
   const hash = value => {let result=2166136261;for(const char of value){result^=char.charCodeAt(0);result=Math.imul(result,16777619);}return (result>>>0).toString(36);};
-  const escape = value => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
   function endFunction(value,start){
     let depth=0,quote='';
     for(let i=start;i<value.length;i++){
@@ -42,46 +41,22 @@
     }
     return output;
   }
-  function sectionFor(selector){
-    for(const [pattern,label] of [
-      [/sign-in|signin|event-selection|app-install|meyersLoading/i,'Sign-in & gathering selection'],
-      [/rsvp|wedding-meal|wedding-rsvp/i,'RSVP'],
-      [/weddingMedia|media-|dropbox|upload/i,'Photos & videos'],
-      [/account|guest-list|invited-|attendance|noResponse|notAttending/i,'Accounts & attendance'],
-      [/header|event-date|event-address|signed-in|sparkle/i,'Header & household'],
-      [/dock|toolbar|host-tool|tabs|footer|page-actions/i,'Navigation & toolbars'],
-      [/menu|dish|category|summary-strip|summary-item/i,'Menu & summary'],
-      [/party|matron|attire/i,'Wedding party & attire'],
-      [/registry|bride|groom|timeline|what-to-expect/i,'Gathering pages'],
-      [/dialog|modal|flow-|input|textarea|select|button|editor/i,'Forms, dialogs & editing']
-    ])if(pattern.test(selector))return label;
-    return 'Shared surfaces & text';
-  }
-  function friendly(value){return value.replace(/([a-z])([A-Z])/g,'$1 $2').replace(/::?/g,' ').replace(/[#.>+~,[\]()="']/g,' ').replace(/--|[-_]/g,' ').replace(/\s+/g,' ').trim();}
-  function elementLabel(selector){
-    const identities=[...selector.matchAll(/[#.]([a-zA-Z][\w-]*)/g)].map(match=>match[1]).filter(name=>!name.startsWith('theme-'));
-    const tags={button:'Buttons',input:'Inputs',select:'Select menus',textarea:'Text areas',a:'Links',label:'Labels',h1:'Headings',h2:'Headings',h3:'Headings',p:'Paragraphs',img:'Images',video:'Videos',table:'Tables',td:'Table cells',th:'Table headings'};
-    const pieces=[...new Set(identities.map(friendly))];
-    for(const match of selector.matchAll(/(?:^|[\s(,>+~])(button|input|select|textarea|a|label|h1|h2|h3|p|img|video|table|td|th)\b/g))pieces.push(tags[match[1]]);
-    for(const [pattern,label] of [[/:hover/,'Hover'],[/:focus/,'Keyboard focus'],[/:disabled|\[disabled\]/,'Disabled'],[/:checked|aria-selected=["']?true/,'Selected'],[/::before|::after/,'Decoration']])if(pattern.test(selector))pieces.push(label);
-    return [...new Set(pieces)].join(' · ').replace(/\brsvp\b/gi,'RSVP') || (selector.includes('theme-wedding')?'Wedding palette':selector.includes('theme-christmas')?'Christmas palette':'Shared palette');
-  }
   function registry(){
     const entries=new Map();
     const register=(context,selector,property,literal,slot)=>{
       const key='p'+hash(`${context}|${property}|${slot}|${literal}`),variable=`--gathering-detail-${key}`;
-      if(!entries.has(key))entries.set(key,{key,variable,default:literal,section:sectionFor(selector),label:`${elementLabel(selector)} — ${friendly(property)}${slot?' '+(slot+1):''}`,selector,property});
+      if(!entries.has(key))entries.set(key,{key,variable,default:literal,selector,property});
       return `var(${variable},${literal})`;
     };
     const registerOpacity=(context,selector,literal)=>{
       const key='p'+hash(`${context}|opacity|${literal}`),variable=`--gathering-detail-${key}`;
-      entries.set(key,{key,variable,default:literal,kind:'opacity',section:sectionFor(selector),label:`${elementLabel(selector)} — Element opacity`,selector,property:'opacity'});
+      entries.set(key,{key,variable,default:literal,kind:'opacity',selector,property:'opacity'});
       return `var(${variable},${literal})`;
     };
     const registerReference=(context,selector,property,wrappers,priority)=>{
       const key='p'+hash(`${context}|reference|${property}`);
       const target=property==='background'?'background-color':/^border(?:-(?:top|right|bottom|left))?$/.test(property)?property+'-color':property;
-      entries.set(key,{key,kind:'reference',section:sectionFor(selector),label:`${elementLabel(selector)} — ${friendly(target)}`,selector,property:target,wrappers,priority});
+      entries.set(key,{key,kind:'reference',selector,property:target,wrappers,priority});
     };
     return {entries,register,registerOpacity,registerReference};
   }
@@ -119,7 +94,7 @@
   function elementPath(element){
     const parts=[];for(let node=element;node&&node!==document.body;node=node.parentElement){
       if(node.id){parts.unshift('#'+node.id);break;}
-      const siblings=Array.from(node.parentElement?.children || []).filter(sibling=>sibling.tagName===node.tagName);
+      const siblings=Array.from(node.parentElement?.querySelectorAll(':scope > *') || []).filter(sibling=>sibling.tagName===node.tagName);
       parts.unshift(`${node.tagName.toLowerCase()}:nth-of-type(${siblings.indexOf(node)+1})`);
     }
     return parts.join(' > ') || 'body';
@@ -170,68 +145,5 @@
     }
     activeStyle.textContent=rules.join('\n');
   }
-  const colorCache=new Map();
-  function channels(value){
-    if(colorCache.has(value))return colorCache.get(value);
-    const sample=document.createElement('span');sample.style.color=value;sample.hidden=true;document.body.append(sample);
-    const resolved=getComputedStyle(sample).color;sample.remove();
-    const numbers=resolved.match(/[\d.]+/g)?.map(Number) || [0,0,0];
-    const result={hex:'#'+numbers.slice(0,3).map(number=>Math.round(number).toString(16).padStart(2,'0')).join(''),alpha:numbers[3]??1};
-    colorCache.set(value,result);return result;
-  }
-  function entryDefault(entry,reset=false){
-    if(entry.kind!=='reference')return entry.default;
-    let selector=entry.selector.replace(/::[a-z-]+(?:\([^)]*\))?/gi,'').replace(/:(?:hover|focus-visible|focus|active|visited|disabled|checked)\b/g,'');
-    let element;try{element=document.querySelector(selector);}catch{}
-    if(!element)return 'transparent';
-    const disabled=activeStyle.disabled;if(reset)activeStyle.disabled=true;
-    let resolved;try{resolved=getComputedStyle(element).getPropertyValue(entry.property).trim();}finally{if(reset)activeStyle.disabled=disabled;}
-    return validColor(resolved)?resolved:'transparent';
-  }
-  function mount(host,values={}){
-    start();document.querySelectorAll('[style]').forEach(scanInline);
-    const sections=new Map();
-    for(const entry of catalog.entries.values()){
-      const themes=[...entry.selector.matchAll(/\.theme-([a-z]+)/g)].map(match=>match[1]);
-      if(themes.length&&!themes.some(theme=>document.body.classList.contains('theme-'+theme)))continue;
-      const custom=[...entry.selector.matchAll(/\.(custom-gathering-[a-z-]+)/g)].map(match=>match[1]);
-      if(custom.length&&!custom.some(name=>document.body.classList.contains(name)))continue;
-      if(!sections.has(entry.section))sections.set(entry.section,[]);sections.get(entry.section).push(entry);
-    }
-    host.insertAdjacentHTML('beforeend',`<section class="palette-editor"><h3>All element colors</h3><p>Customize backgrounds, text, containers, controls, borders, gradients, shadows, and interaction states. Opacity controls transparency.</p><label>Find a color setting<input type="search" data-palette-search placeholder="Search: RSVP, header, button, hover…"></label>${Array.from(sections).map(([section,entries])=>`<details class="palette-section"><summary>${escape(section)} (${entries.length})</summary>${entries.map(entry=>{
-      const current=values[entry.key] ?? entryDefault(entry),color=entry.kind==='opacity'?{hex:'#000000',alpha:Number(current)}:channels(current);
-      return `<div class="palette-row" data-palette-key="${entry.key}" data-palette-kind="${entry.kind || 'color'}" data-palette-search-text="${escape((section+' '+entry.label).toLowerCase())}"><label title="${escape(entry.label)}">${escape(entry.label)}${entry.kind==='opacity'?'':`<input type="color" data-palette-color value="${color.hex}">`}</label><label>Opacity <output>${Math.round(color.alpha*100)}%</output><input type="range" data-palette-alpha min="0" max="100" step="1" value="${Math.round(color.alpha*100)}"></label><button type="button" data-palette-reset>Reset</button></div>`;
-    }).join('')}</details>`).join('')}</section>`);
-    const editor=host.querySelector('.palette-editor');
-    editor.addEventListener('input',event=>{
-      if(event.target.matches('[data-palette-search]')){
-        const query=event.target.value.trim().toLowerCase();
-        editor.querySelectorAll('.palette-section').forEach(section=>{
-          let matches=0;section.querySelectorAll('.palette-row').forEach(row=>{row.hidden=!row.dataset.paletteSearchText.includes(query);if(!row.hidden)matches++;});
-          section.hidden=matches===0;if(query&&matches)section.open=true;
-        });return;
-      }
-      const row=event.target.closest('.palette-row');if(!row)return;
-      row.dataset.changed='true';delete row.dataset.reset;
-      row.querySelector('output').textContent=row.querySelector('[data-palette-alpha]').value+'%';
-    });
-    editor.addEventListener('click',event=>{
-      if(!event.target.matches('[data-palette-reset]'))return;
-      const row=event.target.closest('.palette-row'),entry=catalog.entries.get(row.dataset.paletteKey),color=entry.kind==='opacity'?{alpha:Number(entry.default)}:channels(entryDefault(entry,true));
-      if(row.querySelector('[data-palette-color]'))row.querySelector('[data-palette-color]').value=color.hex;row.querySelector('[data-palette-alpha]').value=Math.round(color.alpha*100);row.querySelector('output').textContent=Math.round(color.alpha*100)+'%';
-      row.dataset.changed='true';row.dataset.reset='true';
-    });
-  }
-  function edits(host,previous={}){
-    const values={...previous};
-    host.querySelectorAll('.palette-row[data-changed]').forEach(row=>{
-      const key=row.dataset.paletteKey;
-      if(row.dataset.reset){delete values[key];return;}
-      const alpha=Number(row.querySelector('[data-palette-alpha]').value)/100;
-      if(row.dataset.paletteKind==='opacity'){values[key]=String(alpha);return;}
-      const hex=row.querySelector('[data-palette-color]').value;
-      values[key]=alpha===1?hex:`rgba(${[1,3,5].map(index=>parseInt(hex.slice(index,index+2),16)).join(',')},${alpha})`;
-    });return values;
-  }
-  globalThis.GatheringPalette={replaceColors,compileSheets,apply,mount,edits};
+  globalThis.GatheringPalette={replaceColors,compileSheets,apply};
 })();

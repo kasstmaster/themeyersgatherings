@@ -141,7 +141,6 @@
     <button id="invitationTemplatesButton" type="button" hidden>Templates</button>
 
     <main hidden></main>
-    <button id="rsvpButton" type="button" hidden>RSVP</button>
 
     <footer>
       <address>
@@ -627,17 +626,7 @@
       </form>
     </dialog>
 
-    <dialog id="weddingPartyPreviewDialog">
-      <form method="dialog" class="modal-card">
-        <button class="modal-close" value="cancel" aria-label="Close">×</button>
-        <p class="section-kicker">Host dashboard</p><h2>Sign in to account</h2>
-        <p id="viewAsDescription">Choose an account to manage its RSVP and contributions.</p>
-        <label><span>Account</span><select id="hostWeddingPartyView" aria-label="Account to sign in to"></select></label>
-        <label hidden><span>Person</span><select id="hostAccountPerson" aria-label="Person in this account"></select></label>
-        <p id="hostWeddingPartyViewError" class="form-error" role="alert"></p>
-        <div class="modal-dialog-footer"><button id="openWeddingPartyPreview" class="primary-button" type="button">Sign in</button></div>
-      </form>
-    </dialog>
+
 
     <dialog id="accountsDialog" class="wide-dialog editor-dialog">
       <form method="dialog" class="modal-card">

@@ -65,7 +65,7 @@ test('moving Attire headings preserves saved edits and migration is repeatable',
 });
 
 test('Wedding Party page headings follow attire, duties, experience, and custom titles',()=>{
- const start=source.indexOf('function weddingPartyPageHeading('),end=source.indexOf('function weddingRsvpTabReplacement(',start);
+ const start=source.indexOf('function weddingPartyPageHeading('),end=source.indexOf('function renderWeddingGathering(',start);
  const nodes={'#weddingPartyKicker':{},'#weddingPartyHeading':{}};
  const c=vm.createContext({document:{querySelector:selector=>nodes[selector]}});vm.runInContext(source.slice(start,end),c);
  for(const [tab,page,kicker,title] of [
@@ -88,7 +88,7 @@ test('party attire has one editable intro without a third container before the d
 });
 
 test('Responsibilities uses the signed-in member role and name in its header',()=>{
- const start=source.indexOf('function weddingPartyPageHeading('),end=source.indexOf('function weddingRsvpTabReplacement(',start);
+ const start=source.indexOf('function weddingPartyPageHeading('),end=source.indexOf('function renderWeddingGathering(',start);
  const nodes={'#weddingPartyKicker':{},'#weddingPartyHeading':{}};
  const c=vm.createContext({document:{querySelector:selector=>nodes[selector]}});vm.runInContext(source.slice(start,end),c);
  for(const member of [{name:'Casey Example',title:'Groomsman'},{name:'Jordan Example',title:'Matron of Honor'}]){
