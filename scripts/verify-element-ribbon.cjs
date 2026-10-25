@@ -7,7 +7,7 @@ await page.evaluate(()=>{state.rsvpIntroText="Welcome friends";openRsvp();});
 const layout=()=>page.evaluate(()=>Object.fromEntries(['rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','weddingPartyTabs','weddingRsvpUploadToolbar'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [id,[r.x,r.y,r.width,r.height]];})));
 for(const tab of ['attire','party']){
  await page.evaluate(tab=>{selectedWeddingTab=tab;selectedMatronTab='duties';render();},tab);
- const boxes=()=>page.evaluate(tab=>[...document.querySelectorAll(tab==='attire'?'#registryAttireSection,#weddingPartyAttireIntroText,[data-attire-group]':'#weddingPartySection,#weddingPartyDetails,[data-responsibilities-member]')].map(e=>[e.id||e.className,e.offsetLeft,e.offsetTop,e.offsetWidth,e.offsetHeight]),tab);
+ const boxes=()=>page.evaluate(tab=>[...document.querySelectorAll(tab==='attire'?'#registryAttireSection,#weddingPartyAttireIntroText,[data-attire-group]':'#weddingPartySection,#weddingPartyDetails,[data-responsibilities-member]')].map(e=>[e.id||e.className,e.offsetLeft,e.offsetTop,e.offsetWidth,e.offsetHeight]).filter(row=>row[4]>0),tab);
  const original=await boxes();await page.evaluate(()=>SiteEditing.toggle(render));assert.deepEqual((await boxes()).map(row=>[row[0],row[1],row[3],row[4]]),original.map(row=>[row[0],row[1],row[3],row[4]]));assert.equal(await page.locator('.inline-members-edit-area,.inline-attire-edit-area,.inline-portal-editor:visible').count(),0);await page.evaluate(()=>SiteEditing.toggle(render));
 }
 await page.evaluate(()=>{selectedWeddingTab='details';render();});
@@ -25,7 +25,7 @@ await page.getByRole('button',{name:'Text',exact:true}).click();
 await page.getByRole('button',{name:'Italic',exact:true}).click();
 await page.getByRole('button',{name:'Save',exact:true}).click();
 assert.equal(await page.evaluate(()=>state.rsvpIntroText),'*Welcome friends*');
-await page.evaluate(()=>{const text=document.querySelector('#rsvpFirstPageText :is(em,i)').firstChild;const selected=document.createRange();selected.setStart(text,8);selected.setEnd(text,15);const selection=getSelection();selection.removeAllRanges();selection.addRange(selected);});
+await page.evaluate(()=>{const text=document.querySelector('#rsvpFirstPageText :is(em,i)').firstChild;const selected=document.createRange();selected.setStart(text,8);selected.setEnd(text,15);const selection=getSelection();selection.removeAllRanges();selection.addRange(selected);document.dispatchEvent(new Event('selectionchange'));});
 await page.getByRole('combobox',{name:'Font',exact:true}).selectOption('Georgia');await page.getByRole('button',{name:'Save',exact:true}).click();
 assert.match(await page.evaluate(()=>state.rsvpIntroText),/Welcome \{\{style:font=Georgia\}\}friends/);
 
@@ -44,11 +44,11 @@ await page.getByRole('button',{name:'Remove image',exact:true}).click();
 await page.getByRole('button',{name:'Border',exact:true}).click();await page.getByRole('spinbutton',{name:'Width',exact:true}).fill('3');await page.getByRole('spinbutton',{name:'Width',exact:true}).press('Tab');
 assert.equal(await page.locator('#rsvpConfirmEvent').evaluate(e=>getComputedStyle(e).borderTopWidth),'3px');
 
-await page.locator('#weddingPartyTabs').getByRole('button',{name:'Travel',exact:true}).click();await page.getByRole('button',{name:'Open page / use button',exact:true}).click();
+await page.locator('#hostAllPages>summary').click();await page.locator('#hostAllPagesMenu').getByRole('button',{name:'Travel',exact:true}).click();
 await page.locator('#custom-page-travel .bride-groom-content').click();await page.locator('#custom-page-travel .bride-groom-content').fill('First item');
 await page.getByRole('button',{name:'Lists',exact:true}).click();await page.getByRole('button',{name:'Bullets',exact:true}).click();await page.getByRole('button',{name:'Save',exact:true}).click();
 assert.match(await page.evaluate(()=>state.sitePages.find(p=>p.id==='travel').content),/- First item/);
-await page.locator('#weddingPartyTabs [data-wedding-tab="registry"]').click();await page.getByRole('button',{name:'Open page / use button',exact:true}).click();
+await page.locator('#hostAllPages>summary').click();await page.locator('#hostAllPagesMenu').getByRole('button',{name:'Registry',exact:true}).click();
 assert.equal(await page.locator('#registrySection').isVisible(),true);
 assert.equal(await page.locator('.element-editor-toolbar').count(),1);
 
@@ -90,7 +90,7 @@ for(let n=0;n<18 && !await page.evaluate(()=>state.rsvps.some(r=>r.name===guestN
 }
 await page.waitForFunction(()=>state.rsvps.some(r=>r.name===guestName) && document.querySelector('#rsvpDialog').open && !document.querySelector('#registrySection').hidden);
 assert.equal(await page.locator('#weddingPartyTabs [data-wedding-tab="registry"]').getAttribute('aria-pressed'),'true');await page.locator('#rsvpDialog .modal-close').click();await page.waitForTimeout(100);
-await page.evaluate(()=>{hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;signedInPersonName='';showSignedInDestination();render();SiteEditing.toggle(render);});
+await page.evaluate(()=>{hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;signedInPersonName='';showSignedInDestination();render();openRsvp();SiteEditing.toggle(render);});
 await page.locator('#invitedListButton').click();await page.getByRole('button',{name:'Text',exact:true}).click();
 await page.evaluate(()=>{const range=document.createRange();range.selectNodeContents(document.querySelector('#invitedCount'));const selection=getSelection();selection.removeAllRanges();selection.addRange(range);});
 await page.getByRole('textbox',{name:'Text color hex',exact:true}).fill('#cc3311');await page.getByRole('textbox',{name:'Text color hex',exact:true}).press('Tab');await page.getByRole('button',{name:'Save',exact:true}).click();

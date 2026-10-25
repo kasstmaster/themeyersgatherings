@@ -20,19 +20,19 @@ function render({event='thanksgiving',host=false,submitted=false,claims=[],tab=n
   context.renderGatheringPages(GatheringFeatures.forGathering(event),host);
   return {menu:nodes.get('.menu-section'),notes:nodes.get('#hostNotesSection'),tabs:nodes.get('#gatheringTabs')};
 }
-test('home menu appears only after this guest has submitted an RSVP and committed a dish',()=>{
+test('menu and notes pages remain host-only regardless of guest response or claims',()=>{
   for(const event of ['thanksgiving','christmas','custom-gathering']) {
-    assert.equal(render({event,submitted:true,claims:['My household']}).menu.hidden,false);
+    assert.equal(render({event,submitted:true,claims:['My household']}).menu.hidden,true);
     assert.equal(render({event,submitted:false,claims:['My household']}).menu.hidden,true);
     assert.equal(render({event,submitted:true,claims:[]}).menu.hidden,true);
     assert.equal(render({event,submitted:true,claims:['Other household']}).menu.hidden,true);
     const guest=render({event,submitted:true,claims:['My household'],tab:'notes'});
-    assert.equal(guest.menu.hidden,false);
+    assert.equal(guest.menu.hidden,true);
     assert.equal(guest.notes.hidden,true);
     assert.equal(guest.tabs.hidden,true);
   }
 });
-test('host menu tabs and Wedding behavior stay unchanged',()=>{
+test('standard host Notes and Menu retain their feature-based visibility',()=>{
   assert.equal(render({host:true,tab:'menu'}).menu.hidden,false);
   assert.equal(render({host:true,tab:'notes'}).menu.hidden,true);
   assert.equal(render({host:true,tab:'notes'}).notes.hidden,false);

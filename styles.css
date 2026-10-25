@@ -1000,3 +1000,24 @@ html:has(dialog:modal),body:has(dialog:modal){overflow:hidden}
 dialog:modal{overflow-y:auto;overscroll-behavior:contain}
 dialog:modal:not(.fullscreen-dialog){max-height:calc(100dvh - 32px);box-sizing:border-box}
 dialog:modal>.modal-card{max-height:none;overflow:visible}
+
+/* Host pages live in the RSVP shell; guests retain their public page buttons. */
+#eventPage>:is(header,main,footer){display:none}
+.host-rsvp-view :is(#weddingRsvpUploadToolbar,#weddingHostTabs,#gatheringTabs){display:none!important}
+.host-rsvp-counters{margin:24px 0;width:100%;box-sizing:border-box}
+.host-rsvp-counters[hidden]{display:none}
+#hostAllPages{flex:1 1 0;max-width:180px;min-width:0}
+#hostAllPages[hidden]{display:none}
+#hostAllPages>summary{display:flex;min-height:56px;align-items:center;justify-content:center;flex-direction:column;gap:5px;padding:5px 4px;cursor:pointer;list-style:none;font:600 .72rem/1 Arial,sans-serif}
+#hostAllPages>summary::-webkit-details-marker{display:none}
+#hostAllPagesMenu{position:fixed;bottom:calc(78px + env(safe-area-inset-bottom,0px));left:12px;max-height:60dvh;overflow:auto;min-width:220px;padding:8px;background:#fffaf1;border:1px solid #b89968;border-radius:5px;box-shadow:0 4px 18px #0003}
+#hostAllPages:not([open]) #hostAllPagesMenu{display:none}
+#hostToolsPanel #hostAllPagesMenu button{display:block;width:100%;max-width:none;min-height:40px;margin:0;padding:10px;text-align:left;background:transparent;color:#132841;border:0;font:600 14px/1.3 Arial,sans-serif}
+#hostToolsPanel #hostAllPagesMenu button:hover{background:#e1e7ed}
+.host-rsvp-view #rsvpDialog #rsvpWeddingPages>.host-outer-panel{padding:24px;background:var(--host-panel-background,var(--wedding-tab-selected-background));border:var(--host-panel-border,1px solid var(--wedding-tab-border));border-radius:var(--host-panel-radius,6px);color:var(--host-panel-text,var(--wedding-tab-text))}
+@media(max-width:650px){.host-rsvp-view #rsvpDialog #rsvpWeddingPages>.host-outer-panel{padding:18px}}
+
+#hostToolsPanel{overflow:visible}
+
+#hostToolsPanel .sync-status{pointer-events:none}#hostToolsPanel .sync-status button{pointer-events:auto}
+.has-host-toolbar dialog:modal:not(.fullscreen-dialog){padding-bottom:120px}

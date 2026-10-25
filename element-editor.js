@@ -232,5 +232,5 @@
     if(part){part.focus({preventScroll:true});const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY) || document.createRange();if(!part.contains(caret.startContainer)){caret.selectNodeContents(part);caret.collapse(false);}const selection=window.getSelection();selection.removeAllRanges();selection.addRange(caret);rememberSelection();}
   },true);
   document.addEventListener('keydown',event=>{if(event.key==='Escape' && target){event.preventDefault();event.stopImmediatePropagation();release();status('Selection cleared.');}},true);
-  globalThis.ElementEditor={render,beforeRender,flush,select,refresh:()=>render(context)};
+  globalThis.ElementEditor={activate:element=>{release();allowAction=true;try{element.click();}finally{allowAction=false;}},render,beforeRender,flush,select,refresh:()=>render(context)};
 })();
