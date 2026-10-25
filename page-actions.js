@@ -35,6 +35,24 @@
     return inRsvp?([...document.querySelectorAll('#rsvpWeddingPages>section')].find(visible) || document.getElementById('rsvpEventConfirmation')):[...document.querySelectorAll(pageSelector)].find(visible) || document.querySelector('#eventPage main > .welcome');
   }
 
+  function printHeader(surface) {
+    if(surface?.contains(document.getElementById('rsvpEventHeader')))return '';
+    const header=document.createElement('header');header.className='printed-gathering-header';
+    for(const id of ['rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails']){
+      const source=document.getElementById(id);
+      if(!source?.textContent.trim())continue;
+      const block=document.createElement(id==='rsvpFirstPageDate'?'strong':'div');
+      block.innerHTML=source.innerHTML;
+      block.querySelectorAll('button,input,textarea,select,script,style,.inline-editor,.inline-edit-control').forEach(node=>node.remove());
+      for(const node of block.querySelectorAll('*')){
+        node.removeAttribute('id');node.removeAttribute('contenteditable');
+        for(const attribute of [...node.attributes])if(attribute.name.startsWith('on'))node.removeAttribute(attribute.name);
+      }
+      header.append(block);
+    }
+    return header.childElementCount?header.outerHTML:'';
+  }
+
   function exportPage(surface) {
     if(!visible(surface))return null;
     if(surface.id === 'gatheringMenuSection' && api.menuExport)return api.menuExport();
@@ -90,7 +108,7 @@
       frame.contentWindow.addEventListener('afterprint',()=>frame.remove(),{once:true});
       frame.contentWindow.focus();frame.contentWindow.print();
     };
-    frame.srcdoc=`<!doctype html><html><head><meta charset="UTF-8"><base href="${escape(document.baseURI)}"><title>${escape(page.title)}</title><style>body{font:16px/1.5 Georgia,serif;color:#111;padding:24px}h1{font-size:26px}img{max-width:100%;height:auto}article,details{margin:16px 0}summary{font-weight:bold}.wedding-party-role,.wedding-party-member-name{display:block}table{border-collapse:collapse;width:100%}td,th{padding:8px;border:1px solid #aaa}a{color:inherit}a,li,p{overflow-wrap:anywhere}@media print{body{padding:0}img{max-height:8in;object-fit:contain}}</style></head><body><h1>${escape(page.title)}</h1>${page.html}</body></html>`;
+    frame.srcdoc=`<!doctype html><html><head><meta charset="UTF-8"><base href="${escape(document.baseURI)}"><title>${escape(page.title)}</title><style>body{font:16px/1.5 Georgia,serif;color:#111;padding:24px}h1{font-size:26px}.printed-gathering-header{margin-bottom:28px;text-align:center;line-height:1.5}.printed-gathering-header>strong{display:block}.printed-gathering-header p{margin:0}.printed-gathering-header [style*="--fitted-text-scale"]{--fitted-text-scale:1!important}img{max-width:100%;height:auto}article,details{margin:16px 0}summary{font-weight:bold}.wedding-party-role,.wedding-party-member-name{display:block}table{border-collapse:collapse;width:100%}td,th{padding:8px;border:1px solid #aaa}a{color:inherit}a,li,p{overflow-wrap:anywhere}@media print{body{padding:0}img{max-height:8in;object-fit:contain}}</style></head><body>${page.headerHtml || ''}<h1>${escape(page.title)}</h1>${page.html}</body></html>`;
     document.body.append(frame);
   }
   const api={sync,exportPage,printPage};
@@ -98,7 +116,9 @@
     const control=event.target.closest('[data-page-export]');
     if(!control)return;
     event.preventDefault();
-    const page=exportPage(toolbarSurface(control));
+    const surface=toolbarSurface(control);
+    const exported=exportPage(surface);
+    const page=exported && {...exported,headerHtml:printHeader(surface)};
     if(!page)return;
     const dialog=document.createElement('dialog');dialog.className='page-export-options';
     dialog.setAttribute('aria-label','Print or email page');
