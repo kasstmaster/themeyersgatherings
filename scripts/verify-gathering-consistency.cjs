@@ -9,7 +9,7 @@ await page.evaluate(()=>{appState.events['legacy-custom']={...makeEvent([],'2027
 for(const width of [1280,390]){
  await page.setViewportSize({width,height:900});let expected;
  for(const id of ['thanksgiving','christmas','legacy-custom',neutral]){
-  await page.evaluate(id=>enterEvent(id),id);
+  await page.evaluate(id=>{enterEvent(id);selectedGatheringTab='notes';render();},id);
   const snapshot=await page.locator('#hostNotesSection').evaluate(e=>{const s=getComputedStyle(e),h=getComputedStyle(e.querySelector('h2'));return {padding:s.padding,border:s.borderTopWidth,radius:s.borderRadius,font:h.fontFamily,size:h.fontSize,line:h.lineHeight};});
   if(expected)assert.deepEqual(snapshot,expected);else expected=snapshot;
   assert.equal(await page.locator('#hostNotesSection').isVisible(),true);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -19,6 +19,6 @@ for(const width of [1280,390]){
 }
 await page.evaluate(()=>{SiteEditing.toggle(render);ElementAppearance.update(document.querySelector('#hostNotesSection'),{backgroundColor:'#123456'});});
 assert.equal(await page.locator('#hostNotesSection').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');
-await page.evaluate(()=>{SiteEditing.toggle(render);enterEvent('thanksgiving');});assert.notEqual(await page.locator('#hostNotesSection').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');
-await page.evaluate(id=>enterEvent(id),neutral);assert.equal(await page.locator('#hostNotesSection').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');
+await page.evaluate(()=>{SiteEditing.toggle(render);enterEvent('thanksgiving');selectedGatheringTab='notes';render();});assert.notEqual(await page.locator('#hostNotesSection').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');
+await page.evaluate(id=>{enterEvent(id);selectedGatheringTab='notes';render();},neutral);assert.equal(await page.locator('#hostNotesSection').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');
 assert.deepEqual(errors,[]);await browser.close();console.log('Shared desktop/mobile layouts, neutral creation, legacy themes and isolated editable colors pass.');})().catch(e=>{console.error(e);process.exit(1);});

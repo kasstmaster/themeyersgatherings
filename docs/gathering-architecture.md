@@ -81,3 +81,8 @@ The Photos & Videos surface combines the gallery and sharing flow without tabs.
 Share Your Photos & Videos reveals Upload and Share Link actions. Exactly one
 form is visible at a time; collapsing sharing hides both forms. The gallery and
 host-published folder link remain available below the sharing flow.
+
+Non-Wedding gatherings default to Photos & Videos on the first RSVP page for
+hosts and guests, including newly created gatherings. They omit the redundant
+Photos & Videos navigation button under RSVP. Wedding keeps its existing default
+page and Photos & Videos button. Host Notes/Menu remain available as page buttons.
