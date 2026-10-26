@@ -1167,6 +1167,7 @@ function enterEvent(eventId, { preserveWeddingView = false } = {}) {
     return;
   }
   selectedGatheringTab = null;
+  selectedWeddingTab = null;
   viewedEventId = eventId;
   state = nextState;
   if (eventId === 'wedding' && !preserveWeddingView) {
@@ -1264,8 +1265,6 @@ function renderWeddingGathering(hostView) {
   const showingAttirePage = (showingGuestPage && publicWeddingTab === 'attire') || showingPartyAttirePage;
   const showingWhatToExpectPage = showingGuestPage && publicWeddingTab === 'details';
   const showingRegistryPage = isWedding && selectedWeddingTab === 'registry';
-  document.querySelector('#weddingMediaSection').hidden = selectedWeddingTab !== 'media';
-  if (selectedWeddingTab === 'media') WeddingMedia.show({ base: SHARED_STATE_URL, host: hostView, password: hostView ? hostCredential : '', name: signedInPersonName || guestName, account: guestName, preview: false });
   const hostTabs=document.querySelector('#weddingHostTabs');
   hostTabs.hidden=!hostView;
   hostTabs.querySelectorAll('[data-wedding-tab]').forEach(button=>{
@@ -1387,6 +1386,30 @@ function renderWeddingGathering(hostView) {
 }
 
 // Standard gatherings share one page renderer; Wedding opts out of Notes/Menu.
+function gatheringGalleryUrl(value) {
+  try{const url=new URL(value);return ['https:','http:'].includes(url.protocol) && !url.username && !url.password?url.href:'';}catch{return '';}
+}
+// Every gathering uses this single media surface and the same upload service.
+function renderGatheringMedia(hostView) {
+  const wedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
+  const showing=(wedding?selectedWeddingTab:selectedGatheringTab)==='media';
+  document.querySelector('#weddingMediaSection').hidden=!showing;
+  document.querySelector('#rsvpWeddingPages').hidden=!wedding && !hostView && !showing;
+  if(!wedding){
+    document.querySelector('#weddingPartyTabs').hidden=false;
+    document.querySelectorAll('#weddingPartyTabs>[data-wedding-tab]').forEach(button=>{
+      button.hidden=button.dataset.weddingTab!=='media';
+      button.setAttribute('aria-selected',String(showing && !button.hidden));
+    });
+  }
+  const galleryLink=document.querySelector('#sharedGalleryLink'),galleryUrl=gatheringGalleryUrl(state.mediaGalleryUrl);
+  galleryLink.textContent=state.mediaGalleryLabel || 'View & Download Photos & Videos';
+  if(galleryUrl)galleryLink.href=galleryUrl;else galleryLink.removeAttribute('href');
+  galleryLink.setAttribute('aria-disabled',String(!galleryUrl));
+  document.querySelector('#sharedGalleryPending').hidden=Boolean(galleryUrl);
+  document.querySelector('#weddingMediaIntro').textContent=wedding?'Share your wedding photos and videos directly with us':'Share your gathering photos and videos directly with us';
+  if(showing)WeddingMedia.show({base:SHARED_STATE_URL,eventId:viewedEventId,host:hostView,password:hostView?hostCredential:'',name:signedInPersonName || guestName,account:guestName,preview:false});
+}
 function renderGatheringPages(features,hostView) {
   if(selectedGatheringTab==='details')selectedGatheringTab=null;
   if(!hostView && selectedGatheringTab==='notes')selectedGatheringTab='menu';
@@ -1419,9 +1442,8 @@ function render() {
   applyGatheringColors();
   document.title = 'The Meyers';
   document.querySelector('meta[name="description"]').content = `The Meyers ${event.name} potluck and RSVP page.`;
-  document.querySelector('#uploadPhotosButton').hidden=!isWedding;
-  document.querySelector('#weddingRsvpUploadToolbar').hidden=!isWedding;
-  document.querySelector('#rsvpPageToolbar').hidden=!isWedding;
+  document.querySelector('#weddingRsvpUploadToolbar').hidden=false;
+  document.querySelector('#rsvpPageToolbar').hidden=false;
   renderSyncStatus();
   updateHostToolsPanel();
   document.querySelector('#editItemsButton').textContent = 'Edit';
@@ -1443,6 +1465,7 @@ function render() {
   document.querySelector('.summary-strip').hidden = !hostView;
   renderGatheringPages(features,hostView);
   renderWeddingGathering(hostView);
+  renderGatheringMedia(hostView);
   const categories = [...new Set(state.items.map(item => item.category))];
   const categoryCard = category => `
     <article class="category-card">
@@ -1538,6 +1561,10 @@ function renderInlineEditing() {
       });
       renderWeddingPageToolbar();
     }, format: (value,options) => formatEditableText(value,options), escape: escapeHtml });
+  SiteEditing.field(document.querySelector('#sharedGalleryLink'),'shared photo folder',[
+    {label:'Button text',value:state.mediaGalleryLabel || 'View & Download Photos & Videos',required:true},
+    {label:'Dropbox folder link (add after the gathering)',type:'url',value:state.mediaGalleryUrl || ''}
+  ],([label,url])=>{state.mediaGalleryLabel=label.trim();state.mediaGalleryUrl=gatheringGalleryUrl(url.trim());});
   SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
   const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,
     keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date', min:key==='eventDate' && GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):undefined })),
@@ -1599,7 +1626,7 @@ function renderInlineEditing() {
     if(nav.id==='weddingPartyTabs')Object.assign(config,{toolbar:true,allowNoSelection:true,pageHost:document.querySelector('#rsvpWeddingPages'),panelIds:['whatToExpectSection','brideGroomSection','weddingTimelineSection','hostNotesSection','gatheringMenuSection'],scroll:true,
       hidePage:page=>page.weddingDefault==='details',
       defaultPage:['details','guest'].includes(selectedWeddingTab) && selectedGuestTab==='details'?page=>page.weddingDefault==='details':null});
-    if(nav.id==='gatheringTabs')Object.assign(config,{pageHost:document.querySelector('#rsvpWeddingPages'),allowNoSelection:true,panelIds:['hostNotesSection','gatheringMenuSection']});
+    if(nav.id==='gatheringTabs')Object.assign(config,{pageHost:document.querySelector('#rsvpWeddingPages'),allowNoSelection:true,panelIds:['hostNotesSection','gatheringMenuSection','weddingMediaSection']});
     if (nav.id==='brideGroomTabs') Object.assign(config, { audience:'host',
       add: () => { state.brideGroomPages.push({id:crypto.randomUUID(),title:'New page',content:''});selectedBrideGroomPage=state.brideGroomPages.at(-1).id; },
       rename: (tab,title) => { state.brideGroomPages.find(page=>page.id===tab.dataset.brideGroomPage).title=title; },
@@ -1676,6 +1703,7 @@ function renderHostAllPages(){
     document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{if(!button.hidden)add(button.textContent.trim(),button);});
   }else{
     document.querySelectorAll('#gatheringTabs>button').forEach(button=>{if(!button.hidden)add(button.textContent.trim(),button);});
+    const upload=document.querySelector('#uploadPhotosButton');add(upload.textContent.trim(),upload);
   }
 }
 function renderEventDock() {
@@ -1798,6 +1826,7 @@ document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav
   const button = event.target.closest('[data-wedding-tab]');
   if (!button) return;
   selectedWeddingTab = button.dataset.weddingTab;
+  if(!GatheringFeatures.forGathering(viewedEventId).weddingPages && selectedWeddingTab==='media'){selectedGatheringTab='media';SiteEditing.resetTabSelection('gatheringTabs',viewedEventId);}
   if(nav.id==='weddingPartyTabs')SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
   if(['attire','details'].includes(selectedWeddingTab))selectedGuestTab=selectedWeddingTab;
   render();

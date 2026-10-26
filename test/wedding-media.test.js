@@ -6,10 +6,11 @@ function fixture(t) {
   const accounts = [
     { name:'Benjamin Hall IV,Sherri Hall', anyListCategoryId:'hall', selectedEvents:{wedding:true}, signInAliases:[{name:'Benjamin Hall IV',alias:'Ben Hall IV'}] },
     { name:'Julie Smith', anyListCategoryId:'smith', selectedEvents:{wedding:true} },
-    { name:'No Access', selectedEvents:{wedding:false} }
+    { name:'No Access', selectedEvents:{wedding:false} },
+    {name:'Standard Guest',selectedEvents:{thanksgiving:true,christmas:true,'gathering-new':true,wedding:false}}
   ];
   const original=globalThis.fetch;
-  globalThis.fetch=async()=>new Response(JSON.stringify({sha:'sha',content:Buffer.from(JSON.stringify({accounts})).toString('base64')}));
+  globalThis.fetch=async()=>new Response(JSON.stringify({sha:'sha',content:Buffer.from(JSON.stringify({accounts,events:{wedding:{},thanksgiving:{},christmas:{},'gathering-new':{}}})).toString('base64')}));
   t.after(()=>{globalThis.fetch=original;});
   const env={HOST_PASSWORD:'host-secret',GITHUB_REPOSITORY:'owner/data',GITHUB_TOKEN:'test',INVITATION_BACKGROUNDS:{
     async put(key,value,options={}) { const bytes=typeof value==='string'?new TextEncoder().encode(value):new Uint8Array(value);objects.set(key,{bytes,...options}); },
@@ -24,7 +25,7 @@ function fixture(t) {
     async list({prefix}){return {objects:[...objects].filter(([key])=>key.startsWith(prefix)).map(([key,value])=>({key,size:value.bytes.length,customMetadata:value.customMetadata})),truncated:false};}
   }};
   const request=(path,token,options={})=>worker.fetch(new Request(`https://worker.example/wedding-media${path}`,{...options,headers:{...options.headers,...(token?{Authorization:`Bearer ${token}`}:{})}}),env);
-  const session=async(name,host=false)=>{const r=await request('/session',null,{method:'POST',headers:{'Content-Type':'application/json',...(host?{'X-Host-Password':'host-secret'}:{})},body:JSON.stringify({name})});return {status:r.status,...await r.json()};};
+  const session=async(name,host=false,eventId='wedding')=>{const r=await request('/session',null,{method:'POST',headers:{'Content-Type':'application/json',...(host?{'X-Host-Password':'host-secret'}:{})},body:JSON.stringify({name,eventId})});return {status:r.status,...await r.json()};};
   const upload=(token,name='photo.jpg')=>request(`/upload?name=${name}`,token,{method:'POST',headers:{'Content-Type':'image/jpeg','X-Account-Name':'Spoofed Account'},body:new Uint8Array([1,2,3,4])});
   return {request,session,upload,objects,env};
 }
@@ -58,4 +59,15 @@ test('uploads reject unsupported, empty, and oversized files; no storage produce
   assert.equal((await f.request('/upload',s.token,{method:'POST',headers:{'Content-Type':'video/mp4','Content-Length':'50000001'},body:'x'})).status,413);
   delete f.env.INVITATION_BACKGROUNDS;
   assert.equal((await f.request('/',s.token)).status,503);
+});
+
+test('standard and newly created gatherings authorize uploads without Wedding access',async t=>{
+ const f=fixture(t);
+ for(const eventId of ['thanksgiving','christmas','gathering-new']){
+  const s=await f.session('Standard Guest',false,eventId);assert.equal(s.status,200);
+  assert.equal((await f.upload(s.token)).status,201);
+ }
+ assert.equal((await f.session('Standard Guest',false,'wedding')).status,401);
+ assert.equal((await f.session('Standard Guest',false,'missing')).status,401);
+ assert.equal((await f.session('No Access',false,'thanksgiving')).status,401);
 });

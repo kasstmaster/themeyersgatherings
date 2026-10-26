@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 await import('../gathering-features.js');
 const [source,html]=await Promise.all(['app.js','index.html'].map(f=>readFile(new URL('../'+f,import.meta.url),'utf8')));
-const prefix=source.slice(source.indexOf('function renderWeddingGathering('),source.indexOf("  document.querySelector('#weddingMediaSection').hidden = selectedWeddingTab !== 'media';"));
+const prefix=source.slice(source.indexOf('function renderWeddingGathering('),source.indexOf("  const hostTabs=document.querySelector('#weddingHostTabs');"));
 function visibility(host,party,tab,event='wedding'){
  const nodes={};const node=id=>nodes[id]??={hidden:false,close(){}};
  const c=vm.createContext({viewedEventId:event,GatheringFeatures,selectedWeddingTab:tab,selectedGuestTab:'attire',selectedMatronTab:'experience',signedInPersonName:'Person',state:{weddingPartyMembers:party?[{name:'Person'}]:[]},weddingPartyPersonMatches:(a,b)=>a===b,document:{querySelector:node,querySelectorAll:()=>[],getElementById:node}});

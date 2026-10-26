@@ -53,3 +53,26 @@ writes, and expect the site served on port 8041:
 
 Older optional browser scripts may describe superseded UI and should be updated
 before use; they are not part of `npm test`.
+
+## Shared photos and videos
+
+Every gathering uses `renderGatheringMedia`, the same media DOM, `wedding-media.js`
+and `dropbox-upload.js`. The historical `/wedding-media` endpoint and storage
+prefix remain stable so existing uploads and galleries keep working. Sessions
+include the selected gathering ID; the service checks account access to that
+gathering rather than requiring Wedding access. Older clients omit the ID and
+retain Wedding authorization. All gatherings use the existing Dropbox connection
+and destination; private galleries remain scoped to the account. New gatherings
+receive this feature automatically without copied markup or configuration.
+
+Run `scripts/verify-shared-uploads.cjs` for desktop/mobile guest and host access
+across Wedding, holidays and a newly created gathering. Worker tests cover
+authorization, ownership, links and file access.
+
+Each gathering also has an optional `mediaGalleryUrl` and `mediaGalleryLabel`.
+View Photos & Videos shows a disabled folder button until the host supplies a
+link. In Edit mode, select that button to set its label and Dropbox folder URL
+in the shared toolbar. The saved link is available to every guest who can open
+that gathering; it is separate from the account's private upload receipts.
+Removing the URL returns the button to its pending state. Dropbox sharing
+permissions determine access and download availability for the linked folder.

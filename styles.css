@@ -902,3 +902,6 @@ body.theme-neutral{--navy:#303030;--navy-2:#666666;--body-background:#f3f3f3;--s
 .host-fixed-add svg{display:block;width:22px;height:22px;fill:currentColor}
 .host-fixed-add[hidden]{display:none!important}
 @media print{.host-fixed-add{display:none!important}}
+
+#sharedGalleryLink{display:block;box-sizing:border-box;width:100%;margin:0 0 16px;text-align:center;text-decoration:none}
+#sharedGalleryLink[aria-disabled="true"]{opacity:.6;cursor:default}
