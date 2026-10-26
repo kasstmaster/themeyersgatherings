@@ -40,7 +40,7 @@ Run `node scripts/verify-gap-editing.cjs` to verify editable existing spacing, s
 
 Choosing a gathering as host opens its first RSVP page. The host counters appear directly below RSVP. The previous host home page is removed. Wedding hosts default to Bride & Groom; guests retain their normal Details or personal Wedding Party default.
 
-Host first-page buttons open Bride & Groom, Timeline, Photos & Videos and custom pages. Standard gatherings expose Notes and Menu there. Information, Attire, Registry and Details are toolbar options, followed by Print Page. Private host buttons and counters stay hidden in guest views. This navigation also works during editing; choose an original page label through Select an element to rename or reorder it.
+Host first-page buttons open Bride & Groom, Photos & Videos and custom pages. Notes and Menu are host toolbar options. Personal-name, Attire, Registry and Details options also live in the toolbar, followed by Print Page. Timeline is shared between the Bride & Groom sub-tabs and wedding party personal-information sub-tabs. Private host buttons and counters stay hidden in guest views. This navigation also works during editing; choose an original page label through Select an element to rename or reorder it.
 
 Run `node scripts/verify-host-rsvp-home.cjs` to check host landing, counter placement, page switching, standard gatherings, and guest privacy.
 

@@ -198,7 +198,7 @@ test('Wedding guest pages stay editable inside RSVP without an extra Guest conta
   assert.match(html,/id="guestSection" class="legacy-guest-navigation"/);
   assert.match(html,/id="rsvpWeddingPages"[\s\S]*id="registryAttireSection"[\s\S]*id="whatToExpectSection"/);
   assert.match(html,/id="adminWhatToExpectContent"/);
-  assert.match(javascript,/formatEditableText\(weddingDetailsWithoutHeaderAddress\(state\.whatToExpectContent\)\)/);
+  assert.match(javascript,/formatEditableText\(sharedWeddingDetailsText\(\)\)/);
   assert.match(javascript,/state\.whatToExpectContent = event\.target\.value/);
 });
 
@@ -312,7 +312,7 @@ test('all Wedding Party sub tabs are available to hosts and wedding party member
     readFile(new URL('../app.js', import.meta.url), 'utf8')
   ]);
 
-  assert.match(html, /The Perfect Experience<\/button>[\s\S]*data-matron-tab="duties"[^>]*>Responsibilities<\/button>/);
+  assert.match(html, /data-matron-tab="duties"[^>]*>Responsibilities<\/button>[\s\S]*data-matron-tab="shared-timeline"[\s\S]*data-matron-tab="shared-details"[\s\S]*The Perfect Experience<\/button>/);
   assert.match(html, /id="perfectExperiencePanel"[^>]*aria-label="The Perfect Experience"/);
   assert.match(html, /id="adminPerfectExperienceContent"/);
   assert.match(javascript, /perfectExperienceContent: ''/);

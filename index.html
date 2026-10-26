@@ -303,9 +303,12 @@
         <p id="weddingPartyKicker" class="section-kicker">The people by our side</p>
         <h2 id="weddingPartyHeading">Wedding Party</h2>
         <nav id="matronInfoTabs" class="matron-info-tabs" aria-label="Wedding party information" role="tablist" hidden>
-          <button type="button" role="tab" data-matron-tab="experience" aria-controls="perfectExperiencePanel" aria-selected="false">The Perfect Experience</button>
           <button type="button" role="tab" data-matron-tab="duties" aria-controls="weddingPartyDetails" aria-selected="true">Responsibilities</button>
+          <button type="button" role="tab" data-matron-tab="shared-timeline" aria-controls="weddingTimelineSection" aria-selected="false">Timeline</button>
+          <button type="button" role="tab" data-matron-tab="shared-details" aria-controls="partySharedDetails" aria-selected="false">Details</button>
+          <button type="button" role="tab" data-matron-tab="experience" aria-controls="perfectExperiencePanel" aria-selected="false">The Perfect Experience</button>
         </nav>
+        <section id="partySharedDetails" class="wedding-tab-content" hidden><div id="partySharedDetailsContent" class="what-to-expect-content" data-shared-details></div></section>
         <div id="weddingPartyDetails" class="wedding-party-details"></div>
         <section id="perfectExperiencePanel" class="wedding-tab-content perfect-experience-panel" aria-label="The Perfect Experience" hidden>
           <div id="perfectExperienceContent" class="perfect-experience-content"></div>
@@ -367,7 +370,7 @@
       <section id="whatToExpectSection" class="wedding-tab-page what-to-expect-section rsvp-information-page" aria-labelledby="whatToExpectHeading" hidden>
           <p class="section-kicker">Plan for the celebration</p>
           <h2 id="whatToExpectHeading">What to Expect</h2>
-          <div id="whatToExpectContent" class="wedding-tab-content what-to-expect-content rsvp-information-content"></div>
+          <div id="whatToExpectContent" data-shared-details class="wedding-tab-content what-to-expect-content rsvp-information-content"></div>
         </section>
 
       <section id="registrySection" class="wedding-tab-page registry-section rsvp-information-page" aria-labelledby="registryHeading" hidden>

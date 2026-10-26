@@ -10,13 +10,13 @@ for(const width of [1280,390]){
   await page.evaluate(async id=>{await closeHostDialogs();hostAuthenticated=false;hostWeddingPartyViewName='';guestName='Casey Example';signedInPersonName='Casey Example';enterEvent(id);},id);
   assert.equal(await page.locator('#weddingMediaSection').isVisible(),true);assert.equal(await page.locator('#uploadPhotosButton').isVisible(),true);
   if(id==='wedding'){
-   assert.equal(await page.locator('#rsvpPageNavigation').getByRole('button',{name:"Casey's Information",exact:true}).isVisible(),true);
-   assert.equal(await page.locator('#rsvpPageNavigation button').first().locator('br').count(),1);
+   assert.equal(await page.locator('#rsvpPageNavigation').getByRole('button',{name:"Casey",exact:true}).isVisible(),true);
+   assert.equal(await page.locator('#rsvpPageNavigation button').first().locator('br').count(),0);
    for(const name of ['Attire','Registry','Details'])assert.equal(await page.locator('#rsvpPageNavigation').getByRole('button',{name,exact:true}).isVisible(),true);
    assert.equal(await page.locator('#weddingPartyTabs [data-wedding-tab="attire"]').isVisible(),false);
    const right=await page.locator('#rsvpPageToolbar').evaluate(e=>{const print=e.querySelector('[data-page-export]').getBoundingClientRect();return [...e.querySelectorAll('button')].filter(b=>b.getClientRects().length).every(b=>b.getBoundingClientRect().right<=print.right+1);});assert.equal(right,true);
    await page.locator('#rsvpPageNavigation').getByRole('button',{name:'Registry',exact:true}).click();assert.equal(await page.locator('#registrySection').isVisible(),true);
-   await page.locator('#rsvpPageNavigation').getByRole('button',{name:"Casey's Information",exact:true}).click();assert.equal(await page.locator('#weddingPartySection').isVisible(),true);
+   await page.locator('#rsvpPageNavigation').getByRole('button',{name:"Casey",exact:true}).click();assert.equal(await page.locator('#weddingPartySection').isVisible(),true);
    await page.locator('#rsvpConfirmEvent').click();assert.equal(await page.locator('#rsvpAttire').isVisible(),true);const text=await page.locator('#rsvpAttireColumns').textContent();assert.match(text,/For the Gentlemen/);assert.doesNotMatch(text,/For the Ladies/);assert.match(text,/Private party attire instructions/);assert.match(text,/Party introduction/);
   }
  }
