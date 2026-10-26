@@ -3,7 +3,7 @@
   const node=id=>document.getElementById(id);
   const types={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',avif:'image/avif',heic:'image/heic',heif:'image/heif',mp4:'video/mp4',mov:'video/quicktime',webm:'video/webm',ogg:'video/ogg',ogv:'video/ogg'};
   const type=file=>file.type||types[file.name.split('.').pop().toLowerCase()]||'';
-  const key=ctx=>JSON.stringify([ctx.base,ctx.account,ctx.name,ctx.host,ctx.preview]);
+  const key=ctx=>JSON.stringify([ctx.base,ctx.account,ctx.name,ctx.host,ctx.preview,ctx.eventId]);
   async function hostRequest(ctx,path,method='GET') {
     const response=await fetch(`${ctx.base}/dropbox/${path}`,{method,headers:{'X-Host-Password':ctx.password},cache:'no-store'});
     const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'Unable to connect to Dropbox. Deploy the updated Worker and check its settings.');return result;

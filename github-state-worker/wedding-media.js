@@ -11,7 +11,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
   const bucket = env.INVITATION_BACKGROUNDS;
   const reply = (value, status = 200) => jsonResponse(request, env, value, status);
   const fail = (error, status) => reply({ error }, status);
-  if (!bucket) return fail('Wedding upload storage is not configured.', 503);
+  if (!bucket) return fail('Photo and video upload storage is not configured.', 503);
   const url = new URL(request.url), route = url.pathname.replace('/wedding-media', '') || '/';
   if (route === '/session' && request.method === 'POST') {
     let identity;
@@ -24,14 +24,16 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
       const result = await readState(env);
       if (result.status !== 200) return fail('Unable to verify your sign-in. Please try again.', 503);
       const state = JSON.parse(result.text);
+      const eventId=typeof body.eventId==='string'?body.eventId:'wedding';
+      if(!Object.hasOwn(state.events || {},eventId))return fail('That gathering is not available.',401);
       const matches = (state.accounts || []).flatMap(account => {
-        if (account.selectedEvents?.wedding !== true) return [];
+        if (account.selectedEvents?.[eventId] !== true) return [];
         const names = accountPeople(account.name);
         const canonical = names.find(person => normalizedPerson(person) === normalizedPerson(name));
         const alias = (account.signInAliases || []).find(entry => normalizedPerson(entry.alias) === normalizedPerson(name) && names.some(person => normalizedPerson(person) === normalizedPerson(entry.name)));
         return canonical || alias ? [{ account, person: canonical || alias.name }] : [];
       });
-      if (matches.length !== 1) return fail('Your wedding account could not be verified.', 401);
+      if (matches.length !== 1) return fail('Your gathering account could not be verified.', 401);
       const { account, person } = matches[0];
       identity = { host: false, owner: await ownerId(String(account.anyListCategoryId || account.qrToken || account.name)), accountName: account.name, uploadedBy: person };
     }

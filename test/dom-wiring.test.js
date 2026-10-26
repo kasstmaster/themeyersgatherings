@@ -343,7 +343,7 @@ test('host account sessions choose a household and person while preserving retur
   assert.match(javascript,/data-host-account-person/);
   assert.match(javascript, /hostReturnSession=\{eventId:viewedEventId/);
   assert.match(javascript, /hostWeddingPartyViewName=account\.name;guestName=account\.name/);
-  assert.match(javascript, /preview: false/);
+  assert.match(javascript, /preview:\s*false/);
 });
 
 test('account sessions retain host navigation and provide Leave account', async () => {
