@@ -132,7 +132,6 @@
       <div class="host-tool-actions">
         <button id="hostHomeButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 11 9-2 2-2-2v11h-5v-7h-4v7H5V11l-2 2-2-2 11-9Z"/></svg><span>Home</span></button>
         <button id="editAccountsButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z"/></svg><span>Accounts</span></button>
-        <details id="hostAllPages" hidden><summary><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 2h14v3H6v14H3V2Zm5 5h13v15H8V7Zm3 3v2h7v-2h-7Zm0 5v2h7v-2h-7Z"/></svg><span>All Pages</span></summary><div id="hostAllPagesMenu"></div></details>
         <button id="gatheringHistoryButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9H1l4-5 4 5H6a6 6 0 1 0 6-6V3Zm-1 4h2v5l4 2-1 2-5-3V7Z"/></svg><span>History</span></button>
       </div>
     </nav>
@@ -205,6 +204,7 @@
         <div id="remainingSummary" class="summary-stat"><strong id="remainingCount">0</strong><span>Dishes needed</span></div>
       </section>
 
+          <nav id="hostFirstPageActions" class="rsvp-front-page-actions" aria-label="Host gathering pages" hidden></nav>
           <div id="weddingRsvpUploadToolbar" class="rsvp-front-page-actions" role="toolbar" aria-label="RSVP page actions" hidden>
       <nav id="weddingPartyTabs" class="toolbar-page-navigation" aria-label="Wedding pages" role="toolbar" hidden>
         <button type="button" role="button" data-wedding-tab="party" aria-controls="weddingPartySection" aria-selected="false">Wedding Party</button>

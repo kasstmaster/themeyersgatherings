@@ -355,7 +355,7 @@ test('account sessions retain host navigation and provide Leave account', async 
 
   assert.match(html, /id="cancelViewAsButton"[^>]*hidden>Leave account<\/button>/);
   assert.match(javascript, /function isHostView\(\) \{ return hostAuthenticated && !isViewingAsGuest\(\); \}/);
-  assert.match(javascript, /hostToolsPanel'\)\.hidden = !isHostView\(\)/);
+  assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
   assert.match(javascript, /cancelViewAsButton'\)\.hidden = !viewingAsGuest/);
   assert.match(javascript, /hostReturnSession=null;hostWeddingPartyViewName=''[\s\S]*guestName=previous\?\.guestName/);
   assert.match(styles, /\.cancel-view-as\{[^}]*position:fixed;[^}]*top:16px;right:16px;[^}]*z-index:30/);
@@ -648,10 +648,10 @@ test('host tools expose Home, Accounts, History, and new gathering', async () =>
   const mainIndex = html.indexOf('<main hidden>');
   assert.ok(accountIndex < toolsIndex);
   assert.ok(mainIndex>=0);
-  assert.match(html, /id="hostToolsPanel"[\s\S]*id="hostHomeButton"[\s\S]*id="editAccountsButton"[\s\S]*id="hostAllPages"[\s\S]*id="gatheringHistoryButton"/);
+  assert.match(html, /id="hostToolsPanel"[\s\S]*id="hostHomeButton"[\s\S]*id="editAccountsButton"[\s\S]*id="gatheringHistoryButton"/);
   assert.doesNotMatch(html, /id="manageEventsButton"|>Gatherings<\/button>/);
   assert.doesNotMatch(javascript, /#manageEventsButton/);
-  assert.match(javascript, /hostToolsPanel'\)\.hidden = !isHostView\(\)/);
+  assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
 });
 
 test('fixed Edit replaces gathering-specific labels and the old session option', async () => {

@@ -787,24 +787,24 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 
 /* First-page actions share the RSVP button layout and keep their icons. */
 #rsvpDialog .modal-close{font-size:2.6rem;width:52px;height:52px;line-height:1;padding:0;z-index:2;cursor:pointer}
-#rsvpEventConfirmation #rsvpConfirmEvent,#weddingRsvpUploadToolbar button{display:flex;align-items:center;justify-content:center;gap:12px}
+#rsvpEventConfirmation #rsvpConfirmEvent,:is(#weddingRsvpUploadToolbar,#hostFirstPageActions) button{display:flex;align-items:center;justify-content:center;gap:12px}
 #rsvpDialog .toolbar-icon{width:24px;height:24px;flex:none;fill:currentColor}
-#weddingRsvpUploadToolbar{display:grid;gap:12px;margin-top:12px}
-#weddingRsvpUploadToolbar[hidden]{display:none}
-#weddingRsvpUploadToolbar .toolbar-page-navigation button{max-width:none}
-#weddingRsvpUploadToolbar button{box-sizing:border-box;width:100%;min-width:0;margin:0;padding:15px 22px;border:0;border-radius:4px;background:var(--orange);color:white;box-shadow:none;font:700 1rem/1.5 Arial,Helvetica,sans-serif;text-align:center;cursor:pointer}
-#weddingRsvpUploadToolbar button[aria-pressed="true"]{background:var(--orange);color:white;outline:2px solid currentColor;outline-offset:-5px}
-#weddingRsvpUploadToolbar button[hidden]{display:none}
+:is(#weddingRsvpUploadToolbar,#hostFirstPageActions){display:grid;gap:12px;margin-top:12px}
+:is(#weddingRsvpUploadToolbar,#hostFirstPageActions)[hidden]{display:none}
+:is(#weddingRsvpUploadToolbar,#hostFirstPageActions) .toolbar-page-navigation button{max-width:none}
+:is(#weddingRsvpUploadToolbar,#hostFirstPageActions) button{box-sizing:border-box;width:100%;min-width:0;margin:0;padding:15px 22px;border:0;border-radius:4px;background:var(--orange);color:white;box-shadow:none;font:700 1rem/1.5 Arial,Helvetica,sans-serif;text-align:center;cursor:pointer}
+:is(#weddingRsvpUploadToolbar,#hostFirstPageActions) button[aria-pressed="true"]{background:var(--orange);color:white;outline:2px solid currentColor;outline-offset:-5px}
+:is(#weddingRsvpUploadToolbar,#hostFirstPageActions) button[hidden]{display:none}
 
 /* Keep page export in the fixed toolbar, separate from the RSVP buttons. */
 #rsvpEventConfirmation:has(#rsvpPageToolbar:not([hidden])){padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 #rsvpPageToolbar{z-index:205}
-#rsvpEventConfirmation #rsvpConfirmEvent,#weddingRsvpUploadToolbar button{display:grid;grid-template-columns:24px minmax(0,1fr) 24px;align-items:center;column-gap:12px;white-space:nowrap}
-#rsvpConfirmEvent>svg,#weddingRsvpUploadToolbar button>svg{grid-column:1;justify-self:start}
-#rsvpConfirmEvent>span,#weddingRsvpUploadToolbar button>span{grid-column:2;white-space:nowrap}
+#rsvpEventConfirmation #rsvpConfirmEvent,:is(#weddingRsvpUploadToolbar,#hostFirstPageActions) button{display:grid;grid-template-columns:24px minmax(0,1fr) 24px;align-items:center;column-gap:12px;white-space:nowrap}
+#rsvpConfirmEvent>svg,:is(#weddingRsvpUploadToolbar,#hostFirstPageActions) button>svg{grid-column:1;justify-self:start}
+#rsvpConfirmEvent>span,:is(#weddingRsvpUploadToolbar,#hostFirstPageActions) button>span{grid-column:2;white-space:nowrap}
 #rsvpConfirmEvent{box-sizing:border-box;padding-left:22px;padding-right:22px}
 #rsvpPageToolbar button{white-space:nowrap}
-@media(max-width:380px){#rsvpEventConfirmation #rsvpConfirmEvent,#weddingRsvpUploadToolbar button{column-gap:8px;padding-left:14px;padding-right:14px;font-size:.9rem}}
+@media(max-width:380px){#rsvpEventConfirmation #rsvpConfirmEvent,:is(#weddingRsvpUploadToolbar,#hostFirstPageActions) button{column-gap:8px;padding-left:14px;padding-right:14px;font-size:.9rem}}
 
 /* A fixed, compact editing ribbon never replaces or resizes page elements. */
 .element-editor-toolbar{position:fixed;z-index:10000;top:0;left:0;right:0;box-sizing:border-box;max-width:100vw;padding:6px 10px;background:#fff;color:#172b43;border-bottom:1px solid #aab3be;box-shadow:0 2px 7px #0002;font:13px/1.35 Arial,sans-serif;text-align:left;isolation:isolate}
@@ -879,14 +879,6 @@ dialog:modal>.modal-card{max-height:none;overflow:visible}
 .host-rsvp-view :is(#weddingRsvpUploadToolbar,#weddingHostTabs,#gatheringTabs){display:none!important}
 .host-rsvp-counters{margin:24px 0;width:100%;box-sizing:border-box}
 .host-rsvp-counters[hidden]{display:none}
-#hostAllPages{flex:1 1 0;max-width:180px;min-width:0}
-#hostAllPages[hidden]{display:none}
-#hostAllPages>summary{display:flex;min-height:56px;align-items:center;justify-content:center;flex-direction:column;gap:5px;padding:5px 4px;cursor:pointer;list-style:none;font:600 .72rem/1 Arial,sans-serif}
-#hostAllPages>summary::-webkit-details-marker{display:none}
-#hostAllPagesMenu{position:fixed;bottom:calc(78px + env(safe-area-inset-bottom,0px));left:12px;max-height:60dvh;overflow:auto;min-width:220px;padding:8px;background:var(--toolbar-background,#fffaf1);border:1px solid var(--toolbar-border,#b89968);border-radius:5px;box-shadow:0 4px 18px #0003}
-#hostAllPages:not([open]) #hostAllPagesMenu{display:none}
-#hostToolsPanel #hostAllPagesMenu button{display:block;width:100%;max-width:none;min-height:40px;margin:0;padding:10px;text-align:left;background:transparent;color:var(--toolbar-text,#132841);border:0;font:600 14px/1.3 Arial,sans-serif}
-#hostToolsPanel #hostAllPagesMenu button:hover{background:var(--toolbar-hover-background,#e1e7ed)}
 .host-rsvp-view #rsvpDialog #rsvpWeddingPages>.host-outer-panel{padding:24px;background:var(--host-panel-background,var(--wedding-tab-selected-background));border:var(--host-panel-border,1px solid var(--wedding-tab-border));border-radius:var(--host-panel-radius,6px);color:var(--host-panel-text,var(--wedding-tab-text))}
 @media(max-width:650px){.host-rsvp-view #rsvpDialog #rsvpWeddingPages>.host-outer-panel{padding:18px}}
 

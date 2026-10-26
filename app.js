@@ -1033,15 +1033,16 @@ function syncHostToolbar(records=[]) {
     const index=hostDialogStack.indexOf(record.target);if(index>=0)hostDialogStack.splice(index,1);
     if(record.target.open)hostDialogStack.push(record.target);
   }
-  persistentHostControls[0].hidden=!isHostView();
+  persistentHostControls[0].hidden=!hostAuthenticated;
   const owner=activeHostDialog() || document.body;
   for(const control of persistentHostControls)if(control.parentElement!==owner)owner.append(control);
   document.querySelector('#newGatheringButton').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || Boolean(activeHostDialog());
   document.querySelector('#cancelViewAsButton').hidden=!isViewingAsGuest();
-  const edit=document.querySelector('#editItemsButton');edit.hidden=!isHostView() || SiteEditing.enabled;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
-  document.body.classList.toggle('has-host-toolbar',isHostView());
-  document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',isHostView());
-  document.querySelector('#eventDock').hidden=isHostView() || !guestName;
+  const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated || SiteEditing.enabled;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
+  document.querySelector('#cancelViewAsButton').style.right=(edit.hidden?0:edit.getBoundingClientRect().width)+'px';
+  document.body.classList.toggle('has-host-toolbar',hostAuthenticated);
+  document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',hostAuthenticated);
+  document.querySelector('#eventDock').hidden=hostAuthenticated || !guestName;
   const print=document.querySelector('#hostToolsPanel [data-page-export]');if(print)print.hidden=Boolean(document.querySelector('#rsvpDialog').open && document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden'));
   if(SiteEditing.enabled)ElementEditor.refresh();
 }
@@ -1050,13 +1051,13 @@ new MutationObserver(records=>syncHostToolbar(records)).observe(document.body,{s
 function showSiteDialog(dialog){if(dialog.id!=='rsvpDialog' && dialog.parentElement.closest('[hidden]'))document.body.append(dialog);dialog.showModal();}
 async function closeHostDialogs(){await Promise.all([...document.querySelectorAll('dialog[open]')].map(dialog=>new Promise(resolve=>{dialog.addEventListener('close',resolve,{once:true});dialog.close();})));}
 document.querySelector('#hostHomeButton').addEventListener('click',async()=>{
-  if(!isHostView())return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
-  await closeHostDialogs();showEventSelection();updateHostToolsPanel();
+  if(!hostAuthenticated)return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
+  await closeHostDialogs();if(isViewingAsGuest())restoreHostSession();showEventSelection();updateHostToolsPanel();
 });
 function updateHostToolsPanel() {
   const viewingAsGuest = isViewingAsGuest();
-  document.querySelector('#hostToolsPanel').hidden = !isHostView();
-  document.querySelector('#editItemsButton').hidden = !isHostView() || SiteEditing.enabled;
+  document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated;
+  document.querySelector('#editItemsButton').hidden = !hostAuthenticated || SiteEditing.enabled;
   syncHostToolbar();
   document.querySelector('#cancelViewAsButton').hidden = !viewingAsGuest;
 }
@@ -1516,7 +1517,7 @@ function render() {
   PageActions.sync();
   syncHostToolbar();
   renderWeddingPageToolbar();
-  renderHostAllPages();
+  renderHostFirstPageActions();
   ElementAppearance.render({state,eventId:viewedEventId,host:hostView,enabled:SiteEditing.enabled,
     save:()=>saveState({refresh:false}),format:(value,options)=>formatEditableText(value,options),upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url});
 }
@@ -1686,11 +1687,16 @@ function renderWeddingPageToolbar(){
     button.innerHTML=`<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons[button.dataset.weddingTab] || icons.custom}"/></svg><span>${escapeHtml(title)}</span>`;
   });
 }
-function renderHostAllPages(){
-  const control=document.querySelector('#hostAllPages');control.hidden=!isHostView();
-  const menu=document.querySelector('#hostAllPagesMenu');menu.replaceChildren();if(!isHostView())return;
-  const add=(title,source)=>{const button=document.createElement('button');button.type='button';button.textContent=title;menu.append(button);button.addEventListener('click',async()=>{
-    control.open=false;commitAllPendingEditorInputs();
+function renderHostFirstPageActions(){
+  const menu=document.querySelector('#hostFirstPageActions');menu.hidden=!isHostView();menu.replaceChildren();if(!isHostView())return;
+  const add=(title,source)=>{
+    const button=document.createElement('button');button.type='button';
+    button.innerHTML='<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z"/></svg>';
+    const icon=source?.querySelector('svg');if(icon)button.firstElementChild.replaceWith(icon.cloneNode(true));
+    const label=document.createElement('span');label.textContent=title;button.append(label);menu.append(button);
+    const entry=source && SiteEditing.editorFor(source);if(entry?.fields)SiteEditing.field(button,entry.title,entry.fields,entry.commit,entry.options);
+    button.addEventListener('click',async()=>{
+    commitAllPendingEditorInputs();
     if(!document.querySelector('#rsvpDialog').open || activeHostDialog()?.id!=='rsvpDialog'){await closeHostDialogs();showSignedInDestination();openRsvp({fromEntry:true});}
     RsvpFlow.first();SiteEditing.resetTabSelection('weddingHostTabs',viewedEventId);SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);SiteEditing.resetTabSelection('gatheringTabs',viewedEventId);
     if(source)ElementEditor.activate(source);else{selectedWeddingTab='details';selectedGuestTab='details';selectedGatheringTab='details';render();}
@@ -1710,7 +1716,7 @@ function renderEventDock() {
   const dock = document.querySelector('#eventDock');
   const switchButtons = document.querySelector('#eventSwitchButtons');
   const ids = availableEventIds();
-  dock.hidden = isHostView() || !guestName || ids.length === 0;
+  dock.hidden = hostAuthenticated || !guestName || ids.length === 0;
   switchButtons.innerHTML = ids.map(id => {
     const name = EVENT_DETAILS[id].name;
     const accessibleLabel = `${name}${id === viewedEventId ? ', current event' : ''}`;
@@ -3323,12 +3329,13 @@ document.querySelector('#adminHostNotes').addEventListener('change', event => {
   state.hostNotes = event.target.value; saveState(); render();
 });
 document.querySelector('#editItemsButton').addEventListener('click', async () => {
-  if (!isHostView()) return;
+  if (!hostAuthenticated) return;
+  if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
   if (SiteEditing.enabled) commitAllPendingEditorInputs();
   SiteEditing.toggle(render);
 });
 
-document.querySelector('#editAccountsButton').addEventListener('click', async () => { if(!isHostView())return;commitAllPendingEditorInputs();if(!document.querySelector('#accountsDialog').open)openAccountsAdmin(); });
+document.querySelector('#editAccountsButton').addEventListener('click', async () => { if(!hostAuthenticated)return;commitAllPendingEditorInputs();if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}if(!document.querySelector('#accountsDialog').open)openAccountsAdmin(); });
 async function signIntoAccount(account,person) {
   if(!hostAuthenticated || !account)return;
   const events=Object.keys(EVENT_DETAILS).filter(id=>accountCanSignIn(account,id));if(!events.length)return;
@@ -3775,7 +3782,7 @@ function renderGatheringHistory() {
     +section('Host notes',event.hostNotes?`<p class="history-notes">${escapeHtml(event.hostNotes)}</p>`:'');
 }
 document.querySelector('#gatheringHistoryButton').addEventListener('click',async()=>{
-  if(!isHostView())return;
+  if(!hostAuthenticated)return;if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
   commitAllPendingEditorInputs();if(captureGatheringHistory())saveState({refresh:false});
   const dates=Object.keys(appState.gatheringHistory?.[viewedEventId] || {}).sort().reverse();
   document.querySelector('#gatheringHistoryDate').innerHTML=dates.map(date=>`<option>${escapeHtml(date)}</option>`).join('');

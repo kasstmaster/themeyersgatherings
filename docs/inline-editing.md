@@ -28,9 +28,9 @@ Serve the repository locally on port 8041, then run `node scripts/verify-element
 
 ## Host navigation and account sessions
 
-The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **Home** returns to gathering selection. **Accounts**, **All Pages**, and **History** stay in the toolbar. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the top editing toolbar.
+The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **Home** returns to gathering selection. **Accounts** and **History** stay in the toolbar. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the top editing toolbar.
 
-In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, only the account’s normal pages and controls appear. The sole host-session control is **Leave account**, fixed at the top-right where Edit normally appears. Accounts without gathering access have disabled sign-in icons.
+In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, the account’s normal pages appear, with Edit and the host toolbar retained for the authenticated host. **Leave account** sits immediately left of Edit. Host management actions return to the host context; ordinary guests never see these controls. Accounts without gathering access have disabled sign-in icons.
 
 Run `node scripts/verify-host-toolbar.cjs` with the same local browser setup to check persistent controls across dialogs, Home, per-person sign-in, host return, Templates placement, and mobile layout.
 
@@ -40,6 +40,6 @@ Run `node scripts/verify-gap-editing.cjs` to verify editable existing spacing, s
 
 Choosing a gathering as host opens its first RSVP page. The host counters appear directly below RSVP. The previous host home page is removed. Wedding hosts default to Bride & Groom; guests retain their normal Details or personal Wedding Party default.
 
-Use **All Pages** in the host toolbar to open Bride & Groom, Timeline, Details, Wedding Party, Attire, Registry, Upload Photos & Videos, and custom Wedding pages. Standard gatherings expose their host Notes and Menu there. All Pages and the counters are hidden in guest views. This navigation also works during editing; choose an original page label through Select an element to rename or reorder it.
+Use the page buttons on the first RSVP page in the host toolbar to open Bride & Groom, Timeline, Details, Wedding Party, Attire, Registry, Upload Photos & Videos, and custom Wedding pages. Standard gatherings expose their host Notes and Menu there. These host buttons and the counters are hidden in guest views. This navigation also works during editing; choose an original page label through Select an element to rename or reorder it.
 
 Run `node scripts/verify-host-rsvp-home.cjs` to check host landing, counter placement, page switching, standard gatherings, and guest privacy.
