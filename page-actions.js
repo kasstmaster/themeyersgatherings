@@ -19,7 +19,8 @@
       if(toolbar.querySelector('[data-toolbar-page-actions]'))continue;
       const actions=document.createElement('div');actions.dataset.toolbarPageActions='';actions.className='toolbar-page-actions';
       actions.innerHTML='<button type="button" data-page-export aria-label="Print or email page" aria-haspopup="dialog"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12v5H6V2Zm-2 6h16a2 2 0 0 1 2 2v8h-4v4H6v-4H2v-8a2 2 0 0 1 2-2Zm4 8v4h8v-4H8Zm10-5v2h2v-2h-2Z"/></svg><span>Print Page</span></button>';
-      toolbar.append(actions);
+      const leaveAccount=toolbar.querySelector('#cancelViewAsButton');
+      if(leaveAccount)leaveAccount.before(actions);else toolbar.append(actions);
     }
   }
   function toolbarSurface(control){

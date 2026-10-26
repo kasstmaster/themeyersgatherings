@@ -1036,6 +1036,7 @@ function syncHostToolbar(records=[]) {
   persistentHostControls[0].hidden=!hostAuthenticated;
   const owner=activeHostDialog() || document.body;
   for(const control of persistentHostControls)if(control.parentElement!==owner)owner.append(control);
+  document.querySelector('#newGatheringButton').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || Boolean(activeHostDialog());
   const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated || SiteEditing.enabled;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
   document.body.classList.toggle('has-host-toolbar',hostAuthenticated);
   document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',hostAuthenticated);
@@ -1475,7 +1476,6 @@ function render() {
   invitedListButton.setAttribute('aria-label', hostView ? `${invitedAdults} adults and ${summaryCounts.invited.children} children invited; view private invitation list` : `${invitedAdults} adults invited; details visible only to the host`);
   if(document.querySelector('#rsvpDialog').open)renderRsvpEventHeader();
   renderInlineEditing();
-  document.querySelectorAll('[data-gathering-tool]').forEach(button => { button.hidden=!isHostView(); });
   if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
   if (document.querySelector('#noResponseDialog').open) renderNoResponseAccounts();
   // Static text editors can restore their original copy during a redraw.
@@ -3700,9 +3700,9 @@ for (let index = 0; index < 40; index += 1) {
   sparkleField.append(sparkle);
 }
 
-// Gathering management stays available in the host toolbar in both modes.
-document.querySelector('#newGatheringButton').addEventListener('click',async()=>{
-  if(!hostAuthenticated)return;if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
+// New gatherings can only be opened from the host gathering chooser.
+document.querySelector('#newGatheringButton').addEventListener('click',()=>{
+  if(!isHostView() || document.querySelector('#eventSelectionPage').hidden || activeHostDialog())return;
   document.querySelector('#newGatheringForm').reset();
   document.querySelector('#newGatheringAddress').value=SharedDetails.homeAddress(state);
   showSiteDialog(document.querySelector('#newGatheringDialog'));
