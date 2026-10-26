@@ -42,7 +42,7 @@
     if(path.startsWith('@group:'))return [...document.querySelectorAll('#eventPage *,#rsvpDialog *,#eventSelectionPage *')].filter(element=>group(element)===path.slice(7));
     try{return [...document.querySelectorAll(path)];}catch{return [];}
   }
-  function appearancePath(target){const kind=group(target);return kind==='toolbar'?'.event-dock':kind?'@group:'+kind:selector(target);}
+  function appearancePath(target){if(target.matches?.('[data-shared-details]'))return '[data-shared-details]';const kind=group(target);return kind==='toolbar'?'.event-dock':kind?'@group:'+kind:selector(target);}
   function colorParts(value){
     const hex=/^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.exec(String(value).trim());
     if(hex){let digits=hex[1];if(digits.length<5)digits=[...digits].map(char=>char+char).join('');return {hex:'#'+digits.slice(0,6).toLowerCase(),alpha:digits.length===8?Math.round(parseInt(digits.slice(6),16)/255*100):100};}
@@ -133,7 +133,7 @@
   }
   function apply(){
     restore(false);applyText();
-    for(const [path,values] of Object.entries(context?.state.elementAppearance || {}).sort(([a],[b])=>Number(a.startsWith('@group:'))-Number(b.startsWith('@group:')) || a.length-b.length))for(const element of find(path)){
+    for(const [path,values] of Object.entries(context?.state.elementAppearance || {}).sort(([a],[b])=>(a==='[data-shared-details]'?2:Number(a.startsWith('@group:')))-(b==='[data-shared-details]'?2:Number(b.startsWith('@group:'))) || a.length-b.length))for(const element of find(path)){
       paint(element,values);
       if(path.startsWith('@group:')){
         const typography=Object.fromEntries(Object.entries(values).filter(([key])=>['fontFamily','fontSize','fontWeight','fontStyle','textDecoration','textColor','textAlpha','textHighlight','textHighlightAlpha'].includes(key)));

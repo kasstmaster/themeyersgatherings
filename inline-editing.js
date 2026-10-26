@@ -144,6 +144,7 @@
         const heading = isSubpage ? 'h3' : 'h2';
         panel.innerHTML = (config.externalHeading?'':`<p class="section-kicker"></p><${heading}>${context.escape(page.title)}</${heading}>`)+`<div class="bride-groom-content">${context.format(page.content)}</div>`;
         if(context.eventId==='wedding')panel.querySelector('.bride-groom-content').classList.add('wedding-tab-content');
+        if(page.weddingDefault==='details')panel.querySelector('.bride-groom-content').setAttribute('data-shared-details','');
         const intro=panel.querySelector('.section-kicker');
         if(intro)intro.innerHTML=formatTextForTarget(intro,page.intro || '');
         if(config.pageHost)config.pageHost.append(panel);else nav.after(panel); cleanup.push(() => panel.remove());

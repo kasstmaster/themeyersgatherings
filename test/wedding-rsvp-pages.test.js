@@ -5,9 +5,9 @@ import vm from 'node:vm';
 await import('../gathering-features.js');
 const [source,html]=await Promise.all(['app.js','index.html'].map(f=>readFile(new URL('../'+f,import.meta.url),'utf8')));
 const prefix=source.slice(source.indexOf('function renderWeddingGathering('),source.indexOf("  const hostTabs=document.querySelector('#weddingHostTabs');"));
-function visibility(host,party,tab,event='wedding'){
+function visibility(host,party,tab,event='wedding',subtab='experience'){
  const nodes={};const node=id=>nodes[id]??={hidden:false,close(){}};
- const c=vm.createContext({viewedEventId:event,GatheringFeatures,selectedWeddingTab:tab,selectedGuestTab:'attire',selectedMatronTab:'experience',signedInPersonName:'Person',state:{weddingPartyMembers:party?[{name:'Person'}]:[]},weddingPartyPersonMatches:(a,b)=>a===b,document:{querySelector:node,querySelectorAll:()=>[],getElementById:node}});
+ const c=vm.createContext({viewedEventId:event,GatheringFeatures,selectedBrideGroomPage:'main',selectedWeddingTab:tab,selectedGuestTab:'attire',selectedMatronTab:subtab,signedInPersonName:'Person',state:{weddingPartyMembers:party?[{name:'Person'}]:[]},weddingPartyPersonMatches:(a,b)=>a===b,document:{querySelector:node,querySelectorAll:()=>[],getElementById:node}});
  vm.runInContext(prefix+'return {showingBrideGroomPage,showingTimelinePage,showingWeddingPartyPage,showingGuestPage,showingAttirePage,showingWhatToExpectPage,showingRegistryPage};}',c);
  return {result:c.renderWeddingGathering(host),nodes};
 }
@@ -20,6 +20,8 @@ test('private Wedding pages remain restricted after public pages move into RSVP'
  assert.equal(visibility(true,false,'timeline').result.showingTimelinePage,true);
  assert.equal(visibility(true,false,'guest').result.showingBrideGroomPage,false);
  assert.equal(visibility(false,true,'party').result.showingWeddingPartyPage,true);
+ assert.equal(visibility(false,true,'party','wedding','shared-timeline').result.showingTimelinePage,true);
+ assert.equal(visibility(false,false,'party','wedding','shared-timeline').result.showingTimelinePage,false);
 });
 test('Wedding pages share the RSVP shell while private pages remain host-only',()=>{
  const rsvp=html.slice(html.indexOf('<section id="rsvpEventConfirmation"'),html.indexOf('<section id="rsvpAttire"'));
@@ -96,4 +98,12 @@ test('Responsibilities uses the signed-in member role and name in its header',()
  }
  const sub=html.match(/<nav id="matronInfoTabs"[\s\S]*?<\/nav>/)[0];assert.doesNotMatch(sub,/data-matron-tab="attire"/);assert.match(sub,/data-matron-tab="duties"[^>]*aria-selected="true">Responsibilities/);
  assert.match(html,/<article class="wedding-tab-content" data-attire-group="ladies">/);assert.match(html,/<article class="wedding-tab-content" data-attire-group="gentlemen">/);
+});
+
+test('shared Details reads and edits the public canonical page without exposing host-only pages',()=>{
+ const state={whatToExpectContent:'Legacy',sitePages:[{id:'private',weddingDefault:'details',audience:'host',content:'Private host notes'},{id:'public',weddingDefault:'details',audience:'guests',content:'Public details'}]};
+ const c=vm.createContext({state,weddingDetailsWithoutHeaderAddress:value=>value});
+ vm.runInContext(source.slice(source.indexOf('function sharedWeddingDetails()'),source.indexOf('function weddingPartyPageHeading(')),c);
+ assert.equal(c.sharedWeddingDetailsText(),'Public details');c.saveSharedWeddingDetails('Edited public details');
+ assert.equal(state.sitePages[1].content,'Edited public details');assert.equal(state.sitePages[0].content,'Private host notes');assert.equal(state.whatToExpectContent,'Legacy');
 });

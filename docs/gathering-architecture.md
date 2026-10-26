@@ -86,7 +86,7 @@ Guests, including wedding party members, start on Photos & Videos in every
  gathering. Hosts retain their planning defaults (Bride & Groom for Wedding,
 Notes for standard gatherings). Photos & Videos remains a button under RSVP.
 Information, Attire, Registry and Details use shared toolbar navigation, with
-Print Page last. Personal Information labels use two lines. Wedding RSVP starts
+Print Page last. Personal information navigation labels show only the member’s first name. Wedding RSVP starts
 with attire for guests and wedding party members; party attire uses the same
 role filtering and private gallery renderer as the main Attire page.
 
@@ -119,3 +119,21 @@ clear conflicting option-level color edits when changed.
 independent content formatting, structural groups and gathering isolation.
 `verify-toolbar-colors.cjs` and `verify-rsvp-page-navigation.cjs` cover shared
 toolbar states, guest defaults, navigation, shortcuts and role-specific attire.
+
+Timeline is a sub-tab inside Bride & Groom, reusing its page selector
+and keyboard handling. The original timeline fields and section ID remain for
+saved content, appearance and printing. First-page action buttons precede the
+counters; the shared Attire icon is a bow tie.
+
+Wedding party personal information has Responsibilities, shared Timeline and
+shared Details tabs. Timeline moves the same DOM panel between Bride & Groom
+and the personal information area, with one set of timeline fields. Details
+reads and saves the same canonical default Details page, falling back to the
+legacy Details field when needed. Shared Details content boxes also share their
+appearance selector, so text-box appearance edits follow the content wherever
+it appears. Personal navigation labels show only the signed-in member’s first
+name. Ordinary guests cannot open the private personal-information Timeline.
+
+Notes and Menu use host-only toolbar options wherever those planning pages are
+enabled, rather than first-page buttons. They use the same toolbar navigation
+component as the Wedding page options, before Print Page.
