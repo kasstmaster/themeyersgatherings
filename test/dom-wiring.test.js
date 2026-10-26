@@ -648,7 +648,7 @@ test('host tools expose Home, Accounts, History, and new gathering', async () =>
   const mainIndex = html.indexOf('<main hidden>');
   assert.ok(accountIndex < toolsIndex);
   assert.ok(mainIndex>=0);
-  assert.match(html, /id="hostToolsPanel"[\s\S]*id="hostHomeButton"[\s\S]*id="editAccountsButton"[\s\S]*id="gatheringHistoryButton"[\s\S]*id="newGatheringButton"/);
+  assert.match(html, /id="hostToolsPanel"[\s\S]*id="hostHomeButton"[\s\S]*id="editAccountsButton"[\s\S]*id="hostAllPages"[\s\S]*id="gatheringHistoryButton"/);
   assert.doesNotMatch(html, /id="manageEventsButton"|>Gatherings<\/button>/);
   assert.doesNotMatch(javascript, /#manageEventsButton/);
   assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
