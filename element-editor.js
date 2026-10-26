@@ -29,10 +29,33 @@
     return [...root.childNodes].map(walk).join('').replace(/\n$/,'');
   }
   function rememberSelection(){const selected=window.getSelection();if(target && selected.rangeCount && editables.some(element=>element.contains(selected.anchorNode)))range=selected.getRangeAt(0).cloneRange();}
+  function currentTextElement(){
+    const selected=window.getSelection();
+    const anchor=selected?.anchorNode;
+    if(anchor && editables.some(part=>part.contains(anchor)))return anchor.nodeType===1?anchor:anchor.parentElement;
+    return editables[0] || target;
+  }
+  function ancestorsUntilTarget(element){const parents=[];for(let parent=element.parentElement;parent && target.contains(parent);parent=parent.parentElement)parents.push(parent);return parents;}
+  function syncTextControls(){
+    if(!target)return;
+    if(panelName==='Lists'){for(const control of toolbar.querySelectorAll('[data-text-command]'))control.setAttribute('aria-pressed',String(document.queryCommandState(control.dataset.textCommand)));return;}
+    if(panelName!=='Text' || target.matches('.event-dock'))return;
+    const element=currentTextElement(),style=getComputedStyle(element),panel=toolbar.querySelector('[data-editor-panel]');
+    const setSelect=(name,value)=>{const control=panel.querySelector(`[aria-label="${name}"]`);if(!control)return;if(![...control.options].some(option=>option.value===String(value))){const option=node('option',String(value));option.value=String(value);control.append(option);}control.value=String(value);};
+    setSelect('Font',style.fontFamily.split(',')[0].trim().replace(/^['"]|['"]$/g,''));
+    const scale=parseFloat(style.getPropertyValue('--fitted-text-scale')) || 1;
+    setSelect('Size',Math.round(parseFloat(style.fontSize)/scale*100)/100);
+    for(const [name,property] of [['Text color','color'],['Highlight','backgroundColor']]){
+      const color=ElementAppearance.colorParts(style[property]);
+      const picker=panel.querySelector(`[aria-label="${name}"]`),hex=panel.querySelector(`[aria-label="${name} hex"]`);
+      if(picker)picker.value=color.hex;if(hex)hex.value=color.hex+(color.alpha<100?Math.round(color.alpha/100*255).toString(16).padStart(2,'0'):'');
+    }
+    for(const [command,active] of [['bold',Number(style.fontWeight)>=600],['italic',style.fontStyle==='italic'],['underline',[element,...ancestorsUntilTarget(element)].some(part=>getComputedStyle(part).textDecorationLine.includes('underline'))]])panel.querySelector(`[data-text-command="${command}"]`)?.setAttribute('aria-pressed',String(active));
+  }
   function restoreSelection(){if(!range)return false;try{const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);return true;}catch{return false;}}
   function textCommand(command,value){
-    if(['buttons','dish-available','dish-claimed','dish-bringing','tabs','titles','counts','toolbar-options'].includes(ElementAppearance.group(target)) && ['bold','italic','underline','removeFormat'].includes(command)){
-      const current=getComputedStyle(target),values=command==='bold'?{fontWeight:Number(current.fontWeight)>=600?'400':'700'}:command==='italic'?{fontStyle:current.fontStyle==='italic'?'normal':'italic'}:command==='underline'?{textDecoration:current.textDecorationLine.includes('underline')?'none':'underline'}:{fontFamily:'',fontSize:null,fontWeight:'',fontStyle:'',textDecoration:'',textColor:'',textHighlight:''};
+    if(['buttons','dish-available','dish-claimed','dish-bringing','tabs','titles','counts','count-values','count-titles','toolbar-options'].includes(ElementAppearance.group(target)) && ['bold','italic','underline','removeFormat'].includes(command)){
+      const current=getComputedStyle(currentTextElement()),values=command==='bold'?{fontWeight:Number(current.fontWeight)>=600?'400':'700'}:command==='italic'?{fontStyle:current.fontStyle==='italic'?'normal':'italic'}:command==='underline'?{textDecoration:current.textDecorationLine.includes('underline')?'none':'underline'}:{fontFamily:'',fontSize:null,fontWeight:'',fontStyle:'',textDecoration:'',textColor:'',textHighlight:''};
       ElementAppearance.update(target,values);return;
     }
 
@@ -41,7 +64,7 @@
     document.execCommand(command,false,value);dirty=true;rememberSelection();
   }
   function textStyle(key,value){
-    if(['buttons','dish-available','dish-claimed','dish-bringing','tabs','titles','counts','toolbar-options'].includes(ElementAppearance.group(target))){const property={font:'fontFamily',size:'fontSize',color:'textColor',highlight:'textHighlight'}[key];if(property)ElementAppearance.update(target,{[property]:key==='size'?Number(value):value});return;}
+    if(['buttons','dish-available','dish-claimed','dish-bringing','tabs','titles','counts','count-values','count-titles','toolbar-options'].includes(ElementAppearance.group(target))){const property={font:'fontFamily',size:'fontSize',color:'textColor',highlight:'textHighlight'}[key];if(property){const color=['color','highlight'].includes(key)?ElementAppearance.colorParts(value):null;ElementAppearance.update(target,color?{[property]:color.hex,[key==='color'?'textAlpha':'textHighlightAlpha']:color.alpha}:{[property]:key==='size'?Number(value):value});}return;}
 
     if(!editables.length)return;
     if(!restoreSelection() || range.collapsed){range=document.createRange();range.selectNodeContents(editables[0]);}
@@ -92,10 +115,18 @@
   }
   function selectInput(parent,title,values,value,change){
     const label=node('label',title),select=node('select');select.setAttribute('aria-label',title);
-    for(const item of values){const option=node('option',String(item));option.value=String(item);select.append(option);}select.value=value;label.append(select);parent.append(label);select.addEventListener('change',()=>change(select.value));return select;
+    for(const item of values){const option=node('option',String(item));option.value=String(item);select.append(option);}if(![...select.options].some(option=>option.value===String(value))){const option=node('option',String(value));option.value=String(value);select.append(option);}select.value=value;label.append(select);parent.append(label);select.addEventListener('change',()=>change(select.value));return select;
   }
   function colorControls(parent,title,property,alpha,css){
-    const computed=ElementAppearance.colorParts(getComputedStyle(target).getPropertyValue(css));
+    let current=getComputedStyle(target).getPropertyValue(css);
+    if(css.startsWith('--toolbar-') && target.matches('.event-dock')){
+      const probe=node('button');probe.setAttribute('aria-pressed',String(css!=='--toolbar-text' && css!=='--toolbar-option-background'));probe.style.cssText='position:absolute;visibility:hidden;pointer-events:none';target.append(probe);
+      current=getComputedStyle(probe)[css.includes('background')?'backgroundColor':'color'];probe.remove();
+    }
+    if(css==='border-top-color'){
+      const style=getComputedStyle(target),side=['Top','Right','Bottom','Left'].find(side=>parseFloat(style['border'+side+'Width'])>0 && style['border'+side+'Style']!=='none');if(side)current=style['border'+side+'Color'];
+    }
+    const computed=ElementAppearance.colorParts(current);
     const saved=ElementAppearance.values(target);let color=saved[property] || computed.hex,opacity=saved[alpha]??computed.alpha;
     const update=()=>ElementAppearance.update(target,{[property]:color,[alpha]:opacity});
     const picker=labelInput(parent,title,'color',color,value=>{color=value;hex.value=value;update();});
@@ -132,49 +163,55 @@
       else{button('Add gap after selection',()=>{const gap=GapLayout.addAfter(target);if(gap)select(gap);else status('Drag Gap from the toolbar between page elements.');},panel);panel.append(node('span','Drag Gap from the toolbar to place a new spacer.'));}
     }
     if(name==='Text' && target.matches('.event-dock')){
-      colorControls(panel,'Unselected text and icons','toolbarTextColor','toolbarTextAlpha','color');
+      colorControls(panel,'Unselected text and icons','toolbarTextColor','toolbarTextAlpha','--toolbar-text');
       colorControls(panel,'Selected text and icons','toolbarSelectedColor','toolbarSelectedAlpha','--toolbar-active-text');
+    }else if(name==='Text' && ElementAppearance.group(target)==='counts'){
+      for(const [title,selector] of [['Count','.summary-item>strong,.summary-stat>strong,.counter-row output'],['Count title','.summary-item>span,.summary-stat>span,.counter-row strong']])button(title,()=>{const part=target.querySelector(selector);if(part)select(part);},panel);
     }else if(name==='Text'){
-      for(const [title,command] of [['Bold','bold'],['Italic','italic'],['Underline','underline'],['Remove formatting','removeFormat']])button(title,()=>textCommand(command),panel);
+      for(const [title,command] of [['Bold','bold'],['Italic','italic'],['Underline','underline'],['Remove formatting','removeFormat']]){const control=button(title,()=>{textCommand(command);syncTextControls();},panel);control.dataset.textCommand=command;}
       selectInput(panel,'Font',TextStyles.fonts,'Times New Roman',value=>textStyle('font',value));
       selectInput(panel,'Size',TextStyles.sizes,16,value=>textStyle('size',value));
       for(const [title,key] of [['Text color','color'],['Highlight','highlight']]){
         const picker=labelInput(panel,title,'color','#000000',value=>textStyle(key,value));
         const hex=labelInput(panel,title+' hex','text','#000000',(value,input)=>{if(/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value)){input.setCustomValidity('');picker.value=value.slice(0,7);textStyle(key,value);}else{input.setCustomValidity('Enter a hex color such as #123456.');input.reportValidity();}});hex.size=8;hex.addEventListener('input',()=>{if(/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(hex.value)){hex.setCustomValidity('');picker.value=hex.value.slice(0,7);textStyle(key,hex.value);}});
       }
-      const link=labelInput(panel,'Link URL','url','',()=>{});button('Add link',()=>{try{const url=new URL(link.value);if(!['http:','https:','mailto:'].includes(url.protocol))throw new Error();textCommand('createLink',url.href);}catch{status('Enter an http, https, or mailto link.');}},panel);
+      const currentLink=currentTextElement().closest('a');
+      const link=labelInput(panel,'Link URL','url',currentLink && target.contains(currentLink)?currentLink.getAttribute('href') || '':'',()=>{});button('Add link',()=>{try{const url=new URL(link.value);if(!['http:','https:','mailto:'].includes(url.protocol))throw new Error();textCommand('createLink',url.href);}catch{status('Enter an http, https, or mailto link.');}},panel);
       button('Remove link',()=>textCommand('unlink'),panel);
       fieldsPanel(panel);
+      syncTextControls();
     }
     if(name==='Lists'){
-      button('Bullets',()=>textCommand('insertUnorderedList'),panel);button('Numbering',()=>textCommand('insertOrderedList'),panel);
+      for(const [title,command] of [['Bullets','insertUnorderedList'],['Numbering','insertOrderedList']]){const control=button(title,()=>{textCommand(command);control.setAttribute('aria-pressed',String(document.queryCommandState(command)));},panel);control.dataset.textCommand=command;control.setAttribute('aria-pressed',String(document.queryCommandState(command)));}
       button('Indent',()=>textCommand('indent'),panel);button('Outdent',()=>textCommand('outdent'),panel);
     }
     if(name==='Background'){
       colorControls(panel,'Background','backgroundColor','backgroundAlpha','background-color');
       if(target.matches('.event-dock')){colorControls(panel,'Unselected option background','toolbarOptionBackground','toolbarOptionAlpha','--toolbar-option-background');colorControls(panel,'Selected option background','toolbarSelectedBackground','toolbarSelectedBackgroundAlpha','--toolbar-selected-background');}
       const values=ElementAppearance.values(target);
-      labelInput(panel,'Image URL','url',values.backgroundImage || '',(value,input)=>{const safe=ElementAppearance.imageUrl(value.trim());if(safe===null){input.setCustomValidity('Use an http or https image URL.');input.reportValidity();return;}input.setCustomValidity('');ElementAppearance.update(target,{backgroundImage:safe});});
+      const computedImage=getComputedStyle(target).backgroundImage;
+      const currentImage=computedImage.startsWith('url(')?computedImage.slice(4,-1).replace(/^['"]|['"]$/g,''):'';
+      labelInput(panel,'Image URL','url',values.backgroundImage ?? currentImage,(value,input)=>{const safe=ElementAppearance.imageUrl(value.trim());if(safe===null){input.setCustomValidity('Use an http or https image URL.');input.reportValidity();return;}input.setCustomValidity('');ElementAppearance.update(target,{backgroundImage:safe});});
       const upload=labelInput(panel,'Upload image','file','',async(_value,input)=>{
         const file=input.files[0],selected=target,eventId=context.eventId;if(!file)return;
         input.disabled=true;status('Uploading image…');
         try{const url=await ElementAppearance.upload(file);if(context.eventId===eventId){ElementAppearance.update(selected,{backgroundImage:url});status('Image saved.');}}catch(error){status(error.message);}finally{input.disabled=false;}
       });upload.accept='image/png,image/jpeg,image/webp';
-      selectInput(panel,'Image fit',['cover','contain'],values.imageFit || 'cover',value=>ElementAppearance.update(target,{imageFit:value}));
+      selectInput(panel,'Image fit',['cover','contain','auto'],values.imageFit || getComputedStyle(target).backgroundSize,value=>ElementAppearance.update(target,{imageFit:value}));
       button('Remove image',()=>ElementAppearance.update(target,{backgroundImage:''}),panel);
       if(entry?.title==='header image')fieldsPanel(panel);
     }
     if(name==='Border'){
       colorControls(panel,'Border','borderColor','borderAlpha','border-top-color');
       for(const [title,key,max,computed] of [['Width','borderWidth',24,'borderTopWidth'],['Radius','borderRadius',100,'borderTopLeftRadius']]){
-        const input=labelInput(panel,title,'number',ElementAppearance.values(target)[key]??parseFloat(getComputedStyle(target)[computed])??0,(value,input)=>{if(input.checkValidity())ElementAppearance.update(target,{[key]:Number(value)});});input.min=0;input.max=max;
+        const input=labelInput(panel,title,'number',ElementAppearance.values(target)[key]??(key==='borderWidth'?Math.max(...['Top','Right','Bottom','Left'].map(side=>parseFloat(getComputedStyle(target)['border'+side+'Width']) || 0)):parseFloat(getComputedStyle(target)[computed]) || 0),(value,input)=>{if(input.checkValidity())ElementAppearance.update(target,{[key]:Number(value)});});input.min=0;input.max=max;
       }
     }
   }
   function select(element){
     if(element===target)return;
     release();target=element;entry=SiteEditing.editorFor(target);
-    if(!entry?.fields && target.matches('button,a,h1,h2,h3,h4,h5,h6,p,li,time,legend,address,output,.summary-item,.summary-stat,.counter-row,label')){SiteEditing.textElement(target,ElementAppearance.label(target));entry=SiteEditing.editorFor(target);}
+    if(!entry?.fields && (target.matches('button,a,h1,h2,h3,h4,h5,h6,p,li,time,legend,address,output,.summary-item,.summary-stat,.counter-row,label') || ['count-values','count-titles'].includes(ElementAppearance.group(target)))){SiteEditing.textElement(target,ElementAppearance.label(target));entry=SiteEditing.editorFor(target);}
     target.classList.add('element-editor-selected');
     if(toolbar.querySelector('[data-editor-chooser]'))toolbar.querySelector('[data-editor-chooser]').value=ElementAppearance.selector(target);
     const kind=ElementAppearance.group(target);
@@ -200,6 +237,8 @@
     const gap=start.closest('gathering-gap,.existing-layout-gap');if(gap)return gap;
     const root=(globalThis.activeHostDialog?.() || [...document.querySelectorAll('dialog[open]')].at(-1)) || document.querySelector('#eventPage:not([hidden])') || document.body;
     if(!root.contains(start) || start.closest(excluded))return null;
+    const countPart=start.closest('.summary-item>strong,.summary-stat>strong,.summary-item>span,.summary-stat>span,.counter-row>div>output,.counter-row>div>strong,.counter-row>div>span');
+    if(countPart && root.contains(countPart))return countPart;
     const group=start.closest('button,.summary-item,.summary-stat,.counter-row,label:has(input,select,textarea)');
     if(group && root.contains(group))return group;
     const owner=SiteEditing.textOwner(start);if(owner && root.contains(owner))return owner;
@@ -244,7 +283,7 @@
     for(const element of [...SiteEditing.editorTargets,...GapLayout.elements()].filter(element=>root.contains(element) && !element.parentElement.closest('[hidden],[data-rsvp-flow-hidden],dialog:not([open])') && !element.hasAttribute('data-rsvp-flow-hidden') && (!element.hidden || SiteEditing.editorFor(element)?.fields?.every(spec=>!spec.value)))){const option=node('option',ElementAppearance.label(element));option.value=ElementAppearance.selector(element);chooser.append(option);}chooser.value=target?ElementAppearance.selector(target):'';sizeRibbon();
   }
   function beforeRender(){release();ribbonResize?.disconnect();ribbonResize=null;ribbonSpace?.remove();ribbonSpace=null;const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}toolbar?.remove();toolbar=null;panelName='';}
-  document.addEventListener('selectionchange',rememberSelection);
+  document.addEventListener('selectionchange',()=>{rememberSelection();if(!toolbar?.contains(document.activeElement))syncTextControls();});
   document.addEventListener('click',event=>{
     if(!context?.host || !context.enabled || allowAction || event.target.closest(excluded) || event.target.closest('#editItemsButton,#hostToolsPanel .host-tool-actions,#hostQuickActions,#hostToolsButton,#invitationTemplatesButton'))return;
     if(target && editables.some(part=>part.contains(event.target))){event.stopImmediatePropagation();if(target.matches('button,a,[role="tab"]'))event.preventDefault();return;}

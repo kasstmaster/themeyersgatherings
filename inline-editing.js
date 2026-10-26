@@ -173,7 +173,7 @@
   }
   function textOwner(element){for(let current=element;current;current=current.parentElement)if(textRoots.has(current) || editTargets.get(current)?.textBlock || editTargets.get(current)?.visual)return current;return null;}
   function textElement(target){
-    field(target,'text',[{label:'Text',type:target.matches('button,a') && !ElementAppearance.isMultiline(target)?'text':'textarea',visual:true,readonly:target.matches('.summary-item,.summary-stat,.counter-row,output,.event-selection-choices>button,label:has(input,select,textarea)'),value:ElementAppearance.textValue(target)}],()=>{},{key:`text-style:${ElementAppearance.selector(target)}`,placement:'element-edit'});
+    field(target,'text',[{label:'Text',type:target.matches('button,a') && !ElementAppearance.isMultiline(target)?'text':'textarea',visual:true,readonly:ElementAppearance.group(target)==='count-values' || target.matches('.summary-item,.summary-stat,.counter-row,output,.event-selection-choices>button,label:has(input,select,textarea)'),value:ElementAppearance.textValue(target)}],()=>{},{key:`text-style:${ElementAppearance.selector(target)}`,placement:'element-edit'});
     if(editTargets.has(target))editTargets.get(target).visual=true;
   }
   globalThis.SiteEditing={

@@ -10,7 +10,7 @@ The toolbar has five expandable groups:
 - **Border:** color picker, hex code, opacity, width, and corner radius.
 - **Gap:** select existing spaces or padding to adjust their size, or drag Gap from the toolbar to add a spacer above/below an element. Drag an existing gap to move it. Gap sizes and placement are saved separately for each gathering.
 
-Each text box, button, count, or container is one logical element. A button's label, background, and border use the same toolbar. Counts remain calculated; formatting does not replace live totals. Text uses the same safe formatting renderer in all existing and newly created gatherings.
+Each text box, button, count value, count title, or container is one logical element. A button's label, background, and border use the same toolbar. Counts remain calculated; formatting does not replace live totals. Text uses the same safe formatting renderer in all existing and newly created gatherings.
 
 Use **Select container** to edit the surface around an element. The **Select an element** menu also reaches empty text boxes without adding placeholders or changing their size. **Save** saves the selection, and **Done editing** saves pending changes and exits edit mode. Switching selection or leaving the page saves pending text changes. Appearance changes save immediately.
 
@@ -69,3 +69,7 @@ an active title edit change the text/caret rather than activating the tab.
 Menu action buttons share appearance by status: available (I’ll bring this), claimed, and bringing. Each status has independent background, border, and text formatting within the gathering. Claimed buttons remain selectable in Edit mode.
 
 The gathering selection home page uses site-wide `appState.gatheringHome` for text, appearance, and gaps, with its own editor context and group scope. It never reads an event’s formatting. All users, including the host, land on gathering selection after signing in. Selecting a gathering opens that event’s RSVP entry. Run `node scripts/verify-home-appearance.cjs` to check independent home/event edits, persistence, guest visibility, host sign-in, and mobile layout.
+
+Click a counter’s number to format all count values in that gathering, or its label to format all count titles independently. The surrounding counter remains selectable for background and border edits. Count values remain calculated. Run `node scripts/verify-count-formatting.cjs` to check independent typography, redraws, and gathering isolation.
+
+The editor initializes controls from the selected element’s current rendered styles and saved overrides, including text selection font/size/color/highlight, bold/italic/underline states, background color/opacity/image/fit, border color/opacity/width/radius, toolbar selected and unselected colors, and gap size. Moving the text selection updates the Text controls. Run `node scripts/verify-current-editor-values.cjs` for this regression check.
