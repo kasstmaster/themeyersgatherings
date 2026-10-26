@@ -1026,21 +1026,22 @@ function updateHeaderImage(event) {
 function isViewingAsGuest() { return hostAuthenticated && Boolean(hostWeddingPartyViewName); }
 function isHostView() { return hostAuthenticated && !isViewingAsGuest(); }
 const hostDialogStack=[];
-const persistentHostControls=['hostToolsPanel','editItemsButton'].map(id=>document.getElementById(id));
+const persistentHostControls=['hostToolsPanel','editItemsButton','cancelViewAsButton'].map(id=>document.getElementById(id));
 function activeHostDialog(){return hostDialogStack.filter(dialog=>dialog.open).at(-1) || [...document.querySelectorAll('dialog[open]')].at(-1);}
 function syncHostToolbar(records=[]) {
   for(const record of records)if(record.target.matches('dialog')){
     const index=hostDialogStack.indexOf(record.target);if(index>=0)hostDialogStack.splice(index,1);
     if(record.target.open)hostDialogStack.push(record.target);
   }
-  persistentHostControls[0].hidden=!hostAuthenticated;
+  persistentHostControls[0].hidden=!isHostView();
   const owner=activeHostDialog() || document.body;
   for(const control of persistentHostControls)if(control.parentElement!==owner)owner.append(control);
   document.querySelector('#newGatheringButton').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || Boolean(activeHostDialog());
-  const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated || SiteEditing.enabled;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
-  document.body.classList.toggle('has-host-toolbar',hostAuthenticated);
-  document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',hostAuthenticated);
-  document.querySelector('#eventDock').hidden=hostAuthenticated || !guestName;
+  document.querySelector('#cancelViewAsButton').hidden=!isViewingAsGuest();
+  const edit=document.querySelector('#editItemsButton');edit.hidden=!isHostView() || SiteEditing.enabled;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
+  document.body.classList.toggle('has-host-toolbar',isHostView());
+  document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',isHostView());
+  document.querySelector('#eventDock').hidden=isHostView() || !guestName;
   const print=document.querySelector('#hostToolsPanel [data-page-export]');if(print)print.hidden=Boolean(document.querySelector('#rsvpDialog').open && document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden'));
   if(SiteEditing.enabled)ElementEditor.refresh();
 }
@@ -1049,13 +1050,13 @@ new MutationObserver(records=>syncHostToolbar(records)).observe(document.body,{s
 function showSiteDialog(dialog){if(dialog.id!=='rsvpDialog' && dialog.parentElement.closest('[hidden]'))document.body.append(dialog);dialog.showModal();}
 async function closeHostDialogs(){await Promise.all([...document.querySelectorAll('dialog[open]')].map(dialog=>new Promise(resolve=>{dialog.addEventListener('close',resolve,{once:true});dialog.close();})));}
 document.querySelector('#hostHomeButton').addEventListener('click',async()=>{
-  if(!hostAuthenticated)return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
-  await closeHostDialogs();if(isViewingAsGuest())restoreHostSession();showEventSelection();updateHostToolsPanel();
+  if(!isHostView())return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
+  await closeHostDialogs();showEventSelection();updateHostToolsPanel();
 });
 function updateHostToolsPanel() {
   const viewingAsGuest = isViewingAsGuest();
-  document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated;
-  document.querySelector('#editItemsButton').hidden = !hostAuthenticated || SiteEditing.enabled;
+  document.querySelector('#hostToolsPanel').hidden = !isHostView();
+  document.querySelector('#editItemsButton').hidden = !isHostView() || SiteEditing.enabled;
   syncHostToolbar();
   document.querySelector('#cancelViewAsButton').hidden = !viewingAsGuest;
 }
@@ -1681,7 +1682,7 @@ function renderEventDock() {
   const dock = document.querySelector('#eventDock');
   const switchButtons = document.querySelector('#eventSwitchButtons');
   const ids = availableEventIds();
-  dock.hidden = hostAuthenticated || !guestName || ids.length === 0;
+  dock.hidden = isHostView() || !guestName || ids.length === 0;
   switchButtons.innerHTML = ids.map(id => {
     const name = EVENT_DETAILS[id].name;
     const accessibleLabel = `${name}${id === viewedEventId ? ', current event' : ''}`;
@@ -3293,13 +3294,12 @@ document.querySelector('#adminHostNotes').addEventListener('change', event => {
   state.hostNotes = event.target.value; saveState(); render();
 });
 document.querySelector('#editItemsButton').addEventListener('click', async () => {
-  if (!hostAuthenticated) return;
-  if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
+  if (!isHostView()) return;
   if (SiteEditing.enabled) commitAllPendingEditorInputs();
   SiteEditing.toggle(render);
 });
 
-document.querySelector('#editAccountsButton').addEventListener('click', async () => { if(!hostAuthenticated)return;commitAllPendingEditorInputs();if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}if(!document.querySelector('#accountsDialog').open)openAccountsAdmin(); });
+document.querySelector('#editAccountsButton').addEventListener('click', async () => { if(!isHostView())return;commitAllPendingEditorInputs();if(!document.querySelector('#accountsDialog').open)openAccountsAdmin(); });
 async function signIntoAccount(account,person) {
   if(!hostAuthenticated || !account)return;
   const events=Object.keys(EVENT_DETAILS).filter(id=>accountCanSignIn(account,id));if(!events.length)return;
@@ -3319,7 +3319,7 @@ function restoreHostSession() {
   selectedMatronTab=previous?.selectedMatronTab || 'duties';selectedGuestTab=previous?.selectedGuestTab || 'attire';selectedBrideGroomPage=previous?.selectedBrideGroomPage || 'main';
   showSignedInDestination();render();openRsvp({page:GatheringFeatures.forGathering(viewedEventId).weddingPages?selectedWeddingTab:null});window.scrollTo({top:0,left:0,behavior:'auto'});
 }
-document.querySelector('#cancelViewAsButton').addEventListener('click',async()=>{await closeHostDialogs();restoreHostSession();});
+document.querySelector('#cancelViewAsButton').addEventListener('click',async()=>{if(!isViewingAsGuest())return;await closeHostDialogs();restoreHostSession();});
 const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 function anyListSyncErrorMessage(status, errorCode) {
   if (status === 401 || errorCode === 'host_authentication_failed') return 'Unable to sync: the Worker host password secret does not match the website host password.';
@@ -3746,7 +3746,7 @@ function renderGatheringHistory() {
     +section('Host notes',event.hostNotes?`<p class="history-notes">${escapeHtml(event.hostNotes)}</p>`:'');
 }
 document.querySelector('#gatheringHistoryButton').addEventListener('click',async()=>{
-  if(!hostAuthenticated)return;if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
+  if(!isHostView())return;
   commitAllPendingEditorInputs();if(captureGatheringHistory())saveState({refresh:false});
   const dates=Object.keys(appState.gatheringHistory?.[viewedEventId] || {}).sort().reverse();
   document.querySelector('#gatheringHistoryDate').innerHTML=dates.map(date=>`<option>${escapeHtml(date)}</option>`).join('');
