@@ -28,6 +28,8 @@
     if(target.matches('.event-dock'))return 'toolbar';
     const dialog=target.closest('dialog');if(dialog && dialog.id!=='rsvpDialog')return null;
     if(target.closest('.element-editor-toolbar,#hostQuickActions,#editItemsButton,[id^="admin"],.inline-portal-editor') || target.closest(contentText))return null;
+    if(target.matches('.summary-item>strong,.summary-stat>strong,.counter-row>div>output'))return 'count-values';
+    if(target.matches('.summary-item>span,.summary-stat>span,.counter-row>div>strong,.counter-row>div>span'))return 'count-titles';
     if(target.matches('.summary-item,.summary-stat,.counter-row'))return 'counts';
     if(target.matches('button') && target.closest('.event-dock'))return 'toolbar-options';
     if(target.matches('button[data-claim]'))return target.dataset.dishStatus==='claimed'?'dish-claimed':target.dataset.dishStatus==='bringing'?'dish-bringing':'dish-available';
@@ -75,8 +77,9 @@
     if(values.backgroundColor && !Object.hasOwn(values,'backgroundImage'))set(element,'background-image','none');
     if(Object.hasOwn(values,'backgroundImage')){
       const url=imageUrl(values.backgroundImage);
-      if(url!==null){set(element,'background-image',url?`url(${JSON.stringify(url)})`:'none');if(url){set(element,'background-size',values.imageFit==='contain'?'contain':'cover');set(element,'background-position','center');set(element,'background-repeat','no-repeat');}}
+      if(url!==null){set(element,'background-image',url?`url(${JSON.stringify(url)})`:'none');if(url){set(element,'background-size',['contain','auto'].includes(values.imageFit)?values.imageFit:'cover');set(element,'background-position','center');set(element,'background-repeat','no-repeat');}}
     }
+    if(['cover','contain','auto'].includes(values.imageFit))set(element,'background-size',values.imageFit);
     if(globalThis.TextStyles?.fonts.includes(values.fontFamily))set(element,'font-family',values.fontFamily);
     if(Number.isFinite(values.fontSize) && values.fontSize>=8 && values.fontSize<=96)set(element,'font-size',`calc(${values.fontSize}px * var(--fitted-text-scale,1))`);
     if(['400','700'].includes(values.fontWeight))set(element,'font-weight',values.fontWeight);

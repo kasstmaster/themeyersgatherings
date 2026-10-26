@@ -812,7 +812,7 @@ body.theme-wedding #eventPage .attire-content-group>#weddingPartyAttireIntro{mar
 .element-editor-row>[data-editor-selection]{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:6px;font-weight:700}
 .element-editor-toolbar button,.element-editor-toolbar select,.element-editor-toolbar input,.element-editor-toolbar textarea{box-sizing:border-box;width:auto;min-width:0;max-width:240px;margin:0;padding:5px 8px;border:1px solid #bbc3ce;border-radius:3px;background:white;color:#172b43;font:13px/1.35 Arial,sans-serif;box-shadow:none;text-transform:none;letter-spacing:normal}
 .element-editor-toolbar button{cursor:pointer;white-space:nowrap}
-.element-editor-toolbar button[aria-expanded="true"]{background:#e2ebf6;border-color:#476990}
+.element-editor-toolbar button:is([aria-expanded="true"],[aria-pressed="true"]){background:#e2ebf6;border-color:#476990}
 .element-editor-panel{max-height:132px;overflow:auto;padding:8px 0 2px;margin-top:6px;border-top:1px solid #d8dfe7}
 .element-editor-panel[hidden],.element-editor-toolbar [hidden]{display:none!important}
 .element-editor-panel label{display:inline-flex;align-items:center;gap:5px;width:auto;margin:0;font:12px Arial,sans-serif;color:inherit}
