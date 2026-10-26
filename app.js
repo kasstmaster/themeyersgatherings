@@ -1794,7 +1794,7 @@ function renderDish(item) {
   const status = item.optional ? 'Optional' : (remaining ? `${remaining} of ${formatQuantity(item.needed, item)} still needed` : '');
   const details = [status, claimants].filter(Boolean).join(' · ');
   const unavailable = remaining === 0 && !mine;
-  return `<div class="dish"><h4>${escapeHtml(item.name)}</h4>${details ? `<div class="dish-meta">${details}</div>` : ''}<button data-claim="${item.id}" ${unavailable ? 'disabled' : ''} class="${mine ? 'claimed' : ''}">${mine ? '✓ Bringing it' : (unavailable ? 'Claimed' : "I'll bring this")}</button></div>`;
+  return `<div class="dish"><h4>${escapeHtml(item.name)}</h4>${details ? `<div class="dish-meta">${details}</div>` : ''}<button data-claim="${item.id}" data-dish-status="${mine ? 'bringing' : unavailable ? 'claimed' : 'available'}" ${unavailable && !SiteEditing.enabled ? 'disabled' : ''} class="${mine ? 'claimed' : ''}">${mine ? '✓ Bringing it' : (unavailable ? 'Claimed' : "I'll bring this")}</button></div>`;
 }
 function claimItem(id) {
   ensureAccount(() => {

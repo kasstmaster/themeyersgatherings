@@ -30,6 +30,7 @@
     if(target.closest('.element-editor-toolbar,#hostQuickActions,#editItemsButton,[id^="admin"],.inline-portal-editor') || target.closest(contentText))return null;
     if(target.matches('.summary-item,.summary-stat,.counter-row'))return 'counts';
     if(target.matches('button') && target.closest('.event-dock'))return 'toolbar-options';
+    if(target.matches('button[data-claim]'))return target.dataset.dishStatus==='claimed'?'dish-claimed':target.dataset.dishStatus==='bringing'?'dish-bringing':'dish-available';
     if(target.matches('#uploadPhotosButton'))return 'buttons';
     if(target.matches('[role="tab"],[data-wedding-tab],[data-gathering-tab],[data-matron-tab],[data-media-tab]'))return 'tabs';
     if(target.matches('button,a.primary-button,a.registry-button,.primary-button'))return 'buttons';
