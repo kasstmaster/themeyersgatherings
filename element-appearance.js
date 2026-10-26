@@ -1,7 +1,7 @@
 /* Shared per-gathering appearance editing. Untouched declarations keep their defaults. */
 (() => {
   let context;
-  const applied=new Map();
+  const applied=new Map(),imageOriginals=new Map();
   const styledText=new Map();
   function label(element){
     if(element===document.body)return 'Page background';
@@ -60,6 +60,8 @@
     try{const url=new URL(value,document.baseURI);return ['http:','https:'].includes(url.protocol)?url.href:null;}catch{return null;}
   }
   function restore(includeText=true){
+    for(const [image,attributes] of imageOriginals)for(const [key,value] of Object.entries(attributes))if(value===null)image.removeAttribute(key);else image.setAttribute(key,value);
+    imageOriginals.clear();
     for(const [element,values] of applied){for(const [property,{value,priority}] of values){if(value)element.style.setProperty(property,value,priority);else element.style.removeProperty(property);}}
     applied.clear();
     if(includeText){for(const [part,record] of styledText)if(normalizedMarkup(part.innerHTML)===normalizedMarkup(record.applied))part.innerHTML=record.html;styledText.clear();}
@@ -70,7 +72,24 @@
     if(!original.has(property))original.set(property,{value:element.style.getPropertyValue(property),priority:element.style.getPropertyPriority(property)});
     element.style.setProperty(property,value,'important');
   }
+  function imageElement(target){return target.matches?.('img')?target:target.matches?.('.header-art')?target.querySelector('img'):null;}
+  function replaceImage(image,url){image.removeAttribute('srcset');image.hidden=!url;if(url)image.setAttribute('src',url);else image.removeAttribute('src');}
+  function updateImage(target,url){
+    if(!context?.host || !context.enabled)return;
+    const image=imageElement(target);if(!image)return globalThis.ElementAppearance.update(target,{backgroundImage:url});
+    const styles=context.state.elementAppearance??={};
+    for(const element of [image,image.closest('.header-art')].filter(Boolean)){
+      const path=appearancePath(element);if(styles[path]){delete styles[path].backgroundImage;delete styles[path].imageSource;}
+    }
+    if(!context.setImage?.(image,url))styles[appearancePath(image)]={...styles[appearancePath(image)],imageSource:url};
+    apply();replaceImage(image,url);context.save();
+  }
   function paint(element,values){
+    const image=imageElement(element);
+    if(image && Object.hasOwn(values,'imageSource')){
+      const url=imageUrl(values.imageSource);if(url!==null){if(!imageOriginals.has(image))imageOriginals.set(image,Object.fromEntries(['src','srcset','hidden'].map(key=>[key,image.getAttribute(key)])));replaceImage(image,url);}
+    }
+    if(image && ['cover','contain','fill','none','scale-down'].includes(values.imageFit))set(image,'object-fit',values.imageFit);
     const color=(key,property,alpha)=>{if(/^#[\da-f]{6}$/i.test(values[key] || ''))set(element,property,rgba(values[key],values[alpha]??100));};
     color('toolbarTextColor','--toolbar-text','toolbarTextAlpha');color('toolbarSelectedColor','--toolbar-active-text','toolbarSelectedAlpha');color('toolbarOptionBackground','--toolbar-option-background','toolbarOptionAlpha');color('toolbarSelectedBackground','--toolbar-selected-background','toolbarSelectedBackgroundAlpha');
     color('backgroundColor','background-color','backgroundAlpha');color('textColor','color','textAlpha');color('borderColor','border-color','borderAlpha');
@@ -154,7 +173,7 @@
   function refreshControls(){ElementEditor.render(context);}
   if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply();if(records.some(record=>record.type==='attributes'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
   globalThis.ElementAppearance={
-    textParts,label,isSurface,
+    textParts,label,isSurface,imageElement,updateImage,
     group,
     values:target=>({...context?.state.elementAppearance?.[selector(target)],...context?.state.elementAppearance?.[appearancePath(target)]}),
     update(target,values){

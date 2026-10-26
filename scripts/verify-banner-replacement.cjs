@@ -1,0 +1,28 @@
+// Optional Chromium integration check. External requests and live state writes are blocked.
+const {chromium}=require('playwright');const assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(12000);const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',async route=>{if(!route.request().url().startsWith('http://127.0.0.1:8041/'))return route.abort();if(new URL(route.request().url()).pathname==='/'){const r=await route.fetch();return route.fulfill({response:r,body:(await r.text()).replace(/(<meta name="shared-state-url" content=")[^"]*/,'$1')});}return route.continue();});await page.goto('http://127.0.0.1:8041/');await page.waitForFunction(()=>typeof startApp==='function');
+await page.evaluate(()=>{localStateRevision+=1;appState=normalizeState(initialAppState());appState.accounts=[{name:'Casey Example',source:'website',selectedEvents:{wedding:true,thanksgiving:true,christmas:true},invitedEvents:{wedding:true,thanksgiving:true,christmas:true}}];const w=appState.events.wedding;w.weddingPartyMembers=[{id:'casey',name:'Casey Example',title:'Groomsman',responsibilities:'Help the groom',pages:[]}];w.weddingMealChoices=[{id:'chicken',name:'Chicken',audience:'Adults and children'}];w.sitePages=[{id:'saved-details',nav:'weddingPartyTabs',title:'What to Expect',content:'Default details body',audience:'guests'},{id:'travel',nav:'weddingPartyTabs',title:'Travel',content:'Travel body',audience:'all'}];hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;signedInPersonName='';viewedEventId='wedding';state=w;showSignedInDestination();render();});
+await page.route('**/replacement-*.svg',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200"><rect width="800" height="200" fill="blue"/></svg>'}));
+for(const eventId of ['wedding','thanksgiving','christmas']){
+ await page.evaluate(id=>{appState.events[id].rsvpHeaderImage='http://127.0.0.1:8041/replacement-initial.svg';enterEvent(id);},eventId);if(!await page.locator('.element-editor-toolbar').count())await page.locator('#editItemsButton').click();
+ await page.evaluate(()=>{const image=document.querySelector('#rsvpFirstPageImage');ElementAppearance.update(image,{backgroundImage:'http://127.0.0.1:8041/old-overlay.png'});ElementAppearance.update(image.closest('.header-art'),{backgroundImage:'http://127.0.0.1:8041/old-overlay.png'});});
+ await page.locator('#rsvpFirstPageImage').click();const bg=page.getByRole('button',{name:'Background',exact:true});if(await bg.getAttribute('aria-expanded')!=='true')await bg.click();
+ const url=`http://127.0.0.1:8041/replacement-${eventId}.svg`;
+ await page.getByLabel('Image URL',{exact:true}).fill(url);await page.getByLabel('Image URL',{exact:true}).press('Tab');
+ assert.equal(await page.locator('#rsvpFirstPageImage').getAttribute('src'),url);assert.equal(await page.evaluate(()=>state.rsvpHeaderImage),url);
+ for(const selector of ['#rsvpFirstPageImage','#rsvpEventHeader .header-art'])assert.equal(await page.locator(selector).evaluate(e=>getComputedStyle(e).backgroundImage),'none');
+ await page.getByRole('button',{name:'Done editing',exact:true}).click();await page.evaluate(()=>render());assert.equal(await page.locator('#rsvpFirstPageImage').getAttribute('src'),url);
+ await page.locator('#editItemsButton').click();await page.locator('#rsvpFirstPageImage').click();await page.getByRole('button',{name:'Background',exact:true}).click();assert.equal(await page.getByLabel('Image URL',{exact:true}).inputValue(),url);
+ // Uploaded images use the same replacement path without contacting live storage.
+ await page.evaluate(()=>{ElementAppearance.upload=async()=>`http://127.0.0.1:8041/replacement-upload.svg`;});
+ await page.getByLabel('Upload image',{exact:true}).setInputFiles({name:'banner.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=','base64')});
+ await page.waitForFunction(()=>state.rsvpHeaderImage.endsWith('replacement-upload.svg'));
+ assert.equal(await page.locator('#rsvpFirstPageImage').getAttribute('src'),'http://127.0.0.1:8041/replacement-upload.svg');
+ await page.getByRole('button',{name:'Remove image',exact:true}).click();assert.equal(await page.locator('#rsvpFirstPageImage').getAttribute('src'),null);assert.equal(await page.evaluate(()=>state.rsvpHeaderImage),'');
+ await page.getByRole('button',{name:'Done editing',exact:true}).click();await page.locator('#hostHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});
+}
+// Non-banner image sources persist in home state and restore across context changes.
+await page.locator('#editItemsButton').click();await page.locator('.event-selection-icon').click();await page.getByRole('button',{name:'Background',exact:true}).click();await page.getByLabel('Image URL',{exact:true}).fill('http://127.0.0.1:8041/replacement-home.svg');await page.getByLabel('Image URL',{exact:true}).press('Tab');await page.getByRole('button',{name:'Done editing',exact:true}).click();
+await page.evaluate(()=>render());assert.equal(await page.locator('.event-selection-icon').getAttribute('src'),'http://127.0.0.1:8041/replacement-home.svg');
+assert.deepEqual(errors,[]);await browser.close();console.log('Banner URL replacement, uploads, removal and legacy overlay cleanup persist across all gatherings; home images replace their source too.');
+})().catch(e=>{console.error(e);process.exit(1);});
