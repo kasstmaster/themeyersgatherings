@@ -20,8 +20,8 @@ await page.evaluate(()=>{
  const assertClaimedEditable=fixture.querySelector('[data-claim="c"]').disabled;
  if(assertClaimedEditable)throw new Error('Claimed dish must be selectable in Edit mode');
  document.querySelector('#rsvpDialog').append(fixture);
- ElementAppearance.update(fixture.children[0],{backgroundColor:'#112233',fontFamily:'Georgia'});
- ElementAppearance.update(fixture.children[2],{backgroundColor:'#445566',fontFamily:'Verdana'});
+ ElementAppearance.update(fixture.querySelector('[data-claim="a"]'),{backgroundColor:'#112233',fontFamily:'Georgia'});
+ ElementAppearance.update(fixture.querySelector('[data-claim="c"]'),{backgroundColor:'#445566',fontFamily:'Verdana'});
 });
 for(const id of ['a','b'])assert.equal(await page.locator(`#dish-style-check [data-claim="${id}"]`).evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(17, 34, 51)');
 assert.equal(await page.locator('#dish-style-check [data-claim="c"]').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(68, 85, 102)');
