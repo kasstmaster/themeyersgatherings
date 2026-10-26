@@ -25,3 +25,11 @@ test('hex and computed colors preserve transparency',()=>{
  const {api}=fixture();assert.equal(api.colorParts('#123').hex,'#112233');assert.equal(api.colorParts('#12345680').alpha,50);assert.equal(api.colorParts('rgba(255, 128, 0, 0.25)').hex,'#ff8000');assert.equal(api.colorParts('rgba(255, 128, 0, 0.25)').alpha,25);assert.equal(api.colorParts('transparent').alpha,0);
 });
 test('guests cannot change appearance through the shared editor API',()=>{const f=fixture();const state={};f.api.render({state,host:false,enabled:false});f.api.update(f.element,{backgroundColor:'#abcdef'});assert.deepEqual(state,{});});
+test('menu action styles are shared by claim status independently of other buttons',()=>{
+ const {api}=fixture();
+ const button=status=>({dataset:{dishStatus:status},matches:selector=>selector==='button[data-claim]' || selector==='button',closest:()=>null});
+ assert.equal(api.group(button('available')),'dish-available');
+ assert.equal(api.group(button('claimed')),'dish-claimed');
+ assert.equal(api.group(button('bringing')),'dish-bringing');
+ assert.equal(api.group({matches:selector=>selector.split(',').includes('button'),closest:()=>null}),'buttons');
+});

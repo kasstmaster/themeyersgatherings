@@ -13,6 +13,22 @@ for(const id of ['brideGroomHeading','weddingMediaHeading','rsvpHeading'])assert
 assert.equal(await page.locator('#brideGroomHeading').textContent(),headingCopy);assert.equal(await page.locator('#weddingMediaHeading').textContent(),'Photos & Videos');assert.equal(await page.locator('#brideGroomContent').innerHTML(),copy);assert.deepEqual(await page.locator('#brideGroomContent').evaluate(e=>({font:getComputedStyle(e).fontFamily,color:getComputedStyle(e).color})),contentStyle);
 for(const id of ['guestCount','notAttendingCount','noResponseCount','invitedCount'])assert.equal(await page.locator('#'+id).evaluate(e=>getComputedStyle(e).fontSize),'24px');
 assert.equal(await page.locator('#weddingMediaSection').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(221, 221, 221)');assert.equal(await page.locator('#rsvpForm').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(221, 221, 221)');assert.equal(await page.locator('[data-attire-group="ladies"]').evaluate(e=>getComputedStyle(e).borderRadius),'12px');assert.equal(await page.locator('[data-wedding-tab="registry"]').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(68, 85, 102)');
+// Dish action states keep their own appearance, including after a claim changes state.
+await page.evaluate(()=>{
+ const fixture=document.createElement('div');fixture.id='dish-style-check';
+ fixture.innerHTML=[{id:'a',claims:[]},{id:'b',claims:[]},{id:'c',claims:['Other household']},{id:'d',claims:[guestName]}].map(item=>renderDish({name:'Test dish',needed:1,...item})).join('');
+ const assertClaimedEditable=fixture.querySelector('[data-claim="c"]').disabled;
+ if(assertClaimedEditable)throw new Error('Claimed dish must be selectable in Edit mode');
+ document.querySelector('#rsvpDialog').append(fixture);
+ ElementAppearance.update(fixture.children[0],{backgroundColor:'#112233',fontFamily:'Georgia'});
+ ElementAppearance.update(fixture.children[2],{backgroundColor:'#445566',fontFamily:'Verdana'});
+});
+for(const id of ['a','b'])assert.equal(await page.locator(`#dish-style-check [data-claim="${id}"]`).evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(17, 34, 51)');
+assert.equal(await page.locator('#dish-style-check [data-claim="c"]').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(68, 85, 102)');
+assert.equal(await page.locator('#rsvpConfirmEvent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(35, 69, 103)');
+await page.evaluate(()=>{const button=document.querySelector('#dish-style-check [data-claim="a"]');button.dataset.dishStatus='claimed';ElementAppearance.applyText();ElementAppearance.update(button,{borderWidth:2});});
+assert.equal(await page.locator('#dish-style-check [data-claim="a"]').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(68, 85, 102)');
+await page.evaluate(()=>document.querySelector('#dish-style-check').remove());
 const separateBefore=await page.locator('#rsvpFirstPageDetails').evaluate(e=>getComputedStyle(e).fontFamily);await page.evaluate(()=>ElementAppearance.update(document.querySelector('#brideGroomContent'),{fontFamily:'Georgia',textColor:'#990011'}));assert.match(await page.locator('#brideGroomContent').evaluate(e=>getComputedStyle(e).fontFamily),/Georgia/);assert.equal(await page.locator('#rsvpFirstPageDetails').evaluate(e=>getComputedStyle(e).fontFamily),separateBefore);await page.getByRole('button',{name:'Done editing',exact:true}).click();await page.locator('#rsvpConfirmEvent').click();assert.equal(await page.locator('#rsvpAttireAcknowledge').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(35, 69, 103)');await page.locator('#rsvpAttireAcknowledge').click();assert.match(await page.locator('#rsvpHeading').evaluate(e=>getComputedStyle(e).fontFamily),/Garamond/);assert.notEqual(await page.locator('#rsvpHeading').textContent(),headingCopy);
 await page.evaluate(async()=>{await closeHostDialogs();enterEvent('thanksgiving');});assert.notEqual(await page.locator('#rsvpConfirmEvent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(35, 69, 103)');assert.equal(await page.evaluate(()=>appState.events.wedding.elementAppearance['@group:buttons'].fontFamily),'Verdana');
 assert.deepEqual(errors,[]);await browser.close();console.log('Matching button/title/count/tab/container styles propagate through RSVP, while words, content text formatting and other gatherings remain independent.');})().catch(e=>{console.error(e);process.exit(1);});

@@ -31,7 +31,7 @@
   function rememberSelection(){const selected=window.getSelection();if(target && selected.rangeCount && editables.some(element=>element.contains(selected.anchorNode)))range=selected.getRangeAt(0).cloneRange();}
   function restoreSelection(){if(!range)return false;try{const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);return true;}catch{return false;}}
   function textCommand(command,value){
-    if(['buttons','tabs','titles','counts','toolbar-options'].includes(ElementAppearance.group(target)) && ['bold','italic','underline','removeFormat'].includes(command)){
+    if(['buttons','dish-available','dish-claimed','dish-bringing','tabs','titles','counts','toolbar-options'].includes(ElementAppearance.group(target)) && ['bold','italic','underline','removeFormat'].includes(command)){
       const current=getComputedStyle(target),values=command==='bold'?{fontWeight:Number(current.fontWeight)>=600?'400':'700'}:command==='italic'?{fontStyle:current.fontStyle==='italic'?'normal':'italic'}:command==='underline'?{textDecoration:current.textDecorationLine.includes('underline')?'none':'underline'}:{fontFamily:'',fontSize:null,fontWeight:'',fontStyle:'',textDecoration:'',textColor:'',textHighlight:''};
       ElementAppearance.update(target,values);return;
     }
@@ -41,7 +41,7 @@
     document.execCommand(command,false,value);dirty=true;rememberSelection();
   }
   function textStyle(key,value){
-    if(['buttons','tabs','titles','counts','toolbar-options'].includes(ElementAppearance.group(target))){const property={font:'fontFamily',size:'fontSize',color:'textColor',highlight:'textHighlight'}[key];if(property)ElementAppearance.update(target,{[property]:key==='size'?Number(value):value});return;}
+    if(['buttons','dish-available','dish-claimed','dish-bringing','tabs','titles','counts','toolbar-options'].includes(ElementAppearance.group(target))){const property={font:'fontFamily',size:'fontSize',color:'textColor',highlight:'textHighlight'}[key];if(property)ElementAppearance.update(target,{[property]:key==='size'?Number(value):value});return;}
 
     if(!editables.length)return;
     if(!restoreSelection() || range.collapsed){range=document.createRange();range.selectNodeContents(editables[0]);}

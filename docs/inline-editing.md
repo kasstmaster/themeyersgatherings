@@ -65,3 +65,5 @@ in the top toolbar. The tab stays selected and its order is saved for the curren
 gathering. Toolbar page options move within their navigation group; The Meyers
 and Print Page keep their fixed positions. Spaces, arrow keys and clicks inside
 an active title edit change the text/caret rather than activating the tab.
+
+Menu action buttons share appearance by status: available (I’ll bring this), claimed, and bringing. Each status has independent background, border, and text formatting within the gathering. Claimed buttons remain selectable in Edit mode.
