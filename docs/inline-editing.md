@@ -67,3 +67,5 @@ and Print Page keep their fixed positions. Spaces, arrow keys and clicks inside
 an active title edit change the text/caret rather than activating the tab.
 
 Menu action buttons share appearance by status: available (I’ll bring this), claimed, and bringing. Each status has independent background, border, and text formatting within the gathering. Claimed buttons remain selectable in Edit mode.
+
+The gathering selection home page uses site-wide `appState.gatheringHome` for text, appearance, and gaps, with its own editor context and group scope. It never reads an event’s formatting. All users, including the host, land on gathering selection after signing in. Selecting a gathering opens that event’s RSVP entry. Run `node scripts/verify-home-appearance.cjs` to check independent home/event edits, persistence, guest visibility, host sign-in, and mobile layout.
