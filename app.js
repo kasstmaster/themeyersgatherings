@@ -1394,13 +1394,14 @@ function gatheringGalleryUrl(value) {
 function renderGatheringMedia(hostView) {
   for(const labels of [state.siteText,state.siteTabTitles])for(const key of Object.keys(labels || {}))if(labels[key]==='Upload Photos & Videos')labels[key]='Photos & Videos';
   const wedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
-  const showing=(wedding?selectedWeddingTab:selectedGatheringTab)==='media';
+  const showing=(wedding?selectedWeddingTab:selectedGatheringTab || 'media')==='media';
   document.querySelector('#weddingMediaSection').hidden=!showing;
   document.querySelector('#rsvpWeddingPages').hidden=!wedding && !hostView && !showing;
   if(!wedding){
-    document.querySelector('#weddingPartyTabs').hidden=false;
+    document.querySelector('#weddingPartyTabs').hidden=true;
+    document.querySelector('#weddingRsvpUploadToolbar').hidden=true;
     document.querySelectorAll('#weddingPartyTabs>[data-wedding-tab]').forEach(button=>{
-      button.hidden=button.dataset.weddingTab!=='media';
+      button.hidden=true;
       button.setAttribute('aria-selected',String(showing && !button.hidden));
     });
   }
@@ -1415,7 +1416,7 @@ function renderGatheringMedia(hostView) {
 function renderGatheringPages(features,hostView) {
   if(selectedGatheringTab==='details')selectedGatheringTab=null;
   if(!hostView && selectedGatheringTab==='notes')selectedGatheringTab='menu';
-  const tab=selectedGatheringTab || (hostView?'notes':'menu');
+  const tab=selectedGatheringTab || 'media';
   document.querySelector('#gatheringTabs').hidden=!hostView || (!features.menu && !features.notes);
   document.querySelectorAll('[data-gathering-tab]').forEach(button=>{
     button.hidden=!hostView || (button.dataset.gatheringTab==='notes' && !features.notes);
@@ -1710,7 +1711,6 @@ function renderHostFirstPageActions(){
     document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{if(!button.hidden)add(button.textContent.trim(),button);});
   }else{
     document.querySelectorAll('#gatheringTabs>button').forEach(button=>{if(!button.hidden)add(button.textContent.trim(),button);});
-    const upload=document.querySelector('#uploadPhotosButton');add(upload.textContent.trim(),upload);
   }
 }
 function renderEventDock() {
