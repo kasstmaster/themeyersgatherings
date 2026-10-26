@@ -119,3 +119,8 @@ clear conflicting option-level color edits when changed.
 independent content formatting, structural groups and gathering isolation.
 `verify-toolbar-colors.cjs` and `verify-rsvp-page-navigation.cjs` cover shared
 toolbar states, guest defaults, navigation, shortcuts and role-specific attire.
+
+Timeline is a host-only sub-tab inside Bride & Groom, reusing its page selector
+and keyboard handling. The original timeline fields and section ID remain for
+saved content, appearance and printing. First-page action buttons precede the
+counters; the shared Attire icon is a bow tie.

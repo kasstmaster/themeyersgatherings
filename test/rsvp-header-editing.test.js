@@ -33,7 +33,7 @@ test('all first pages have one fixed image, date, two text slots and shared firs
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
  const section=html.slice(html.indexOf('<section id="rsvpEventConfirmation"'),html.indexOf('<div id="rsvpWeddingPages"'));
  const ids=[...section.matchAll(/id="([^"]+)"/g)].map(match=>match[1]);
- assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','hostRsvpCounters','guestListButton','guestCount','notAttendingButton','notAttendingCount','noResponseButton','noResponseCount','invitedListButton','invitedCount','remainingSummary','remainingCount','hostFirstPageActions','weddingRsvpUploadToolbar','weddingPartyTabs','uploadPhotosButton']);
+ assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','hostFirstPageActions','weddingRsvpUploadToolbar','weddingPartyTabs','uploadPhotosButton','hostRsvpCounters','guestListButton','guestCount','notAttendingButton','notAttendingCount','noResponseButton','noResponseCount','invitedListButton','invitedCount','remainingSummary','remainingCount']);
  assert.doesNotMatch(headerCode,/cloneNode/);
  for(const id of ['wedding','thanksgiving','christmas','new-gathering']){
   const f=fixture(true,id);f.context.renderRsvpEventHeader();f.context.renderRsvpInlineEditing();

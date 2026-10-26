@@ -1254,6 +1254,7 @@ function renderWeddingPartyPageHeading(tab,page,member) {
 }
 function renderWeddingGathering(hostView) {
   const isWedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
+  if(hostView && selectedWeddingTab==='timeline'){selectedWeddingTab='couple';selectedBrideGroomPage='__wedding-timeline';}
   document.querySelector('#rsvpWeddingPages').hidden=!isWedding && !hostView;
   if(!isWedding){
     for(const id of ['weddingHostTabs','weddingPartyTabs','brideGroomSection','weddingPartySection','weddingTimelineSection','guestSection','weddingMediaSection','registrySection','registryAttireSection','whatToExpectSection'])document.getElementById(id).hidden=true;
@@ -1269,9 +1270,10 @@ function renderWeddingGathering(hostView) {
   });
   if (!hostView && selectedWeddingTab === 'timeline') selectedWeddingTab = 'guest';
   if ((!hostView && !isWeddingPartyMember && selectedWeddingTab === 'party') || (!hostView && selectedWeddingTab === 'couple')) selectedWeddingTab = 'guest';
+  if(isWedding && hostView && selectedWeddingTab==='couple' && selectedBrideGroomPage!=='__wedding-timeline' && !(state.brideGroomPages || []).some(page=>page.id===selectedBrideGroomPage))selectedBrideGroomPage=state.brideGroomPages?.[0]?.id || '__wedding-timeline';
   const showingBrideGroomPage = isWedding && hostView && selectedWeddingTab === 'couple';
   const showingWeddingPartyPage = isWedding && (hostView || isWeddingPartyMember) && selectedWeddingTab === 'party';
-  const showingTimelinePage = isWedding && hostView && selectedWeddingTab === 'timeline';
+  const showingTimelinePage = showingBrideGroomPage && selectedBrideGroomPage === '__wedding-timeline';
   const publicWeddingTab = hostView && ['couple','timeline'].includes(selectedWeddingTab)?selectedWeddingTab:['couple','timeline','guest'].includes(selectedWeddingTab) ? selectedGuestTab : selectedWeddingTab;
   const showingGuestPage = isWedding && ['attire','details'].includes(publicWeddingTab);
   const showingPartyAttirePage = (hostView || isWeddingPartyMember) && publicWeddingTab === 'attire';
@@ -1305,12 +1307,14 @@ function renderWeddingGathering(hostView) {
   document.querySelector('#brideGroomSection').hidden = !showingBrideGroomPage;
   if (showingBrideGroomPage) {
     const brideGroomPages = state.brideGroomPages || [];
-    if (!brideGroomPages.some(page => page.id === selectedBrideGroomPage)) selectedBrideGroomPage = brideGroomPages[0]?.id || '';
+    if (selectedBrideGroomPage!=='__wedding-timeline' && !brideGroomPages.some(page => page.id === selectedBrideGroomPage)) selectedBrideGroomPage = brideGroomPages[0]?.id || '';
     const brideGroomTabs = document.querySelector('#brideGroomTabs');
-    brideGroomTabs.hidden = brideGroomPages.length < 2;
-    brideGroomTabs.innerHTML = brideGroomPages.map(page => `<button type="button" role="tab" data-bride-groom-page="${escapeAttribute(page.id)}" aria-selected="${page.id === selectedBrideGroomPage}" tabindex="${page.id === selectedBrideGroomPage ? '0' : '-1'}">${escapeHtml(page.title)}</button>`).join('');
+    brideGroomTabs.hidden = false;
+    const subpages=[...brideGroomPages,{id:'__wedding-timeline',title:state.timelineTabTitle || state.siteTabTitles?.['weddingHostTabs:weddingTab=timeline'] || 'Timeline'}];
+    brideGroomTabs.innerHTML = subpages.map(page => `<button type="button" role="tab" data-bride-groom-page="${escapeAttribute(page.id)}" aria-controls="${page.id==='__wedding-timeline'?'weddingTimelineSection':'brideGroomContent'}" aria-selected="${page.id === selectedBrideGroomPage}" tabindex="${page.id === selectedBrideGroomPage ? '0' : '-1'}">${escapeHtml(page.title)}</button>`).join('');
     const activeBrideGroomPage = brideGroomPages.find(page => page.id === selectedBrideGroomPage) || brideGroomPages[0];
     const brideGroomContent = document.querySelector('#brideGroomContent');
+    brideGroomContent.hidden=showingTimelinePage;
     brideGroomContent.innerHTML = formatEditableText(activeBrideGroomPage?.content || '');
     if (!brideGroomContent.innerHTML) brideGroomContent.innerHTML = '<p class="guest-empty">No Bride & Groom details have been added yet.</p>';
   }
@@ -1645,8 +1649,8 @@ function renderInlineEditing() {
     if(nav.id==='gatheringTabs')Object.assign(config,{pageHost:document.querySelector('#rsvpWeddingPages'),allowNoSelection:true,panelIds:['hostNotesSection','gatheringMenuSection','weddingMediaSection']});
     if (nav.id==='brideGroomTabs') Object.assign(config, { audience:'host',
       add: () => { state.brideGroomPages.push({id:crypto.randomUUID(),title:'New page',content:''});selectedBrideGroomPage=state.brideGroomPages.at(-1).id; },
-      rename: (tab,title) => { state.brideGroomPages.find(page=>page.id===tab.dataset.brideGroomPage).title=title; },
-      remove: tab => { state.brideGroomPages=state.brideGroomPages.filter(page=>page.id!==tab.dataset.brideGroomPage); }
+      rename: (tab,title) => { if(tab.dataset.brideGroomPage==='__wedding-timeline')state.timelineTabTitle=title;else state.brideGroomPages.find(page=>page.id===tab.dataset.brideGroomPage).title=title; },
+      remove: tab => { if(tab.dataset.brideGroomPage==='__wedding-timeline'){state.siteHiddenTabs??=[];state.siteHiddenTabs.push('brideGroomTabs:brideGroomPage=__wedding-timeline');}else state.brideGroomPages=state.brideGroomPages.filter(page=>page.id!==tab.dataset.brideGroomPage); }
     });
     if (nav.id==='matronInfoTabs') Object.assign(config,{audience:'party',externalHeading:true,
       rename:(tab,title)=>{
@@ -1695,7 +1699,7 @@ function renderRsvpInlineEditing() {
 }
 
 function renderWeddingPageToolbar(){
-  const icons={media:'M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',party:'M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z',attire:'M8 2h8l-2 5 4 13-6 4-6-4 4-13-2-5Zm2 1 2 3 2-3h-4Z',registry:'M2 8h20v5h-9v9h-2v-9H2V8Zm2 7h5v7H4v-7Zm11 0h5v7h-5v-7ZM7 1c3 0 5 5 5 5s2-5 5-5a3 3 0 0 1 0 6H7a3 3 0 0 1 0-6Zm0 2a1 1 0 0 0 0 2h3S8 3 7 3Zm10 0c-1 0-3 2-3 2h3a1 1 0 0 0 0-2Z',custom:'M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z'};
+  const icons={media:'M8 3 6 6H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-2-3H8Zm4 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',party:'M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z',attire:'M2 5v14l8-5V10L2 5Zm20 0-8 5v4l8 5V5ZM10 9h4v6h-4V9Z',registry:'M2 8h20v5h-9v9h-2v-9H2V8Zm2 7h5v7H4v-7Zm11 0h5v7h-5v-7ZM7 1c3 0 5 5 5 5s2-5 5-5a3 3 0 0 1 0 6H7a3 3 0 0 1 0-6Zm0 2a1 1 0 0 0 0 2h3S8 3 7 3Zm10 0c-1 0-3 2-3 2h3a1 1 0 0 0 0-2Z',custom:'M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z'};
   document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{
     const firstName=signedInPersonName.trim().split(/\s+/)[0];
     const title=button.dataset.weddingTab==='party' && firstName ? `${firstName}'s Information` : button.textContent.trim(),selected=button.getAttribute('aria-selected')==='true';

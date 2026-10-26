@@ -554,7 +554,8 @@ test('Wedding Timeline is private to hosts and remains host-editable', async () 
   ]);
   const pageTabs = html.match(/<nav id="weddingHostTabs"[\s\S]*?<\/nav>/)?.[0] || '';
 
-  assert.match(pageTabs, /data-wedding-tab="couple"[\s\S]*data-wedding-tab="timeline"[^>]*>Timeline<\/button>/);
+  assert.match(pageTabs, /data-wedding-tab="couple"/);
+  assert.doesNotMatch(pageTabs, /data-wedding-tab="timeline"/);
   assert.match(html, /id="weddingTimelineSection"[^>]*hidden/);
   assert.match(html, /<th scope="col">Time<\/th><th scope="col">What Happens<\/th><th scope="col">Notes<\/th>/);
   assert.match(html, /id="weddingTimelineAboveContent"[\s\S]*id="weddingTimelineBody"[\s\S]*id="weddingTimelineBelowContent"/);
