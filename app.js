@@ -1392,6 +1392,7 @@ function gatheringGalleryUrl(value) {
 }
 // Every gathering uses this single media surface and the same upload service.
 function renderGatheringMedia(hostView) {
+  for(const labels of [state.siteText,state.siteTabTitles])for(const key of Object.keys(labels || {}))if(labels[key]==='Upload Photos & Videos')labels[key]='Photos & Videos';
   const wedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
   const showing=(wedding?selectedWeddingTab:selectedGatheringTab)==='media';
   document.querySelector('#weddingMediaSection').hidden=!showing;

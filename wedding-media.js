@@ -1,5 +1,5 @@
 (() => {
-  let current, tab = 'upload', loadNumber = 0;
+  let current, mode = '', loadNumber = 0;
   const sessions = new Map();
   const node = id => document.getElementById(id);
   const key = ctx => JSON.stringify([ctx.base, ctx.host ? 'host' : ctx.account, ctx.name, ctx.preview, ctx.eventId]);
@@ -23,18 +23,21 @@
     if (!response.ok) { if (response.status === 401) sessions.delete(key(ctx)); throw new Error(result.error || `Upload service failed (${response.status}).`); }
     return result;
   }
-  function selectTab(value) {
-    tab = value;
-    document.querySelectorAll('[data-media-tab]').forEach(button => { const active = button.dataset.mediaTab === tab; button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1; });
-    node('weddingMediaUpload').hidden = tab !== 'upload'; node('weddingMediaView').hidden = tab !== 'view';
-    if (tab === 'view') loadGallery();
+  function selectShareMode(value) {
+    mode=value;
+    node('weddingMediaUploadForm').hidden=mode!=='upload';
+    node('weddingMediaLinkForm').hidden=mode!=='link';
+    node('weddingMediaChooseUpload').setAttribute('aria-expanded',String(mode==='upload'));
+    node('weddingMediaShareLink').setAttribute('aria-expanded',String(mode==='link'));
+    if(mode==='upload')DropboxUpload.show(current,api);
+    if(mode==='link')node('weddingMediaLink').focus();
   }
   function show(ctx) {
     ctx = { ...ctx, base:ctx.base.replace(/\/$/,'') };
     if (!current || key(current) !== key(ctx)) {
-      current = ctx; node('weddingMediaLinkForm').hidden=true;node('weddingMediaShareLink').setAttribute('aria-expanded','false');node('weddingMediaLinkStatus').textContent='';node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();selectTab('upload');
+      current = ctx;selectShareMode('');node('weddingMediaShareOptions').hidden=true;node('weddingMediaShare').setAttribute('aria-expanded','false');node('weddingMediaLinkStatus').textContent='';node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();loadGallery();
     } else current=ctx;
-    DropboxUpload.show(ctx, api);
+    if(mode==='upload')DropboxUpload.show(ctx, api);
   }
   async function loadGallery() {
     const ctx=current, attempt=++loadNumber;
@@ -58,15 +61,17 @@
     } catch(error) { if(attempt===loadNumber)status.textContent=error.message; }
   }
   function initialize() {
-    document.querySelectorAll('[data-media-tab]').forEach(button=>button.addEventListener('click',()=>selectTab(button.dataset.mediaTab)));
-    node('weddingMediaTabs').addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();selectTab(event.key==='Home'?'upload':event.key==='End'?'view':tab==='upload'?'view':'upload');document.querySelector(`[data-media-tab="${tab}"]`).focus();});
-    node('weddingMediaShareLink').addEventListener('click',()=>{
-      node('weddingMediaLinkForm').hidden=false;node('weddingMediaShareLink').setAttribute('aria-expanded','true');node('weddingMediaLink').focus();
+    node('weddingMediaShare').addEventListener('click',()=>{
+      const options=node('weddingMediaShareOptions');options.hidden=!options.hidden;
+      node('weddingMediaShare').setAttribute('aria-expanded',String(!options.hidden));
+      if(options.hidden)selectShareMode('');
     });
+    node('weddingMediaChooseUpload').addEventListener('click',()=>selectShareMode('upload'));
+    node('weddingMediaShareLink').addEventListener('click',()=>selectShareMode('link'));
     node('weddingMediaSaveLink').addEventListener('click',async()=>{
       const ctx=current,button=node('weddingMediaSaveLink'),status=node('weddingMediaLinkStatus');
       let url;try{url=new URL(node('weddingMediaLink').value.trim());if(!['http:','https:'].includes(url.protocol))throw new Error();}catch{status.textContent='Enter a full http or https photo-sharing link.';return;}
-      button.disabled=true;try{await api(ctx,'/links',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url.href})});node('weddingMediaLink').value='';status.textContent='Sharing link saved. Find it in View Photos & Videos.';}catch(error){status.textContent=error.message;}finally{button.disabled=false;}
+      button.disabled=true;try{await api(ctx,'/links',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url.href})});node('weddingMediaLink').value='';status.textContent='Sharing link saved.';loadGallery();}catch(error){status.textContent=error.message;}finally{button.disabled=false;}
     });
     node('weddingMediaRefresh').addEventListener('click',loadGallery);
   }
