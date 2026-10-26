@@ -1,0 +1,45 @@
+// Optional Chromium integration check. External requests and live state writes are blocked.
+const {chromium}=require('playwright');const assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(12000);const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',async route=>{if(!route.request().url().startsWith('http://127.0.0.1:8041/'))return route.abort();if(new URL(route.request().url()).pathname==='/'){const r=await route.fetch();return route.fulfill({response:r,body:(await r.text()).replace(/(<meta name="shared-state-url" content=")[^"]*/,'$1')});}return route.continue();});await page.goto('http://127.0.0.1:8041/');await page.waitForFunction(()=>typeof startApp==='function');
+await page.evaluate(()=>{localStateRevision+=1;appState=normalizeState(initialAppState());appState.accounts=[{name:'Casey Example',source:'website',selectedEvents:{wedding:true,thanksgiving:true,christmas:true},invitedEvents:{wedding:true,thanksgiving:true,christmas:true}}];const w=appState.events.wedding;w.weddingPartyMembers=[{id:'casey',name:'Casey Example',title:'Groomsman',responsibilities:'Help the groom',pages:[]}];w.weddingMealChoices=[{id:'chicken',name:'Chicken',audience:'Adults and children'}];w.sitePages=[{id:'saved-details',nav:'weddingPartyTabs',title:'What to Expect',content:'Default details body',audience:'guests'},{id:'travel',nav:'weddingPartyTabs',title:'Travel',content:'Travel body',audience:'all'}];hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;signedInPersonName='';viewedEventId='wedding';state=w;showSignedInDestination();render();});
+await page.locator('#hostHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});
+await page.locator('#editItemsButton').click();
+await page.locator('[data-enter-event="wedding"]').click();
+await page.getByRole('button',{name:'Background',exact:true}).click();
+await page.getByLabel('Background hex',{exact:true}).fill('#123456');await page.getByLabel('Background hex',{exact:true}).press('Tab');
+for(const id of ['wedding','thanksgiving','christmas'])assert.equal(await page.locator(`[data-enter-event="${id}"]`).evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');
+await page.locator('#eventSelectionHeading').click();await page.getByRole('button',{name:'Text',exact:true}).click();
+await page.getByLabel('Font',{exact:true}).selectOption('Georgia');
+await page.locator('#eventSelectionHeading').fill('Our gathering home');
+await page.getByRole('button',{name:'Done editing',exact:true}).click();
+assert.equal(await page.evaluate(()=>appState.gatheringHome.elementAppearance['@group:buttons'].backgroundColor),'#123456');
+assert.equal(await page.evaluate(()=>appState.events.wedding.elementAppearance?.['@group:buttons']?.backgroundColor),undefined);
+const home=await page.evaluate(()=>JSON.stringify(appState.gatheringHome));
+await page.locator('[data-enter-event="thanksgiving"]').click();await page.locator('#rsvpDialog').waitFor({state:'visible'});
+assert.notEqual(await page.locator('#rsvpConfirmEvent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');
+await page.locator('#editItemsButton').click();await page.locator('#rsvpConfirmEvent').click();
+await page.getByRole('button',{name:'Background',exact:true}).click();await page.getByLabel('Background hex',{exact:true}).fill('#654321');await page.getByLabel('Background hex',{exact:true}).press('Tab');
+await page.evaluate(()=>ElementAppearance.update(document.body,{backgroundColor:'#998877'}));
+await page.getByRole('button',{name:'Done editing',exact:true}).click();
+await page.locator('#hostHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});
+assert.equal(await page.locator('#eventSelectionHeading').textContent(),'Our gathering home');
+assert.equal(await page.locator('[data-enter-event="thanksgiving"]').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');
+assert.notEqual(await page.locator('body').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(153, 136, 119)');
+assert.equal(await page.evaluate(()=>JSON.stringify(appState.gatheringHome)),home);
+const snapshot=await page.evaluate(()=>JSON.stringify(appState));await page.reload();await page.waitForFunction(()=>typeof startApp==='function');
+await page.evaluate(saved=>{appState=normalizeState(JSON.parse(saved));hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;viewedEventId='christmas';state=appState.events.christmas;showEventSelection();},snapshot);
+assert.equal(await page.locator('#eventSelectionHeading').textContent(),'Our gathering home');
+assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('[data-enter-event="wedding"]')).backgroundColor),'rgb(18, 52, 86)');
+await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+// Guests see the same independently saved home design.
+await page.evaluate(()=>{hostAuthenticated=false;guestName='Casey Example';signedInPersonName='Casey Example';showEventSelection();});
+assert.equal(await page.locator('#eventSelectionHeading').textContent(),'Our gathering home');
+assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('[data-enter-event="wedding"]')).backgroundColor),'rgb(18, 52, 86)');
+assert.equal(await page.locator('#editItemsButton').isVisible(),false);
+// Host sign-in lands at selection, with no gathering RSVP automatically opened.
+await page.evaluate(()=>{guestName='';document.querySelector('#accountFirstName').value=HOST_PASSWORD;document.querySelector('#passwordForm').requestSubmit();});
+assert.equal(await page.locator('#eventSelectionPage').isVisible(),true);
+assert.equal(await page.locator('#rsvpDialog').evaluate(e=>e.open),false);
+assert.equal(await page.locator('#editItemsButton').isVisible(),true);
+assert.deepEqual(errors,[]);await browser.close();console.log('Home appearance and text persist independently across gatherings and reloads, with mobile layout intact.');
+})().catch(e=>{console.error(e);process.exit(1);});

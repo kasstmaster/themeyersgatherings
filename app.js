@@ -99,30 +99,30 @@ const GATHERING_COLORS = [
   ['header','Header','--ivory'], ['page','Page containers','--gathering-card-background'],
   ['inner','Inner containers','--gathering-inner-background'], ['text','Page text','--ink'], ['border','Borders','--border']
 ];
-function applyGatheringColors() {
-  GatheringPalette.apply(state.gatheringColors?.details || {});
+function applyGatheringColors(paletteState = state) {
+  GatheringPalette.apply(paletteState.gatheringColors?.details || {});
   for (const [, ,variable] of GATHERING_COLORS) document.body.style.removeProperty(variable);
   document.body.style.removeProperty('--orange-dark');
   document.body.style.removeProperty('--muted');
   document.body.style.removeProperty('--page-border');
   document.body.style.removeProperty('--gold-rule');
   for (const [key,,variable] of GATHERING_COLORS) {
-    const color=state.gatheringColors?.[key];
+    const color=paletteState.gatheringColors?.[key];
     if (/^#[0-9a-f]{6}$/i.test(color || '')) document.body.style.setProperty(variable,color);
   }
-  const gold=state.gatheringColors?.gold;
+  const gold=paletteState.gatheringColors?.gold;
   const customGold=/^#[0-9a-f]{6}$/i.test(gold || '');
   document.body.classList.toggle('custom-gathering-gold',customGold);
   if(customGold){document.body.style.setProperty('--page-border',gold);document.body.style.setProperty('--gold-rule',gold);}
-  if(/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.border || ''))document.body.style.setProperty('--page-border',state.gatheringColors.border);
-  if (/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.text || '')) document.body.style.setProperty('--muted',state.gatheringColors.text);
-  document.body.classList.toggle('custom-gathering-borders',/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.border || ''));
-  document.body.classList.toggle('custom-gathering-header',/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.header || ''));
-  if (state.gatheringColors?.accent) {
-    const color=state.gatheringColors.accent;
+  if(/^#[0-9a-f]{6}$/i.test(paletteState.gatheringColors?.border || ''))document.body.style.setProperty('--page-border',paletteState.gatheringColors.border);
+  if (/^#[0-9a-f]{6}$/i.test(paletteState.gatheringColors?.text || '')) document.body.style.setProperty('--muted',paletteState.gatheringColors.text);
+  document.body.classList.toggle('custom-gathering-borders',/^#[0-9a-f]{6}$/i.test(paletteState.gatheringColors?.border || ''));
+  document.body.classList.toggle('custom-gathering-header',/^#[0-9a-f]{6}$/i.test(paletteState.gatheringColors?.header || ''));
+  if (paletteState.gatheringColors?.accent) {
+    const color=paletteState.gatheringColors.accent;
     if (/^#[0-9a-f]{6}$/i.test(color)) document.body.style.setProperty('--orange-dark',`#${[1,3,5].map(i=>Math.round(parseInt(color.slice(i,i+2),16)*.65).toString(16).padStart(2,'0')).join('')}`);
   }
-  document.body.classList.toggle('custom-gathering-colors',GATHERING_COLORS.some(([key])=>/^#[0-9a-f]{6}$/i.test(state.gatheringColors?.[key] || '')));
+  document.body.classList.toggle('custom-gathering-colors',GATHERING_COLORS.some(([key])=>/^#[0-9a-f]{6}$/i.test(paletteState.gatheringColors?.[key] || '')));
 }
 
 function christmasItems() {
@@ -160,6 +160,7 @@ function initialAppState() {
     signupResetVersion: SIGNUP_RESET_VERSION,
     accounts: structuredClone(GUEST_ACCOUNTS),
     invitationTemplates: [],
+    gatheringHome: {},
     events: {
       thanksgiving: makeEvent(structuredClone(defaultItems), DEFAULT_EVENT_DATE),
       christmas: makeEvent(christmasItems(), DEFAULT_CHRISTMAS_DATE, CHRISTMAS_MENU_VERSION),
@@ -252,6 +253,7 @@ function normalizeState(saved) {
             ]))
           };
         }),
+        gatheringHome: saved.gatheringHome && typeof saved.gatheringHome==='object' && !Array.isArray(saved.gatheringHome) ? saved.gatheringHome : {},
         events: { ...fresh.events, ...saved.events },
         invitationTemplates: Array.isArray(saved.invitationTemplates) ? saved.invitationTemplates : []
       };
@@ -1141,7 +1143,7 @@ function showEventSelection() {
   document.body.className = 'theme-wedding';
   updateSignedInAccountBanner();
   updateHostToolsPanel();
-  GapLayout.refresh();
+  render();
   window.scrollTo({top:0,left:0,behavior:'auto'});
 }
 function videoEmbedUrl(url) {
@@ -1458,18 +1460,38 @@ function renderGatheringPages(features,hostView) {
   document.querySelector('.menu-section').hidden=!features.menu || !hostView || tab!=='menu';
   document.querySelector('#copyMenuButton').hidden=state.items.length===0;
 }
+// The shared gathering chooser has site-wide editing state, independent of every event.
+function renderGatheringHome() {
+  const home=appState.gatheringHome??={};
+  const host=isHostView();
+  document.body.className='theme-wedding';
+  applyGatheringColors({});
+  document.title='The Meyers';
+  renderEventSelection();
+  updateSignedInAccountBanner();
+  updateHostToolsPanel();
+  const format=(value,options)=>formatEditableText(value,options);
+  const save=()=>saveState({refresh:!SiteEditing.flushing});
+  SiteEditing.render({host,eventId:'gathering-home',state:home,save,refresh:render,format,escape:escapeHtml});
+  SiteEditing.staticText(document.querySelector('#eventSelectionPage'));
+  GapLayout.render({state:home,eventId:'gathering-home',host,editing:SiteEditing.enabled,save:()=>saveState({refresh:false})});
+  PageActions.sync();
+  syncHostToolbar();
+  ElementAppearance.render({state:home,eventId:'gathering-home',scope:'#eventSelectionPage',host,enabled:SiteEditing.enabled,
+    save:()=>saveState({refresh:false}),format,upload:async file=>(await uploadTemplateBackground(`home-appearance-${crypto.randomUUID()}`,file)).url});
+}
 function render() {
   ElementAppearance.restore();
   if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}
   GapLayout.beforeRender();
   SiteEditing.beforeRender();
   syncGatheringDefinitions(appState.events);
+  if(!document.querySelector('#eventSelectionPage').hidden){renderGatheringHome();return;}
   const event = EVENT_DETAILS[viewedEventId];
   const features=GatheringFeatures.forGathering(viewedEventId);
   const isWedding = features.weddingPages;
   const hostView = isHostView();
   updateSignedInAccountBanner();
-  if(!document.querySelector('#eventSelectionPage').hidden)renderEventSelection();
   document.body.className = `theme-${event.theme}`;
   applyGatheringColors();
   document.title = 'The Meyers';
@@ -1849,11 +1871,9 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
     updateHostToolsPanel();
     const action = pendingAccountAction;
     pendingAccountAction = null;
-    showSignedInDestination();
+    showEventSelection();
     document.querySelector('#accountPasswordError').textContent = '';
     firstNameInput.value = '';
-    render();
-    openRsvp({fromEntry:true});
     if (action) action();
     return;
   }

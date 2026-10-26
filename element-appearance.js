@@ -40,7 +40,7 @@
     return null;
   }
   function find(path){
-    if(path.startsWith('@group:'))return [...document.querySelectorAll('#eventPage *,#rsvpDialog *,#eventSelectionPage *')].filter(element=>group(element)===path.slice(7));
+    if(path.startsWith('@group:'))return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *')].filter(element=>group(element)===path.slice(7));
     try{return [...document.querySelectorAll(path)];}catch{return [];}
   }
   function appearancePath(target){if(target.matches?.('[data-shared-details]'))return '[data-shared-details]';const kind=group(target);return kind==='toolbar'?'.event-dock':kind?'@group:'+kind:selector(target);}
