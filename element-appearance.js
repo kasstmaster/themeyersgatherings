@@ -28,6 +28,7 @@
     if(target.matches('.event-dock'))return 'toolbar';
     const dialog=target.closest('dialog');if(dialog && dialog.id!=='rsvpDialog')return null;
     if(target.closest('.element-editor-toolbar,#hostQuickActions,#editItemsButton,[id^="admin"],.inline-portal-editor') || target.closest(contentText))return null;
+    if(target.matches('.summary-strip'))return 'inner-containers';
     if(target.matches('.summary-item>strong,.summary-stat>strong,.counter-row>div>output'))return 'count-values';
     if(target.matches('.summary-item>span,.summary-stat>span,.counter-row>div>strong,.counter-row>div>span'))return 'count-titles';
     if(target.matches('.summary-item,.summary-stat,.counter-row'))return 'counts';
@@ -38,6 +39,7 @@
     if(target.matches('button,a.primary-button,a.registry-button,.primary-button'))return 'buttons';
     if(target.matches('h1,h2,h3,h4,h5,h6,legend,.section-kicker'))return 'titles';
     // A subpage may also carry outer-page classes for layout; its surface stays inner.
+    if(target.id!=='rsvpForm' && target.closest('#rsvpForm') && target.matches('.host-outer-panel,.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'inner-containers';
     if(target.matches('#rsvpForm,.event-selection-card,.host-outer-panel'))return 'containers';
     if(target.matches('.wedding-tab-content,.wedding-party-card,.gathering-subpage,.category-card,.perfect-experience-panel,.guest-attire-guidance>article,[data-attire-group]'))return 'inner-containers';
     if(target.matches('.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'containers';
