@@ -28,9 +28,9 @@ Serve the repository locally on port 8041, then run `node scripts/verify-element
 
 ## Host navigation and account sessions
 
-The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **Home** returns to gathering selection. **Accounts**, **History**, and the **+** new-gathering action stay in the same toolbar. Gathering shortcuts remain available to guests. **Templates** is in the top editing toolbar.
+The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **Home** returns to gathering selection. **Accounts**, **All Pages**, and **History** stay in the toolbar. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the top editing toolbar.
 
-In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. Host controls remain available during the account session; choosing a host management action restores the host context first. Accounts without gathering access have disabled sign-in icons.
+In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, only the account’s normal pages and controls appear. The sole host-session control is **Leave account**, fixed at the top-right where Edit normally appears. Accounts without gathering access have disabled sign-in icons.
 
 Run `node scripts/verify-host-toolbar.cjs` with the same local browser setup to check persistent controls across dialogs, Home, per-person sign-in, host return, Templates placement, and mobile layout.
 
