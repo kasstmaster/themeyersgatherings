@@ -59,3 +59,9 @@ RSVP steps. The selected element label identifies shared buttons, titles, tabs,
 counts, containers and inner containers. Appearance edits apply to matching
 components; editing their names or words remains local. Page-content text boxes
 keep independent colors, fonts and selected-text formatting.
+
+To reorder tabs, select a tab in Edit mode and use **Move left** or **Move right**
+in the top toolbar. The tab stays selected and its order is saved for the current
+gathering. Toolbar page options move within their navigation group; The Meyers
+and Print Page keep their fixed positions. Spaces, arrow keys and clicks inside
+an active title edit change the text/caret rather than activating the tab.

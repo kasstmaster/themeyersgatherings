@@ -84,7 +84,7 @@
     for(const element of editables){element.removeAttribute('contenteditable');element.removeAttribute('spellcheck');}
     editables=[];target?.classList.remove('element-editor-selected');target=null;entry=null;range=null;fieldDraft=null;dirty=false;
     const panel=toolbar?.querySelector('[data-editor-panel]');if(panel){panel.replaceChildren();panel.hidden=true;}
-    if(toolbar)toolbar.querySelector('[data-editor-selection]').textContent='Click an element to edit';
+    if(toolbar){toolbar.querySelector('[data-editor-selection]').textContent='Click an element to edit';toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=true);}
   }
   function status(text){const live=toolbar?.querySelector('[data-editor-status]');if(live)live.textContent=text;}
   function labelInput(parent,title,type,value,change){
@@ -111,7 +111,7 @@
       fieldDraft={inputs:controls,entry};
       button('Apply',()=>{if(!controls.every(input=>input.reportValidity()))return;flush();const values=controls.map(input=>input.value);SiteEditing.persist(()=>{entry.commit?.(values);fields.forEach((spec,index)=>{spec.value=values[index];});});SiteEditing.editorContext.refresh();},parent);
     }
-    for(const [title,action] of entry?.options?.actions || [])button(title,()=>{flush();action();},parent);
+    for(const [title,action] of entry?.options?.actions || [])if(!['Move left','Move right'].includes(title))button(title,()=>{flush();action();},parent);
     if(entry?.addPage){const input=labelInput(parent,'New page title','text','',()=>{});button('Add page',()=>{if(input.value.trim()){flush();entry.addPage(input.value.trim());}},parent);}
     if(entry?.settings)button('Edit '+entry.settings.title,()=>{flush();closeSettings();parent.querySelector('.element-editor-settings')?.remove();const area=node('div');area.className='element-editor-settings';parent.append(area);entry.settings.build(area);},parent);
     if(entry?.portal){
@@ -179,6 +179,7 @@
     if(toolbar.querySelector('[data-editor-chooser]'))toolbar.querySelector('[data-editor-chooser]').value=ElementAppearance.selector(target);
     const kind=ElementAppearance.group(target);
     toolbar.querySelector('[data-editor-selection]').textContent=ElementAppearance.label(target)+(kind?' · Shared '+kind.replaceAll('-',' '):'');
+    toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=!entry?.options?.actions?.some(([title])=>title===button.dataset.editorMove));
     const fields=entry?.fields;
     const readonly=Boolean(fields?.[0]?.readonly || fields?.length===1 && !['text','page','notes'].includes(entry.title));
     if((fields?.length===1 || entry?.visual) && target.getClientRects().length && target.getBoundingClientRect().height){
@@ -187,7 +188,8 @@
         part.setAttribute('contenteditable','true');part.spellcheck=!readonly;
         if(readonly){const prevent=event=>event.preventDefault();part.addEventListener('beforeinput',prevent);restores.push(()=>part.removeEventListener('beforeinput',prevent));}
         const input=()=>{dirty=true;};part.addEventListener('input',input);restores.push(()=>part.removeEventListener('input',input));
-        const keydown=event=>{if(readonly){if(event.key.length===1 || ['Backspace','Delete','Enter'].includes(event.key))event.preventDefault();}else if(event.key==='Enter'){event.preventDefault();if(target.matches('button,a'))flush();else textCommand('insertLineBreak');}};part.addEventListener('keydown',keydown);restores.push(()=>part.removeEventListener('keydown',keydown));
+        const keydown=event=>{event.stopPropagation();if(!readonly && [' ','Spacebar'].includes(event.key) && target.matches('button,a,[role="tab"]')){event.preventDefault();document.execCommand('insertText',false,' ');dirty=true;rememberSelection();return;}if(readonly){if(event.key.length===1 || ['Backspace','Delete','Enter'].includes(event.key))event.preventDefault();}else if(event.key==='Enter'){event.preventDefault();if(target.matches('button,a'))flush();else textCommand('insertLineBreak');}};part.addEventListener('keydown',keydown);restores.push(()=>part.removeEventListener('keydown',keydown));
+        const keyup=event=>{event.stopPropagation();if([' ','Spacebar','Enter'].includes(event.key) && target.matches('button,a,[role="tab"]'))event.preventDefault();};part.addEventListener('keyup',keyup);restores.push(()=>part.removeEventListener('keyup',keyup));
         const paste=event=>{event.preventDefault();if(!readonly){const value=event.clipboardData.getData('text/plain');textCommand('insertText',target.matches('button,a')?value.replace(/\r?\n/g,' '):value);}};part.addEventListener('paste',paste);restores.push(()=>part.removeEventListener('paste',paste));
       }
     }
@@ -218,6 +220,14 @@
       const chooser=node('select');chooser.dataset.editorChooser='';chooser.setAttribute('aria-label','Select an element');row.append(chooser);chooser.addEventListener('change',()=>{const element=document.querySelector(chooser.value);if(element)select(element);});
       const selection=node('span','Click an element to edit');selection.dataset.editorSelection='';row.append(selection);
       for(const title of ['Text','Lists','Background','Border','Gap']){const control=button(title,()=>showPanel(title),row);control.dataset.editorGroup=title;control.setAttribute('aria-expanded','false');if(title==='Gap'){control.draggable=true;control.dataset.newGap='';control.title='Drag a new gap between elements';}}
+      for(const title of ['Move left','Move right']){
+        const move=button(title,()=>{
+          if(!target)return;const path=ElementAppearance.selector(target);flush();
+          const current=document.querySelector(path),record=current && SiteEditing.editorFor(current);
+          record?.options?.actions?.find(([name])=>name===title)?.[1]();
+          const next=document.querySelector(path);if(next){select(next);editables[0]?.focus({preventScroll:true});}
+        },row);move.dataset.editorMove=title;move.hidden=true;
+      }
       const parent=button('Select container',()=>{if(target?.parentElement && !target.matches('body,dialog')){flush();select(target.parentElement);}},row);parent.title='Select the container around this element';
       const open=button('Open page / use button',()=>{if(!target)return;const current=target;release();allowAction=true;try{current.click();}finally{allowAction=false;}},row);open.dataset.editorOpen='';open.hidden=true;
       button('Save',()=>{const structured=flush();if(structured)SiteEditing.editorContext.refresh();status('Saved.');},row);
@@ -237,7 +247,7 @@
   document.addEventListener('selectionchange',rememberSelection);
   document.addEventListener('click',event=>{
     if(!context?.host || !context.enabled || allowAction || event.target.closest(excluded) || event.target.closest('#editItemsButton,#hostToolsPanel .host-tool-actions,#hostQuickActions,#hostToolsButton,#invitationTemplatesButton'))return;
-    if(target && editables.some(part=>part.contains(event.target)))return;
+    if(target && editables.some(part=>part.contains(event.target))){event.stopImmediatePropagation();if(target.matches('button,a,[role="tab"]'))event.preventDefault();return;}
     const element=pick(event.target);if(!element)return;
     event.preventDefault();event.stopImmediatePropagation();select(element);
     const part=editables.find(part=>part.contains(event.target)) || editables[0];
