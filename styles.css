@@ -902,3 +902,26 @@ body.theme-neutral{--navy:#303030;--navy-2:#666666;--body-background:#f3f3f3;--s
 #weddingMediaShareOptions[hidden]{display:none}
 #weddingMediaUploadForm,#weddingMediaLinkForm{margin-top:20px}
 #weddingMediaView{margin-top:28px}
+
+#weddingPartyTabs>button:is([data-wedding-tab="party"],[data-wedding-tab="attire"],[data-wedding-tab="registry"]){display:none!important}
+#rsvpPageNavigation{display:contents}
+#rsvpPageNavigation[hidden]{display:none!important}
+#rsvpPageNavigation button{display:flex;flex:1 1 0;min-width:0;max-width:180px;min-height:56px;align-items:center;justify-content:center;flex-direction:column;gap:5px;padding:5px 4px;border:0;background:transparent;color:inherit;font:600 .72rem/1.15 Arial,sans-serif}
+#rsvpPageNavigation span{white-space:normal;text-align:center}
+#rsvpPageNavigation .toolbar-icon{width:24px;height:24px;fill:currentColor}
+.rsvp-party-attire-intro{grid-column:1/-1}
+
+.event-dock button{color:var(--toolbar-text,#77757a);background:var(--toolbar-option-background,transparent)}
+.event-dock button:is([aria-pressed="true"],[aria-current="page"]){color:var(--toolbar-active-text,#461f33)!important;background:var(--toolbar-selected-background,transparent)!important}
+.event-dock button:not([aria-pressed="true"]):not([aria-current="page"]){color:var(--toolbar-text,#77757a)!important;background:var(--toolbar-option-background,transparent)!important}
+.event-dock button :is(span,svg,path){color:inherit!important}
+
+#hostQuickActions{position:fixed;top:0;left:0;z-index:12000;display:flex;gap:0}
+#hostQuickActions[hidden]{display:none!important}
+#hostQuickActions button{position:static;box-sizing:border-box;width:44px;height:40px;margin:0;padding:8px 10px;border:1px solid var(--toolbar-border,#b89968);border-radius:4px;background:var(--toolbar-background,#fffaf1);color:var(--toolbar-text,#132841);cursor:pointer}
+#hostQuickActions svg{display:block;width:22px;height:22px;fill:currentColor}
+@media print{#hostQuickActions{display:none!important}}
+
+.has-host-toolbar .element-editor-row{padding-left:calc(var(--host-shortcuts-width,88px) + 4px)}
+
+#rsvpDialog:has(>#rsvpPageToolbar:not(.host-toolbar-replaced)){padding-bottom:84px}

@@ -28,7 +28,7 @@ Serve the repository locally on port 8041, then run `node scripts/verify-element
 
 ## Host navigation and account sessions
 
-The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **Home** returns to gathering selection. **Accounts** and **History** stay in the toolbar. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the top editing toolbar.
+The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **The Meyers** returns everyone to gathering selection. **Accounts** and **History** are host-only fixed corner icons. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the top editing toolbar.
 
 In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, the account’s normal pages appear, with Edit and the host toolbar retained for the authenticated host. **Leave account** sits immediately left of Edit. Host management actions return to the host context; ordinary guests never see these controls. Accounts without gathering access have disabled sign-in icons.
 
@@ -40,6 +40,22 @@ Run `node scripts/verify-gap-editing.cjs` to verify editable existing spacing, s
 
 Choosing a gathering as host opens its first RSVP page. The host counters appear directly below RSVP. The previous host home page is removed. Wedding hosts default to Bride & Groom; guests retain their normal Details or personal Wedding Party default.
 
-Use the page buttons on the first RSVP page in the host toolbar to open Bride & Groom, Timeline, Details, Wedding Party, Attire, Registry, Photos & Videos, and custom Wedding pages. Standard gatherings expose their host Notes and Menu there. These host buttons and the counters are hidden in guest views. This navigation also works during editing; choose an original page label through Select an element to rename or reorder it.
+Host first-page buttons open Bride & Groom, Timeline, Photos & Videos and custom pages. Standard gatherings expose Notes and Menu there. Information, Attire, Registry and Details are toolbar options, followed by Print Page. Private host buttons and counters stay hidden in guest views. This navigation also works during editing; choose an original page label through Select an element to rename or reorder it.
 
 Run `node scripts/verify-host-rsvp-home.cjs` to check host landing, counter placement, page switching, standard gatherings, and guest privacy.
+
+Toolbar colors: in Edit mode, click the toolbar background or choose its toolbar
+element from Select an element. Text contains selected/unselected text and icon
+colors; Background contains overall and selected/unselected option backgrounds.
+Each setting includes a color picker, hex input and opacity. These settings apply
+to every option, including the guest toolbar for the same gathering.
+
+Accounts and History are fixed icons at the top-left beside the chooser’s +.
+The Meyers returns any signed-in user to gathering selection. Wedding Information,
+Attire, Registry and Details live in the toolbar, with Print Page last.
+
+Matching component appearance is shared within the current gathering, including
+RSVP steps. The selected element label identifies shared buttons, titles, tabs,
+counts, containers and inner containers. Appearance edits apply to matching
+components; editing their names or words remains local. Page-content text boxes
+keep independent colors, fonts and selected-text formatting.

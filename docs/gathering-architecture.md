@@ -82,7 +82,40 @@ Share Your Photos & Videos reveals Upload and Share Link actions. Exactly one
 form is visible at a time; collapsing sharing hides both forms. The gallery and
 host-published folder link remain available below the sharing flow.
 
-Non-Wedding gatherings default to Photos & Videos on the first RSVP page for
-hosts and guests, including newly created gatherings. They omit the redundant
-Photos & Videos navigation button under RSVP. Wedding keeps its existing default
-page and Photos & Videos button. Host Notes/Menu remain available as page buttons.
+Guests, including wedding party members, start on Photos & Videos in every
+ gathering. Hosts retain their planning defaults (Bride & Groom for Wedding,
+Notes for standard gatherings). Photos & Videos remains a button under RSVP.
+Information, Attire, Registry and Details use shared toolbar navigation, with
+Print Page last. Personal Information labels use two lines. Wedding RSVP starts
+with attire for guests and wedding party members; party attire uses the same
+role filtering and private gallery renderer as the main Attire page.
+
+Toolbar appearance is shared through the `.event-dock` saved appearance entry
+within each gathering. The editor exposes selected/unselected text and icon
+colors, selected/unselected option backgrounds, and overall background/border
+controls with hex, color pickers and opacity. Root toolbar editing propagates
+these colors to all its options and to the guest toolbar for that gathering.
+Accounts and History are fixed host-only corner shortcuts beside the chooser's
++ button. The Meyers is the shared home action for hosts and guests.
+
+## Shared appearance groups within a gathering
+
+`ElementAppearance.group` classifies buttons, toolbar options, tabs, titles,
+counts, outer containers and inner containers once for every gathering. New
+appearance edits save under `@group:<kind>` in that gathering’s
+`elementAppearance`. Rendering applies the group to existing and subsequently
+rendered matching elements, including RSVP steps. Editing fonts, sizes, emphasis
+and colors on buttons/titles/counts/tabs stores typography independently of
+content. Names, labels and page wording still save to their individual fields.
+Rich content text boxes retain their individual appearance and selected-text
+formatting. Admin dialogs are outside these public component groups.
+
+Existing per-element styles remain supported; a new group edit supersedes the
+same properties on matching individual elements. Other gatherings keep their
+own appearance data. Toolbar selected/unselected controls remain shared and
+clear conflicting option-level color edits when changed.
+
+`verify-grouped-appearance.cjs` checks propagation through RSVP, distinct words,
+independent content formatting, structural groups and gathering isolation.
+`verify-toolbar-colors.cjs` and `verify-rsvp-page-navigation.cjs` cover shared
+toolbar states, guest defaults, navigation, shortcuts and role-specific attire.

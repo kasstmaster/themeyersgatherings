@@ -1026,7 +1026,7 @@ function updateHeaderImage(event) {
 function isViewingAsGuest() { return hostAuthenticated && Boolean(hostWeddingPartyViewName); }
 function isHostView() { return hostAuthenticated && !isViewingAsGuest(); }
 const hostDialogStack=[];
-const persistentHostControls=['hostToolsPanel','editItemsButton','cancelViewAsButton'].map(id=>document.getElementById(id));
+const persistentHostControls=['hostToolsPanel','editItemsButton','cancelViewAsButton','hostQuickActions'].map(id=>document.getElementById(id));
 function activeHostDialog(){return hostDialogStack.filter(dialog=>dialog.open).at(-1) || [...document.querySelectorAll('dialog[open]')].at(-1);}
 function syncHostToolbar(records=[]) {
   for(const record of records)if(record.target.matches('dialog')){
@@ -1034,26 +1034,38 @@ function syncHostToolbar(records=[]) {
     if(record.target.open)hostDialogStack.push(record.target);
   }
   persistentHostControls[0].hidden=!hostAuthenticated;
+  document.querySelector('#hostQuickActions').hidden=!hostAuthenticated;
   const owner=activeHostDialog() || document.body;
   for(const control of persistentHostControls)if(control.parentElement!==owner)owner.append(control);
   document.querySelector('#newGatheringButton').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || Boolean(activeHostDialog());
   document.querySelector('#cancelViewAsButton').hidden=!isViewingAsGuest();
+  document.body.style.setProperty('--host-shortcuts-width',document.querySelector('#hostQuickActions').getBoundingClientRect().width+'px');
   const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated || SiteEditing.enabled;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
   document.querySelector('#cancelViewAsButton').style.right=(edit.hidden?0:edit.getBoundingClientRect().width)+'px';
   document.body.classList.toggle('has-host-toolbar',hostAuthenticated);
   document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',hostAuthenticated);
   document.querySelector('#eventDock').hidden=hostAuthenticated || !guestName;
+  const guestBar=document.querySelector('#rsvpPageToolbar');
+  const guestBarOwner=document.querySelector(document.querySelector('#rsvpDialog').open?'#rsvpDialog':'#rsvpEventConfirmation');
+  if(guestBar.parentElement!==guestBarOwner)guestBarOwner.append(guestBar);
+  const guestPrint=guestBar.querySelector('[data-page-export]');if(guestPrint)guestPrint.hidden=document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden');
+  const guestHome=document.querySelector('#guestHomeButton');
+  const guestHomeOwner=document.querySelector(document.querySelector('#rsvpDialog').open?'#rsvpPageToolbar':'#eventDock');
+  if(guestHome.parentElement!==guestHomeOwner)guestHomeOwner.prepend(guestHome);
+  guestHome.hidden=hostAuthenticated || !guestName;
   const print=document.querySelector('#hostToolsPanel [data-page-export]');if(print)print.hidden=Boolean(document.querySelector('#rsvpDialog').open && document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden'));
+  const navigation=document.querySelector('#rsvpPageNavigation');if(navigation)navigation.hidden=!GatheringFeatures.forGathering(viewedEventId).weddingPages || !document.querySelector('#rsvpDialog').open || document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden');
   if(SiteEditing.enabled)ElementEditor.refresh();
 }
 document.addEventListener('close',()=>syncHostToolbar(),true);
 new MutationObserver(records=>syncHostToolbar(records)).observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']});
 function showSiteDialog(dialog){if(dialog.id!=='rsvpDialog' && dialog.parentElement.closest('[hidden]'))document.body.append(dialog);dialog.showModal();}
 async function closeHostDialogs(){await Promise.all([...document.querySelectorAll('dialog[open]')].map(dialog=>new Promise(resolve=>{dialog.addEventListener('close',resolve,{once:true});dialog.close();})));}
-document.querySelector('#hostHomeButton').addEventListener('click',async()=>{
-  if(!hostAuthenticated)return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
+async function showGatheringsHome(){
+  if(!guestName && !hostAuthenticated)return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
   await closeHostDialogs();if(isViewingAsGuest())restoreHostSession();showEventSelection();updateHostToolsPanel();
-});
+}
+for(const id of ['hostHomeButton','guestHomeButton'])document.getElementById(id).addEventListener('click',showGatheringsHome);
 function updateHostToolsPanel() {
   const viewingAsGuest = isViewingAsGuest();
   document.querySelector('#hostToolsPanel').hidden = !hostAuthenticated;
@@ -1394,14 +1406,14 @@ function gatheringGalleryUrl(value) {
 function renderGatheringMedia(hostView) {
   for(const labels of [state.siteText,state.siteTabTitles])for(const key of Object.keys(labels || {}))if(labels[key]==='Upload Photos & Videos')labels[key]='Photos & Videos';
   const wedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
-  const showing=(wedding?selectedWeddingTab:selectedGatheringTab || 'media')==='media';
+  const showing=(wedding?selectedWeddingTab:selectedGatheringTab || (hostView?'notes':'media'))==='media';
   document.querySelector('#weddingMediaSection').hidden=!showing;
   document.querySelector('#rsvpWeddingPages').hidden=!wedding && !hostView && !showing;
   if(!wedding){
-    document.querySelector('#weddingPartyTabs').hidden=true;
-    document.querySelector('#weddingRsvpUploadToolbar').hidden=true;
+    document.querySelector('#weddingPartyTabs').hidden=false;
+    document.querySelector('#weddingRsvpUploadToolbar').hidden=false;
     document.querySelectorAll('#weddingPartyTabs>[data-wedding-tab]').forEach(button=>{
-      button.hidden=true;
+      button.hidden=button.dataset.weddingTab!=='media';
       button.setAttribute('aria-selected',String(showing && !button.hidden));
     });
   }
@@ -1416,7 +1428,7 @@ function renderGatheringMedia(hostView) {
 function renderGatheringPages(features,hostView) {
   if(selectedGatheringTab==='details')selectedGatheringTab=null;
   if(!hostView && selectedGatheringTab==='notes')selectedGatheringTab='menu';
-  const tab=selectedGatheringTab || 'media';
+  const tab=selectedGatheringTab || (hostView?'notes':'media');
   document.querySelector('#gatheringTabs').hidden=!hostView || (!features.menu && !features.notes);
   document.querySelectorAll('[data-gathering-tab]').forEach(button=>{
     button.hidden=!hostView || (button.dataset.gatheringTab==='notes' && !features.notes);
@@ -1520,6 +1532,7 @@ function render() {
   syncHostToolbar();
   renderWeddingPageToolbar();
   renderHostFirstPageActions();
+  renderRsvpPageNavigation();
   ElementAppearance.render({state,eventId:viewedEventId,host:hostView,enabled:SiteEditing.enabled,
     save:()=>saveState({refresh:false}),format:(value,options)=>formatEditableText(value,options),upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url});
 }
@@ -1649,6 +1662,7 @@ function renderInlineEditing() {
     if (nav.id==='weddingHostTabs')Object.assign(config,{audience:'host',allowNoSelection:true,pageHost:document.querySelector('#rsvpWeddingPages'),panelIds:['weddingPartySection','registryAttireSection','registrySection','whatToExpectSection','weddingMediaSection','hostNotesSection','gatheringMenuSection']});
     SiteEditing.tabs(nav,config);
   });
+  document.querySelectorAll('.event-dock').forEach(toolbar=>SiteEditing.field(toolbar,'toolbar',[],()=>{}));
   renderRsvpInlineEditing();
 }
 function renderRsvpInlineEditing() {
@@ -1689,9 +1703,33 @@ function renderWeddingPageToolbar(){
     button.innerHTML=`<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons[button.dataset.weddingTab] || icons.custom}"/></svg><span>${escapeHtml(title)}</span>`;
   });
 }
+function renderRsvpPageNavigation(){
+  const nav=document.querySelector('#rsvpPageNavigation');nav.replaceChildren();
+  const owner=document.querySelector(hostAuthenticated?'#hostToolsPanel':'#rsvpPageToolbar');
+  const print=owner.querySelector('[data-toolbar-page-actions]');owner.insertBefore(nav,print);
+  nav.hidden=!GatheringFeatures.forGathering(viewedEventId).weddingPages || !document.querySelector('#rsvpDialog').open || document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden');
+  if(nav.hidden)return;
+  const add=(title,source)=>{
+    const button=document.createElement('button');button.type='button';button.id=`rsvp-nav-${source?.dataset.weddingTab || 'details'}`;button.setAttribute('aria-label',title);button.setAttribute('aria-pressed',String(source?source.getAttribute('aria-selected')==='true':selectedWeddingTab==='details'));
+    button.innerHTML=source?.querySelector('svg')?.outerHTML || '<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z"/></svg>';
+    const label=document.createElement('span');
+    if(source?.dataset.weddingTab==='party' && title.endsWith(' Information')){label.append(document.createTextNode(title.slice(0,-12)),document.createElement('br'),document.createTextNode('Information'));}else label.textContent=title;
+    button.append(label);nav.append(button);
+    const entry=source && SiteEditing.editorFor(source);if(entry?.fields)SiteEditing.field(button,entry.title,entry.fields,entry.commit,entry.options);
+    button.addEventListener('click',()=>{
+      commitAllPendingEditorInputs();
+      SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);SiteEditing.resetTabSelection('weddingHostTabs',viewedEventId);
+      if(source)ElementEditor.activate(source);else{selectedWeddingTab='details';selectedGuestTab='details';render();}
+      [...document.querySelectorAll('#rsvpWeddingPages>section')].find(element=>!element.hidden && element.getClientRects().length)?.scrollIntoView({block:'start',behavior:'auto'});
+    });
+  };
+  document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{if(!button.hidden && ['party','attire','registry'].includes(button.dataset.weddingTab))add(button.textContent.trim(),button);});
+  add('Details');
+}
 function renderHostFirstPageActions(){
   const menu=document.querySelector('#hostFirstPageActions');menu.hidden=!isHostView();menu.replaceChildren();if(!isHostView())return;
   const add=(title,source)=>{
+    if(['party','attire','registry'].includes(source?.dataset.weddingTab) || title==='Details')return;
     const button=document.createElement('button');button.type='button';
     button.innerHTML='<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z"/></svg>';
     const icon=source?.querySelector('svg');if(icon)button.firstElementChild.replaceWith(icon.cloneNode(true));
@@ -1711,6 +1749,7 @@ function renderHostFirstPageActions(){
     document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{if(!button.hidden)add(button.textContent.trim(),button);});
   }else{
     document.querySelectorAll('#gatheringTabs>button').forEach(button=>{if(!button.hidden)add(button.textContent.trim(),button);});
+    const upload=document.querySelector('#uploadPhotosButton');add(upload.textContent.trim(),upload);
   }
 }
 function renderEventDock() {
@@ -2062,7 +2101,7 @@ function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   if(document.querySelector('#rsvpDialog').open)return;
   if(document.querySelector('#eventPage').hidden)showSignedInDestination();
   if(GatheringFeatures.forGathering(viewedEventId).weddingPages){
-    selectedWeddingTab=page || (isHostView()?'couple':isSignedInWeddingPartyMember()?'party':'details');selectedGuestTab='details';
+    selectedWeddingTab=page || (isHostView()?'couple':'media');selectedGuestTab='details';
     if(selectedWeddingTab==='party'){selectedMatronTab='duties';SiteEditing.resetTabSelection('matronInfoTabs',viewedEventId);}
     SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
   }
@@ -2150,12 +2189,15 @@ document.querySelector('#rsvpDialog').addEventListener('close',()=>{
   showEventSelection();
 });
 function renderRsvpAttire(){
-  const section=document.querySelector('#rsvpAttire');section.hidden=viewedEventId!=='wedding' || isSignedInWeddingPartyMember() || SiteEditing.enabled;
+  const section=document.querySelector('#rsvpAttire');section.hidden=viewedEventId!=='wedding' || SiteEditing.enabled;
   const columns=document.querySelector('#rsvpAttireColumns');columns.replaceChildren();
   if(section.hidden)return;
+  const member=state.weddingPartyMembers?.find(member=>weddingPartyPersonMatches(member.name,signedInPersonName));
+  if(member){renderWeddingPartyAttireImages(true);if(state.weddingPartyAttireIntro?.trim()){const intro=document.createElement('div');intro.className='rsvp-party-attire-intro';intro.innerHTML=formatEditableText(state.weddingPartyAttireIntro);columns.append(intro);}}
   document.querySelectorAll('#weddingAttireGuidance>article').forEach(source=>{
-    const article=document.createElement('article');article.className='flow-panel';
-    for(const selector of ['h4','.guest-attire-requirements']){const original=source.querySelector(selector);if(original){const copy=original.cloneNode(true);copy.querySelectorAll('button,.inline-edit-control').forEach(node=>node.remove());copy.removeAttribute('id');copy.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));article.append(copy);}}
+    if(member && !WeddingParty.attireSections(member.title).includes(source.dataset.attireGroup))return;
+    const article=document.createElement('article');article.className='flow-panel';article.id=`rsvpAttire-${source.dataset.attireGroup}`;
+    for(const selector of (member?['h4','.guest-attire-requirements','.wedding-party-attire-gallery']:['h4','.guest-attire-requirements'])){const original=source.querySelector(selector);if(original){const copy=original.cloneNode(true);copy.querySelectorAll('button,.inline-edit-control').forEach(node=>node.remove());copy.removeAttribute('id');copy.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));article.append(copy);}}
     columns.append(article);
   });
 }
@@ -2181,7 +2223,7 @@ function rsvpFlowSteps() {
   const steps=[];
   const add=(key,element,title)=>{if(element)steps.push({key,element,title});};
   if(!SiteEditing.enabled)add('event-confirmation',document.querySelector('#rsvpEventConfirmation'),'Confirm your gathering');
-  if(viewedEventId==='wedding' && !isSignedInWeddingPartyMember() && !SiteEditing.enabled)add('attire',document.querySelector('#rsvpAttire'),'Formal Attire Required');
+  if(viewedEventId==='wedding' && !SiteEditing.enabled)add('attire',document.querySelector('#rsvpAttire'),'Formal Attire Required');
   document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>{
     add(`person-${index}`,row.querySelector('.rsvp-attendance-options'),row.dataset.rsvpPerson);
     if(rsvpAttendanceValue(row)==='yes' && !rsvpOptionsLocked()) {
@@ -2400,6 +2442,7 @@ function renderWeddingRsvpMenu(selections = []) {
   if(SiteEditing.enabled && !cards.length)cards.push(`<fieldset class="wedding-rsvp-guest" data-edit-meal-preview><legend>Meal options</legend><div class="wedding-meal-options">${GuestPlanning.weddingMeals(state).map(meal=>`<label class="wedding-meal-choice"><span>${escapeHtml(meal.name)}</span></label>`).join('')}</div></fieldset>`);
   document.querySelector('#weddingRsvpGuests').innerHTML = cards.join('');
   applyRsvpDeadline();
+  document.querySelectorAll('.event-dock').forEach(toolbar=>SiteEditing.field(toolbar,'toolbar',[],()=>{}));
   renderRsvpInlineEditing();
   RsvpFlow.refresh();
 }
