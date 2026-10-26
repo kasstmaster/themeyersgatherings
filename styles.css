@@ -584,7 +584,7 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 /* RSVP cards and upload panels are one shared full-page surface component. */
 :is(#rsvpDialog,#weddingMediaDialog) .flow-panel{background:var(--flow-panel-background);border:1px solid var(--flow-panel-border);border-radius:6px;color:var(--flow-text)}
 :is(#rsvpDialog,#weddingMediaDialog) .flow-panel :is(p,h2,h3,h4,ul,li,label,a,.bride-groom-content){color:var(--flow-text)}
-#weddingMediaTabs{width:100%;max-width:none}
+
 
 #weddingMediaHeading{text-align:center;margin-right:0}
 
@@ -897,3 +897,8 @@ body.theme-neutral{--navy:#303030;--navy-2:#666666;--body-background:#f3f3f3;--s
 
 #sharedGalleryLink{display:block;box-sizing:border-box;width:100%;margin:0 0 16px;text-align:center;text-decoration:none}
 #sharedGalleryLink[aria-disabled="true"]{opacity:.6;cursor:default}
+
+#weddingMediaShareOptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+#weddingMediaShareOptions[hidden]{display:none}
+#weddingMediaUploadForm,#weddingMediaLinkForm{margin-top:20px}
+#weddingMediaView{margin-top:28px}

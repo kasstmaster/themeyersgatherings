@@ -70,9 +70,14 @@ across Wedding, holidays and a newly created gathering. Worker tests cover
 authorization, ownership, links and file access.
 
 Each gathering also has an optional `mediaGalleryUrl` and `mediaGalleryLabel`.
-View Photos & Videos shows a disabled folder button until the host supplies a
+The combined Photos & Videos page shows a disabled folder button until the host supplies a
 link. In Edit mode, select that button to set its label and Dropbox folder URL
 in the shared toolbar. The saved link is available to every guest who can open
 that gathering; it is separate from the account's private upload receipts.
 Removing the URL returns the button to its pending state. Dropbox sharing
 permissions determine access and download availability for the linked folder.
+
+The Photos & Videos surface combines the gallery and sharing flow without tabs.
+Share Your Photos & Videos reveals Upload and Share Link actions. Exactly one
+form is visible at a time; collapsing sharing hides both forms. The gallery and
+host-published folder link remain available below the sharing flow.
