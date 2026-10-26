@@ -1,0 +1,27 @@
+// Optional Chromium integration check. External requests and live state writes are blocked.
+const {chromium}=require('playwright');const assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:1280,height:900}});page.setDefaultTimeout(12000);const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',async route=>{if(!route.request().url().startsWith('http://127.0.0.1:8041/'))return route.abort();if(new URL(route.request().url()).pathname==='/'){const r=await route.fetch();return route.fulfill({response:r,body:(await r.text()).replace(/(<meta name="shared-state-url" content=")[^"]*/,'$1')});}return route.continue();});await page.goto('http://127.0.0.1:8041/');await page.waitForFunction(()=>typeof startApp==='function');
+await page.evaluate(()=>{localStateRevision+=1;appState=normalizeState(initialAppState());appState.accounts=[{name:'Casey Example',source:'website',selectedEvents:{wedding:true,thanksgiving:true,christmas:true},invitedEvents:{wedding:true,thanksgiving:true,christmas:true}}];const w=appState.events.wedding;w.weddingPartyMembers=[{id:'casey',name:'Casey Example',title:'Groomsman',responsibilities:'Help the groom',pages:[]}];w.weddingMealChoices=[{id:'chicken',name:'Chicken',audience:'Adults and children'}];w.sitePages=[{id:'saved-details',nav:'weddingPartyTabs',title:'What to Expect',content:'Default details body',audience:'guests'},{id:'travel',nav:'weddingPartyTabs',title:'Travel',content:'Travel body',audience:'all'}];hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;signedInPersonName='';viewedEventId='wedding';state=w;showSignedInDestination();render();});
+
+await page.evaluate(()=>{state.weddingPartyAttireNotes={gentlemen:'Private party attire instructions'};state.weddingPartyAttireIntro='Party introduction';});
+for(const width of [1280,390]){
+ await page.setViewportSize({width,height:900});
+ for(const id of ['wedding','thanksgiving','christmas']){
+  await page.evaluate(async id=>{await closeHostDialogs();hostAuthenticated=false;hostWeddingPartyViewName='';guestName='Casey Example';signedInPersonName='Casey Example';enterEvent(id);},id);
+  assert.equal(await page.locator('#weddingMediaSection').isVisible(),true);assert.equal(await page.locator('#uploadPhotosButton').isVisible(),true);
+  if(id==='wedding'){
+   assert.equal(await page.locator('#rsvpPageNavigation').getByRole('button',{name:"Casey's Information",exact:true}).isVisible(),true);
+   assert.equal(await page.locator('#rsvpPageNavigation button').first().locator('br').count(),1);
+   for(const name of ['Attire','Registry','Details'])assert.equal(await page.locator('#rsvpPageNavigation').getByRole('button',{name,exact:true}).isVisible(),true);
+   assert.equal(await page.locator('#weddingPartyTabs [data-wedding-tab="attire"]').isVisible(),false);
+   const right=await page.locator('#rsvpPageToolbar').evaluate(e=>{const print=e.querySelector('[data-page-export]').getBoundingClientRect();return [...e.querySelectorAll('button')].filter(b=>b.getClientRects().length).every(b=>b.getBoundingClientRect().right<=print.right+1);});assert.equal(right,true);
+   await page.locator('#rsvpPageNavigation').getByRole('button',{name:'Registry',exact:true}).click();assert.equal(await page.locator('#registrySection').isVisible(),true);
+   await page.locator('#rsvpPageNavigation').getByRole('button',{name:"Casey's Information",exact:true}).click();assert.equal(await page.locator('#weddingPartySection').isVisible(),true);
+   await page.locator('#rsvpConfirmEvent').click();assert.equal(await page.locator('#rsvpAttire').isVisible(),true);const text=await page.locator('#rsvpAttireColumns').textContent();assert.match(text,/For the Gentlemen/);assert.doesNotMatch(text,/For the Ladies/);assert.match(text,/Private party attire instructions/);assert.match(text,/Party introduction/);
+  }
+ }
+}
+await page.evaluate(async()=>{await closeHostDialogs();hostAuthenticated=false;guestName='Casey Example';signedInPersonName='Casey Example';appState.events.wedding.weddingPartyMembers=[];enterEvent('wedding');});assert.equal(await page.locator('#weddingMediaSection').isVisible(),true);await page.locator('#rsvpConfirmEvent').click();assert.equal(await page.locator('#rsvpAttire').isVisible(),true);assert.match(await page.locator('#rsvpAttireColumns').textContent(),/For the Ladies/);assert.doesNotMatch(await page.locator('#rsvpAttireColumns').textContent(),/Private party attire instructions/);
+await page.evaluate(async()=>{await closeHostDialogs();hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;signedInPersonName='';enterEvent('wedding');});assert.equal(await page.locator('#brideGroomSection').isVisible(),true);assert.equal(await page.locator('#hostFirstPageActions').getByRole('button',{name:'Attire',exact:true}).count(),0);assert.equal(await page.locator('#hostToolsPanel #rsvpPageNavigation').getByRole('button',{name:'Attire',exact:true}).isVisible(),true);
+await page.evaluate(async()=>{await closeHostDialogs();enterEvent('thanksgiving');});assert.equal(await page.locator('#hostNotesSection').isVisible(),true);
+assert.deepEqual(errors,[]);await browser.close();console.log('Guest media defaults, visible Photos button, toolbar navigation/two-line personal label, rightmost Print, host defaults, and role-specific first RSVP attire pass on desktop/mobile.');})().catch(e=>{console.error(e);process.exit(1);});

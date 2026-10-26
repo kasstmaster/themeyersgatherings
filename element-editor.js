@@ -31,11 +31,18 @@
   function rememberSelection(){const selected=window.getSelection();if(target && selected.rangeCount && editables.some(element=>element.contains(selected.anchorNode)))range=selected.getRangeAt(0).cloneRange();}
   function restoreSelection(){if(!range)return false;try{const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);return true;}catch{return false;}}
   function textCommand(command,value){
+    if(['buttons','tabs','titles','counts','toolbar-options'].includes(ElementAppearance.group(target)) && ['bold','italic','underline','removeFormat'].includes(command)){
+      const current=getComputedStyle(target),values=command==='bold'?{fontWeight:Number(current.fontWeight)>=600?'400':'700'}:command==='italic'?{fontStyle:current.fontStyle==='italic'?'normal':'italic'}:command==='underline'?{textDecoration:current.textDecorationLine.includes('underline')?'none':'underline'}:{fontFamily:'',fontSize:null,fontWeight:'',fontStyle:'',textDecoration:'',textColor:'',textHighlight:''};
+      ElementAppearance.update(target,values);return;
+    }
+
     if(!editables.length || entry?.fields?.[0]?.readonly && ['insertUnorderedList','insertOrderedList','indent','outdent'].includes(command))return;
     if(!restoreSelection()){editables[0].focus();const selection=window.getSelection();selection.selectAllChildren(editables[0]);}
     document.execCommand(command,false,value);dirty=true;rememberSelection();
   }
   function textStyle(key,value){
+    if(['buttons','tabs','titles','counts','toolbar-options'].includes(ElementAppearance.group(target))){const property={font:'fontFamily',size:'fontSize',color:'textColor',highlight:'textHighlight'}[key];if(property)ElementAppearance.update(target,{[property]:key==='size'?Number(value):value});return;}
+
     if(!editables.length)return;
     if(!restoreSelection() || range.collapsed){range=document.createRange();range.selectNodeContents(editables[0]);}
     const existing=range.startContainer===range.endContainer && range.startContainer.nodeType===1 && range.startContainer.matches('span') && range.startOffset===0 && range.endOffset===range.startContainer.childNodes.length ? range.startContainer : null;
@@ -124,7 +131,10 @@
       if(GapLayout.isGap(target)){const current=GapLayout.getSize(target);const number=labelInput(panel,'Gap size (px)','number',current,value=>GapLayout.setSize(target,value));number.min=0;number.max=1000;const slider=labelInput(panel,'Gap size','range',Math.min(current,300),value=>{number.value=value;GapLayout.setSize(target,value);});slider.min=0;slider.max=300;button('Remove gap',()=>{GapLayout.remove(target);release();},panel);}
       else{button('Add gap after selection',()=>{const gap=GapLayout.addAfter(target);if(gap)select(gap);else status('Drag Gap from the toolbar between page elements.');},panel);panel.append(node('span','Drag Gap from the toolbar to place a new spacer.'));}
     }
-    if(name==='Text'){
+    if(name==='Text' && target.matches('.event-dock')){
+      colorControls(panel,'Unselected text and icons','toolbarTextColor','toolbarTextAlpha','color');
+      colorControls(panel,'Selected text and icons','toolbarSelectedColor','toolbarSelectedAlpha','--toolbar-active-text');
+    }else if(name==='Text'){
       for(const [title,command] of [['Bold','bold'],['Italic','italic'],['Underline','underline'],['Remove formatting','removeFormat']])button(title,()=>textCommand(command),panel);
       selectInput(panel,'Font',TextStyles.fonts,'Times New Roman',value=>textStyle('font',value));
       selectInput(panel,'Size',TextStyles.sizes,16,value=>textStyle('size',value));
@@ -142,6 +152,7 @@
     }
     if(name==='Background'){
       colorControls(panel,'Background','backgroundColor','backgroundAlpha','background-color');
+      if(target.matches('.event-dock')){colorControls(panel,'Unselected option background','toolbarOptionBackground','toolbarOptionAlpha','--toolbar-option-background');colorControls(panel,'Selected option background','toolbarSelectedBackground','toolbarSelectedBackgroundAlpha','--toolbar-selected-background');}
       const values=ElementAppearance.values(target);
       labelInput(panel,'Image URL','url',values.backgroundImage || '',(value,input)=>{const safe=ElementAppearance.imageUrl(value.trim());if(safe===null){input.setCustomValidity('Use an http or https image URL.');input.reportValidity();return;}input.setCustomValidity('');ElementAppearance.update(target,{backgroundImage:safe});});
       const upload=labelInput(panel,'Upload image','file','',async(_value,input)=>{
@@ -166,7 +177,8 @@
     if(!entry?.fields && target.matches('button,a,h1,h2,h3,h4,h5,h6,p,li,time,legend,address,output,.summary-item,.summary-stat,.counter-row,label')){SiteEditing.textElement(target,ElementAppearance.label(target));entry=SiteEditing.editorFor(target);}
     target.classList.add('element-editor-selected');
     if(toolbar.querySelector('[data-editor-chooser]'))toolbar.querySelector('[data-editor-chooser]').value=ElementAppearance.selector(target);
-    toolbar.querySelector('[data-editor-selection]').textContent=ElementAppearance.label(target);
+    const kind=ElementAppearance.group(target);
+    toolbar.querySelector('[data-editor-selection]').textContent=ElementAppearance.label(target)+(kind?' · Shared '+kind.replaceAll('-',' '):'');
     const fields=entry?.fields;
     const readonly=Boolean(fields?.[0]?.readonly || fields?.length===1 && !['text','page','notes'].includes(entry.title));
     if((fields?.length===1 || entry?.visual) && target.getClientRects().length && target.getBoundingClientRect().height){
@@ -224,7 +236,7 @@
   function beforeRender(){release();ribbonResize?.disconnect();ribbonResize=null;ribbonSpace?.remove();ribbonSpace=null;const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',rememberSelection);
   document.addEventListener('click',event=>{
-    if(!context?.host || !context.enabled || allowAction || event.target.closest(excluded) || event.target.closest('#editItemsButton,#hostToolsPanel,#hostToolsButton,#invitationTemplatesButton'))return;
+    if(!context?.host || !context.enabled || allowAction || event.target.closest(excluded) || event.target.closest('#editItemsButton,#hostToolsPanel .host-tool-actions,#hostQuickActions,#hostToolsButton,#invitationTemplatesButton'))return;
     if(target && editables.some(part=>part.contains(event.target)))return;
     const element=pick(event.target);if(!element)return;
     event.preventDefault();event.stopImmediatePropagation();select(element);

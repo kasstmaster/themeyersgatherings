@@ -54,7 +54,6 @@
     </section>
 
     <section id="eventSelectionPage" class="event-selection-page theme-wedding" aria-labelledby="eventSelectionHeading" hidden>
-        <button id="newGatheringButton" class="host-fixed-add" hidden type="button" aria-label="New gathering" title="New gathering"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2h4v8h8v4h-8v8h-4v-8H2v-4h8V2Z"/></svg></button>
       <div class="event-selection-card">
         <img class="event-selection-icon" src="assets/icons/meyers-512.png" width="144" height="144" alt="Our wedding rose" decoding="async" />
         <h1 id="eventSelectionHeading">Welcome to The Meyers Gatherings</h1>
@@ -130,10 +129,13 @@
     <nav id="hostToolsPanel" class="host-tools-panel event-dock" aria-label="Host tools" hidden>
       <div id="syncStatus" class="sync-status" role="status" aria-live="polite" hidden></div>
       <div class="host-tool-actions">
-        <button id="hostHomeButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 11 9-2 2-2-2v11h-5v-7h-4v7H5V11l-2 2-2-2 11-9Z"/></svg><span>Home</span></button>
-        <button id="editAccountsButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z"/></svg><span>Accounts</span></button>
-        <button id="gatheringHistoryButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9H1l4-5 4 5H6a6 6 0 1 0 6-6V3Zm-1 4h2v5l4 2-1 2-5-3V7Z"/></svg><span>History</span></button>
+        <button id="hostHomeButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 11 9-2 2-2-2v11h-5v-7h-4v7H5V11l-2 2-2-2 11-9Z"/></svg><span>The Meyers</span></button>
       </div>
+    </nav>
+    <nav id="hostQuickActions" aria-label="Host shortcuts" hidden>
+        <button id="newGatheringButton" class="host-fixed-add" hidden type="button" aria-label="New gathering" title="New gathering"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2h4v8h8v4h-8v8h-4v-8H2v-4h8V2Z"/></svg></button>
+        <button id="editAccountsButton" aria-label="Accounts" title="Accounts" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z"/></svg></button>
+        <button id="gatheringHistoryButton" aria-label="History" title="History" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9H1l4-5 4 5H6a6 6 0 1 0 6-6V3Zm-1 4h2v5l4 2-1 2-5-3V7Z"/></svg></button>
     </nav>
     <button id="editItemsButton" class="host-fixed-edit" type="button" hidden>Edit</button>
         <button id="cancelViewAsButton" class="host-fixed-edit" type="button" hidden>Leave account</button>
@@ -385,7 +387,7 @@
       </section>
           </div>
 
-          <div id="rsvpPageToolbar" class="event-dock" role="toolbar" aria-label="Page actions" hidden></div>
+          <div id="rsvpPageToolbar" class="event-dock" role="toolbar" aria-label="Page actions" hidden><button id="guestHomeButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 11 9-2 2-2-2v11h-5v-7h-4v7H5V11l-2 2-2-2 11-9Z"/></svg><span>The Meyers</span></button><nav id="rsvpPageNavigation" aria-label="Gathering information" hidden></nav></div>
         </section>
         <section id="rsvpAttire" hidden><div id="rsvpAttireColumns" class="rsvp-attire-columns"></div><button id="rsvpAttireAcknowledge" class="primary-button" type="button" data-rsvp-advance>I Agree</button></section>
         <fieldset id="rsvpAttendance" class="rsvp-attendance-box"><legend>Attending</legend>
