@@ -137,3 +137,11 @@ name. Ordinary guests cannot open the private personal-information Timeline.
 Notes and Menu use host-only toolbar options wherever those planning pages are
 enabled, rather than first-page buttons. They use the same toolbar navigation
 component as the Wedding page options, before Print Page.
+
+The shared element editor isolates clicks and key events inside the active
+contenteditable title from tab navigation. Its top-level Move left/right actions
+flush pending text, resolve fresh metadata after redraws, and reselect the moved
+tab. Sub-tabs use `siteTabOrder`; toolbar page options use `rsvpToolbarOrder` so
+reordering them does not interact with first-page Photos & Videos or fixed
+home/print actions. `verify-tab-editing.cjs` exercises real keyboard/caret input,
+normal navigation outside editing, local persistence and both ordering paths.
