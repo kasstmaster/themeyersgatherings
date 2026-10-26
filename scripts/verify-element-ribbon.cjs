@@ -44,11 +44,11 @@ await page.getByRole('button',{name:'Remove image',exact:true}).click();
 await page.getByRole('button',{name:'Border',exact:true}).click();await page.getByRole('spinbutton',{name:'Width',exact:true}).fill('3');await page.getByRole('spinbutton',{name:'Width',exact:true}).press('Tab');
 assert.equal(await page.locator('#rsvpConfirmEvent').evaluate(e=>getComputedStyle(e).borderTopWidth),'3px');
 
-await page.locator('#hostAllPages>summary').click();await page.locator('#hostAllPagesMenu').getByRole('button',{name:'Travel',exact:true}).click();
+await page.locator('#hostFirstPageActions').getByRole('button',{name:'Travel',exact:true}).click();await page.getByRole('button',{name:'Open page / use button',exact:true}).click();
 await page.locator('#custom-page-travel .bride-groom-content').click();await page.locator('#custom-page-travel .bride-groom-content').fill('First item');
 await page.getByRole('button',{name:'Lists',exact:true}).click();await page.getByRole('button',{name:'Bullets',exact:true}).click();await page.getByRole('button',{name:'Save',exact:true}).click();
 assert.match(await page.evaluate(()=>state.sitePages.find(p=>p.id==='travel').content),/- First item/);
-await page.locator('#hostAllPages>summary').click();await page.locator('#hostAllPagesMenu').getByRole('button',{name:'Registry',exact:true}).click();
+await page.locator('#hostFirstPageActions').getByRole('button',{name:'Registry',exact:true}).click();await page.getByRole('button',{name:'Open page / use button',exact:true}).click();
 assert.equal(await page.locator('#registrySection').isVisible(),true);
 assert.equal(await page.locator('.element-editor-toolbar').count(),1);
 

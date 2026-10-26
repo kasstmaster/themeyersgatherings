@@ -7,7 +7,7 @@ pages, role visibility, named guests and meals through its feature definition.
 Accounts, children, invitations, attendance lists and editing remain shared.
 
 Hosts select gatherings into the same first RSVP page as guests. Host counters
-sit below RSVP; All Pages exposes private planning pages. Wedding hosts start
+sit below RSVP; individual first-page buttons expose private planning pages. Wedding hosts start
 on Bride & Groom; guests retain their permitted default page. There is no
 separate host home layout.
 

@@ -9,7 +9,7 @@ for(const width of [1280,390]){
  await page.setViewportSize({width,height:900});
  for(const id of ['wedding','thanksgiving','christmas',custom]){
   await page.evaluate(id=>{hostAuthenticated=true;hostWeddingPartyViewName='';guestName=HOST_DISPLAY_NAME;signedInPersonName='';enterEvent(id);},id);
-  await page.locator('#hostAllPages>summary').click();await page.locator('#hostAllPagesMenu').getByRole('button',{name:'Upload Photos & Videos',exact:true}).click();assert.equal(await page.locator('#weddingMediaSection').isVisible(),true);
+  await page.locator('#hostFirstPageActions').getByRole('button',{name:'Upload Photos & Videos',exact:true}).click();assert.equal(await page.locator('#weddingMediaSection').isVisible(),true);
   await page.evaluate(async id=>{await closeHostDialogs();hostAuthenticated=false;guestName='Casey Example';signedInPersonName='Casey Example';enterEvent(id);},id);
   assert.equal(await page.locator('#uploadPhotosButton').isVisible(),true);assert.equal(await page.locator('#weddingMediaSection').isVisible(),false);
   await page.locator('#uploadPhotosButton').click();assert.equal(await page.locator('#weddingMediaSection').isVisible(),true);assert.equal(await page.locator('#weddingMediaShareLink').isVisible(),true);assert.equal(await page.locator('#dropboxCheckConnection').isVisible(),false);
