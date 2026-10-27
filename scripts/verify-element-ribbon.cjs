@@ -64,7 +64,7 @@ await page.locator('#rsvpConfirmEvent').click();await page.getByRole('button',{n
 for(let n=0;n<12 && !await page.locator('#weddingRsvpMenu').isVisible();n++){const advance=page.locator('#rsvpDialog [data-rsvp-advance]:visible').first();if(await advance.count())await advance.click();else await page.locator('#rsvpNext').click();await page.getByRole('button',{name:'Open page / use button',exact:true}).click();}
 assert.equal(await page.locator('#weddingRsvpMenu').isVisible(),true);
 const mealLayout=await page.locator('#weddingRsvpGuests').innerHTML();
-await page.getByRole('combobox',{name:'Select an element',exact:true}).selectOption('#weddingRsvpMenu');
+await page.evaluate(()=>ElementEditor.select(document.querySelector('#weddingRsvpMenu')));
 await page.getByRole('button',{name:'Text',exact:true}).click();await page.getByRole('button',{name:'Edit meal options',exact:true}).click();
 assert.equal(await page.locator('#weddingRsvpGuests').innerHTML(),mealLayout);
 await page.getByRole('textbox',{name:'Meal name: Chicken',exact:true}).fill('Roasted chicken');await page.getByRole('textbox',{name:'Meal name: Chicken',exact:true}).press('Tab');

@@ -9,7 +9,7 @@ for(const eventId of ['thanksgiving','christmas','test-gathering']){
  await page.locator('#editItemsButton').click();
  await page.evaluate(()=>ElementAppearance.update(document.querySelector('#rsvpForm'),{backgroundColor:'#123456',backgroundAlpha:100,borderColor:'#334455',borderWidth:3}));
  const outer=await page.locator('#rsvpForm').evaluate(e=>({background:getComputedStyle(e).backgroundColor,border:getComputedStyle(e).borderColor,width:getComputedStyle(e).borderWidth}));
- await page.getByLabel('Select an element',{exact:true}).selectOption('#hostNotesSection');
+ await page.evaluate(()=>ElementEditor.select(document.querySelector('#hostNotesSection')));
  assert.equal(await page.locator('.element-editor-selected').getAttribute('id'),'hostNotesSection');
  const background=page.getByRole('button',{name:'Background',exact:true});if(await background.getAttribute('aria-expanded')!=='true')await background.click();
  await page.getByLabel('Background hex',{exact:true}).fill('#abcdef');await page.getByLabel('Background hex',{exact:true}).press('Tab');await page.getByLabel('Background opacity',{exact:true}).evaluate(e=>{e.value='60';e.dispatchEvent(new Event('input',{bubbles:true}));});
