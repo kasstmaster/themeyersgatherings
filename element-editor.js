@@ -54,7 +54,7 @@
   }
   function restoreSelection(){if(!range)return false;try{const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);return true;}catch{return false;}}
   function textCommand(command,value){
-    if((['buttons','dish-available','dish-claimed','dish-bringing','dish-details','dish-claimants','tabs','titles','counts','count-values','count-titles','toolbar-options'].includes(ElementAppearance.group(target)) || ElementAppearance.group(target)?.startsWith('count-list-')) && ['bold','italic','underline','removeFormat'].includes(command)){
+    if((['buttons','dish-available','dish-claimed','dish-bringing','dish-details','dish-claimants','tabs','titles','introductions','counts','count-values','count-titles','toolbar-options'].includes(ElementAppearance.group(target)) || ElementAppearance.group(target)?.startsWith('count-list-')) && ['bold','italic','underline','removeFormat'].includes(command)){
       const current=getComputedStyle(currentTextElement()),values=command==='bold'?{fontWeight:Number(current.fontWeight)>=600?'400':'700'}:command==='italic'?{fontStyle:current.fontStyle==='italic'?'normal':'italic'}:command==='underline'?{textDecoration:current.textDecorationLine.includes('underline')?'none':'underline'}:{fontFamily:'',fontSize:null,fontWeight:'',fontStyle:'',textDecoration:'',textColor:'',textHighlight:''};
       ElementAppearance.update(target,values);return;
     }
@@ -65,7 +65,7 @@
     document.execCommand(command,false,value);if(temporary)for(const part of editables)part.removeAttribute('contenteditable');dirty=true;refreshUndo();rememberSelection();
   }
   function textStyle(key,value){
-    if((['buttons','dish-available','dish-claimed','dish-bringing','dish-details','dish-claimants','tabs','titles','counts','count-values','count-titles','toolbar-options'].includes(ElementAppearance.group(target)) || ElementAppearance.group(target)?.startsWith('count-list-'))){const property={font:'fontFamily',size:'fontSize',color:'textColor',highlight:'textHighlight'}[key];if(property){const color=['color','highlight'].includes(key)?ElementAppearance.colorParts(value):null;ElementAppearance.update(target,color?{[property]:color.hex,[key==='color'?'textAlpha':'textHighlightAlpha']:color.alpha}:{[property]:key==='size'?Number(value):value});}return;}
+    if((['buttons','dish-available','dish-claimed','dish-bringing','dish-details','dish-claimants','tabs','titles','introductions','counts','count-values','count-titles','toolbar-options'].includes(ElementAppearance.group(target)) || ElementAppearance.group(target)?.startsWith('count-list-'))){const property={font:'fontFamily',size:'fontSize',color:'textColor',highlight:'textHighlight'}[key];if(property){const color=['color','highlight'].includes(key)?ElementAppearance.colorParts(value):null;ElementAppearance.update(target,color?{[property]:color.hex,[key==='color'?'textAlpha':'textHighlightAlpha']:color.alpha}:{[property]:key==='size'?Number(value):value});}return;}
 
     if(!editables.length)return;
     if(!restoreSelection() || range.collapsed){range=document.createRange();range.selectNodeContents(editables[0]);}

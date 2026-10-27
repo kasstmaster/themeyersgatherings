@@ -62,7 +62,8 @@
     if(target.matches('#uploadPhotosButton'))return 'buttons';
     if(target.matches('[role="tab"],[data-wedding-tab],[data-gathering-tab],[data-matron-tab],[data-media-tab]'))return 'tabs';
     if(target.matches('button,a.primary-button,a.registry-button,.primary-button'))return 'buttons';
-    if(target.matches('h1,h2,h3,h4,h5,h6,legend,.section-kicker,.dish-title'))return 'titles';
+    if(target.matches('.section-kicker,.event-selection-intro'))return 'introductions';
+    if(target.matches('h1,h2,h3,h4,h5,h6,legend,.dish-title'))return 'titles';
     // A subpage may also carry outer-page classes for layout; its surface stays inner.
     if(target.id!=='rsvpForm' && target.closest('#rsvpForm,#dishListDialog') && target.matches('.host-outer-panel,.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'inner-containers';
     if(target.matches('#rsvpForm,.event-selection-card,.host-outer-panel'))return 'containers';
