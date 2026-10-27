@@ -937,7 +937,7 @@ body.theme-neutral{--navy:#303030;--navy-2:#666666;--body-background:#f3f3f3;--s
 gathering-gap[data-gap-axis="x"]{clear:none;vertical-align:middle}.gap-drop-marker.horizontal-gap-marker{border-top:0;border-left:3px solid #d92525}.site-edit-mode gathering-gap[data-gap-axis="x"]::after{max-width:100%;overflow:hidden;white-space:nowrap;left:0}
 
 /* Page sections arrange content; the RSVP form and its content panels are the two surfaces. */
-#rsvpDialog #rsvpWeddingPages .wedding-tab-content{box-sizing:border-box;background:var(--flow-inner-background);border:1px solid var(--flow-panel-border);border-radius:6px;padding:var(--wedding-tab-padding,24px)}
+#rsvpDialog #rsvpWeddingPages .wedding-tab-content{box-sizing:border-box;width:100%;max-width:100%;margin-left:0;margin-right:0;background:var(--flow-inner-background);border:1px solid var(--flow-panel-border);border-radius:6px;padding:var(--wedding-tab-padding,24px)}
 #rsvpDialog #rsvpWeddingPages>.rsvp-page-shell{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;min-height:0!important;margin-bottom:0!important}
 #rsvpDialog #rsvpWeddingPages :is(.wedding-tab-content,.wedding-party-card,.gathering-subpage)>:is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.wedding-party-description){background:transparent;border:0;box-shadow:none;padding:0;min-height:0}
 
