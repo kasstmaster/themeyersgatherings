@@ -103,6 +103,11 @@
       const after=find(info.after),before=info.before?find(info.before):null,parent=find(info.parent);if(!after || !parent || after.parentElement!==parent || parent.closest(excluded) || !after.getClientRects().length || before && !before.getClientRects().length)continue;
       const horizontal=info.axis==='x',property=horizontal?'margin-left':'margin-top';
       if(before && before.parentElement===parent){
+        // Saved spacing describes adjacent content. Expanded panels between the
+        // anchors must keep their natural space rather than become a negative margin.
+        let sibling=before.nextElementSibling;
+        while(sibling && sibling!==after && !sibling.getClientRects().length)sibling=sibling.nextElementSibling;
+        if(sibling!==after)continue;
         setStyle(before,horizontal?'margin-right':'margin-bottom',0);
         setStyle(after,property,0);
         for(let pass=0;pass<3;pass++){const a=before.getBoundingClientRect(),b=after.getBoundingClientRect(),actual=horizontal?b.left-a.right:b.top-a.bottom,current=parseFloat(getComputedStyle(after).getPropertyValue(property))||0;setStyle(after,property,current+size(info.size)-actual);}

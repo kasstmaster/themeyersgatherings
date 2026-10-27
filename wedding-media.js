@@ -32,6 +32,7 @@
     node('weddingMediaChooseUpload').setAttribute('aria-pressed',String(mode==='upload'));node('weddingMediaShareLink').setAttribute('aria-pressed',String(mode==='link'));
     if(mode==='upload')DropboxUpload.show(current,api);
     if(mode==='link')node('weddingMediaLink').focus();
+    globalThis.GapLayout?.refresh();
   }
   function show(ctx) {
     ctx = { ...ctx, base:ctx.base.replace(/\/$/,'') };
@@ -66,6 +67,7 @@
       const options=node('weddingMediaShareOptions');options.hidden=!options.hidden;
       node('weddingMediaShare').setAttribute('aria-expanded',String(!options.hidden));
       if(options.hidden)selectShareMode('');
+      globalThis.GapLayout?.refresh();
     });
     node('weddingMediaChooseUpload').addEventListener('click',()=>selectShareMode('upload'));
     node('weddingMediaShareLink').addEventListener('click',()=>selectShareMode('link'));
