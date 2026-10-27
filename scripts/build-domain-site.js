@@ -1,4 +1,5 @@
 // Create only the two subdirectories needed by the parent website. Never change its home page.
+import { createHash } from 'node:crypto';
 import { cp, mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,13 +31,15 @@ export async function buildDomainSite(output) {
   }
   const site = join(destination, 'themeyers');
   await mkdir(site, { recursive: true });
-  const html = await readFile(join(source, 'index.html'), 'utf8');
+  let html = await readFile(join(source, 'index.html'), 'utf8');
   const files = new Set([...html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"/g)]
     .map(match => match[1].split(/[?#]/)[0]).filter(path => !/^(?:[a-z]+:|\/)/i.test(path)));
   for (const file of files) {
     if (file.split('/').includes('..')) throw new Error('Site assets must stay within the source directory.');
     await mkdir(dirname(join(site, file)), { recursive: true });
     await cp(join(source, file), join(site, file));
+    const version = createHash('sha256').update(await readFile(join(source, file))).digest('hex').slice(0,12);
+    html = html.replaceAll(`"${file}"`, `"${file}?v=${version}"`);
   }
   for (const directory of ['assets', 'vendor', 'data']) await cp(join(source, directory), join(site, directory), { recursive: true });
   for (const file of ['service-worker.js', 'offline.html']) await cp(join(source, file), join(site, file));

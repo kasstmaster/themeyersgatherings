@@ -2,10 +2,10 @@
 
 Sign in as the host and choose the fixed **Edit** button at the top right. Click an element to select it. A red outline identifies the selected element, and one fixed vertical toolbar stays on the left. The page uses the remaining width, shrinking containers when needed so the toolbar never covers them. The fixed Edit button hides while the toolbar is open and returns after Done editing. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
 
-The toolbar has five expandable groups:
+The Format panel opens automatically when you select an element and combines the applicable controls:
 
 - **Text:** bold, italic, underline, font, size, text color, highlight, and links. Highlight the text you want to format. Type directly in a selected text box or button label. Dates, URLs, and other structured values have compact fields in the toolbar.
-- **Lists:** bullets, numbering, indent, and outdent.
+- **Lists:** bullets, numbering, indent, and outdent for editable text boxes.
 - **Background:** color picker, hex code, opacity, image URL or upload, image fit, and image removal.
 - **Border:** color picker, hex code, opacity, width, and corner radius.
 - **Gap:** select existing spaces or padding to adjust their size, or drag Gap from the toolbar to add a spacer above/below an element. Drag an existing gap to move it. Gap sizes and placement are saved separately for each gathering.
@@ -18,7 +18,7 @@ Clicking a navigation button selects it for editing. Use **Open page / use butto
 
 Page labels expose movement and deletion actions in **Text**. Select a tab group's container to add a page. Private host pages and party audience restrictions remain unchanged. Existing manual tab order remains saved per gathering.
 
-For Wedding Party member management, select the Responsibilities container and open **Text → Edit party members**. For Attire media, select the Attire page container and use **Text → Edit images and videos**. For meal definitions, select the Menu container and use **Text → Edit meal options**. These settings appear inside the compact toolbar; they do not replace page containers. Meal names, audience restrictions, addition, and removal remain available.
+For Wedding Party member management, select the Responsibilities container and open **Format → Edit party members**. For Attire media, select the Attire page container and use **Format → Edit images and videos**. For meal definitions, select the Menu container and use **Format → Edit meal options**. These settings appear inside the compact toolbar; they do not replace page containers. Meal names, audience restrictions, addition, and removal remain available.
 
 Background images may be PNG, JPEG, or WebP, uploaded through the existing authenticated host upload service. Appearance overrides and text edits remain separate for each gathering. Previously saved colors and images continue to apply.
 
@@ -89,7 +89,7 @@ In Edit mode, Photos & Videos text boxes also support drag-and-drop using the sa
 
 The dish counter uses the same modal card and compact list rows as the other count dialogs. Remaining quantities appear first as “Dish (1 of 2) still needed”; claimed quantities appear below per household as “Dish (1 of 2) Raudman”. Partially claimed dishes therefore appear in both groups. Copy menu retains its export behavior with a smaller button. In the Gap panel, choose or drag Vertical gap or Horizontal gap; explicit gaps also have a direction selector and size control. Existing gaps default to vertical. Run `node scripts/verify-compact-dishes-and-gaps.cjs`.
 
-The editing toolbar includes Undo for up to 50 saved changes in the current editing session. Undo restores only the properties changed by that action and preserves unrelated RSVP data; it refuses to overwrite a conflicting later change. Pending text formatting is saved before undoing. Run `node scripts/verify-editor-undo.cjs`.
+The editing toolbar includes ⬅️ Undo and ➡️ Redo for up to 50 saved changes in the current editing session. A new edit clears redo history. Undo restores only the properties changed by that action and preserves unrelated RSVP data; it refuses to overwrite a conflicting later change. Pending text formatting is saved before undoing. Run `node scripts/verify-editor-undo.cjs`.
 
 RSVP layout now initializes after inactive questions are hidden, hides empty navigation footers, and applies saved spacing after appearance. Page wrappers are layout-only: the full RSVP form is the outer surface, and content panels/counts are shared inner surfaces. Content text formatting remains independent. This removes the extra painted Wedding layer and unused bottom reserve while preserving Attire, Responsibilities, and meal layouts. Run `node scripts/verify-first-open-and-layers.cjs`.
 
@@ -102,3 +102,5 @@ Selecting a button, tab, or toolbar option shows a Formatting state selector for
 A single click selects a text box for formatting and dragging; double-click enters inline text editing. While typing, drag its border to move it. Vertical side gaps reserve left/right room on the anchored element rather than taking a line above a block. Their size and side persist across redraws. Run `node scripts/verify-editor-interactions.cjs`.
 
 Photos & Videos keeps its title and intro above the shared inner panel. All remaining page text and controls stay inside that panel, including paragraphs moved outside it by older saved layouts. Body text can be dragged within the inner panel; the intro remains above it. Run `node scripts/verify-media-container-alignment.cjs` and `node scripts/verify-media-text-drag.cjs`.
+
+The left editor keeps ⬅️ / ➡️, Save, and Done Editing pinned at the top. Format opens automatically on selection; text boxes include lists, buttons and titles show typography without lists, containers show surfaces and relevant settings, and gaps show sizing. Separate launchers for Text, Lists, Background and Border are removed. Vertical gap and Horizontal gap follow, then Open page / use button and Select container, then Templates, separated by divider lines. Published frontend asset URLs include content hashes so updated editor files replace cached copies.

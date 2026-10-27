@@ -11,12 +11,12 @@ for(const eventId of ['thanksgiving','christmas','test-gathering']){
  const outer=await page.locator('#rsvpForm').evaluate(e=>({background:getComputedStyle(e).backgroundColor,border:getComputedStyle(e).borderColor,width:getComputedStyle(e).borderWidth}));
  await page.evaluate(()=>ElementEditor.select(document.querySelector('#hostNotesSection')));
  assert.equal(await page.locator('.element-editor-selected').getAttribute('id'),'hostNotesSection');
- const background=page.getByRole('button',{name:'Background',exact:true});if(await background.getAttribute('aria-expanded')!=='true')await background.click();
+ const background=page.getByRole('button',{name:'Format',exact:true});if(await background.getAttribute('aria-expanded')!=='true')await background.click();
  await page.getByLabel('Background hex',{exact:true}).fill('#abcdef');await page.getByLabel('Background hex',{exact:true}).press('Tab');await page.getByLabel('Background opacity',{exact:true}).evaluate(e=>{e.value='60';e.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.equal(await page.locator('#hostNotesContent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(171, 205, 239, 0.6)');
  assert.equal(await page.locator('#hostRsvpCounters').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(171, 205, 239, 0.6)');
  assert.deepEqual(await page.locator('#rsvpForm').evaluate(e=>({background:getComputedStyle(e).backgroundColor,border:getComputedStyle(e).borderColor,width:getComputedStyle(e).borderWidth})),outer);
- await page.getByRole('button',{name:'Done editing',exact:true}).click();await page.evaluate(()=>render());
+ await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.evaluate(()=>render());
  assert.deepEqual(await page.locator('#rsvpForm').evaluate(e=>({background:getComputedStyle(e).backgroundColor,border:getComputedStyle(e).borderColor,width:getComputedStyle(e).borderWidth})),outer);
  assert.equal(await page.locator('#hostNotesContent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(171, 205, 239, 0.6)');
  assert.equal(await page.evaluate(()=>state.elementAppearance['@group:containers'].backgroundColor),'#123456');

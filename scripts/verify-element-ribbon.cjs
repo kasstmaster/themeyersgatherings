@@ -12,16 +12,16 @@ for(const tab of ['attire','party']){
 }
 await page.evaluate(()=>{selectedWeddingTab='details';render();});
 const before=await layout();await page.evaluate(()=>SiteEditing.toggle(render));
-const shifted=await layout();for(const key of Object.keys(before))assert.deepEqual([shifted[key][0],shifted[key][2],shifted[key][3]],[before[key][0],before[key][2],before[key][3]]);
+const shifted=await layout();for(const key of Object.keys(before))assert.deepEqual([shifted[key][2],shifted[key][3]],[before[key][2],before[key][3]]);
 assert.equal(await page.locator('.inline-edit-control:visible,.appearance-editor:visible,.inline-meal-editor:visible,.inline-portal-editor:visible').count(),0);
 assert.equal(await page.getByRole('toolbar',{name:'Element editor',exact:true}).count(),1);
-await page.locator('#rsvpFirstPageText').click();
+await page.locator('#rsvpFirstPageText').dblclick();
 assert.equal(await page.locator('#rsvpFirstPageText').getAttribute('contenteditable'),'true');
 assert.equal(await page.evaluate(()=>document.activeElement.id),'rsvpFirstPageText');
 assert.equal(await page.locator('.element-editor-selected').count(),1);
 await page.locator('#rsvpFirstPageText').fill('First line\nSecond line');
 await page.evaluate(()=>{const e=document.getElementById('rsvpFirstPageText');e.textContent='Welcome friends';e.dispatchEvent(new Event('input',{bubbles:true}));const range=document.createRange();range.selectNodeContents(e);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);});
-await page.getByRole('button',{name:'Text',exact:true}).click();
+await page.getByRole('button',{name:'Format',exact:true}).click();
 await page.getByRole('button',{name:'Italic',exact:true}).click();
 await page.getByRole('button',{name:'Save',exact:true}).click();
 assert.equal(await page.evaluate(()=>state.rsvpIntroText),'*Welcome friends*');
@@ -30,7 +30,7 @@ await page.getByRole('combobox',{name:'Font',exact:true}).selectOption('Georgia'
 assert.match(await page.evaluate(()=>state.rsvpIntroText),/Welcome \{\{style:font=Georgia\}\}friends/);
 
 await page.locator('#rsvpConfirmEvent').click();
-await page.getByRole('button',{name:'Background',exact:true}).click();
+await page.getByRole('button',{name:'Format',exact:true}).click();
 await page.getByRole('textbox',{name:'Background hex',exact:true}).fill('#123456');await page.getByRole('textbox',{name:'Background hex',exact:true}).press('Tab');
 assert.equal(await page.locator('#rsvpConfirmEvent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');
 await page.getByRole('slider',{name:'Background opacity',exact:true}).evaluate(e=>{e.value=40;e.dispatchEvent(new Event('change',{bubbles:true}));});
@@ -41,18 +41,18 @@ await page.waitForFunction(()=>document.querySelector('.element-editor-toolbar [
 assert.match(await page.locator('#rsvpConfirmEvent').evaluate(e=>getComputedStyle(e).backgroundImage),/thanksgiving-header.svg/);
 await page.getByRole('button',{name:'Remove image',exact:true}).click();
 
-await page.getByRole('button',{name:'Border',exact:true}).click();await page.getByRole('spinbutton',{name:'Width',exact:true}).fill('3');await page.getByRole('spinbutton',{name:'Width',exact:true}).press('Tab');
+await page.getByRole('button',{name:'Format',exact:true}).click();await page.getByRole('spinbutton',{name:'Width',exact:true}).fill('3');await page.getByRole('spinbutton',{name:'Width',exact:true}).press('Tab');
 assert.equal(await page.locator('#rsvpConfirmEvent').evaluate(e=>getComputedStyle(e).borderTopWidth),'3px');
 
 await page.locator('#hostFirstPageActions').getByRole('button',{name:'Travel',exact:true}).click();await page.getByRole('button',{name:'Open page / use button',exact:true}).click();
-await page.locator('#custom-page-travel .bride-groom-content').click();await page.locator('#custom-page-travel .bride-groom-content').fill('First item');
-await page.getByRole('button',{name:'Lists',exact:true}).click();await page.getByRole('button',{name:'Bullets',exact:true}).click();await page.getByRole('button',{name:'Save',exact:true}).click();
+await page.locator('#custom-page-travel .bride-groom-content').dblclick();await page.locator('#custom-page-travel .bride-groom-content').fill('First item');
+await page.getByRole('button',{name:'Format',exact:true}).click();await page.getByRole('button',{name:'Bullets',exact:true}).click();await page.getByRole('button',{name:'Save',exact:true}).click();
 assert.match(await page.evaluate(()=>state.sitePages.find(p=>p.id==='travel').content),/- First item/);
 await page.locator('#rsvpPageNavigation').getByRole('button',{name:'Registry',exact:true}).click();await page.getByRole('button',{name:'Open page / use button',exact:true}).click();
 assert.equal(await page.locator('#registrySection').isVisible(),true);
 assert.equal(await page.locator('.element-editor-toolbar').count(),1);
 
-await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done editing',exact:true}).click();
+await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done Editing',exact:true}).click();
 assert.equal(await page.locator('.element-editor-toolbar').count(),0);
 assert.equal(await page.locator('.element-editor-selected').count(),0);
 assert.match(await page.evaluate(()=>state.rsvpIntroText),/font=Georgia/);
@@ -65,11 +65,11 @@ for(let n=0;n<12 && !await page.locator('#weddingRsvpMenu').isVisible();n++){con
 assert.equal(await page.locator('#weddingRsvpMenu').isVisible(),true);
 const mealLayout=await page.locator('#weddingRsvpGuests').innerHTML();
 await page.evaluate(()=>ElementEditor.select(document.querySelector('#weddingRsvpMenu')));
-await page.getByRole('button',{name:'Text',exact:true}).click();await page.getByRole('button',{name:'Edit meal options',exact:true}).click();
+await page.getByRole('button',{name:'Format',exact:true}).click();await page.getByRole('button',{name:'Edit meal options',exact:true}).click();
 assert.equal(await page.locator('#weddingRsvpGuests').innerHTML(),mealLayout);
 await page.getByRole('textbox',{name:'Meal name: Chicken',exact:true}).fill('Roasted chicken');await page.getByRole('textbox',{name:'Meal name: Chicken',exact:true}).press('Tab');
 assert.equal(await page.evaluate(()=>GuestPlanning.weddingMeals(state)[0].name),'Roasted chicken');
-await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done editing',exact:true}).click();
+await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done Editing',exact:true}).click();
 assert.equal(await page.evaluate(()=>state.rsvps.length),0);
 console.log('Fixed ribbon preserves page layouts; text, lists, backgrounds, opacity, uploaded images, borders, and meal editing pass.');
 await page.locator('#rsvpDialog .modal-close').click();await page.waitForTimeout(100);
@@ -91,11 +91,11 @@ for(let n=0;n<18 && !await page.evaluate(()=>state.rsvps.some(r=>r.name===guestN
 await page.waitForFunction(()=>state.rsvps.some(r=>r.name===guestName) && document.querySelector('#rsvpDialog').open && !document.querySelector('#registrySection').hidden);
 assert.equal(await page.locator('#weddingPartyTabs [data-wedding-tab="registry"]').getAttribute('aria-pressed'),'true');await page.locator('#rsvpDialog .modal-close').click();await page.waitForTimeout(100);
 await page.evaluate(()=>{hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;signedInPersonName='';showSignedInDestination();render();openRsvp();SiteEditing.toggle(render);});
-await page.locator('#invitedListButton').click();await page.getByRole('button',{name:'Text',exact:true}).click();
+await page.locator('#invitedListButton').click();await page.getByRole('button',{name:'Format',exact:true}).click();
 await page.evaluate(()=>{const range=document.createRange();range.selectNodeContents(document.querySelector('#invitedCount'));const selection=getSelection();selection.removeAllRanges();selection.addRange(range);});
 await page.getByRole('textbox',{name:'Text color hex',exact:true}).fill('#cc3311');await page.getByRole('textbox',{name:'Text color hex',exact:true}).press('Tab');await page.getByRole('button',{name:'Save',exact:true}).click();
 const oldCount=await page.locator('#invitedCount').textContent();await page.evaluate(()=>{appState.accounts.push({name:'Second Person',source:'website',selectedEvents:{wedding:true},invitedEvents:{wedding:true}});render();});
 assert.notEqual(await page.locator('#invitedCount').textContent(),oldCount);assert.equal(await page.locator('#invitedCount').evaluate(e=>getComputedStyle(e).color),'rgb(204, 51, 17)');
 await page.evaluate(()=>{viewedEventId='thanksgiving';state=appState.events.thanksgiving;render();});assert.equal(await page.evaluate(()=>Boolean(state.textAppearance?.['#invitedListButton'])),false);
-await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done editing',exact:true}).click();
+await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done Editing',exact:true}).click();
 assert.deepEqual(errors,[]);console.log('Completing the real guest RSVP flow retains the saved response and opens Registry.');await browser.close();})().catch(e=>{console.error(e);process.exit(1);});

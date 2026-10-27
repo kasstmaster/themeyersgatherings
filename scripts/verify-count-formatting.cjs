@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
 await page.evaluate(()=>{localStateRevision+=1;appState=normalizeState(initialAppState());appState.accounts=[{name:'Casey Example',source:'website',selectedEvents:{wedding:true,thanksgiving:true,christmas:true},invitedEvents:{wedding:true,thanksgiving:true,christmas:true}}];const w=appState.events.wedding;w.weddingPartyMembers=[{id:'casey',name:'Casey Example',title:'Groomsman',responsibilities:'Help the groom',pages:[]}];w.weddingMealChoices=[{id:'chicken',name:'Chicken',audience:'Adults and children'}];w.sitePages=[{id:'saved-details',nav:'weddingPartyTabs',title:'What to Expect',content:'Default details body',audience:'guests'},{id:'travel',nav:'weddingPartyTabs',title:'Travel',content:'Travel body',audience:'all'}];hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;signedInPersonName='';viewedEventId='wedding';state=w;showSignedInDestination();render();});
 await page.evaluate(()=>enterEvent('wedding'));
 await page.locator('#editItemsButton').click();
-await page.locator('#guestCount').click();await page.getByRole('button',{name:'Text',exact:true}).click();
+await page.locator('#guestCount').click();await page.getByRole('button',{name:'Format',exact:true}).click();
 await page.getByLabel('Font',{exact:true}).selectOption('Georgia');
 await page.getByLabel('Size',{exact:true}).selectOption('32');
 await page.evaluate(()=>ElementAppearance.update(document.querySelector('#guestCount'),{textColor:'#123456'}));
@@ -30,7 +30,7 @@ assert.equal(await page.getByLabel('Size',{exact:true}).inputValue(),'14');
 assert.equal(await page.getByLabel('Text color hex',{exact:true}).inputValue(),'#654321');
 assert.equal(await page.getByRole('button',{name:'Italic',exact:true}).getAttribute('aria-pressed'),'true');
 
-await page.getByRole('button',{name:'Done editing',exact:true}).click();await page.evaluate(()=>{state.rsvps.push({name:'Casey Example',adults:1,children:0,attending:true,people:[{name:'Casey Example',attending:true}]});render();});
+await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.evaluate(()=>{state.rsvps.push({name:'Casey Example',adults:1,children:0,attending:true,people:[{name:'Casey Example',attending:true}]});render();});
 assert.deepEqual(await page.locator('#guestCount').evaluate(e=>({font:getComputedStyle(e).fontFamily,size:getComputedStyle(e).fontSize,color:getComputedStyle(e).color})),number);
 assert.equal(await page.locator('#guestListButton>span').evaluate(e=>getComputedStyle(e).fontSize),'14px');
 const snapshot=await page.evaluate(()=>JSON.stringify(appState.events.wedding.elementAppearance));
