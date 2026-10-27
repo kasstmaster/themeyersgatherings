@@ -7,7 +7,7 @@ await page.evaluate(()=>{localStateRevision+=1;appState=normalizeState(initialAp
 await page.evaluate(()=>enterEvent('thanksgiving'));
 assert.equal(await page.locator('#editAccountsButton').isVisible(),false);assert.equal(await page.locator('#gatheringHistoryButton').isVisible(),false);assert.equal(await page.locator('#hostQuickActions #editAccountsButton,#hostQuickActions #gatheringHistoryButton').count(),0);
 await page.locator('#editItemsButton').click();
-assert.deepEqual(await page.locator('.element-editor-top button:not([hidden])').allTextContents(),['Undo','Redo','Save','Done','↑ Gap','→ Gap','Use Button','Container','Menu','Templates','Accounts','History']);
+assert.deepEqual(await page.locator('.element-editor-top button:not([hidden])').allTextContents(),['Undo','Redo','Save','Done','Menu','Templates','Accounts','History','↑ Gap','→ Gap','Use Button','Container']);
 await page.getByRole('button',{name:'Menu',exact:true}).click();await page.locator('#menuEditorDialog').waitFor({state:'visible'});assert.equal(await page.locator('#menuEditorDialog #menuAdminFields').isVisible(),true);assert.equal(await page.locator('#adminDialog').isVisible(),false);
 const firstId=await page.evaluate(()=>state.items[0].id);await page.locator('#adminItems [aria-label="Dish name"]').first().fill('Updated dish');await page.locator('#adminItems [aria-label="Dish name"]').first().press('Tab');assert.equal(await page.evaluate(id=>state.items.find(item=>item.id===id).name,firstId),'Updated dish');
 await page.locator('#adminNewItem').fill('Toolbar dish');await page.locator('#adminAddButton').click();assert.equal(await page.evaluate(()=>state.items.some(item=>item.name==='Toolbar dish')),true);

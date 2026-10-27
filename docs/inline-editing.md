@@ -116,3 +116,5 @@ After a gathering is selected, each role keeps its full permitted toolbar throug
 Menu opens only the selected gathering’s menu controls. Potluck menus reuse the dish editor, including quantities, categories and claims; Wedding reuses the same meal-choice editor as the RSVP settings. Accounts and History keep their existing management screens and are hidden outside host edit mode. Run `node scripts/verify-editor-management.cjs`.
 
 Fixed actions use paired rows: Save / Done, ↑ Gap / → Gap, Use Button / Container, Menu / Templates, and Accounts / History. Only the formatting area scrolls.
+
+Fixed row order is Undo / Redo, Save / Done, divider, Menu / Templates, Accounts / History, divider, ↑ Gap / → Gap, then Use Button / Container. Formatting scrolls below these actions.

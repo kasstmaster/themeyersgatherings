@@ -303,7 +303,7 @@
       const redo=button('Redo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.redo()?'Change redone.':'There is no change to redo, or the data has changed elsewhere.');},history);redo.dataset.editorRedo='';redo.setAttribute('aria-label','Redo');redo.title='Redo';redo.disabled=true;
       const save=button('Save',()=>{commitToolbarInput();const structured=flush();SiteEditing.endUndoGroup();if(structured)SiteEditing.editorContext.refresh();status('Saved.');},row);
       const done=button('Done',()=>{commitToolbarInput();SiteEditing.endUndoGroup();SiteEditing.toggle(()=>SiteEditing.editorContext.refresh());},row);
-      const top=node('div');top.className='element-editor-top';const saveDone=node('div');saveDone.className='element-editor-pair';saveDone.dataset.editorSaveDone='';saveDone.append(save,done);top.append(history,saveDone,gaps,actions,menuTemplates,management,moves);toolbar.prepend(top);
+      const top=node('div');top.className='element-editor-top';const saveDone=node('div');saveDone.className='element-editor-pair';saveDone.dataset.editorSaveDone='';saveDone.append(save,done);top.append(history,saveDone,node('hr'),menuTemplates,management,node('hr'),gaps,actions,moves);toolbar.prepend(top);
       const panel=node('div');panel.dataset.editorPanel='';panel.className='element-editor-panel';panel.hidden=true;row.append(panel);
       const live=node('span');live.dataset.editorStatus='';live.setAttribute('role','status');toolbar.append(live);
       toolbar.addEventListener('focusin',event=>{if(event.target.matches('input,select,textarea'))SiteEditing.beginUndoGroup();});

@@ -1016,3 +1016,5 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 .element-editor-pair>[data-editor-templates]{min-width:0}
 .element-editor-pair>[data-editor-templates]>button{white-space:normal;overflow-wrap:anywhere}
 .element-editor-management>button{overflow-wrap:anywhere}
+
+.element-editor-top>hr{width:100%;border:0;border-top:1px solid #485365;margin:3px 0}
