@@ -1028,7 +1028,7 @@ function updateHeaderImage(event) {
 function isViewingAsGuest() { return hostAuthenticated && Boolean(hostWeddingPartyViewName); }
 function isHostView() { return hostAuthenticated && !isViewingAsGuest(); }
 const hostDialogStack=[];
-const persistentHostControls=['hostToolsPanel','editItemsButton','cancelViewAsButton','hostQuickActions'].map(id=>document.getElementById(id));
+const persistentHostControls=['hostToolsPanel','cancelViewAsButton','hostQuickActions'].map(id=>document.getElementById(id));
 function activeHostDialog(){return hostDialogStack.filter(dialog=>dialog.open).at(-1) || [...document.querySelectorAll('dialog[open]')].at(-1);}
 function hasGatheringToolbarContext(){return Boolean((guestName || hostAuthenticated) && document.querySelector('#eventSelectionPage').hidden && availableEventIds().includes(viewedEventId));}
 function syncHostToolbar(records=[]) {
@@ -1043,8 +1043,9 @@ function syncHostToolbar(records=[]) {
   document.querySelector('#newGatheringButton').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || Boolean(activeHostDialog());
   document.querySelector('#cancelViewAsButton').hidden=!isViewingAsGuest();
   document.body.style.setProperty('--host-shortcuts-width',document.querySelector('#hostQuickActions').getBoundingClientRect().width+'px');
-  const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated || SiteEditing.enabled;edit.textContent='Edit';edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
-  document.querySelector('#cancelViewAsButton').style.right=(edit.hidden?0:edit.getBoundingClientRect().width)+'px';
+  const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated || SiteEditing.enabled;edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
+  const hostToolbar=document.querySelector('#hostToolsPanel');if(edit.parentElement!==hostToolbar || hostToolbar.lastElementChild!==edit)hostToolbar.append(edit);
+  document.querySelector('#cancelViewAsButton').style.right='0px';
   document.body.classList.toggle('has-host-toolbar',hostAuthenticated);
   document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',hostAuthenticated);
   document.querySelector('#eventDock').hidden=true;
@@ -1499,7 +1500,6 @@ function render() {
   document.querySelector('#rsvpPageToolbar').hidden=false;
   renderSyncStatus();
   updateHostToolsPanel();
-  document.querySelector('#editItemsButton').textContent = 'Edit';
   renderEventDock();
   updateHeaderImage(event);
   const eventDate = new Date(`${state.eventDate}T12:00:00`);

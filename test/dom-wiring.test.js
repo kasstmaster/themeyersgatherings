@@ -655,13 +655,15 @@ test('host tools expose Home, Accounts, History, and new gathering', async () =>
   assert.match(javascript, /hostToolsPanel'\)\.hidden = !hostAuthenticated/);
 });
 
-test('fixed Edit replaces gathering-specific labels and the old session option', async () => {
-  const [javascript, styles] = await Promise.all([
+test('host Edit retains its icon and label when placed in the toolbar', async () => {
+  const [javascript, styles, html] = await Promise.all([
     readFile(new URL('../app.js', import.meta.url), 'utf8'),
-    readFile(new URL('../styles.css', import.meta.url), 'utf8')
+    readFile(new URL('../styles.css', import.meta.url), 'utf8'),
+    readFile(new URL('../index.html', import.meta.url), 'utf8')
   ]);
 
-  assert.match(javascript, /#editItemsButton'\)\.textContent = 'Edit'/);
+  assert.match(html, /id="editItemsButton"[^>]*>[\s\S]*?<svg[\s\S]*?<span>Edit<\/span>/);
+  assert.doesNotMatch(javascript, /edit\.textContent='Edit'|#editItemsButton'\)\.textContent/);
   assert.match(javascript, /function populateClearClaimControls/);
   assert.doesNotMatch(javascript, /#previewWeddingPartyButton/);
   assert.match(styles, /\.host-tools-panel \.host-tool-actions button\[hidden\]\{display:none\}/);
