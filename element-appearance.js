@@ -28,6 +28,8 @@
     if(target.matches('.event-dock'))return 'toolbar';
     const dialog=target.closest('dialog');if(dialog && dialog.id!=='rsvpDialog')return null;
     if(target.closest('.element-editor-toolbar,#hostQuickActions,#editItemsButton,[id^="admin"],.inline-portal-editor') || target.closest(contentText))return null;
+    if(target.matches('.dish-claimants'))return 'dish-claimants';
+    if(target.matches('.dish-status,.rsvp-dish-choice small'))return 'dish-details';
     if(target.matches('.summary-strip'))return 'inner-containers';
     if(target.matches('.summary-item>strong,.summary-stat>strong,.counter-row>div>output'))return 'count-values';
     if(target.matches('.summary-item>span,.summary-stat>span,.counter-row>div>strong,.counter-row>div>span'))return 'count-titles';
