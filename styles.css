@@ -1002,3 +1002,13 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 #menuEditorContent .inline-meal-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;margin:12px 0}
 #menuEditorContent .inline-meal-row>*{min-width:0}
 @media(max-width:600px){#menuEditorContent .inline-meal-row{grid-template-columns:minmax(0,1fr)} }
+/* Compact formatting controls without changing the selected page's typography. */
+.element-editor-toolbar .element-editor-row{font-size:11px;line-height:1.25;gap:4px}
+.element-editor-toolbar .element-editor-panel{gap:4px;padding-top:6px;margin-top:6px}
+.element-editor-toolbar .element-editor-row label{font-size:10.5px;line-height:1.2;gap:2px}
+.element-editor-toolbar .element-editor-row :is(button,select,input,textarea){font-size:11px;line-height:1.2;padding:3px 5px;min-height:22px}
+.element-editor-toolbar .element-editor-panel input[type="color"]{width:28px;height:22px;padding:1px}
+.element-editor-toolbar .element-editor-panel input[type="range"]{min-height:16px;padding:0}
+.element-editor-toolbar .element-editor-panel textarea{height:36px;min-height:36px}
+.element-editor-toolbar .element-editor-settings{gap:6px}
+.element-editor-toolbar .element-editor-row output{font-size:10px;line-height:1.2}
