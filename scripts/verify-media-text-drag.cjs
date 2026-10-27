@@ -7,7 +7,7 @@ const copy=await page.locator('#weddingMediaIntro').textContent();
 await page.locator('#weddingMediaIntro').dragTo(page.locator('#mediaGalleryDescription'),{targetPosition:{x:40,y:3}});
 assert.equal(await page.locator('#weddingMediaIntro').evaluate(e=>e.parentElement.id),'weddingMediaView');assert.equal(await page.locator('#weddingMediaIntro').evaluate(e=>e.nextElementSibling.id),'mediaGalleryDescription');assert.equal(await page.locator('#weddingMediaIntro').textContent(),copy);
 // A click still enters text editing; dragging the selection border repositions the box.
-await page.locator('#weddingMediaIntro').click();assert.equal(await page.locator('#weddingMediaIntro').getAttribute('contenteditable'),'true');
+await page.locator('#weddingMediaIntro').click();assert.equal(await page.locator('#weddingMediaIntro').getAttribute('contenteditable'),null);await page.locator('#weddingMediaIntro').dblclick();assert.equal(await page.locator('#weddingMediaIntro').getAttribute('contenteditable'),'true');
 await page.locator('#weddingMediaIntro').press('End');await page.locator('#weddingMediaIntro').press('!');
 await page.locator('#weddingMediaIntro').dragTo(page.locator('#weddingMediaHeading'),{sourcePosition:{x:2,y:2},targetPosition:{x:40,y:3}});
 assert.equal(await page.locator('#weddingMediaIntro').evaluate(e=>e.parentElement.id),'weddingMediaSection');assert.equal(await page.locator('#weddingMediaIntro').evaluate(e=>e.nextElementSibling.id),'weddingMediaHeading');assert.match(await page.locator('#weddingMediaIntro').textContent(),/!/);

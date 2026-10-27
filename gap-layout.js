@@ -4,12 +4,14 @@
   const nodes=new Map(),virtuals=new Map(),virtualInfo=new WeakMap(),originalStyles=[];
   const excluded='.editor-ribbon-space,#hostToolsPanel,.element-editor-toolbar,.host-fixed-edit,.gap-drop-marker,.existing-layout-gap,.editor-dialog,#newGatheringDialog,#gatheringHistoryDialog';
   const find=selector=>{try{return document.querySelector(selector);}catch{return null;}};
+  let sideFrame=0;
+  const sideResize=typeof ResizeObserver==='function'?new ResizeObserver(()=>{if(sideFrame)return;sideFrame=requestAnimationFrame(()=>{sideFrame=0;if(context){applySpacing();scanSpaces();}});}):null;
   const size=value=>Math.max(0,Math.min(1000,Math.round(Number(value)||0)));
   function enabled(){return context?.host && context.editing;}
-  function beforeRender(){for(const element of virtuals.values())element.remove();virtuals.clear();restoreSpacing();for(const element of nodes.values())element.remove();nodes.clear();clearMarker();}
+  function beforeRender(){sideResize?.disconnect();if(sideFrame)cancelAnimationFrame(sideFrame);sideFrame=0;for(const element of virtuals.values())element.remove();virtuals.clear();restoreSpacing();for(const element of nodes.values())element.remove();nodes.clear();clearMarker();}
   function paintGap(element,gap){
     const axis=gap.axis==='x'?'x':'y',amount=size(gap.size);element.dataset.gapAxis=axis;
-    Object.assign(element.style,{display:axis==='x'?'inline-block':'block',width:axis==='x'?amount+'px':'100%',height:axis==='x'?'1em':amount+'px',flexBasis:axis==='x'?amount+'px':'auto'});
+    element.hidden=false;Object.assign(element.style,{left:'',top:'',display:'block',position:axis==='x'?'absolute':'relative',width:axis==='x'?amount+'px':'100%',height:axis==='x'?'1em':amount+'px',flexBasis:axis==='x'?amount+'px':'auto'});
     element.dataset.gapLabel=`${axis==='x'?'Vertical':'Horizontal'} gap · ${amount} px`;element.setAttribute('aria-label',element.dataset.gapLabel);element.setAttribute('aria-orientation',axis==='x'?'vertical':'horizontal');
   }
   function render(ctx){
@@ -28,7 +30,7 @@
       }
       if(!progress)break;
     }
-    applySpacing();scanSpaces();
+    applySpacing();scanSpaces();sideResize?.disconnect();for(const gap of ctx.state.siteGaps || [])if(gap.axis==='x'){const node=nodes.get(gap.id),anchor=gap.anchor?find(gap.anchor):gap.before?find(gap.before):node?.previousElementSibling;if(anchor){sideResize?.observe(anchor);if(anchor.parentElement)sideResize?.observe(anchor.parentElement);}}
   }
   function candidate(start,axis='y'){
     const virtual=start?.closest('.existing-layout-gap');if(virtual){const info=virtualInfo.get(virtual);start=info?find(info.after):null;}
@@ -53,6 +55,7 @@
     for(const info of Object.values(context.state.siteSpacing || {}))if(info.before==='#'+own?.id && previous)info.before=ElementAppearance.selector(previous);
     if(own)for(const gap of context.state.siteGaps)if(gap!==record && gap.before==='#'+own.id)gap.before=own.nextElementSibling?ElementAppearance.selector(own.nextElementSibling):null;
     record.parent=ElementAppearance.selector(parent);record.before=anchor?ElementAppearance.selector(anchor):null;
+    record.anchor=ElementAppearance.selector(element);record.side=before?'before':'after';
     for(const gap of context.state.siteGaps)if(gap!==record && gap.parent===record.parent && gap.before===record.before)gap.before='#gathering-gap-'+record.id;
 
     for(const [key,info] of Object.entries(context.state.siteSpacing || {}))if(!info.padding && info.axis==='y' && info.parent===record.parent && info.after===record.before){delete context.state.siteSpacing[key];info.before='#gathering-gap-'+record.id;info.key=[info.parent,info.before,info.after,info.axis,''].join('|');context.state.siteSpacing[info.key]=info;}
@@ -64,12 +67,12 @@
   function normalizeSpacing(){if(context.state.siteSpacing){const spacing={};for(const info of Object.values(context.state.siteSpacing)){info.key=[info.parent,info.before || '',info.after,info.axis,info.padding || ''].join('|');spacing[info.key]=info;}context.state.siteSpacing=spacing;}}
   function getAxis(element){return virtualInfo.get(element)?.axis || element?.dataset.gapAxis || 'y';}
   function getSize(element){return virtualInfo.get(element)?.size ?? (parseFloat(element?.style[getAxis(element)==='x'?'width':'height']) || 0);}
-  function setAxis(element,axis){const gap=context?.state.siteGaps?.find(gap=>gap.id===element?.dataset.gapId);if(!enabled() || !gap)return;gap.axis=axis==='x'?'x':'y';paintGap(element,gap);scanSpaces();context.save();}
+  function setAxis(element,axis){const gap=context?.state.siteGaps?.find(gap=>gap.id===element?.dataset.gapId);if(!enabled() || !gap)return;gap.axis=axis==='x'?'x':'y';paintGap(element,gap);applySpacing();scanSpaces();context.save();}
   function setSize(element,value){
     if(!enabled())return;
     const info=virtualInfo.get(element);
     if(info){context.state.siteSpacing??={};context.state.siteSpacing[info.key]={...info,size:size(value)};applySpacing();scanSpaces();context.save();return;}
-    const gap=context.state.siteGaps?.find(gap=>gap.id===element?.dataset.gapId);if(!gap)return;gap.size=size(value);paintGap(element,gap);scanSpaces();context.save();
+    const gap=context.state.siteGaps?.find(gap=>gap.id===element?.dataset.gapId);if(!gap)return;gap.size=size(value);paintGap(element,gap);applySpacing();scanSpaces();context.save();
   }
   function remove(element){
     if(!enabled())return;
@@ -78,8 +81,24 @@
   }
   function restoreSpacing(){for(const [element,property,value,priority] of originalStyles.reverse()){if(value)element.style.setProperty(property,value,priority);else element.style.removeProperty(property);}originalStyles.length=0;}
   function setStyle(element,property,value){originalStyles.push([element,property,element.style.getPropertyValue(property),element.style.getPropertyPriority(property)]);element.style.setProperty(property,value+'px','important');}
+  function applySideGaps(){
+    const anchors=new Map();
+    for(const gap of context?.state.siteGaps || []){
+      if(gap.axis!=='x')continue;const element=nodes.get(gap.id),anchor=gap.anchor?find(gap.anchor):gap.before?find(gap.before):element?.previousElementSibling;
+      if(!element || !anchor || anchor.matches('gathering-gap') || anchor.parentElement!==element.parentElement || !anchor.getClientRects().length || anchor.closest('[hidden],[data-rsvp-flow-hidden]')){if(element)element.hidden=true;continue;}
+      element.hidden=false;if(!anchors.has(anchor))anchors.set(anchor,[]);anchors.get(anchor).push({element,gap,side:gap.side || (gap.before?'before':'after')});
+    }
+    for(const [anchor,entries] of anchors){
+      const left=entries.filter(entry=>entry.side==='before').reduce((sum,entry)=>sum+size(entry.gap.size),0),right=entries.filter(entry=>entry.side==='after').reduce((sum,entry)=>sum+size(entry.gap.size),0),style=getComputedStyle(anchor),parent=anchor.parentElement,parentStyle=getComputedStyle(parent);
+      if(left)setStyle(anchor,'margin-left',(parseFloat(style.marginLeft)||0)+left);if(right)setStyle(anchor,'margin-right',(parseFloat(style.marginRight)||0)+right);
+      const width=parent.clientWidth-(parseFloat(parentStyle.paddingLeft)||0)-(parseFloat(parentStyle.paddingRight)||0)-left-right;
+      const originalLimit=style.maxWidth.endsWith('%')?parent.clientWidth*parseFloat(style.maxWidth)/100:parseFloat(style.maxWidth);
+      setStyle(anchor,'max-width',Math.max(0,Math.min(width,Number.isFinite(originalLimit)?originalLimit:Infinity)));const rect=anchor.getBoundingClientRect();let before=left,after=0;
+      for(const {element,gap,side} of entries){const amount=size(gap.size),owner=element.offsetParent || document.documentElement,origin=owner.getBoundingClientRect();const x=side==='before'?rect.left-before:rect.right+after;if(side==='before')before-=amount;else after+=amount;Object.assign(element.style,{left:(x-origin.left-owner.clientLeft+owner.scrollLeft)+'px',top:(rect.top-origin.top-owner.clientTop+owner.scrollTop)+'px',height:rect.height+'px'});}
+    }
+  }
   function applySpacing(){
-    restoreSpacing();
+    restoreSpacing();applySideGaps();
     for(const info of Object.values(context?.state.siteSpacing || {})){
       const after=find(info.after),before=info.before?find(info.before):null,parent=find(info.parent);if(!after || !parent || after.parentElement!==parent || parent.closest(excluded) || !after.getClientRects().length || before && !before.getClientRects().length)continue;
       const horizontal=info.axis==='x',property=horizontal?'margin-left':'margin-top';

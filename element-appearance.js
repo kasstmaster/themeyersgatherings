@@ -2,7 +2,7 @@
 (() => {
   let context;
   const applied=new Map(),imageOriginals=new Map();
-  const styledText=new Map();
+  const styledText=new Map(),editingStates=new Map(),previewStyles=new Map();
   function label(element){
     if(element===document.body)return 'Page background';
     if(element.tagName.toLowerCase()==='svg')return 'Icon';
@@ -56,7 +56,17 @@
     return null;
   }
   const stateGroups=['buttons','tabs','toolbar-options'];
-  function selectedState(target){return stateGroups.includes(group(target))?(target.matches('[aria-selected="true"],[aria-pressed="true"],[aria-current="page"]')?'selected':'unselected'):null;}
+  function selectedState(target){return stateGroups.includes(group(target))?(context?.enabled && context.host && editingStates.has(target)?editingStates.get(target):target.matches('[aria-selected="true"],[aria-pressed="true"],[aria-current="page"]')?'selected':'unselected'):null;}
+  function editState(target,state){
+    if(!context?.enabled || !context.host || !stateGroups.includes(group(target)))return;
+    restore(false);const clone=target.cloneNode(true);clone.classList.remove('element-editor-selected');clone.removeAttribute('contenteditable');
+    for(const attribute of ['aria-selected','aria-pressed'])clone.setAttribute(attribute,String(state==='selected'));
+    if(clone.hasAttribute('aria-current'))clone.setAttribute('aria-current',state==='selected'?'page':'false');
+    Object.assign(clone.style,{position:'fixed',left:'-10000px',top:'0',visibility:'hidden',pointerEvents:'none',width:target.getBoundingClientRect().width+'px'});target.after(clone);
+    const computed=getComputedStyle(clone),css={};for(const property of ['background-color','background-image','background-size','border-color','border-width','border-style','border-radius','outline-color','outline-style','outline-width','outline-offset','color','font-family','font-size','font-weight','font-style','text-decoration'])css[property]=computed.getPropertyValue(property);
+    clone.remove();editingStates.set(target,state);previewStyles.set(target,css);apply();
+  }
+  function clearEditState(target){if(editingStates.delete(target)){previewStyles.delete(target);apply();}}
   function find(path){
     if(path.startsWith('@group:')){
       const [kind,state]=path.slice(7).split(':');
@@ -94,7 +104,7 @@
   function imageElement(target){return target.matches?.('img')?target:target.matches?.('.header-art')?target.querySelector('img'):null;}
   function replaceImage(image,url){image.removeAttribute('srcset');image.hidden=!url;if(url)image.setAttribute('src',url);else image.removeAttribute('src');}
   function updateImage(target,url){
-    if(!context?.host || !context.enabled)return;
+    if(!target || !context?.host || !context.enabled)return;
     const image=imageElement(target);if(!image)return globalThis.ElementAppearance.update(target,{backgroundImage:url});
     const styles=context.state.elementAppearance??={};
     for(const element of [image,image.closest('.header-art')].filter(Boolean)){
@@ -166,7 +176,7 @@
     if(!context?.format)return;
     const desired=new Map();
     for(const [path,entry] of Object.entries(context.state.textAppearance || {}))if(entry && Array.isArray(entry.parts))for(const target of find(path)){
-      textParts(target).forEach((part,index)=>{if(part.isContentEditable)return;const saved=entry.parts?.[index];if(!saved || typeof saved.markup!=='string' || typeof saved.source!=='string')return;const markup=TextStyles.rebase(saved.markup,saved.source,saved.overrideText??plainText(part));desired.set(part,context.format(markup,{inline:true}));});
+      textParts(target).forEach((part,index)=>{if(part.isContentEditable || globalThis.ElementEditor?.ownsText?.(part))return;const saved=entry.parts?.[index];if(!saved || typeof saved.markup!=='string' || typeof saved.source!=='string')return;const markup=TextStyles.rebase(saved.markup,saved.source,saved.overrideText??plainText(part));desired.set(part,context.format(markup,{inline:true}));});
     }
     for(const [part,html] of desired){
       const record=styledText.get(part);
@@ -177,6 +187,7 @@
   }
   function apply(){
     restore(false);applyText();
+    if(context?.enabled && context.host)for(const [target,css] of previewStyles)if(target.isConnected)for(const [property,value] of Object.entries(css))set(target,property,value);
     for(const [path,values] of Object.entries(context?.state.elementAppearance || {}).sort(([a],[b])=>(a==='[data-shared-details]'?2:Number(a.startsWith('@group:')))-(b==='[data-shared-details]'?2:Number(b.startsWith('@group:'))) || a.length-b.length))for(const element of find(path)){
       paint(element,path==='@group:inner-containers' && contentSurface(element)?Object.fromEntries(Object.entries(values).filter(([key])=>surfaceKeys.includes(key))):values);
       if(path.startsWith('@group:') && !contentSurface(element) && !element.matches?.('.rsvp-page-shell')){
@@ -195,10 +206,10 @@
   if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply();if(records.some(record=>record.type==='attributes' && record.attributeName==='open'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open','aria-selected','aria-pressed','aria-current']});
   globalThis.ElementAppearance={
     textParts,label,isSurface,surfaceElement,imageElement,updateImage,
-    group,selectedState,
+    group,selectedState,editState,clearEditState,
     values:target=>({...context?.state.elementAppearance?.[selector(target)],...(stateGroups.includes(group(target))?context?.state.elementAppearance?.['@group:'+group(target)]:{}),...context?.state.elementAppearance?.[appearancePath(target)],...(contentSurface(target)?Object.fromEntries(Object.entries(context?.state.elementAppearance?.['@group:inner-containers'] || {}).filter(([key])=>surfaceKeys.includes(key))):{})}),
     update(target,values){
-      if(!context?.host || !context.enabled)return;
+      if(!target || !context?.host || !context.enabled)return;
       const styles=context.state.elementAppearance??={},path=appearancePath(target,values);
       if(path!==selector(target) && !selectedState(target))for(const oldPath of Object.keys(styles))if(!oldPath.startsWith('@group:') && oldPath!==path && find(oldPath).some(element=>appearancePath(element,values)===path))for(const key of Object.keys(values))delete styles[oldPath][key];
       if(path==='.event-dock'){
