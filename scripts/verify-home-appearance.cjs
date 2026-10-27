@@ -12,8 +12,8 @@ await page.locator('#eventSelectionHeading').click();await page.getByRole('butto
 await page.getByLabel('Font',{exact:true}).selectOption('Georgia');
 await page.locator('#eventSelectionHeading').fill('Our gathering home');
 await page.getByRole('button',{name:'Done editing',exact:true}).click();
-assert.equal(await page.evaluate(()=>appState.gatheringHome.elementAppearance['@group:buttons'].backgroundColor),'#123456');
-assert.equal(await page.evaluate(()=>appState.events.wedding.elementAppearance?.['@group:buttons']?.backgroundColor),undefined);
+assert.equal(await page.evaluate(()=>appState.gatheringHome.elementAppearance['@group:buttons:unselected'].backgroundColor),'#123456');
+assert.equal(await page.evaluate(()=>appState.events.wedding.elementAppearance?.['@group:buttons:unselected']?.backgroundColor),undefined);
 const home=await page.evaluate(()=>JSON.stringify(appState.gatheringHome));
 await page.locator('[data-enter-event="thanksgiving"]').click();await page.locator('#rsvpDialog').waitFor({state:'visible'});
 assert.notEqual(await page.locator('#rsvpConfirmEvent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');

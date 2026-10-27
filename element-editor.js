@@ -217,7 +217,7 @@
     if(SiteEditing.movableTextRoot(target)){target.draggable=false;restores.push(()=>target.draggable=true);}
     if(toolbar.querySelector('[data-editor-chooser]'))toolbar.querySelector('[data-editor-chooser]').value=ElementAppearance.selector(target);
     const kind=ElementAppearance.group(target);
-    toolbar.querySelector('[data-editor-selection]').textContent=ElementAppearance.label(target)+(kind?' · Shared '+kind.replaceAll('-',' '):'');
+    toolbar.querySelector('[data-editor-selection]').textContent=ElementAppearance.label(target)+(kind?' · Shared '+(ElementAppearance.selectedState(target)?ElementAppearance.selectedState(target)+' ':'')+kind.replaceAll('-',' '):'');
     toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=!entry?.options?.actions?.some(([title])=>title===button.dataset.editorMove));
     const fields=entry?.fields;
     const readonly=Boolean(fields?.[0]?.readonly || fields?.length===1 && !['text','page','notes'].includes(entry.title));
