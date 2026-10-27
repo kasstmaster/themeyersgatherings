@@ -1811,11 +1811,11 @@ function renderEventDock() {
 function renderDish(item) {
   const mine = guestName && item.claims.includes(guestName);
   const remaining = Math.max(0, item.needed - item.claims.length);
-  const claimants = isHostView()
+  const claimants = isHostView() && item.claims.length > 0
     ? `<span class="dish-claimants">${[...new Set(item.claims)].map(name => escapeHtml(contributionDisplayName(name))).join(', ')}</span>`
     : '';
   const status = item.optional ? 'Optional' : (remaining ? `${remaining} of ${formatQuantity(item.needed, item)} still needed` : '');
-  const details = [status, claimants].filter(Boolean).join(' · ');
+  const details = [status ? `<span class="dish-status">${status}</span>` : '', claimants].filter(Boolean).join(' · ');
   const unavailable = remaining === 0 && !mine;
   return `<div class="dish"><h4>${escapeHtml(item.name)}</h4>${details ? `<div class="dish-meta">${details}</div>` : ''}<button data-claim="${item.id}" data-dish-status="${mine ? 'bringing' : unavailable ? 'claimed' : 'available'}" ${unavailable && !SiteEditing.enabled ? 'disabled' : ''} class="${mine ? 'claimed' : ''}">${mine ? '✓ Bringing it' : (unavailable ? 'Claimed' : "I'll bring this")}</button></div>`;
 }
