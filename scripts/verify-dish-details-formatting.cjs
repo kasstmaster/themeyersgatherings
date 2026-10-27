@@ -19,11 +19,11 @@ assert.equal(await page.locator('#menuGrid .dish-claimants').evaluate(e=>getComp
 assert.match(await page.locator('#menuGrid .dish-claimants').evaluate(e=>getComputedStyle(e).fontFamily),/Georgia/);
 assert.equal(await page.locator('#menuGrid .dish-status').first().evaluate(e=>getComputedStyle(e).color),'rgb(18, 52, 86)');
 const details=await page.locator('#menuGrid .dish-status').allTextContents();assert.ok(details.some(text=>text.includes('1 of 1')));
-await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.evaluate(()=>{state.items[0].needed=2;render();});
+await page.getByRole('button',{name:'Done',exact:true}).click();await page.evaluate(()=>{state.items[0].needed=2;render();});
 assert.match(await page.locator('#menuGrid .dish-status').first().textContent(),/2 of 2/);assert.equal(await page.locator('#menuGrid .dish-status').first().evaluate(e=>getComputedStyle(e).color),'rgb(18, 52, 86)');
 await page.locator('#editItemsButton').click();await page.locator('#menuGrid .dish .dish-title').first().click();await page.getByRole('button',{name:'Format',exact:true}).click();await page.getByLabel('Text color hex',{exact:true}).fill('#654321');await page.getByLabel('Text color hex',{exact:true}).press('Tab');
 assert.equal(await page.locator('#menuGrid .dish-status').first().evaluate(e=>getComputedStyle(e).color),'rgb(18, 52, 86)');
 assert.equal(await page.locator('#menuGrid .dish-claimants').evaluate(e=>getComputedStyle(e).color),'rgb(171, 205, 239)');
-await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.locator('#hostHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});await page.locator('[data-enter-event="christmas"]').click();await page.locator('#remainingSummary').click();assert.notEqual(await page.locator('#menuGrid .dish-status').first().evaluate(e=>getComputedStyle(e).color),'rgb(18, 52, 86)');
+await page.getByRole('button',{name:'Done',exact:true}).click();await page.locator('#hostHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});await page.locator('[data-enter-event="christmas"]').click();await page.locator('#remainingSummary').click();assert.notEqual(await page.locator('#menuGrid .dish-status').first().evaluate(e=>getComputedStyle(e).color),'rgb(18, 52, 86)');
 assert.deepEqual(errors,[]);await browser.close();console.log('Dish status formatting is shared independently of titles, remains calculated after redraws, and stays separate across gatherings.');
 })().catch(e=>{console.error(e);process.exit(1);});

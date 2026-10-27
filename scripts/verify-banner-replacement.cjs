@@ -11,7 +11,7 @@ for(const eventId of ['wedding','thanksgiving','christmas']){
  await page.getByLabel('Image URL',{exact:true}).fill(url);await page.getByLabel('Image URL',{exact:true}).press('Tab');
  assert.equal(await page.locator('#rsvpFirstPageImage').getAttribute('src'),url);assert.equal(await page.evaluate(()=>state.rsvpHeaderImage),url);
  for(const selector of ['#rsvpFirstPageImage','#rsvpEventHeader .header-art'])assert.equal(await page.locator(selector).evaluate(e=>getComputedStyle(e).backgroundImage),'none');
- await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.evaluate(()=>render());assert.equal(await page.locator('#rsvpFirstPageImage').getAttribute('src'),url);
+ await page.getByRole('button',{name:'Done',exact:true}).click();await page.evaluate(()=>render());assert.equal(await page.locator('#rsvpFirstPageImage').getAttribute('src'),url);
  await page.locator('#editItemsButton').click();await page.locator('#rsvpFirstPageImage').click();await page.getByRole('button',{name:'Format',exact:true}).click();assert.equal(await page.getByLabel('Image URL',{exact:true}).inputValue(),url);
  // Uploaded images use the same replacement path without contacting live storage.
  await page.evaluate(()=>{ElementAppearance.upload=async()=>`http://127.0.0.1:8041/replacement-upload.svg`;});
@@ -19,10 +19,10 @@ for(const eventId of ['wedding','thanksgiving','christmas']){
  await page.waitForFunction(()=>state.rsvpHeaderImage.endsWith('replacement-upload.svg'));
  assert.equal(await page.locator('#rsvpFirstPageImage').getAttribute('src'),'http://127.0.0.1:8041/replacement-upload.svg');
  await page.getByRole('button',{name:'Remove image',exact:true}).click();assert.equal(await page.locator('#rsvpFirstPageImage').getAttribute('src'),null);assert.equal(await page.evaluate(()=>state.rsvpHeaderImage),'');
- await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.locator('#hostHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});
+ await page.getByRole('button',{name:'Done',exact:true}).click();await page.locator('#hostHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});
 }
 // Non-banner image sources persist in home state and restore across context changes.
-await page.locator('#editItemsButton').click();await page.locator('.event-selection-icon').click();await page.getByRole('button',{name:'Format',exact:true}).click();await page.getByLabel('Image URL',{exact:true}).fill('http://127.0.0.1:8041/replacement-home.svg');await page.getByLabel('Image URL',{exact:true}).press('Tab');await page.getByRole('button',{name:'Done Editing',exact:true}).click();
+await page.locator('#editItemsButton').click();await page.locator('.event-selection-icon').click();await page.getByRole('button',{name:'Format',exact:true}).click();await page.getByLabel('Image URL',{exact:true}).fill('http://127.0.0.1:8041/replacement-home.svg');await page.getByLabel('Image URL',{exact:true}).press('Tab');await page.getByRole('button',{name:'Done',exact:true}).click();
 await page.evaluate(()=>render());assert.equal(await page.locator('.event-selection-icon').getAttribute('src'),'http://127.0.0.1:8041/replacement-home.svg');
 assert.deepEqual(errors,[]);await browser.close();console.log('Banner URL replacement, uploads, removal and legacy overlay cleanup persist across all gatherings; home images replace their source too.');
 })().catch(e=>{console.error(e);process.exit(1);});

@@ -1012,3 +1012,7 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 .element-editor-toolbar .element-editor-panel textarea{height:36px;min-height:36px}
 .element-editor-toolbar .element-editor-settings{gap:6px}
 .element-editor-toolbar .element-editor-row output{font-size:10px;line-height:1.2}
+
+.element-editor-pair>[data-editor-templates]{min-width:0}
+.element-editor-pair>[data-editor-templates]>button{white-space:normal;overflow-wrap:anywhere}
+.element-editor-management>button{overflow-wrap:anywhere}

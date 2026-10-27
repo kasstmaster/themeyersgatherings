@@ -52,7 +52,7 @@ await page.locator('#rsvpPageNavigation').getByRole('button',{name:'Registry',ex
 assert.equal(await page.locator('#registrySection').isVisible(),true);
 assert.equal(await page.locator('.element-editor-toolbar').count(),1);
 
-await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done Editing',exact:true}).click();
+await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done',exact:true}).click();
 assert.equal(await page.locator('.element-editor-toolbar').count(),0);
 assert.equal(await page.locator('.element-editor-selected').count(),0);
 assert.match(await page.evaluate(()=>state.rsvpIntroText),/font=Georgia/);
@@ -69,7 +69,7 @@ await page.getByRole('button',{name:'Format',exact:true}).click();await page.get
 assert.equal(await page.locator('#weddingRsvpGuests').innerHTML(),mealLayout);
 await page.getByRole('textbox',{name:'Meal name: Chicken',exact:true}).fill('Roasted chicken');await page.getByRole('textbox',{name:'Meal name: Chicken',exact:true}).press('Tab');
 assert.equal(await page.evaluate(()=>GuestPlanning.weddingMeals(state)[0].name),'Roasted chicken');
-await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done Editing',exact:true}).click();
+await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done',exact:true}).click();
 assert.equal(await page.evaluate(()=>state.rsvps.length),0);
 console.log('Fixed ribbon preserves page layouts; text, lists, backgrounds, opacity, uploaded images, borders, and meal editing pass.');
 await page.locator('#rsvpDialog .modal-close').click();await page.waitForTimeout(100);
@@ -97,5 +97,5 @@ await page.getByRole('textbox',{name:'Text color hex',exact:true}).fill('#cc3311
 const oldCount=await page.locator('#invitedCount').textContent();await page.evaluate(()=>{appState.accounts.push({name:'Second Person',source:'website',selectedEvents:{wedding:true},invitedEvents:{wedding:true}});render();});
 assert.notEqual(await page.locator('#invitedCount').textContent(),oldCount);assert.equal(await page.locator('#invitedCount').evaluate(e=>getComputedStyle(e).color),'rgb(204, 51, 17)');
 await page.evaluate(()=>{viewedEventId='thanksgiving';state=appState.events.thanksgiving;render();});assert.equal(await page.evaluate(()=>Boolean(state.textAppearance?.['#invitedListButton'])),false);
-await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done Editing',exact:true}).click();
+await page.locator('.element-editor-toolbar').getByRole('button',{name:'Done',exact:true}).click();
 assert.deepEqual(errors,[]);console.log('Completing the real guest RSVP flow retains the saved response and opens Registry.');await browser.close();})().catch(e=>{console.error(e);process.exit(1);});

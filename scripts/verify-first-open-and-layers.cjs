@@ -6,7 +6,7 @@ const bottomGap=()=>page.evaluate(()=>{const form=document.querySelector('#rsvpF
 for(const width of [1280,390]){
  await page.setViewportSize({width,height:900});await page.evaluate(()=>enterEvent('thanksgiving'));
  const first=await page.locator('#rsvpForm').evaluate(e=>e.getBoundingClientRect().height);assert.ok(Math.abs(await bottomGap())<2);assert.equal(await page.locator('#rsvpForm>.modal-dialog-footer').isVisible(),false);
- await page.locator('#editItemsButton').click();const editing=await page.locator('#rsvpForm').evaluate(e=>e.getBoundingClientRect().height);await page.getByRole('button',{name:'Done Editing',exact:true}).click();const after=await page.locator('#rsvpForm').evaluate(e=>e.getBoundingClientRect().height);assert.ok(Math.abs(first-editing)<2);assert.ok(Math.abs(first-after)<2);
+ await page.locator('#editItemsButton').click();const editing=await page.locator('#rsvpForm').evaluate(e=>e.getBoundingClientRect().height);await page.getByRole('button',{name:'Done',exact:true}).click();const after=await page.locator('#rsvpForm').evaluate(e=>e.getBoundingClientRect().height);assert.ok(Math.abs(first-editing)<2);assert.ok(Math.abs(first-after)<2);
  await page.locator('#hostHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});
 }
 await page.setViewportSize({width:1280,height:900});await page.evaluate(()=>enterEvent('wedding'));
@@ -15,7 +15,7 @@ assert.equal(await painted('#brideGroomContent'),2);
 await page.locator('#editItemsButton').click();await page.evaluate(()=>ElementEditor.select(document.querySelector('#rsvpForm')));await page.getByRole('button',{name:'Format',exact:true}).click();await page.getByLabel('Background hex',{exact:true}).fill('#123456');await page.getByLabel('Background hex',{exact:true}).press('Tab');await page.getByLabel('Background opacity',{exact:true}).evaluate(e=>{e.value=100;e.dispatchEvent(new Event('input',{bubbles:true}));});
 await page.evaluate(()=>ElementEditor.select(document.querySelector('#brideGroomSection')));await page.getByLabel('Background hex',{exact:true}).fill('#abcdef');await page.getByLabel('Background hex',{exact:true}).press('Tab');await page.getByLabel('Background opacity',{exact:true}).evaluate(e=>{e.value=100;e.dispatchEvent(new Event('input',{bubbles:true}));});
 assert.equal(await page.locator('#rsvpForm').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(18, 52, 86)');assert.equal(await page.locator('#brideGroomContent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(171, 205, 239)');assert.equal(await page.locator('#brideGroomSection').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)');assert.equal(await painted('#brideGroomContent'),2);
-await page.getByRole('button',{name:'Done Editing',exact:true}).click();
+await page.getByRole('button',{name:'Done',exact:true}).click();
 for(const [name,selector] of [['Registry','#registrySection .registry-gift-note'],['Attire','[data-attire-group="ladies"]'],['Wedding Party','#weddingPartyDetails .wedding-party-card']]){
  await page.locator('#rsvpPageNavigation').getByRole('button',{name,exact:true}).click();assert.equal(await painted(selector),2);
 }

@@ -30,7 +30,7 @@ assert.equal(await page.getByLabel('Size',{exact:true}).inputValue(),'14');
 assert.equal(await page.getByLabel('Text color hex',{exact:true}).inputValue(),'#654321');
 assert.equal(await page.getByRole('button',{name:'Italic',exact:true}).getAttribute('aria-pressed'),'true');
 
-await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.evaluate(()=>{state.rsvps.push({name:'Casey Example',adults:1,children:0,attending:true,people:[{name:'Casey Example',attending:true}]});render();});
+await page.getByRole('button',{name:'Done',exact:true}).click();await page.evaluate(()=>{state.rsvps.push({name:'Casey Example',adults:1,children:0,attending:true,people:[{name:'Casey Example',attending:true}]});render();});
 assert.deepEqual(await page.locator('#guestCount').evaluate(e=>({font:getComputedStyle(e).fontFamily,size:getComputedStyle(e).fontSize,color:getComputedStyle(e).color})),number);
 assert.equal(await page.locator('#guestListButton>span').evaluate(e=>getComputedStyle(e).fontSize),'14px');
 const snapshot=await page.evaluate(()=>JSON.stringify(appState.events.wedding.elementAppearance));

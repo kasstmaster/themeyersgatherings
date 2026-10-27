@@ -16,7 +16,7 @@ for(const eventId of ['thanksgiving','christmas','test-gathering']){
  assert.equal(await page.locator('#hostNotesContent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(171, 205, 239, 0.6)');
  assert.equal(await page.locator('#hostRsvpCounters').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(171, 205, 239, 0.6)');
  assert.deepEqual(await page.locator('#rsvpForm').evaluate(e=>({background:getComputedStyle(e).backgroundColor,border:getComputedStyle(e).borderColor,width:getComputedStyle(e).borderWidth})),outer);
- await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.evaluate(()=>render());
+ await page.getByRole('button',{name:'Done',exact:true}).click();await page.evaluate(()=>render());
  assert.deepEqual(await page.locator('#rsvpForm').evaluate(e=>({background:getComputedStyle(e).backgroundColor,border:getComputedStyle(e).borderColor,width:getComputedStyle(e).borderWidth})),outer);
  assert.equal(await page.locator('#hostNotesContent').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(171, 205, 239, 0.6)');
  assert.equal(await page.evaluate(()=>state.elementAppearance['@group:containers'].backgroundColor),'#123456');

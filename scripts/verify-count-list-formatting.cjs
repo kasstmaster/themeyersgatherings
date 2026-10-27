@@ -14,7 +14,7 @@ await page.evaluate(()=>ElementAppearance.update(document.querySelector('#dishLi
 assert.equal(await page.locator('#dishListDialog .dish-title').first().evaluate(e=>ElementAppearance.group(e)),'count-list-item-titles');
 for(const heading of await page.locator('.count-list-dialog .invited-entry-heading>strong').all())assert.equal(await heading.evaluate(e=>getComputedStyle(e).color),'rgb(69, 103, 137)');
 assert.equal(await page.evaluate(()=>Object.keys(state.elementAppearance).some(key=>key==='@group:count-list-titles')),true);
-await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.locator('#closeDishListButton').click();
+await page.getByRole('button',{name:'Done',exact:true}).click();await page.locator('#closeDishListButton').click();
 await page.locator('#noResponseButton').click();assert.equal(await page.locator('#noResponseDialog h2').evaluate(e=>getComputedStyle(e).color),'rgb(18, 52, 86)');
 assert.deepEqual(errors,[]);await browser.close();console.log('All five count lists share isolated container and title formatting; unrelated gathering and RSVP elements retain their styles.');
 })().catch(e=>{console.error(e);process.exit(1);});
