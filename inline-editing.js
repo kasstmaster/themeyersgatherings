@@ -3,12 +3,35 @@
   let enabled=false,flushing=false,context;
   const cleanup=[],editTargets=new Map(),textRoots=new Set(),originals=new Map(),selectedCustom=new Map(),layoutOriginals=new Map();
   const node=(tag,text,className)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;if(className)element.className=className;return element;};
+  let undoSteps=[],undoBaseline=null,undoEvent='',undoActive=false,replaying=false;
+  const same=(left,right)=>JSON.stringify(left)===JSON.stringify(right);
+  function changes(before,after,path=[]){
+    if(same(before,after))return [];
+    if(before && after && typeof before==='object' && typeof after==='object' && !Array.isArray(before) && !Array.isArray(after))return [...new Set([...Object.keys(before),...Object.keys(after)])].flatMap(key=>changes(before[key],after[key],[...path,key]));
+    return [{path,before:structuredClone(before),after:structuredClone(after)}];
+  }
+  function recordUndo(){
+    if(!enabled || !context?.host || replaying || !undoBaseline)return;
+    const next=structuredClone(context.state),patches=changes(undoBaseline,next);
+    if(patches.length){undoSteps.push(patches);if(undoSteps.length>50)undoSteps.shift();undoBaseline=next;globalThis.ElementEditor?.refreshUndo();}
+  }
+  function undo(){
+    if(!enabled || !context?.host || !undoSteps.length)return false;
+    const patches=undoSteps.at(-1),get=path=>path.reduce((value,key)=>value?.[key],context.state);
+    if(patches.some(patch=>!same(get(patch.path),patch.after)))return false;
+    replaying=true;
+    try{
+      ElementEditor.beforeRender();
+      for(const {path,before} of patches){let parent=context.state;for(const key of path.slice(0,-1))parent=parent[key]??={};const key=path.at(-1);if(before===undefined)delete parent[key];else parent[key]=structuredClone(before);}
+      undoSteps.pop();undoBaseline=structuredClone(context.state);context.save();return true;
+    }finally{replaying=false;globalThis.ElementEditor?.refreshUndo();}
+  }
   function button(text,action,parent,label=text){
     if(!parent || !enabled || !context.host)return;
     const entry=editTargets.get(parent) || {};entry.options??={};entry.options.actions??=[];entry.options.actions.push([label,action]);editTargets.set(parent,entry);cleanup.push(()=>editTargets.delete(parent));
   }
   function beforeRender(){ElementEditor.beforeRender();textRoots.clear();while(cleanup.length)cleanup.pop()();for(const [parent,children] of layoutOriginals)for(const child of children)if(child.isConnected && parent.isConnected)parent.append(child);layoutOriginals.clear();}
-  function render(ctx){context=ctx;if(!ctx.host)enabled=false;const toggle=document.querySelector('#editItemsButton');toggle.textContent='Edit';toggle.setAttribute('aria-pressed',String(enabled));document.querySelector('#invitationTemplatesButton').hidden=!ctx.host || !enabled;document.body.classList.toggle('site-edit-mode',enabled && ctx.host);}
+  function render(ctx){context=ctx;const active=Boolean(enabled && ctx.host);if(!active || !undoActive || undoEvent!==ctx.eventId)undoSteps=[];undoBaseline=active?structuredClone(ctx.state):null;undoEvent=ctx.eventId;undoActive=active;if(!ctx.host)enabled=false;const toggle=document.querySelector('#editItemsButton');toggle.textContent='Edit';toggle.setAttribute('aria-pressed',String(enabled));document.querySelector('#invitationTemplatesButton').hidden=!ctx.host || !enabled;document.body.classList.toggle('site-edit-mode',enabled && ctx.host);}
   function field(target,title,fields,commit,options={}){
     if(!target)return;
     const textBlock=fields.some(spec=>spec.type==='textarea') && !target.matches('section');if(textBlock)textRoots.add(target);
@@ -225,6 +248,7 @@
     if(editTargets.has(target))editTargets.get(target).visual=true;
   }
   globalThis.SiteEditing={
+    recordUndo,undo,get canUndo(){return undoSteps.length>0;},
     settings(target,title,build){if(!target || !enabled || !context.host)return;const entry=editTargets.get(target) || {};entry.settings={title,build};editTargets.set(target,entry);cleanup.push(()=>editTargets.delete(target));},
     editorFor:target=>editTargets.get(target),get editorTargets(){return [...editTargets.keys()];},
     persist(action){flushing=true;try{action?.();context.save();}finally{flushing=false;}},get editorContext(){return context;},

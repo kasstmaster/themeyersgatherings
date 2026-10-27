@@ -863,7 +863,7 @@ gathering-gap{display:block;position:relative;box-sizing:border-box;flex-shrink:
 
 .site-edit-mode :is(section,article,h1,h2,h3,h4,p,time,.event-header-text,gathering-gap){scroll-margin-top:160px}
 
-.element-editor-row{flex-wrap:nowrap;overflow-x:auto}.element-editor-row>*{flex-shrink:0}.element-editor-row [data-editor-chooser]{max-width:160px}.element-editor-row>[data-editor-selection]{max-width:120px}.dragging-gap .element-editor-panel:not(:has([data-new-gap])){display:none!important}
+.element-editor-row{flex-wrap:nowrap;overflow-x:auto}.element-editor-row>*{flex-shrink:0}.element-editor-row [data-editor-chooser]{max-width:160px}.element-editor-row>[data-editor-selection]{max-width:120px}
 
 .editor-ribbon-space{display:block;flex:none;width:100%;margin:0;padding:0;border:0;pointer-events:none}
 @media print{.editor-ribbon-space{display:none!important}}
@@ -879,8 +879,6 @@ dialog:modal>.modal-card{max-height:none;overflow:visible}
 .host-rsvp-view :is(#weddingRsvpUploadToolbar,#weddingHostTabs,#gatheringTabs){display:none!important}
 .host-rsvp-counters{margin:24px 0;width:100%;box-sizing:border-box}
 .host-rsvp-counters[hidden]{display:none}
-.host-rsvp-view #rsvpDialog #rsvpWeddingPages>.host-outer-panel{padding:24px;background:var(--host-panel-background,var(--wedding-tab-selected-background));border:var(--host-panel-border,1px solid var(--wedding-tab-border));border-radius:var(--host-panel-radius,6px);color:var(--host-panel-text,var(--wedding-tab-text))}
-@media(max-width:650px){.host-rsvp-view #rsvpDialog #rsvpWeddingPages>.host-outer-panel{padding:18px}}
 
 #hostToolsPanel{overflow:visible}
 
@@ -937,3 +935,10 @@ body.theme-neutral{--navy:#303030;--navy-2:#666666;--body-background:#f3f3f3;--s
 .guest-entry.dish-list-row{display:block;padding:14px 0;border-bottom:1px solid var(--border);line-height:1.6}
 
 gathering-gap[data-gap-axis="x"]{clear:none;vertical-align:middle}.gap-drop-marker.horizontal-gap-marker{border-top:0;border-left:3px solid #d92525}.site-edit-mode gathering-gap[data-gap-axis="x"]::after{max-width:100%;overflow:hidden;white-space:nowrap;left:0}
+
+/* Page sections arrange content; the RSVP form and its content panels are the two surfaces. */
+#rsvpDialog #rsvpWeddingPages .wedding-tab-content{box-sizing:border-box;background:var(--flow-inner-background);border:1px solid var(--flow-panel-border);border-radius:6px;padding:var(--wedding-tab-padding,24px)}
+#rsvpDialog #rsvpWeddingPages>.rsvp-page-shell{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;min-height:0!important;margin-bottom:0!important}
+#rsvpDialog #rsvpWeddingPages :is(.wedding-tab-content,.wedding-party-card,.gathering-subpage)>:is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.wedding-party-description){background:transparent;border:0;box-shadow:none;padding:0;min-height:0}
+
+.element-editor-toolbar button:disabled{opacity:.45;cursor:default}

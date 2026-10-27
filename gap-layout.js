@@ -10,7 +10,7 @@
   function paintGap(element,gap){
     const axis=gap.axis==='x'?'x':'y',amount=size(gap.size);element.dataset.gapAxis=axis;
     Object.assign(element.style,{display:axis==='x'?'inline-block':'block',width:axis==='x'?amount+'px':'100%',height:axis==='x'?'1em':amount+'px',flexBasis:axis==='x'?amount+'px':'auto'});
-    element.dataset.gapLabel=`${axis==='x'?'Horizontal':'Vertical'} gap · ${amount} px`;element.setAttribute('aria-label',element.dataset.gapLabel);element.setAttribute('aria-orientation',axis==='x'?'vertical':'horizontal');
+    element.dataset.gapLabel=`${axis==='x'?'Vertical':'Horizontal'} gap · ${amount} px`;element.setAttribute('aria-label',element.dataset.gapLabel);element.setAttribute('aria-orientation',axis==='x'?'vertical':'horizontal');
   }
   function render(ctx){
     context=ctx;

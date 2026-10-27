@@ -48,12 +48,12 @@ test('choosing any gathering opens RSVP directly, including wedding party and su
  }
 });
 
-test('first RSVP open applies saved tab order before the guest journey starts',()=>{
+test('first RSVP open initializes the flow before rendering saved layout',()=>{
  const start=source.indexOf("  document.querySelector('#rsvpDialog').showModal();",source.indexOf('function openRsvp('));
- const code=source.slice(start,source.indexOf('  RsvpFlow.start(',start));
+ const code=source.slice(start,source.indexOf('\n});}',start));
  for(const editing of [false,true]){
   const calls=[];const dialog={open:false,showModal(){this.open=true;calls.push('open');}};
-  const c=vm.createContext({SiteEditing:{enabled:editing},document:{querySelector:()=>dialog},render:()=>{assert.equal(dialog.open,true);calls.push('render');}});
-  vm.runInContext(code,c);assert.deepEqual(calls,['open','render']);
+  const c=vm.createContext({SiteEditing:{enabled:editing},document:{querySelector:()=>dialog},rsvpFlowSteps(){},renderRsvpReview(){},validateRsvpQuestion(){},RsvpFlow:{start(){assert.equal(dialog.open,true);calls.push('flow');}},render:()=>{assert.equal(calls.at(-1),'flow');calls.push('render');}});
+  vm.runInContext(code,c);assert.deepEqual(calls,['open','flow','render']);
  }
 });
