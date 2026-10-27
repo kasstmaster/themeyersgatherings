@@ -21,7 +21,12 @@ window.location.replace(target.href);
 <noscript>Please enable JavaScript to keep your invitation sign-in link when continuing.</noscript></body></html>\n`;
 }
 
+export function validatePublicFallback(fallback){
+  if(!Array.isArray(fallback.accounts)||fallback.accounts.length||Object.keys(fallback.gatheringHistory||{}).length||Object.values(fallback.events||{}).some(event=>(event.rsvps||[]).length||(event.weddingPartyMembers||[]).length||(event.items||[]).some(item=>(item.claims||[]).length))||/"qrToken"/.test(JSON.stringify(fallback)))throw new Error('Refusing to publish private account/response data in the static fallback. Keep live state in its private repository.');
+}
+
 export async function buildDomainSite(output) {
+  validatePublicFallback(JSON.parse(await readFile(join(source,'data/app-state.json'),'utf8')));
   const destination = resolve(output);
   // Fail rather than overwrite existing published directories or source files.
   for (const name of ['themeyers', 'themeyersgatherings']) {
@@ -41,7 +46,9 @@ export async function buildDomainSite(output) {
     const version = createHash('sha256').update(await readFile(join(source, file))).digest('hex').slice(0,12);
     html = html.replaceAll(`"${file}"`, `"${file}?v=${version}"`);
   }
-  for (const directory of ['assets', 'vendor', 'data']) await cp(join(source, directory), join(site, directory), { recursive: true });
+  for (const directory of ['assets', 'vendor']) await cp(join(source, directory), join(site, directory), { recursive: true });
+  await mkdir(join(site,'data'),{recursive:true});
+  await cp(join(source,'data/app-state.json'),join(site,'data/app-state.json'));
   for (const file of ['service-worker.js', 'offline.html']) await cp(join(source, file), join(site, file));
   await writeFile(join(site, 'index.html'), html.replace('</head>', `    <link rel="canonical" href="${canonical}" />\n  </head>`));
   await mkdir(join(destination, 'themeyersgatherings'));

@@ -42,6 +42,8 @@
             <label data-sign-in-step="1" hidden><span>Last Name</span><input disabled id="accountLastName" type="text" autocomplete="family-name" /></label>
             <label data-sign-in-step="2" hidden><span>Suffix <small>(if any)</small></span><input disabled id="accountSuffix" type="text" autocomplete="honorific-suffix" placeholder="e.g. Jr. or IV" /></label>
           </div>
+          <label id="hostPasswordField" hidden>Host password<input id="hostPassword" type="password" autocomplete="current-password"></label>
+          <button id="hostSignInToggle" type="button">Host sign-in</button>
           <p class="form-error" id="accountPasswordError" role="alert"></p>
           <button class="primary-button" id="signInSubmit" type="submit">Next</button>
           <button id="signInBack" class="sign-in-back" type="button" hidden>Back</button>
@@ -743,6 +745,8 @@
     <script src="gathering-history.js" defer></script>
     <script src="rsvp-flow.js" defer></script>
     <script src="fitted-text.js" defer></script>
+    <script src="shared-state-protocol.js"></script>
+    <script src="state-client.js"></script>
     <script src="app.js" defer></script>
   </body>
 </html>

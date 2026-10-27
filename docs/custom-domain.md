@@ -14,7 +14,7 @@ secrets in the original account. It does not attempt to register ilymmd.com rout
 The website Worker needs only static assets and the domain routes; it receives no
 service-account credentials, storage bindings, or Dropbox secrets.
 
-Both deployments run sequentially in one job in `.github/workflows/deploy-state-worker.yml` on every main push or manual dispatch. The service deploys before the website. The frontend is built once into `.domain-site` in that job and deployed from its asset binding, without maintaining another editable source copy. This workflow does not create the R2 bucket or install runtime secrets; provision those in the service account first.
+After the security rollout approval gate passes, both deployments run sequentially in one job in `.github/workflows/deploy-state-worker.yml` on every main push or manual dispatch. The service deploys before the website. The frontend is built once into `.domain-site` in that job and deployed from its asset binding, without maintaining another editable source copy. This workflow does not create the R2 bucket or install runtime secrets; provision those in the service account first.
 
 ## Required one-time GitHub setup
 
@@ -105,3 +105,7 @@ runs a read-only live check of the main site, gathering site/assets, original QR
 address, redirect, and CORS. The host-authorized setup can also be deployed with workflow_dispatch against the review branch.
 Then verify an existing printed invitation and normal
 RSVP/upload interactions. Keep the old GitHub Pages address active permanently.
+
+## Security release hold
+
+The A1/A2 branch changes the state protocol and host authentication. Do not merge or manually deploy it just because ordinary CI passes: main pushes deploy automatically. First follow the [private backup, host-secret replacement, readiness setting and owner approval plan](state-security-rollout.md). The new first-step gate requires repository variable `SECURITY_ROLLOUT_APPROVED=state-auth-v1` after owner approval; leave it unset beforehand. Existing QR redirects and token values are preserved; old open frontend tabs need a reload at cutover. No guest access code/email provider or new DNS/R2 binding is required.

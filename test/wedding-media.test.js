@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../github-state-worker/worker.js';
+import {TEST_PASSWORD} from './security-fixture.js';
 function fixture(t) {
   const objects = new Map();
   const accounts = [
@@ -12,7 +13,7 @@ function fixture(t) {
   const original=globalThis.fetch;
   globalThis.fetch=async()=>new Response(JSON.stringify({sha:'sha',content:Buffer.from(JSON.stringify({accounts,events:{wedding:{},thanksgiving:{},christmas:{},'gathering-new':{}}})).toString('base64')}));
   t.after(()=>{globalThis.fetch=original;});
-  const env={HOST_PASSWORD:'host-secret',GITHUB_REPOSITORY:'owner/data',GITHUB_TOKEN:'test',INVITATION_BACKGROUNDS:{
+  const env={HOST_PASSWORD:TEST_PASSWORD,AUTH_MIGRATION_READY:'verified-backup-v1',GITHUB_REPOSITORY:'owner/data',GITHUB_TOKEN:'test',INVITATION_BACKGROUNDS:{
     async put(key,value,options={}) { const bytes=typeof value==='string'?new TextEncoder().encode(value):new Uint8Array(value);objects.set(key,{bytes,...options}); },
     async get(key,options) {
       const value=objects.get(key);if(!value)return null;
@@ -24,8 +25,14 @@ function fixture(t) {
     async delete(key){objects.delete(key);},
     async list({prefix}){return {objects:[...objects].filter(([key])=>key.startsWith(prefix)).map(([key,value])=>({key,size:value.bytes.length,customMetadata:value.customMetadata})),truncated:false};}
   }};
-  const request=(path,token,options={})=>worker.fetch(new Request(`https://worker.example/wedding-media${path}`,{...options,headers:{...options.headers,...(token?{Authorization:`Bearer ${token}`}:{})}}),env);
-  const session=async(name,host=false,eventId='wedding')=>{const r=await request('/session',null,{method:'POST',headers:{'Content-Type':'application/json',...(host?{'X-Host-Password':'host-secret'}:{})},body:JSON.stringify({name,eventId})});return {status:r.status,...await r.json()};};
+  const sessions=new Map();
+  const request=(path,token,options={})=>worker.fetch(new Request(`https://worker.example/wedding-media${path}`,{...options,headers:{...options.headers,...(token?{'X-Media-Session':token,...(sessions.has(token)?{Authorization:`Bearer ${sessions.get(token)}`}:{})}:{})}}),env);
+  const session=async(name,host=false,eventId='wedding')=>{
+   const signed=await worker.fetch(new Request('https://worker.example/auth/login',{method:'POST',body:JSON.stringify(host?{role:'host',password:TEST_PASSWORD}:{role:'guest',name})}),env);
+   const identity=await signed.json();if(signed.status!==200)return {status:signed.status,...identity};
+   const response=await request('/session',null,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${identity.token}`},body:JSON.stringify({name,eventId})});
+   const result=await response.json();if(result.token)sessions.set(result.token,identity.token);return {status:response.status,...result};
+  };
   const upload=(token,name='photo.jpg')=>request(`/upload?name=${name}`,token,{method:'POST',headers:{'Content-Type':'image/jpeg','X-Account-Name':'Spoofed Account'},body:new Uint8Array([1,2,3,4])});
   return {request,session,upload,objects,env};
 }

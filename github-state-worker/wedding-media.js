@@ -1,3 +1,5 @@
+import {eventAllowed} from './permissions.js';
+import {digest,boundedJson} from './auth.js';
 import { handleDropboxUpload } from './dropbox.js';
 import { accountPeople, normalizedPerson } from '../scripts/anylist-accounts.js';
 const PREFIX = 'wedding-media/';
@@ -7,19 +9,19 @@ const OWNER = /^[a-f0-9]{64}$/;
 async function ownerId(value) {
   return [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)))].map(b => b.toString(16).padStart(2, '0')).join('');
 }
-export async function handleWeddingMedia(request, env, { response, jsonResponse, requireHost, readState }) {
+export async function handleWeddingMedia(request, env, { response, jsonResponse, requireHost, readState, actor }) {
   const bucket = env.INVITATION_BACKGROUNDS;
   const reply = (value, status = 200) => jsonResponse(request, env, value, status);
   const fail = (error, status) => reply({ error }, status);
   if (!bucket) return fail('Photo and video upload storage is not configured.', 503);
   const url = new URL(request.url), route = url.pathname.replace('/wedding-media', '') || '/';
+  if(!actor && (route==='/session'||!/^\/uploads\//.test(route)))return fail('Sign in before accessing uploads.',401);
   if (route === '/session' && request.method === 'POST') {
+    const body=await boundedJson(request,8192);if(!body||typeof body!=='object')return fail('Invalid sign-in request.',400);
     let identity;
-    if (requireHost(request, env)) identity = { host: true, owner: await ownerId('host'), accountName: 'The Host', uploadedBy: 'The Host' };
+    if (requireHost(request, env) && !body.preview) identity = { host: true, owner: await ownerId('host'), accountName: 'The Host', uploadedBy: 'The Host' };
     else {
-      let body; try { body = await request.json(); } catch { return fail('Invalid sign-in request.', 400); }
-      if (!body || typeof body !== 'object') return fail('Invalid sign-in request.', 400);
-      const name = typeof body.name === 'string' ? body.name.trim() : '';
+      const name=actor.role==='host'&&body.preview?(typeof body.name==='string'?body.name.trim():''):actor.person||'';
       if (!normalizedPerson(name)) return fail('Sign in before uploading.', 401);
       const result = await readState(env);
       if (result.status !== 200) return fail('Unable to verify your sign-in. Please try again.', 503);
@@ -27,7 +29,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
       const eventId=typeof body.eventId==='string'?body.eventId:'wedding';
       if(!Object.hasOwn(state.events || {},eventId))return fail('That gathering is not available.',401);
       const matches = (state.accounts || []).flatMap(account => {
-        if (account.selectedEvents?.[eventId] !== true) return [];
+        if (!eventAllowed(account,eventId) || actor.role!=='host' && (account.qrToken||account.anyListCategoryId||account.name)!==actor.accountId) return [];
         const names = accountPeople(account.name);
         const canonical = names.find(person => normalizedPerson(person) === normalizedPerson(name));
         const alias = (account.signInAliases || []).find(entry => normalizedPerson(entry.alias) === normalizedPerson(name) && names.some(person => normalizedPerson(person) === normalizedPerson(entry.name)));
@@ -39,15 +41,17 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
     }
     const token = crypto.randomUUID() + crypto.randomUUID();
     const expires = Date.now() + 60 * 60 * 1000;
-    await bucket.put(`${PREFIX}sessions/${token}`, JSON.stringify({ ...identity, expires }), { httpMetadata: { contentType: 'application/json' } });
+    await bucket.put(`${PREFIX}sessions/${token}`, JSON.stringify({ ...identity, expires, stateSessionVersion:actor.version, issuedToRole:actor.role }), { httpMetadata: { contentType: 'application/json' } });
     return reply({ token, expires });
   }
-  const token = request.headers.get('Authorization')?.replace(/^Bearer /, '') || url.searchParams.get('session') || '';
+  const token = request.headers.get('X-Media-Session') || url.searchParams.get('session') || '';
   if (!/^[a-f0-9-]{72}$/.test(token)) return fail('Sign in before accessing uploads.', 401);
   const sessionObject = await bucket.get(`${PREFIX}sessions/${token}`);
   if (!sessionObject) return fail('Your upload session has expired. Please try again.', 401);
   const identity = JSON.parse(await sessionObject.text());
+  if(identity.stateSessionVersion!==await digest(env.HOST_PASSWORD||''))return fail('Sign in again to access uploads.',401);
   if (identity.expires < Date.now()) { await bucket.delete(`${PREFIX}sessions/${token}`); return fail('Your upload session has expired. Please try again.', 401); }
+  if(actor && (identity.issuedToRole!==actor.role||actor.role!=='host'&&(identity.host||identity.uploadedBy!==actor.person)))return fail('Sign in before accessing uploads.',401);
   if (url.pathname.startsWith('/wedding-media/dropbox-upload/')) return await handleDropboxUpload(request, env, identity, { jsonResponse });
   const prefix = `${PREFIX}uploads/`;
   if (route === '/' && request.method === 'GET') {

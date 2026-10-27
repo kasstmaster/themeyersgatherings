@@ -1,3 +1,5 @@
+import {authenticate,login,logout,boundedJson} from './auth.js';
+import {projectState,updateFromChanges,accountForActor} from './state-access.js';
 import '../guest-planning.js';
 import '../gathering-history.js';
 import { handleDropboxOAuth } from './dropbox.js';
@@ -19,8 +21,8 @@ function corsHeaders(request, env) {
   const allowedOrigin = origins.includes('*') ? '*' : origins.includes(origin) ? origin : origins[0];
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Host-Password, Authorization, Range',
+    'Access-Control-Allow-Methods': 'GET, PUT, PATCH, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Media-Session, Range, If-Match',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin'
   };
@@ -31,7 +33,7 @@ function response(request, env, body, status = 200, headers = {}) {
 }
 
 function jsonResponse(request, env, value, status = 200) {
-  return response(request, env, JSON.stringify(value), status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+  return response(request, env, JSON.stringify(value), status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Referrer-Policy':'no-referrer' });
 }
 
 function githubHeaders(env) {
@@ -53,17 +55,8 @@ function repositoryConfig(env) {
   return { url: `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/contents/${path}`, branch };
 }
 
-function safeEqual(left, right) {
-  const a = new TextEncoder().encode(left || '');
-  const b = new TextEncoder().encode(right || '');
-  let difference = a.length ^ b.length;
-  for (let index = 0; index < Math.max(a.length, b.length); index += 1) difference |= (a[index] || 0) ^ (b[index] || 0);
-  return difference === 0;
-}
-
-function requireHost(request, env) {
-  return env.HOST_PASSWORD && safeEqual((request.headers.get('X-Host-Password') || '').toLowerCase(), env.HOST_PASSWORD.toLowerCase());
-}
+const requestActors=new WeakMap();
+function requireHost(request) {return requestActors.get(request)?.role==='host';}
 
 const INVITATION_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 function invitationBackgroundKey(pathname) {
@@ -228,6 +221,41 @@ async function writeState(env, text, {historyOnly=false} = {}) {
   return { status: 409, error: 'The state changed at the same time. Please try again.' };
 }
 
+async function writeConditional(env,next,sha) {
+ const {url,branch}=repositoryConfig(env);
+ const text=JSON.stringify(next,null,2)+'\n';
+ if(new TextEncoder().encode(text).length>1_000_000)return {status:413};
+ const result=await fetch(url,{method:'PUT',headers:{...githubHeaders(env),'Content-Type':'application/json'},body:JSON.stringify({message:'Save authorized gathering changes',branch,sha,content:bytesToBase64(new TextEncoder().encode(text))})});
+ if(result.status===409||result.status===422)return {status:409};
+ if(!result.ok)return {status:502};
+ const data=await result.json();return {status:200,revision:data.content.sha};
+}
+async function secureState(request,env,url,actor) {
+ if(url.pathname!=='/auth/login'&&!actor)return jsonResponse(request,env,{error:'Sign in to continue.'},401);
+ if(url.pathname==='/auth/login'&&request.method!=='POST')return jsonResponse(request,env,{error:'Method not allowed.'},405);
+ if(url.pathname.startsWith('/auth/')&&!['/auth/login','/auth/logout'].includes(url.pathname))return jsonResponse(request,env,{error:'Not found.'},404);
+ let result,state;
+ const load=async()=>{if(!result){result=await readState(env);if(result.status!==200)throw Object.assign(new Error('Shared state is unavailable.'),{status:503});state=JSON.parse(result.text);}return state;};
+ if(url.pathname==='/auth/login'&&request.method==='POST'){
+  const session=await login(request,env,load);await load();return jsonResponse(request,env,{token:session.token,expires:session.expires,role:session.identity.role,person:session.identity.person,state:projectState(state,session.identity),revision:result.sha});
+ }
+ await load();
+ if(!actor)return jsonResponse(request,env,{error:'Sign in to continue.'},401);
+ if(url.pathname==='/auth/logout'&&request.method==='POST'){await logout(request,env);return response(request,env,null,204);}
+ if(actor.role!=='host'&&!accountForActor(state,actor))return jsonResponse(request,env,{error:'Session no longer valid.'},401);
+ if(request.method==='GET'){
+  if(GatheringHistory.archiveDue(state)){const archived=await writeState(env,null,{historyOnly:true});if(archived.status!==200)return jsonResponse(request,env,{error:'Could not preserve history.'},503);result=await readState(env);if(result.status!==200)return jsonResponse(request,env,{error:'State unavailable.'},503);state=JSON.parse(result.text);}
+  return jsonResponse(request,env,{state:projectState(state,actor),revision:result.sha});
+ }
+ if(request.method!=='PATCH')return jsonResponse(request,env,{error:'Upgrade this page before saving.'},405);
+ if(!request.headers.has('If-Match'))return jsonResponse(request,env,{error:'Reload the current revision before saving.'},428);
+ if(request.headers.get('If-Match')!==result.sha)return jsonResponse(request,env,{error:'Newer information is available. Your changes were not applied.'},409);
+ const payload=await boundedJson(request);GatheringHistory.archiveDue(state);const next=updateFromChanges(state,actor,payload.changes);
+ GatheringHistory.preserve(next,state);next.savedAt=new Date().toISOString();
+ const saved=await writeConditional(env,next,result.sha);
+ if(saved.status!==200)return jsonResponse(request,env,{error:saved.status===409?'Newer information is available. Your changes were not applied.':'Changes could not be saved.'},saved.status);
+ return jsonResponse(request,env,{state:projectState(next,actor),revision:saved.revision});
+}
 export default {
   async scheduled(_event,env) {
     const result=await writeState(env,null,{historyOnly:true});
@@ -241,8 +269,11 @@ export default {
     if (request.method === 'OPTIONS') return response(request, env, null, 204);
     try {
       const url = new URL(request.url);
+      const actor=await authenticate(request,env);if(actor)requestActors.set(request,actor);
+      if(url.pathname==='/'||url.pathname==='/state'||url.pathname.startsWith('/auth/'))return await secureState(request,env,url,actor);
+
       if (url.pathname.startsWith('/dropbox/')) return await handleDropboxOAuth(request, env, { response, jsonResponse, requireHost });
-      if (url.pathname === '/wedding-media' || url.pathname.startsWith('/wedding-media/')) return await handleWeddingMedia(request, env, { response, jsonResponse, requireHost, readState });
+      if (url.pathname === '/wedding-media' || url.pathname.startsWith('/wedding-media/')) return await handleWeddingMedia(request, env, { response, jsonResponse, requireHost, readState, actor });
       const videoMatch = /^\/attire-videos\/([a-zA-Z0-9-]+)$/.exec(url.pathname);
       if (videoMatch) {
         try { return await handleAttireVideo(request, env, `attire-videos/${videoMatch[1]}`); }
@@ -271,37 +302,13 @@ export default {
         if (url.pathname === '/anylist-sync/status' && request.method === 'GET') {
           const result = await readSyncStatus(env, url.searchParams.get('id') || '');
           if (result.error) return jsonResponse(request, env, { error: 'status_read_failed' }, result.status);
-          return response(request, env, result.text, result.status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+          return response(request, env, result.text, result.status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Referrer-Policy':'no-referrer' });
         }
         return response(request, env, 'Method not allowed.', 405);
       }
-      if (request.method === 'GET') {
-        const result = await readState(env);
-        if (result.status === 404) return response(request, env, null, 404);
-        if (result.status !== 200) return response(request, env, result.error, result.status);
-        const state=JSON.parse(result.text);
-        if(GatheringHistory.archiveDue(state)){
-          const archived=await writeState(env,null,{historyOnly:true});
-          if(archived.status!==200)return response(request,env,archived.error,archived.status);
-          return response(request,env,archived.text,200,{'Content-Type':'application/json','Cache-Control':'no-store'});
-        }
-        return response(request, env, result.text, 200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-      }
-      if (request.method === 'PUT') {
-        if (Number(request.headers.get('Content-Length') || 0) > 1_000_000) return response(request, env, 'State is too large.', 413);
-        const state = await request.json();
-        if (!state || typeof state !== 'object' || !state.events || !Array.isArray(state.accounts)) {
-          return response(request, env, 'Invalid application state.', 400);
-        }
-        const text = JSON.stringify(state, null, 2);
-        if (text.length > 1_000_000) return response(request, env, 'State is too large.', 413);
-        const result = await writeState(env, text);
-        return response(request, env, result.error || null, result.status);
-      }
-      return response(request, env, 'Method not allowed.', 405, { 'Allow': 'GET, PUT, OPTIONS' });
+      return response(request,env,'Not found.',404);
     } catch (error) {
-      console.error(error);
-      return response(request, env, 'Unable to access shared state.', 500);
+      return jsonResponse(request,env,{error:error.status&&error.status<500?error.message:'Unable to access shared state.'},error.status||500);
     }
   }
 };

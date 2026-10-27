@@ -1,0 +1,113 @@
+import {actorAccount,eventAllowed} from './permissions.js';
+import '../guest-planning.js';
+import '../invitation-groups.js';
+import '../wedding-party.js';
+import '../shared-state-protocol.js';
+const clone=value=>structuredClone(value);
+const SAME=SharedStateProtocol.same;
+const PUBLIC_KEYS=`gatheringName gatheringTheme eventDate rsvpDate homeAddress addressLine1 addressLine2 headerText rsvpIntroText rsvpDetailsText rsvpDetailsTitle siteHeaderImage rsvpHeaderImage sitePalette colors gatheringColors quantityUnits registryUrl monetaryGiftUrl churchWeekDay churchYear churchTime churchStreet churchCityStateZip venueTime venueStreet venueCityStateZip attireVideos weddingMealChoices weddingMealOptions weddingChildMealOption weddingChildMealOptions mediaGalleryUrl mediaGalleryLabel siteHiddenTabs siteTabTitles siteTabOrder rsvpToolbarOrder siteElementOrder siteElementPlacements siteGaps siteSpacing`.split(' ');
+const pick=(value,keys)=>Object.fromEntries(keys.filter(key=>Object.hasOwn(value,key)).map(key=>[key,clone(value[key])]));
+export function accountForActor(state,actor){
+ if(actor.role==='host')return null;
+ return actorAccount(state,actor);
+}
+export function permittedEvents(state,actor){const account=accountForActor(state,actor);return actor.role==='host'?Object.keys(state.events):Object.keys(state.events).filter(id=>eventAllowed(account,id));}
+const privateSelector=/(?:hostNotes|brideGroom|weddingTimeline|weddingPartyPersonalPage|weddingPartyDetails|partySharedDetails|perfectExperience|weddingPartyHeading|weddingPartyKicker|count-list|admin|guestList|invited|noResponse|notAttending)/i;
+function textEntries(entries,party,allowedPages=[]){
+ return Object.fromEntries(Object.entries(entries||{}).filter(([path])=>{
+  if(path.includes('custom-page-')&&!allowedPages.some(id=>path.includes('custom-page-'+id)))return false;
+  if(/weddingParty(?:Heading|Kicker|PersonalPage|Details)|weddingHostTabs|matronInfoTabs.*memberPage/.test(path))return false;
+  return !privateSelector.test(path)||(party&&/(partyShared|perfectExperience|weddingTimeline)/.test(path));
+ }));
+}
+export function projectState(state,actor){
+ if(actor.role==='host')return clone(state);
+ const account=accountForActor(state,actor);if(!account)throw new Error('Session no longer valid');
+ const accountView=pick(account,['name','children','selectedEvents','invitedEvents','plusOnes','plusOnePeople','invitationPeople','invitationQuantities','signInAliases']);
+ accountView.selectedEvents=Object.fromEntries(Object.keys(state.events).map(id=>[id,eventAllowed(account,id)]));
+ const events={};
+ for(const id of permittedEvents(state,actor)){
+  const original=state.events[id],event=pick(original,PUBLIC_KEYS);
+  const member=WeddingParty.normalizeMembers(original.weddingPartyMembers||[]).find(value=>value.name?.trim().toLowerCase()===actor.person.trim().toLowerCase());
+  event.weddingPartyMembers=member?[clone(member)]:[];
+  const attire=member?WeddingParty.attireSections(member.title):[];
+  if(member)event.weddingPartyAttireIntro=original.weddingPartyAttireIntro||'';
+  event.weddingPartyAttireImages=pick(original.weddingPartyAttireImages||{},attire);event.weddingPartyAttireNotes=pick(original.weddingPartyAttireNotes||{},attire);
+  event.sitePages=(original.sitePages||[]).filter(page=>['weddingPartyTabs','guestInfoTabs'].includes(page.nav)||page.nav==='matronInfoTabs'&&member).filter(page=>page.audience==='all'||page.audience==='guests'&&!member||page.audience==='party'&&member||!page.audience).map(clone);
+  // Details' intentional canonical shared views remain available to their audience.
+  event.whatToExpectContent=original.whatToExpectContent||'';
+  if(member){for(const key of ['timelineAboveContent','timelineContent','timelineBelowContent','timelineTabTitle','perfectExperienceContent'])if(Object.hasOwn(original,key))event[key]=clone(original[key]);}
+  const pageIds=event.sitePages.map(page=>page.id);
+  event.siteText=textEntries(original.siteText,Boolean(member),pageIds);event.textAppearance=textEntries(original.textAppearance,Boolean(member),pageIds);
+  event.siteTabTitles=textEntries(original.siteTabTitles,Boolean(member),pageIds);
+  event.elementAppearance=Object.fromEntries(Object.entries(original.elementAppearance||{}).filter(([path])=>path.startsWith('@group:')||!privateSelector.test(path)).map(([key,value])=>[key,clone(value)]));
+  event.items=(original.items||[]).map(item=>({...clone(item),claims:(item.claims||[]).map(name=>name===account.name?name:'__other_claim__')}));
+  event.rsvps=(original.rsvps||[]).filter(response=>response.name===account.name).map(clone);
+  events[id]=event;
+ }
+ const ids=Object.keys(events);
+ return {events,accounts:[accountView],activeEventId:ids.includes(state.activeEventId)?state.activeEventId:ids[0],sharedSite:pick(state.sharedSite||{},['footerName']),gatheringHome:pick(state.gatheringHome||{},['elementAppearance','siteText','textAppearance','siteGaps','siteSpacing','siteElementOrder']),savedAt:state.savedAt};
+}
+function forbidden(){throw Object.assign(new Error('Change is not permitted.'),{status:403});}
+function validRsvp(response,account,event,id){
+ if(!response||response.name!==account.name||!Array.isArray(response.people))forbidden();
+ const names=GuestPlanning.accountNames(account.name);
+ if(response.people.some(person=>!names.includes(person.name)||typeof person.attending!=='boolean'))forbidden();
+ if(new Set(response.people.map(person=>person.name)).size!==response.people.length)forbidden();
+ for(const key of ['adults','children','extraGuests'])if(response[key]!==undefined&&(!Number.isSafeInteger(response[key])||response[key]<0||response[key]>200))forbidden();
+ if((response.childNames||[]).some(name=>typeof name!=='string'||name.length>200)||(response.extraGuestNames||[]).some(name=>typeof name!=='string'||name.length>200))forbidden();
+ if(response.adults!==GuestPlanning.attendees(response.people).length+(response.extraGuests||0))forbidden();
+ const allowed=GuestPlanning.plusOnePeople(account,id,names);
+ if(id==='wedding'&&response.people.some(person=>person.guestChoice==='guest'&&(!allowed.includes(person.name)||!person.attending||!person.guestName?.trim())))forbidden();
+ const attendeeNames=GuestPlanning.attendees(response.people).concat(response.extraGuestNames||[]);
+ if((response.menuSelections||[]).some(selection=>!['adult','child'].includes(selection.type)||selection.type==='adult'&&!attendeeNames.includes(selection.name)||selection.meal==='none'&&selection.type!=='child'))forbidden();
+ if((response.menuSelections||[]).some(selection=>selection.meal&&selection.meal!=='none'&&!GuestPlanning.weddingMealOptions(event,selection.type).includes(selection.meal)))forbidden();
+}
+export function updateFromChanges(state,actor,operations){
+ if(actor.role==='host'){
+  const next=SharedStateProtocol.apply(state,operations);
+  if(!next.events||Array.isArray(next.events)||!Array.isArray(next.accounts))forbidden();
+  return next;
+ }
+ const account=accountForActor(state,actor),allowed=permittedEvents(state,actor);
+ if(!account)forbidden();
+ for(const {path} of operations)if(path?.length!==3||path[0]!=='events'||!allowed.includes(path[1])||!['rsvps','items'].includes(path[2]))forbidden();
+ const view=projectState(state,actor),desired=SharedStateProtocol.apply(view,operations),next=clone(state);
+ for(const id of new Set(operations.map(operation=>operation.path[1]))){
+  const source=state.events[id],incoming=desired.events[id];
+  if(!SAME(view.events[id].rsvps,incoming.rsvps)){
+   if(!Array.isArray(incoming.rsvps)||incoming.rsvps.length>1)forbidden();
+   const response=incoming.rsvps[0];if(!response)forbidden();validRsvp(response,account,source,id);
+   const previous=source.rsvps?.find(value=>value.name===account.name);
+   const number=InvitationGroups.number(account,id,actor.person),own=InvitationGroups.members(account,id,GuestPlanning.accountNames(account.name),actor.person);
+   const otherPeople=value=>(value?.people||[]).filter(person=>!own.includes(person.name));
+   if(!SAME(otherPeople(previous),otherPeople(response)))forbidden();
+   for(const key of new Set([...Object.keys(previous?.invitationResponses||{}),...Object.keys(response.invitationResponses||{})]))if(Number(key)!==number&&!SAME(previous?.invitationResponses?.[key],response.invitationResponses?.[key]))forbidden();
+   const names=GuestPlanning.accountNames(account.name);
+   let ownResponse=InvitationGroups.response(account,id,names,number,response);
+   if(id==='wedding'&&GuestPlanning.rsvpClosed(source)){
+    const existing=InvitationGroups.response(account,id,names,number,previous||{}),locked=GuestPlanning.lockedRsvp(existing,ownResponse);
+    for(const person of ownResponse.people){const expected=locked.people.find(value=>value.name===person.name);if((person.guestChoice||'no-guest')!==expected.guestChoice||(person.guestName||'')!==expected.guestName)forbidden();}
+    for(const key of ['menuSelections','savedMenuSelections'])if(!SAME(ownResponse[key]||[],locked[key]||[]))forbidden();
+    ownResponse=locked;
+   }
+   const accepted=InvitationGroups.merge(account,id,names,number,previous,pick(ownResponse,['name','people','adults','children','childNames','extraGuests','extraGuestNames','menuSelections','savedMenuSelections']));
+   next.events[id].rsvps=[...(source.rsvps||[]).filter(value=>value.name!==account.name),accepted];
+  }
+  if(!SAME(view.events[id].items,incoming.items)){
+   if(!Array.isArray(incoming.items)||id==='wedding')forbidden();
+   const originals=new Map((source.items||[]).map(item=>[item.id,item]));
+   if(new Set(incoming.items.map(item=>item.id)).size!==incoming.items.length)forbidden();
+   next.events[id].items=incoming.items.map(item=>{
+    const original=originals.get(item.id);
+    if(!original){if(!/^custom-[a-f0-9-]+$/.test(item.id)||typeof item.name!=='string'||!item.name.trim()||item.name.length>200||!Number.isSafeInteger(item.needed)||item.needed<1||item.needed>1000||!['Appetizers','Main Table','Sides','Desserts','Drinks'].includes(item.category)||!Array.isArray(item.claims)||item.claims.some(name=>name!==account.name)||item.claims.length!==item.needed||typeof item.unit!=='string'||item.unit.length>100)forbidden();return pick(item,['id','name','category','needed','unit','claims']);}
+    const safe=clone(original),others=(original.claims||[]).filter(name=>name!==account.name);
+    const submittedOther=(item.claims||[]).filter(name=>name!==account.name);
+    if(!SAME({...item,claims:[]},{...view.events[id].items.find(value=>value.id===item.id),claims:[]})||submittedOther.some(name=>name!=='__other_claim__')||submittedOther.length!==others.length)forbidden();
+    const ownClaims=item.claims.filter(name=>name===account.name);if(ownClaims.length+others.length>original.needed)forbidden();safe.claims=[...others,...ownClaims];return safe;
+   });
+   if([...originals.keys()].some(key=>!incoming.items.some(item=>item.id===key)))forbidden();
+  }
+ }
+ return next;
+}
