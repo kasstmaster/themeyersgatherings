@@ -973,3 +973,6 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 .element-editor-toolbar :is(button,select,input,textarea):focus-visible{outline:2px solid #9bc7ff;outline-offset:1px}
 .element-editor-toolbar .element-editor-panel{border-color:#485365}
 .element-editor-toolbar [data-editor-selection]:empty{display:none}
+
+.dish-list-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.dish-list-summary #dishListTotals{margin:0!important}
