@@ -22,4 +22,6 @@ Replacing an image of the same size preserves the layout. The editor warns befor
 
 Account invitation quantities/group membership and named-adult guest allowances are keyed by gathering. A zero quantity excludes an account from bulk output. Rendering and QR downloads consume existing account tokens; AnyList sync can backfill missing tokens without replacing existing ones. Account QR sign-in still requires the guest’s name. These UI features do not protect the complete shared-state endpoint; see the [audit](documentation-architecture-audit.md).
 
+In Accounts, **QR** opens the account code preview, transparent PNG/SVG downloads and a copyable sign-in link. Account links use `#/signin/account/<token>` with the existing random token; a general-login QR uses the general site URL. Never put real token values in documentation.
+
 The production canonical URL is `https://themeyers.ilymmd.com/`. Keep the legacy GitHub Pages entry alive for existing printed links. Do not regenerate account tokens to change the website origin. [Hosting and redirect details](custom-domain.md).
