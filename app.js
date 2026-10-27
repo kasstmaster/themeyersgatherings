@@ -216,7 +216,6 @@ let qrScopedAccount = null;
 let qrAdminAccount = null;
 let invitationPreviewAccount = null;
 let localStateRevision = 0;
-const singleColumnMenu = window.matchMedia('(max-width: 800px)');
 
 function normalizeState(saved) {
   try {
@@ -1520,16 +1519,11 @@ function render() {
   renderGatheringPages(features,hostView);
   renderWeddingGathering(hostView);
   renderGatheringMedia(hostView);
-  const categories = [...new Set(state.items.map(item => item.category))];
-  const categoryCard = (category,items) => `<article class="category-card"><div class="category-title"><h3>${escapeHtml(category)}</h3></div>${items.filter(item=>item.category===category).map(renderDish).join('')}</article>`;
-  const fullyClaimed=item=>item.optional?item.claims.length>0:item.claims.length>=item.needed;
-  document.querySelector('#menuGrid').classList.add('menu-status-list');
-  document.querySelector('#menuGrid').innerHTML=[['Still needed',state.items.filter(item=>!fullyClaimed(item))],['Claimed',state.items.filter(fullyClaimed)]].map(([title,items])=>{
-    const columns=Array.from({length:singleColumnMenu.matches?1:2},()=>[]);
-    categories.filter(category=>items.some(item=>item.category===category)).forEach((category,index)=>columns[index%columns.length].push(categoryCard(category,items)));
-    return `<section class="menu-status-group" data-dish-group="${title==='Claimed'?'claimed':'needed'}"><h3>${title}</h3>${items.length?`<div class="menu-status-grid">${columns.filter(column=>column.length).map(column=>`<div class="menu-column">${column.join('')}</div>`).join('')}</div>`:'<p>No dishes in this group.</p>'}</section>`;
-  }).join('');
+  const neededRows=state.items.flatMap(item=>{const remaining=Math.max(0,item.needed-item.claims.length);return remaining?[renderDish(item,remaining)]:[];});
+  const claimedRows=state.items.flatMap(item=>[...new Set(item.claims)].map(claimant=>renderDish(item,item.claims.filter(name=>name===claimant).length,claimant)));
+  document.querySelector('#menuGrid').innerHTML=[['Still needed','needed',neededRows],['Claimed','claimed',claimedRows]].map(([title,key,rows])=>`<section data-dish-group="${key}"><h3 class="dish-list-group-title">${title}</h3>${rows.length?rows.join(''):'<p class="guest-empty">No dishes in this group.</p>'}</section>`).join('');
   const needed = state.items.reduce((sum, item) => sum + (item.optional ? 0 : Math.max(0, item.needed - item.claims.length)), 0);
+  document.querySelector('#dishListTotals').textContent=`${needed} still needed · ${state.items.reduce((sum,item)=>sum+item.claims.length,0)} claimed`;
   const guests = GuestPlanning.guestResponses(state.rsvps).reduce((sum, rsvp) => sum + rsvp.adults + rsvp.children, 0);
   const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
   const summaryCounts=attendanceSummaryCounts();
@@ -1658,12 +1652,13 @@ function renderInlineEditing() {
   SiteEditing.portal(document.querySelector('#weddingPartyDetails'), 'party members', ['#weddingPartyAdmin'], prepare);
   }
   if (features.menu) {
-    document.querySelectorAll('#menuGrid [data-claim]').forEach(button => {
-      const item = state.items.find(item => item.id === button.dataset.claim);
-      const dish = button.closest('.dish');
+    document.querySelectorAll('#menuGrid [data-dish-id]').forEach(dish => {
+      const item = state.items.find(item => item.id === dish.dataset.dishId);
       SiteEditing.field(dish, item.name, [{label:'Name',value:item.name,required:true},{label:'Category',value:item.category,options:['Appetizers','Main Table','Sides','Desserts','Drinks']},{label:'Amount',value:item.needed,type:'number',min:1},{label:'Unit',value:item.unit,options:(state.quantityUnits || ['item','dozen']).map(unit=>typeof unit==='string'?unit:unit.id)}], ([name,category,needed,unit]) => { Object.assign(item,{name,category,needed:Number(needed),unit}); });
+      if(SiteEditing.enabled)SiteEditing.button('Change my claim',()=>claimItem(item.id),dish);
       if (SiteEditing.enabled) SiteEditing.button('×', () => { if (confirm(`Delete “${item.name}”?`)) { state.items=state.items.filter(entry=>entry.id!==item.id); saveState(); } }, dish, `Delete ${item.name}`);
     });
+    SiteEditing.button('Add dish',()=>openCustomItem('Main Table'),document.querySelector('#gatheringMenuSection'));
     SiteEditing.portal(document.querySelector('#gatheringMenuSection'), 'menu items and claims', ['#menuAdminFields'], prepare);
   }
   SiteEditing.field(document.querySelector('#eventPage .header-art'), 'header image', [
@@ -1805,16 +1800,9 @@ function renderEventDock() {
     return `<button type="button" data-switch-event="${id}" aria-label="${escapeHtml(accessibleLabel)}" ${id === viewedEventId ? 'aria-current="page"' : ''}><span>${escapeHtml(name)}</span></button>`;
   }).join('');
 }
-function renderDish(item) {
-  const mine = guestName && item.claims.includes(guestName);
-  const remaining = Math.max(0, item.needed - item.claims.length);
-  const claimants = isHostView() && item.claims.length > 0
-    ? `<span class="dish-claimants">${[...new Set(item.claims)].map(name => escapeHtml(name)).join(', ')}</span>`
-    : '';
-  const status = item.optional ? 'Optional' : (remaining ? `${remaining} of ${formatQuantity(item.needed, item)} still needed` : '');
-  const details = [status ? `<span class="dish-status">${status}</span>` : '', claimants].filter(Boolean).join(' · ');
-  const unavailable = remaining === 0 && !mine;
-  return `<div class="dish"><h4>${escapeHtml(item.name)}</h4>${details ? `<div class="dish-meta">${details}</div>` : ''}<button data-claim="${item.id}" data-dish-status="${mine ? 'bringing' : unavailable ? 'claimed' : 'available'}" ${unavailable && !SiteEditing.enabled ? 'disabled' : ''} class="${mine ? 'claimed' : ''}">${mine ? '✓ Bringing it' : (unavailable ? 'Claimed' : "I'll bring this")}</button></div>`;
+function renderDish(item,quantity=Math.max(0,item.needed-item.claims.length),claimant=null) {
+  const family=claimant===null?'':claimant===HOST_DISPLAY_NAME?'Host':[...new Set(accountSignInNames(claimant).map(name=>firstAccountLastName(name)))].join(' / ');
+  return `<div class="guest-entry invited-entry dish dish-list-row" data-dish-id="${escapeAttribute(item.id)}"><strong class="dish-title">${escapeHtml(item.name)}</strong> <span class="dish-status">(${quantity} of ${item.needed})${claimant===null?' still needed':''}</span>${claimant===null?'':` <span class="dish-claimants">${escapeHtml(family)}</span>`}</div>`;
 }
 function claimItem(id) {
   ensureAccount(() => {
@@ -2029,15 +2017,6 @@ document.querySelector('#matronInfoTabs').addEventListener('keydown', event => {
   selectedMatronTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.matronTab;
   render();
   document.querySelector(`[data-matron-tab="${CSS.escape(selectedMatronTab)}"]`).focus();
-});
-document.querySelector('#menuGrid').addEventListener('click', event => {
-  const claimButton = event.target.closest('[data-claim]');
-  if (claimButton) {
-    claimItem(claimButton.dataset.claim);
-    return;
-  }
-  const customButton = event.target.closest('[data-custom-category]');
-  if (customButton) openCustomItem(customButton.dataset.customCategory);
 });
 document.querySelector('#claimQuantityForm').addEventListener('submit', event => {
   event.preventDefault();
@@ -3787,7 +3766,6 @@ document.querySelectorAll('.affordable-attire-toggle').forEach(button => {
 render();
 if (sharedSavePending) queueSharedStateSave();
 startApp().finally(() => window.MeyersLoading?.finish());
-singleColumnMenu.addEventListener('change', () => { commitAllPendingEditorInputs();render(); });
 function resumeSharedSync() {
   if(sharedSavePending && !sharedSaveInProgress){clearTimeout(sharedSaveTimer);return saveSharedState();}
   return loadSharedState();

@@ -1,12 +1,17 @@
-/* Saved vertical spacers use stable anchors and the same layout in every gathering. */
+/* Saved directional spacers use stable anchors and the same layout in every gathering. */
 (() => {
-  let context,dragging,marker,placement,movingSpace,draggingText;
+  let context,dragging,marker,placement,movingSpace,draggingText,draggingAxis='y';
   const nodes=new Map(),virtuals=new Map(),virtualInfo=new WeakMap(),originalStyles=[];
   const excluded='.editor-ribbon-space,#hostToolsPanel,.element-editor-toolbar,.host-fixed-edit,.gap-drop-marker,.existing-layout-gap,.editor-dialog,#newGatheringDialog,#gatheringHistoryDialog';
   const find=selector=>{try{return document.querySelector(selector);}catch{return null;}};
   const size=value=>Math.max(0,Math.min(1000,Math.round(Number(value)||0)));
   function enabled(){return context?.host && context.editing;}
   function beforeRender(){for(const element of virtuals.values())element.remove();virtuals.clear();restoreSpacing();for(const element of nodes.values())element.remove();nodes.clear();clearMarker();}
+  function paintGap(element,gap){
+    const axis=gap.axis==='x'?'x':'y',amount=size(gap.size);element.dataset.gapAxis=axis;
+    Object.assign(element.style,{display:axis==='x'?'inline-block':'block',width:axis==='x'?amount+'px':'100%',height:axis==='x'?'1em':amount+'px',flexBasis:axis==='x'?amount+'px':'auto'});
+    element.dataset.gapLabel=`${axis==='x'?'Horizontal':'Vertical'} gap · ${amount} px`;element.setAttribute('aria-label',element.dataset.gapLabel);element.setAttribute('aria-orientation',axis==='x'?'vertical':'horizontal');
+  }
   function render(ctx){
     context=ctx;
     const remaining=(Array.isArray(ctx.state.siteGaps)?ctx.state.siteGaps:[]).filter(gap=>gap && typeof gap.id==='string' && typeof gap.parent==='string');
@@ -17,7 +22,7 @@
         if(!parent || gap.before && !before || before && before.parentElement!==parent || parent.closest(excluded) || !parent.matches('div,section,main,header,footer,form,fieldset,nav,article'))continue;
         let element=nodes.get(gap.id);
         if(!element){element=document.createElement('gathering-gap');element.id='gathering-gap-'+gap.id;element.dataset.gapId=gap.id;element.style.display='block';nodes.set(gap.id,element);}
-        element.style.height=size(gap.size)+'px';element.dataset.gapLabel=`Gap · ${size(gap.size)} px`;
+        paintGap(element,gap);
         element.draggable=enabled();element.tabIndex=enabled()?0:-1;element.setAttribute('role','separator');element.setAttribute('aria-label',element.dataset.gapLabel);element.setAttribute('aria-hidden',String(!enabled()));
         parent.insertBefore(element,before);remaining.splice(index,1);progress=true;
       }
@@ -25,23 +30,23 @@
     }
     applySpacing();scanSpaces();
   }
-  function candidate(start){
+  function candidate(start,axis='y'){
     const virtual=start?.closest('.existing-layout-gap');if(virtual){const info=virtualInfo.get(virtual);start=info?find(info.after):null;}
     if(!start || start.closest(excluded) || start.closest('[hidden],[data-rsvp-flow-hidden]'))return null;
     const root=globalThis.activeHostDialog?.() || document.querySelector('#eventPage:not([hidden]),#eventSelectionPage:not([hidden]),#attirePage:not([hidden]),#signInPage:not([hidden])');
     if(!root?.contains(start))return null;
     let element=start.closest('gathering-gap') || SiteEditing.textOwner(start) || start.closest('button,h1,h2,h3,h4,p,time,img,article,section,fieldset,nav,.wedding-tab-content,.event-header-text');
     const control=element?.closest('button,a,label');if(control)element=control;
-    const nav=element?.closest('nav:not(.toolbar-page-navigation)');if(nav)element=nav;
+    const nav=element?.closest('nav:not(.toolbar-page-navigation)');if(nav && axis!=='x')element=nav;
     if(!element || !element.parentElement || element.closest(excluded) || !element.parentElement.matches('div,section,main,header,footer,form,fieldset,nav,article'))return null;
     return element;
   }
-  function put(element,before,id){
+  function put(element,before,id,axis='y'){
     if(!enabled() || !element?.parentElement)return null;
     const parent=element.parentElement,next=before?element:element.nextElementSibling;
     if(id && next?.dataset.gapId===id)return nodes.get(id);
     context.state.siteGaps??=[];
-    const record=context.state.siteGaps.find(gap=>gap.id===id) || {id:crypto.randomUUID(),size:24};
+    const record=context.state.siteGaps.find(gap=>gap.id===id) || {id:crypto.randomUUID(),size:24,axis};
     const own=nodes.get(record.id);let anchor=next;
     if(anchor===own)anchor=own.nextElementSibling;
     const previous=own?.previousElementSibling;
@@ -57,12 +62,14 @@
     own?.remove();render(context);context.save();return nodes.get(record.id);
   }
   function normalizeSpacing(){if(context.state.siteSpacing){const spacing={};for(const info of Object.values(context.state.siteSpacing)){info.key=[info.parent,info.before || '',info.after,info.axis,info.padding || ''].join('|');spacing[info.key]=info;}context.state.siteSpacing=spacing;}}
-  function getSize(element){return virtualInfo.get(element)?.size ?? (parseFloat(element?.style.height) || 0);}
+  function getAxis(element){return virtualInfo.get(element)?.axis || element?.dataset.gapAxis || 'y';}
+  function getSize(element){return virtualInfo.get(element)?.size ?? (parseFloat(element?.style[getAxis(element)==='x'?'width':'height']) || 0);}
+  function setAxis(element,axis){const gap=context?.state.siteGaps?.find(gap=>gap.id===element?.dataset.gapId);if(!enabled() || !gap)return;gap.axis=axis==='x'?'x':'y';paintGap(element,gap);scanSpaces();context.save();}
   function setSize(element,value){
     if(!enabled())return;
     const info=virtualInfo.get(element);
     if(info){context.state.siteSpacing??={};context.state.siteSpacing[info.key]={...info,size:size(value)};applySpacing();scanSpaces();context.save();return;}
-    const gap=context.state.siteGaps?.find(gap=>gap.id===element?.dataset.gapId);if(!gap)return;gap.size=size(value);element.style.height=gap.size+'px';element.dataset.gapLabel=`Gap · ${gap.size} px`;element.setAttribute('aria-label',element.dataset.gapLabel);scanSpaces();context.save();
+    const gap=context.state.siteGaps?.find(gap=>gap.id===element?.dataset.gapId);if(!gap)return;gap.size=size(value);paintGap(element,gap);scanSpaces();context.save();
   }
   function remove(element){
     if(!enabled())return;
@@ -119,21 +126,21 @@
     const text=SiteEditing.movableTextRoot(event.target);
     if(text && text.text.draggable){draggingText=text.text;dragging='text';document.body.classList.add('dragging-gap');event.dataTransfer.setData('application/x-gathering-text',ElementAppearance.selector(draggingText));event.dataTransfer.effectAllowed='move';return;}
     const gap=event.target.closest('gathering-gap,.existing-layout-gap,[data-new-gap]');if(!gap)return;
-    movingSpace=virtualInfo.get(gap)?{element:gap,size:virtualInfo.get(gap).size}:null;dragging=gap.dataset.gapId || (movingSpace?'existing':'new');document.body.classList.add('dragging-gap');event.dataTransfer.setData('application/x-gathering-gap',dragging);event.dataTransfer.effectAllowed=dragging==='new'?'copy':'move';
+    movingSpace=virtualInfo.get(gap)?{element:gap,size:virtualInfo.get(gap).size}:null;draggingAxis=gap.hasAttribute('data-new-gap')?(gap.dataset.newGap==='x'?'x':'y'):getAxis(gap);dragging=gap.dataset.gapId || (movingSpace?'existing':'new');document.body.classList.add('dragging-gap');event.dataTransfer.setData('application/x-gathering-gap',dragging);event.dataTransfer.effectAllowed=dragging==='new'?'copy':'move';
   });
   document.addEventListener('dragover',event=>{
     if(!enabled() || !dragging)return;
-    const element=candidate(event.target);if(!element || element.dataset.gapId===dragging || draggingText && !SiteEditing.canMoveText(draggingText,element)){clearMarker();return;}
-    event.preventDefault();const rect=element.getBoundingClientRect(),before=event.clientY<rect.top+rect.height/2;placement={element,before};
+    const element=candidate(event.target,draggingText?'y':draggingAxis);if(!element || element.dataset.gapId===dragging || draggingText && !SiteEditing.canMoveText(draggingText,element)){clearMarker();return;}
+    event.preventDefault();const rect=element.getBoundingClientRect(),before=draggingAxis==='x'&&!draggingText?event.clientX<rect.left+rect.width/2:event.clientY<rect.top+rect.height/2;placement={element,before};
     if(!marker){marker=document.createElement('div');marker.className='gap-drop-marker';(globalThis.activeHostDialog?.() || document.body).append(marker);}
-    Object.assign(marker.style,{left:rect.left+'px',top:(before?rect.top:rect.bottom)+'px',width:rect.width+'px'});
+    const horizontal=draggingAxis==='x'&&!draggingText;marker.classList.toggle('horizontal-gap-marker',horizontal);Object.assign(marker.style,horizontal?{left:(before?rect.left:rect.right)+'px',top:rect.top+'px',height:rect.height+'px',width:'0px'}:{left:rect.left+'px',top:(before?rect.top:rect.bottom)+'px',width:rect.width+'px',height:'0px'});
   });
   document.addEventListener('drop',event=>{
     if(!enabled() || !dragging || !placement)return;
     event.preventDefault();const {element,before}=placement;
     if(draggingText){const result=SiteEditing.moveTextTo(draggingText,element,before);draggingText=null;clearMarker();dragging=null;document.body.classList.remove('dragging-gap');if(result)ElementEditor.select(result);return;}
-    if(movingSpace)setSize(movingSpace.element,0);const result=put(element,before,['new','existing'].includes(dragging)?null:dragging);if(result && movingSpace)setSize(result,movingSpace.size);movingSpace=null;clearMarker();dragging=null;document.body.classList.remove('dragging-gap');if(result)ElementEditor.select(result);
+    if(movingSpace)setSize(movingSpace.element,0);const result=put(element,before,['new','existing'].includes(dragging)?null:dragging,draggingAxis);if(result && movingSpace)setSize(result,movingSpace.size);movingSpace=null;clearMarker();dragging=null;document.body.classList.remove('dragging-gap');if(result)ElementEditor.select(result);
   });
   document.addEventListener('dragend',()=>{dragging=null;draggingText=null;movingSpace=null;document.body.classList.remove('dragging-gap');clearMarker();});
-  globalThis.GapLayout={render,refresh:()=>{if(context)render(context);},beforeRender,setSize,remove,addAfter:element=>put(candidate(element),false),getSize,isGap:element=>element?.matches('gathering-gap,.existing-layout-gap'),elements:()=>[...nodes.values(),...virtuals.values()]};
+  globalThis.GapLayout={render,refresh:()=>{if(context)render(context);},beforeRender,setSize,remove,addAfter:(element,axis='y')=>put(candidate(element,axis),false,null,axis),getAxis,setAxis,getSize,isGap:element=>element?.matches('gathering-gap,.existing-layout-gap'),elements:()=>[...nodes.values(),...virtuals.values()]};
 })();
