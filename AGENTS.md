@@ -8,6 +8,8 @@ The website must use **ONE shared gathering builder and editing system** while a
 
 These architectural principles must be preserved during all future development.
 
+---
+
 ## Existing Infrastructure and Data Protection
 
 This website uses GitHub Pages, a Cloudflare Worker, and a separate GitHub data repository for persistent shared state.
@@ -23,8 +25,6 @@ When modifying shared builder functionality, gathering formatting, or page conte
 - Preserve all existing integrations, including AnyList, Dropbox, and invitation generation.
 
 Consult README.md and other relevant project documentation before changing related infrastructure.
-
----
 
 ## One Shared Gathering Builder
 
