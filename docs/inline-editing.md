@@ -118,3 +118,5 @@ Menu opens only the selected gathering’s menu controls. Potluck menus reuse th
 Fixed actions use paired rows: Save / Done, ↑ Gap / → Gap, Use Button / Container, Menu / Templates, and Accounts / History. Only the formatting area scrolls.
 
 Fixed row order is Undo / Redo, Save / Done, divider, Menu / Templates, Accounts / History, divider, ↑ Gap / → Gap, then Use Button / Container. Formatting scrolls below these actions.
+
+Every gathering uses the same summary-item count button styling, including Dishes needed. Hover adds no underline. Counts keep shared value and title appearance groups, separately from the shared count-list groups and editor controls.
