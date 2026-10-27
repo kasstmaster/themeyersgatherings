@@ -33,8 +33,24 @@
   function group(target){
     if(!target?.matches || !target.closest)return null;
     if(target.matches('.event-dock'))return 'toolbar';
-    const dialog=target.closest('dialog');if(dialog && !['rsvpDialog','dishListDialog'].includes(dialog.id))return null;
-    if(target.closest('.element-editor-toolbar,#hostQuickActions,#editItemsButton,[id^="admin"],.inline-portal-editor') || target.closest(contentText))return null;
+    if(target.closest('.element-editor-toolbar,#hostQuickActions,#editItemsButton,[id^="admin"],.inline-portal-editor'))return null;
+    const dialog=target.closest('dialog');
+    if(dialog?.matches('.count-list-dialog')){
+      if(target.matches('.modal-card'))return 'count-list-containers';
+      if(target.matches('.modal-close'))return 'count-list-close';
+      if(target.matches('button,a'))return 'count-list-buttons';
+      if(target.matches('.section-kicker'))return 'count-list-kickers';
+      if(target.matches('h1,h2,h3,h4,h5,h6'))return target.matches('.dish-list-group-title')?'count-list-group-titles':'count-list-titles';
+      if(target.matches('.invited-people-total'))return 'count-list-totals';
+      if(target.matches('.dish-title,.invited-entry-heading>strong'))return 'count-list-item-titles';
+      if(target.matches('.dish-status,.invited-entry-heading>span'))return 'count-list-details';
+      if(target.matches('.dish-claimants,.invited-entry-names'))return 'count-list-names';
+      if(target.matches('.guest-entry'))return 'count-list-rows';
+      if(target.matches('.guest-list'))return 'count-list-panels';
+      return null;
+    }
+    if(dialog && dialog.id!=='rsvpDialog')return null;
+    if(target.closest(contentText))return null;
     if(target.matches('.dish-claimants'))return 'dish-claimants';
     if(target.matches('.dish-status,.rsvp-dish-choice small'))return 'dish-details';
     if(target.matches('.summary-strip'))return 'inner-containers';
@@ -70,7 +86,7 @@
   function find(path){
     if(path.startsWith('@group:')){
       const [kind,state]=path.slice(7).split(':');
-      return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,#dishListDialog *')].filter(element=>(group(element)===kind && (!state || selectedState(element)===state)) || path==='@group:inner-containers' && contentSurface(element));
+      return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,.count-list-dialog *')].filter(element=>(group(element)===kind && (!state || selectedState(element)===state)) || path==='@group:inner-containers' && contentSurface(element));
     }
     try{return [...document.querySelectorAll(path)];}catch{return [];}
   }
