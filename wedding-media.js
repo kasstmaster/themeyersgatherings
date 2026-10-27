@@ -35,7 +35,7 @@
   function show(ctx) {
     ctx = { ...ctx, base:ctx.base.replace(/\/$/,'') };
     if (!current || key(current) !== key(ctx)) {
-      current = ctx;selectShareMode('');node('weddingMediaShareOptions').hidden=true;node('weddingMediaShare').setAttribute('aria-expanded','false');node('weddingMediaLinkStatus').textContent='';node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();loadGallery();
+      current = ctx;node('mediaUploadFeedback').hidden=true;selectShareMode('');node('weddingMediaShareOptions').hidden=true;node('weddingMediaShare').setAttribute('aria-expanded','false');node('weddingMediaLinkStatus').textContent='';node('weddingMediaLink').value='';node('weddingMediaGallery').replaceChildren();loadGallery();
     } else current=ctx;
     if(mode==='upload')DropboxUpload.show(ctx, api);
   }
@@ -73,8 +73,7 @@
       let url;try{url=new URL(node('weddingMediaLink').value.trim());if(!['http:','https:'].includes(url.protocol))throw new Error();}catch{status.textContent='Enter a full http or https photo-sharing link.';return;}
       button.disabled=true;try{await api(ctx,'/links',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url.href})});node('weddingMediaLink').value='';status.textContent='Sharing link saved.';loadGallery();}catch(error){status.textContent=error.message;}finally{button.disabled=false;}
     });
-    node('weddingMediaRefresh').addEventListener('click',loadGallery);
   }
-  globalThis.WeddingMedia={show};
+  globalThis.WeddingMedia={show,uploadsFinished:ctx=>{if(current && key(current)===key(ctx))return loadGallery();}};
   initialize();
 })();

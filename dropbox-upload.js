@@ -46,11 +46,18 @@
     catch(error){popup?.close();node('dropboxConnectionStatus').textContent=error.message;}
   });
   node('dropboxFiles').addEventListener('change',()=>{jobs=[...node('dropboxFiles').files].map(file=>({file,offset:0}));node('dropboxUploadStatus').textContent=`${jobs.length} files selected.`;});
+  function feedback(ctx,batch,failures=[],finished=false){
+    if(key(current)!==key(ctx))return;
+    const box=node('mediaUploadFeedback'),done=batch.filter(job=>job.done).length,total=batch.reduce((sum,job)=>sum+job.file.size,0),sent=batch.reduce((sum,job)=>sum+Math.min(job.file.size,job.offset),0);
+    box.hidden=false;box.dataset.state=finished?(failures.length?'error':'complete'):'uploading';box.setAttribute('role',failures.length?'alert':'status');
+    node('mediaUploadProgress').value=finished&&!failures.length?100:Math.min(99,total?Math.floor(sent/total*100):0);
+    node('mediaUploadSummary').textContent=finished?(failures.length?`Upload incomplete: ${done} of ${batch.length} items uploaded. ${failures.join(' ')} Open Upload and press Upload to retry unfinished files.`:`✓ All ${batch.length} items uploaded.`):`Uploading ${done} of ${batch.length} items — ${Math.min(99,total?Math.floor(sent/total*100):0)}%. Please keep this page open.`;
+  }
   node('dropboxUpload').addEventListener('click',async()=>{
     if(busy)return;const ctx=current,ctxKey=key(ctx),batch=[...jobs];
     if(!batch.length){node('dropboxUploadStatus').textContent='Choose photos or videos first.';return;}
     if(ctx.preview)return;
-    busy=true;node('dropboxUpload').disabled=true;node('dropboxFiles').disabled=true;const failures=[];
+    busy=true;node('dropboxUpload').disabled=true;node('dropboxFiles').disabled=true;const failures=[];feedback(ctx,batch);
     for(const [index,job] of batch.entries()){
       if(job.done)continue;
       try{
@@ -60,14 +67,14 @@
           if(key(current)!==ctxKey)throw new Error('Your signed-in account changed. Select files again to resume.');
           node('dropboxUploadStatus').textContent=`Uploading ${index+1} of ${batch.length}: ${job.file.name} (${Math.floor(job.offset/job.file.size*100)}%)`;
           const chunk=job.file.slice(job.offset,job.offset+8*1024*1024);
-          const result=await api(ctx,`/dropbox-upload/${job.id}/chunk?offset=${job.offset}`,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:chunk});job.offset=result.offset;
+          const result=await api(ctx,`/dropbox-upload/${job.id}/chunk?offset=${job.offset}`,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:chunk});job.offset=result.offset;feedback(ctx,batch);
         }
-        await api(ctx,`/dropbox-upload/${job.id}/finish`,{method:'POST'});job.done=true;
+        await api(ctx,`/dropbox-upload/${job.id}/finish`,{method:'POST'});job.done=true;feedback(ctx,batch);
       }catch(error){failures.push(`${job.file.name}: ${error.message}`);}
     }
     busy=false;node('dropboxUpload').disabled=false;node('dropboxFiles').disabled=false;
     if(failures.length && key(current)===ctxKey)status({silent:true});
-    if(key(current)===ctxKey){const done=batch.filter(job=>job.done).length;node('dropboxUploadStatus').textContent=`${done} of ${batch.length} uploaded to Dropbox.${failures.length?' '+failures.join(' ')+' Press Upload to retry unfinished files.':''}`;if(!failures.length){jobs=[];node('dropboxFiles').value='';}}
+    if(key(current)===ctxKey){const done=batch.filter(job=>job.done).length;node('dropboxUploadStatus').textContent=`${done} of ${batch.length} uploaded to Dropbox.${failures.length?' '+failures.join(' ')+' Press Upload to retry unfinished files.':''}`;feedback(ctx,batch,failures,true);if(!failures.length){jobs=[];node('dropboxFiles').value='';globalThis.WeddingMedia?.uploadsFinished(ctx);}}
   });
   globalThis.DropboxUpload={show};
 })();
