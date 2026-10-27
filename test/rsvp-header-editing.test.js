@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const source=await readFile(new URL('../app.js',import.meta.url),'utf8');
 const headerCode=source.slice(source.indexOf('function rsvpFirstPageTextFields()'),source.indexOf("document.querySelector('#rsvpConfirmEvent').addEventListener"));
-const editorCode=source.slice(source.indexOf('function renderRsvpInlineEditing()'),source.indexOf('function renderEventDock()'));
+const editorCode=source.slice(source.indexOf('function renderRsvpInlineEditing('),source.indexOf('function renderEventDock()'));
 function fixture(editing,eventId='thanksgiving'){
  const fields=[],section={hidden:true},confirm={dataset:{},setAttribute(key,value){this[key]=value;},querySelector(){return {setAttribute:(key,value)=>{this.icon=value;}};}},wrong={},image={src:'main.png',hidden:false,removeAttribute(){this.src='';},addEventListener(){}};
  const clone={removeAttribute(){},querySelector:()=>image,querySelectorAll:selector=>selector==='img[src]'&&image.src?[image]:[]};
@@ -57,4 +57,10 @@ test('first-page RSVP icon follows the shared gathering response status',()=>{
  const f=fixture(false);const paths=new Set();
  for(const status of ['', 'attending', 'declined']){f.context.gatheringRsvpStatus=()=>status;f.context.renderRsvpEventHeader();assert.equal(f.confirm.dataset.rsvpStatus,status || 'pending');paths.add(f.confirm.icon);assert.ok(f.confirm['aria-description']);}
  assert.equal(paths.size,3);
+});
+
+test('pending RSVP text commits stay bound to their original gathering',()=>{
+ const f=fixture(true);const original=f.context.state;f.context.renderRsvpInlineEditing();
+ f.context.state={};f.fields[2].commit(['Original gathering only']);
+ assert.equal(original.rsvpIntroText,'Original gathering only');assert.equal(f.context.state.rsvpIntroText,undefined);
 });

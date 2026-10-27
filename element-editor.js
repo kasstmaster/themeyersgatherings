@@ -42,6 +42,7 @@
     for(const command of ['insertUnorderedList','insertOrderedList'])toolbar.querySelector(`[data-text-command="${command}"]`)?.setAttribute('aria-pressed',String(document.queryCommandState(command)));
     const element=currentTextElement(),style=getComputedStyle(element),panel=toolbar.querySelector('[data-editor-panel]');
     const setSelect=(name,value)=>{const control=panel.querySelector(`[aria-label="${name}"]`);if(!control)return;if(![...control.options].some(option=>option.value===String(value))){const option=node('option',String(value));option.value=String(value);control.append(option);}control.value=String(value);};
+    setSelect('Alignment',style.textAlign);
     setSelect('Font',style.fontFamily.split(',')[0].trim().replace(/^['"]|['"]$/g,''));
     const scale=parseFloat(style.getPropertyValue('--fitted-text-scale')) || 1;
     setSelect('Size',Math.round(parseFloat(style.fontSize)/scale*100)/100);
@@ -113,7 +114,7 @@
     if(toolbar){toolbar.querySelector('[data-editor-state]')?.closest('label').setAttribute('hidden','');toolbar.querySelector('[data-editor-selection]').textContent='';toolbar.querySelector('[data-editor-open]').disabled=true;toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=true);}
   }
   function commitToolbarInput(){const input=document.activeElement;if(toolbar?.contains(input) && input.matches('[data-editor-committed]') && input.value!==input.dataset.editorCommitted)input.dispatchEvent(new Event('change',{bubbles:true}));}
-  function scheduleAutosave(){clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>{if(context?.enabled && SiteEditing.enabled)flush();},800);}
+  function scheduleAutosave(){clearTimeout(autosaveTimer);const owner=context;autosaveTimer=setTimeout(()=>{if(context===owner && context?.enabled && SiteEditing.enabled)flush();},800);}
   function refreshUndo(){scheduleAutosave();const redo=toolbar?.querySelector('[data-editor-redo]');if(redo)redo.disabled=!SiteEditing.canRedo;const control=toolbar?.querySelector('[data-editor-undo]');if(control)control.disabled=!(SiteEditing.canUndo || dirty || [...(toolbar?.querySelectorAll('[data-editor-committed]') || [])].some(input=>input.value!==input.dataset.editorCommitted) || fieldDraft?.inputs.some((input,index)=>input.value!==String(fieldDraft.entry.fields[index].value??'')));}
   function status(text){const live=toolbar?.querySelector('[data-editor-status]');if(live)live.textContent=text;}
   function labelInput(parent,title,type,value,change){
@@ -176,6 +177,7 @@
       for(const [title,selector] of [['Count','.summary-item>strong,.summary-stat>strong,.counter-row output'],['Count title','.summary-item>span,.summary-stat>span,.counter-row strong']])button(title,()=>{const part=target.querySelector(selector);if(part)select(part);},panel);
     }else if(name==='Format' && textual){
       for(const [title,command] of [['Bold','bold'],['Italic','italic'],['Underline','underline'],['Remove formatting','removeFormat']]){const control=button(title,()=>{textCommand(command);syncTextControls();},panel);control.dataset.textCommand=command;}
+      selectInput(panel,'Alignment',['left','center','right','justify'],getComputedStyle(target).textAlign,value=>ElementAppearance.update(target,{textAlign:value}));
       selectInput(panel,'Font',TextStyles.fonts,'Times New Roman',value=>textStyle('font',value));
       selectInput(panel,'Size',TextStyles.sizes,16,value=>textStyle('size',value));
       for(const [title,key] of [['Text color','color'],['Highlight','highlight']]){
@@ -319,7 +321,7 @@
     toolbar.querySelector('#editMenuButton').disabled=!globalThis.hasGatheringToolbarContext?.();
     refreshUndo();sizeSidebar();
   }
-  function beforeRender(){release();sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)document.querySelector('#hostEditorManagement').append(control);}toolbar?.remove();toolbar=null;panelName='';}
+  function beforeRender(){release();clearTimeout(autosaveTimer);sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)document.querySelector('#hostEditorManagement').append(control);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',()=>{rememberSelection();if(!toolbar?.contains(document.activeElement))syncTextControls();});
   document.addEventListener('pointerdown',event=>{
     if(context?.enabled && toolbar && !toolbar.contains(event.target))SiteEditing.endUndoGroup();

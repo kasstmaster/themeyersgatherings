@@ -149,6 +149,7 @@
     if(['cover','contain','auto'].includes(values.imageFit))set(element,'background-size',values.imageFit);
     if(globalThis.TextStyles?.fonts.includes(values.fontFamily))set(element,'font-family',values.fontFamily);
     if(Number.isFinite(values.fontSize) && values.fontSize>=8 && values.fontSize<=96)set(element,'font-size',`calc(${values.fontSize}px * var(--fitted-text-scale,1))`);
+    if(['left','center','right','justify','start','end'].includes(values.textAlign))set(element,'text-align',values.textAlign);
     if(['400','700'].includes(values.fontWeight))set(element,'font-weight',values.fontWeight);
     if(['normal','italic'].includes(values.fontStyle))set(element,'font-style',values.fontStyle);
     if(['none','underline'].includes(values.textDecoration))set(element,'text-decoration',values.textDecoration);
@@ -164,7 +165,6 @@
     if(target.matches('.summary-item,.summary-stat'))return [...target.querySelectorAll(':scope>strong,:scope>span')];
     if(target.matches('.counter-row'))return [...target.querySelectorAll(':scope>div>strong,:scope>div>span,:scope>div>output')];
     if(target.matches('.event-selection-choices>button'))return [...target.querySelectorAll('.event-selection-label>span,.event-selection-label>small')];
-    if(target.matches('#uploadPhotosButton'))return 'buttons';
     if(target.matches('[role="tab"],[data-wedding-tab],[data-switch-event],[data-page-export],.toolbar-upload-action') && target.querySelector(':scope>span'))return [target.querySelector(':scope>span:last-of-type')];
     if(target.matches('button,a') && target.querySelector(':scope>svg,:scope>img'))return [...target.querySelectorAll(':scope>span')];
     return [target];
