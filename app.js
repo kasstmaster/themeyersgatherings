@@ -1445,7 +1445,7 @@ function renderGatheringMedia(hostView) {
   if(showing)WeddingMedia.show({base:SHARED_STATE_URL,eventId:viewedEventId,host:hostView,password:hostView?hostCredential:'',name:signedInPersonName || guestName,account:guestName,preview:false});
 }
 function renderGatheringPages(features,hostView) {
-  if(selectedGatheringTab==='details')selectedGatheringTab=null;
+  if(['details','menu'].includes(selectedGatheringTab))selectedGatheringTab=null;
   if(!hostView && selectedGatheringTab==='notes')selectedGatheringTab='menu';
   const tab=selectedGatheringTab || (hostView?'notes':'media');
   document.querySelector('#gatheringTabs').hidden=!hostView || (!features.menu && !features.notes);
@@ -1457,7 +1457,7 @@ function renderGatheringPages(features,hostView) {
   document.querySelector('#hostNotesSection').hidden=!features.notes || !hostView || tab!=='notes';
   document.querySelector('#hostNotesContent').innerHTML=features.notes && hostView
     ? formatEditableText(state.hostNotes || '') || '<p>Edit Website to add your notes.</p>' : '';
-  document.querySelector('.menu-section').hidden=!features.menu || !hostView || tab!=='menu';
+  document.querySelector('.menu-section').hidden=!features.menu || !hostView;
   document.querySelector('#copyMenuButton').hidden=state.items.length===0;
 }
 // The shared gathering chooser has site-wide editing state, independent of every event.
@@ -1521,18 +1521,14 @@ function render() {
   renderWeddingGathering(hostView);
   renderGatheringMedia(hostView);
   const categories = [...new Set(state.items.map(item => item.category))];
-  const categoryCard = category => `
-    <article class="category-card">
-      <div class="category-title"><h3>${escapeHtml(category)}</h3></div>
-      ${state.items.filter(item => item.category === category).map(renderDish).join('')}
-      <button class="category-other" type="button" data-custom-category="${escapeHtml(category)}">I'll bring something else</button>
-    </article>`;
-  const menuColumns = Array.from({ length: singleColumnMenu.matches ? 1 : 2 }, () => []);
-  categories.forEach((category, index) => menuColumns[index % menuColumns.length].push(categoryCard(category)));
-  document.querySelector('#menuGrid').innerHTML = menuColumns
-    .filter(column => column.length)
-    .map(column => `<div class="menu-column">${column.join('')}</div>`)
-    .join('');
+  const categoryCard = (category,items) => `<article class="category-card"><div class="category-title"><h3>${escapeHtml(category)}</h3></div>${items.filter(item=>item.category===category).map(renderDish).join('')}</article>`;
+  const fullyClaimed=item=>item.optional?item.claims.length>0:item.claims.length>=item.needed;
+  document.querySelector('#menuGrid').classList.add('menu-status-list');
+  document.querySelector('#menuGrid').innerHTML=[['Still needed',state.items.filter(item=>!fullyClaimed(item))],['Claimed',state.items.filter(fullyClaimed)]].map(([title,items])=>{
+    const columns=Array.from({length:singleColumnMenu.matches?1:2},()=>[]);
+    categories.filter(category=>items.some(item=>item.category===category)).forEach((category,index)=>columns[index%columns.length].push(categoryCard(category,items)));
+    return `<section class="menu-status-group" data-dish-group="${title==='Claimed'?'claimed':'needed'}"><h3>${title}</h3>${items.length?`<div class="menu-status-grid">${columns.filter(column=>column.length).map(column=>`<div class="menu-column">${column.join('')}</div>`).join('')}</div>`:'<p>No dishes in this group.</p>'}</section>`;
+  }).join('');
   const needed = state.items.reduce((sum, item) => sum + (item.optional ? 0 : Math.max(0, item.needed - item.claims.length)), 0);
   const guests = GuestPlanning.guestResponses(state.rsvps).reduce((sum, rsvp) => sum + rsvp.adults + rsvp.children, 0);
   const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
@@ -1679,10 +1675,10 @@ function renderInlineEditing() {
   document.querySelectorAll('#eventPage [role="tablist"],#rsvpWeddingPages [role="tablist"],#weddingPartyTabs').forEach(nav => {
     if(nav.id==='gatheringTabs' ? !features.menu && !features.notes : !features.weddingPages)return;
     const config = { available: nav.id==='brideGroomTabs' && selectedWeddingTab==='couple' && viewedEventId==='wedding' };
-    if(nav.id==='weddingPartyTabs')Object.assign(config,{toolbar:true,allowNoSelection:true,pageHost:document.querySelector('#rsvpWeddingPages'),panelIds:['whatToExpectSection','brideGroomSection','weddingTimelineSection','hostNotesSection','gatheringMenuSection'],scroll:true,
+    if(nav.id==='weddingPartyTabs')Object.assign(config,{toolbar:true,allowNoSelection:true,pageHost:document.querySelector('#rsvpWeddingPages'),panelIds:['whatToExpectSection','brideGroomSection','weddingTimelineSection','hostNotesSection'],scroll:true,
       hidePage:page=>page.weddingDefault==='details',
       defaultPage:['details','guest'].includes(selectedWeddingTab) && selectedGuestTab==='details'?page=>page.weddingDefault==='details':null});
-    if(nav.id==='gatheringTabs')Object.assign(config,{pageHost:document.querySelector('#rsvpWeddingPages'),allowNoSelection:true,panelIds:['hostNotesSection','gatheringMenuSection','weddingMediaSection']});
+    if(nav.id==='gatheringTabs')Object.assign(config,{pageHost:document.querySelector('#rsvpWeddingPages'),allowNoSelection:true,panelIds:['hostNotesSection','weddingMediaSection']});
     if (nav.id==='brideGroomTabs') Object.assign(config, { audience:'host',
       add: () => { state.brideGroomPages.push({id:crypto.randomUUID(),title:'New page',content:''});selectedBrideGroomPage=state.brideGroomPages.at(-1).id; },
       rename: (tab,title) => { if(tab.dataset.brideGroomPage==='__wedding-timeline')state.timelineTabTitle=title;else state.brideGroomPages.find(page=>page.id===tab.dataset.brideGroomPage).title=title; },
@@ -1699,7 +1695,7 @@ function renderInlineEditing() {
           state.siteTabTitles??={};state.siteTabTitles[key]=title;
         }
       },onSelect:page=>{if(page)renderWeddingPartyPageHeading('custom',page);}});
-    if (nav.id==='weddingHostTabs')Object.assign(config,{audience:'host',allowNoSelection:true,pageHost:document.querySelector('#rsvpWeddingPages'),panelIds:['weddingPartySection','registryAttireSection','registrySection','whatToExpectSection','weddingMediaSection','hostNotesSection','gatheringMenuSection']});
+    if (nav.id==='weddingHostTabs')Object.assign(config,{audience:'host',allowNoSelection:true,pageHost:document.querySelector('#rsvpWeddingPages'),panelIds:['weddingPartySection','registryAttireSection','registrySection','whatToExpectSection','weddingMediaSection','hostNotesSection']});
     SiteEditing.tabs(nav,config);
   });
   document.querySelectorAll('.event-dock').forEach(toolbar=>SiteEditing.field(toolbar,'toolbar',[],()=>{}));
@@ -1812,7 +1808,7 @@ function renderDish(item) {
   const mine = guestName && item.claims.includes(guestName);
   const remaining = Math.max(0, item.needed - item.claims.length);
   const claimants = isHostView() && item.claims.length > 0
-    ? `<span class="dish-claimants">${[...new Set(item.claims)].map(name => escapeHtml(contributionDisplayName(name))).join(', ')}</span>`
+    ? `<span class="dish-claimants">${[...new Set(item.claims)].map(name => escapeHtml(name)).join(', ')}</span>`
     : '';
   const status = item.optional ? 'Optional' : (remaining ? `${remaining} of ${formatQuantity(item.needed, item)} still needed` : '');
   const details = [status ? `<span class="dish-status">${status}</span>` : '', claimants].filter(Boolean).join(' · ');
@@ -2309,10 +2305,10 @@ function renderRsvpDishes(){
     const items=state.items.filter(item=>item.category===category).flatMap(item=>{
       const saved=item.claims.filter(name=>name===guestName).length;
       const available=Math.max(0,item.needed-item.claims.filter(name=>name!==guestName).length);
-      if(!available&&!saved)return [];
+      const claimedByOthers=!available&&!saved;
       const limit=Math.max(available,saved);
       const quantity=limit>1?`<label class="rsvp-dish-quantity" ${saved?'':'hidden'}><span>How many?</span><select data-rsvp-dish-quantity aria-label="Quantity of ${escapeAttribute(item.name)}" ${saved?'required':''}><option value="">Choose</option>${Array.from({length:limit},(_,index)=>{const quantity=index+1;return `<option value="${quantity}" ${quantity===saved?'selected':''}>${escapeHtml(formatQuantity(quantity,item))}</option>`;}).join('')}</select></label>`:'<input type="hidden" data-rsvp-dish-quantity value="1">';
-      return [`<div class="rsvp-dish-option"><label class="rsvp-dish-choice"><input type="checkbox" data-rsvp-dish="${escapeAttribute(item.id)}" ${saved?'checked':''}><span>${escapeHtml(item.name)}<small>${available?`${formatQuantity(available,item)} available`:'Already claimed'}</small></span></label>${quantity}</div>`];
+      return [`<div class="rsvp-dish-option${claimedByOthers?' rsvp-dish-covered':''}"><label class="rsvp-dish-choice"><input type="checkbox" data-rsvp-dish="${escapeAttribute(item.id)}" ${saved||claimedByOthers?'checked':''} ${claimedByOthers?'disabled':''}><span>${escapeHtml(item.name)}<small>${available?`${formatQuantity(available,item)} available`:'Already claimed'}</small></span></label>${quantity}</div>`];
     }).join('');return items?`<section class="rsvp-dish-category" data-rsvp-dish-category="${escapeAttribute(category)}"><h4>${escapeHtml(category)}</h4><div class="rsvp-dish-grid">${items}</div></section>`:'';
   }).join(''):'';
   if(enabled&&!document.querySelector('#rsvpDishChoices').textContent.trim())document.querySelector('#rsvpDishChoices').textContent='The listed dishes are covered. You can bring something else or go back and choose No.';
@@ -2325,7 +2321,7 @@ function renderRsvpDishes(){
 function rsvpDishDraft(){
   if(!rsvpDishesEnabled())return null;
   const yes=document.querySelector('#rsvpBringingDish').value==='yes';
-  const quantities=new Map([...document.querySelectorAll('[data-rsvp-dish]')].map(input=>[input.dataset.rsvpDish,yes&&input.checked?Number(input.closest('.rsvp-dish-option').querySelector('[data-rsvp-dish-quantity]').value):0]));
+  const quantities=new Map([...document.querySelectorAll('[data-rsvp-dish]')].map(input=>[input.dataset.rsvpDish,yes&&input.checked&&!input.disabled?Number(input.closest('.rsvp-dish-option').querySelector('[data-rsvp-dish-quantity]').value):0]));
   const custom=yes&&document.querySelector('#rsvpCustomDish').checked?{name:document.querySelector('#rsvpCustomDishName').value.trim(),quantity:Number(document.querySelector('#rsvpCustomDishQuantity').value),unit:document.querySelector('#rsvpCustomDishUnit').value,category:document.querySelector('#rsvpCustomDishCategory').value}:null;
   return {quantities,custom};
 }
@@ -2342,7 +2338,7 @@ function validateRsvpQuestion(key){
   document.querySelector('#rsvpCustomDishQuantity').required=custom;
   const draft=rsvpDishDraft();
   const choice=document.querySelector('#rsvpCustomDish');choice.setCustomValidity('');
-  if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.custom&&!document.querySelector('[data-rsvp-dish]:checked')){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
+  if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.custom&&!document.querySelector('[data-rsvp-dish]:checked:not(:disabled)')){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
   return true;
 }
 function applyRsvpDishes(draft){
@@ -2656,6 +2652,11 @@ function renderGuestAttendance() {
     return attendanceEntryHtml(rsvp.invitationTitle,people.length,children,rows);
   }).join('') : '<p class="guest-empty">No declined RSVPs yet.</p>');
 }
+document.querySelector('#remainingSummary').addEventListener('click',()=>{
+  if(!isHostView() || !GatheringFeatures.forGathering(viewedEventId).menu)return;
+  commitAllPendingEditorInputs();showSiteDialog(document.querySelector('#dishListDialog'));
+});
+document.querySelector('#closeDishListButton').addEventListener('click',()=>document.querySelector('#dishListDialog').close());
 document.querySelector('#guestListButton').addEventListener('click', () => {
   if (!isHostView()) return;
   renderGuestAttendance();

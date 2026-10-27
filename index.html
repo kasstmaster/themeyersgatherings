@@ -218,12 +218,11 @@
         <button class="summary-item" id="notAttendingButton" type="button"><strong id="notAttendingCount">0/0</strong><span>Not attending</span></button>
         <button class="summary-item" id="noResponseButton" type="button"><strong id="noResponseCount">0/0</strong><span>No Response</span></button>
         <button class="summary-item" id="invitedListButton" type="button"><strong id="invitedCount">0/0</strong><span>Invited</span></button>
-        <div id="remainingSummary" class="summary-stat"><strong id="remainingCount">0</strong><span>Dishes needed</span></div>
+        <button id="remainingSummary" class="summary-stat" type="button" aria-haspopup="dialog" aria-controls="dishListDialog"><strong id="remainingCount">0</strong><span>Dishes needed</span></button>
       </section>
           <div id="rsvpWeddingPages" hidden>
       <nav id="gatheringTabs" class="wedding-party-tabs" aria-label="Gathering pages" role="tablist" hidden>
         <button type="button" role="tab" data-gathering-tab="notes" aria-controls="hostNotesSection" aria-selected="false" hidden>Notes</button>
-        <button type="button" role="tab" data-gathering-tab="menu" aria-controls="gatheringMenuSection" aria-selected="true">Menu</button>
       </nav>
       <section id="hostNotesSection" class="gathering-page" aria-labelledby="hostNotesHeading" hidden><h2 id="hostNotesHeading">Notes</h2><div id="hostNotesContent" class="wedding-tab-content bride-groom-content"></div></section>
 
@@ -250,14 +249,6 @@
       </section>
       </section>
 
-
-      <section id="gatheringMenuSection" class="menu-section gathering-page" aria-label="Available dishes">
-        <div class="menu-heading">
-          <h2>Menu</h2>
-          <button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button>
-        </div>
-        <div id="menuGrid" class="menu-grid"></div>
-      </section>
 
       <section id="weddingMediaSection" class="wedding-tab-page" hidden aria-labelledby="weddingMediaHeading">
         <p id="weddingMediaIntro" class="section-kicker wedding-upload-intro">Share your wedding photos and videos directly with us</p>
@@ -436,6 +427,20 @@
         </p>
         <div class="modal-dialog-footer"><button class="primary-button" value="default">Done</button></div>
       </form>
+    </dialog>
+
+    <dialog id="dishListDialog" aria-label="All dishes">
+      <div class="modal-card dish-list-card">
+        <button id="closeDishListButton" type="button" class="modal-close" aria-label="Close dishes">×</button>
+      <section id="gatheringMenuSection" class="menu-section gathering-page" aria-label="Available dishes">
+        <div class="menu-heading">
+          <h2>All dishes</h2>
+          <button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button>
+        </div>
+        <div id="menuGrid" class="menu-grid"></div>
+      </section>
+
+      </div>
     </dialog>
 
     <dialog id="guestListDialog">

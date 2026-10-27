@@ -26,7 +26,7 @@
   function group(target){
     if(!target?.matches || !target.closest)return null;
     if(target.matches('.event-dock'))return 'toolbar';
-    const dialog=target.closest('dialog');if(dialog && dialog.id!=='rsvpDialog')return null;
+    const dialog=target.closest('dialog');if(dialog && !['rsvpDialog','dishListDialog'].includes(dialog.id))return null;
     if(target.closest('.element-editor-toolbar,#hostQuickActions,#editItemsButton,[id^="admin"],.inline-portal-editor') || target.closest(contentText))return null;
     if(target.matches('.dish-claimants'))return 'dish-claimants';
     if(target.matches('.dish-status,.rsvp-dish-choice small'))return 'dish-details';
@@ -41,15 +41,15 @@
     if(target.matches('button,a.primary-button,a.registry-button,.primary-button'))return 'buttons';
     if(target.matches('h1,h2,h3,h4,h5,h6,legend,.section-kicker'))return 'titles';
     // A subpage may also carry outer-page classes for layout; its surface stays inner.
-    if(target.id!=='rsvpForm' && target.closest('#rsvpForm') && target.matches('.host-outer-panel,.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'inner-containers';
-    if(target.matches('#rsvpForm,.event-selection-card,.host-outer-panel'))return 'containers';
+    if(target.id!=='rsvpForm' && target.closest('#rsvpForm,#dishListDialog') && target.matches('.host-outer-panel,.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'inner-containers';
+    if(target.matches('#rsvpForm,.event-selection-card,.host-outer-panel,.dish-list-card'))return 'containers';
     if(target.matches('.wedding-tab-content,.wedding-party-card,.gathering-subpage,.category-card,.perfect-experience-panel,.guest-attire-guidance>article,[data-attire-group]'))return 'inner-containers';
     if(target.matches('.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'containers';
     if(target.matches('.flow-panel'))return 'inner-containers';
     return null;
   }
   function find(path){
-    if(path.startsWith('@group:'))return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *')].filter(element=>group(element)===path.slice(7));
+    if(path.startsWith('@group:'))return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,#dishListDialog *')].filter(element=>group(element)===path.slice(7));
     try{return [...document.querySelectorAll(path)];}catch{return [];}
   }
   function appearancePath(target){if(target.matches?.('[data-shared-details]'))return '[data-shared-details]';const kind=group(target);return kind==='toolbar'?'.event-dock':kind?'@group:'+kind:selector(target);}

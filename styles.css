@@ -925,3 +925,11 @@ body.theme-neutral{--navy:#303030;--navy-2:#666666;--body-background:#f3f3f3;--s
 .has-host-toolbar .element-editor-row{padding-left:calc(var(--host-shortcuts-width,88px) + 4px)}
 
 #rsvpDialog:has(>#rsvpPageToolbar:not(.host-toolbar-replaced)){padding-bottom:84px}
+
+#remainingSummary{border:0;border-left:1px solid var(--summary-divider,rgba(255,255,255,.15));border-radius:0;background:transparent;color:inherit;cursor:pointer}
+.dish-list-card{width:min(1100px,100%);max-width:1100px;box-sizing:border-box}
+.menu-grid.menu-status-list{display:flex;flex-direction:column;gap:32px}
+.menu-status-group{width:100%}.menu-status-group>h3{margin:0 0 16px;font-family:"Times New Roman",Times,serif;font-size:1.6rem}
+.menu-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+.rsvp-dish-covered{opacity:.55;filter:grayscale(1)}.rsvp-dish-covered label{cursor:not-allowed}
+@media(max-width:800px){.menu-status-grid{grid-template-columns:1fr}}

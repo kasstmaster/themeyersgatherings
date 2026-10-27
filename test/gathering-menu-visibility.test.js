@@ -32,9 +32,9 @@ test('menu and notes pages remain host-only regardless of guest response or clai
     assert.equal(guest.tabs.hidden,true);
   }
 });
-test('standard host Notes and Menu retain their feature-based visibility',()=>{
+test('host dish overview is independent of Notes navigation and keeps feature visibility',()=>{
   assert.equal(render({host:true,tab:'menu'}).menu.hidden,false);
-  assert.equal(render({host:true,tab:'notes'}).menu.hidden,true);
+  assert.equal(render({host:true,tab:'notes'}).menu.hidden,false);
   assert.equal(render({host:true,tab:'notes'}).notes.hidden,false);
   assert.equal(render({event:'wedding',submitted:true,claims:['My household']}).menu.hidden,true);
 });

@@ -134,7 +134,7 @@ appearance selector, so text-box appearance edits follow the content wherever
 it appears. Personal navigation labels show only the signed-in member’s first
 name. Ordinary guests cannot open the private personal-information Timeline.
 
-Notes and Menu use host-only toolbar options wherever those planning pages are
+Notes uses a host-only toolbar option wherever planning pages are
 enabled, rather than first-page buttons. They use the same toolbar navigation
 component as the Wedding page options, before Print Page.
 
@@ -145,3 +145,5 @@ tab. Sub-tabs use `siteTabOrder`; toolbar page options use `rsvpToolbarOrder` so
 reordering them does not interact with first-page Photos & Videos or fixed
 home/print actions. `verify-tab-editing.cjs` exercises real keyboard/caret input,
 normal navigation outside editing, local persistence and both ordering paths.
+
+The host Dishes needed counter opens the dish overview dialog instead of a Menu page. The overview groups all items by remaining need while preserving claimant names; RSVP selections keep covered items checked/disabled in their original categories and exclude them from the active household’s draft. The shared RSVP flow handles X/Escape as one-level-back navigation from questions.
