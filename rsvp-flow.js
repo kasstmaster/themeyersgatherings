@@ -5,6 +5,7 @@
   const dialog = document.querySelector('#rsvpDialog');
   const next = document.querySelector('#rsvpNext');
   const back = document.querySelector('#rsvpBack');
+  const navigation=next.closest('.modal-dialog-footer');
   const review = document.querySelector('#rsvpReview');
   const heading=document.querySelector('#rsvpHeading');
   const kicker=form.querySelector('.section-kicker');
@@ -38,6 +39,7 @@
     if (step.key === 'review') context.review(review);
     back.hidden = index === 0;
     next.hidden=Boolean(step.element.querySelector('[data-rsvp-advance]'));
+    navigation.hidden=back.hidden && next.hidden;
     form.classList.toggle('rsvp-direct-choice',next.hidden);
     form.classList.toggle('rsvp-attire-step',step.key==='attire');
     form.classList.toggle('rsvp-dish-selection',step.key==='dishes'||step.key==='attire'||step.key==='event-confirmation');

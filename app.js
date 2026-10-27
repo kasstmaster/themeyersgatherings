@@ -443,6 +443,7 @@ function setGatheringDetail(key,value) {
   } else SharedDetails.setDetail(appState.events,viewedEventId,key,value);
 }
 function saveState({ refresh = !SiteEditing.portalOpen && !SiteEditing.flushing } = {}) {
+  SiteEditing.recordUndo();
   captureGatheringHistory();
   appState.events[viewedEventId] = state;
   appState.savedAt=new Date().toISOString();
@@ -1488,7 +1489,6 @@ function render() {
   if(!document.querySelector('#eventSelectionPage').hidden){renderGatheringHome();return;}
   const event = EVENT_DETAILS[viewedEventId];
   const features=GatheringFeatures.forGathering(viewedEventId);
-  const isWedding = features.weddingPages;
   const hostView = isHostView();
   updateSignedInAccountBanner();
   document.body.className = `theme-${event.theme}`;
@@ -1549,13 +1549,8 @@ function render() {
   // Static text editors can restore their original copy during a redraw.
   // Reapply the active RSVP step's heading without restarting the journey.
   RsvpFlow.refresh();
-  const hostMain=document.querySelector('#rsvpWeddingPages');
   document.querySelector('#eventPage').dataset.hostHome=String(hostView);
-  if(hostView){
-    const source=document.querySelector(isWedding?'#rsvpWeddingPages .wedding-tab-content':'#rsvpForm');
-    const panel=getComputedStyle(source);
-    for(const [name,value] of Object.entries({'background':panel.background,'border':panel.border,'radius':panel.borderRadius,'text':panel.color}))hostMain.style.setProperty(`--host-panel-${name}`,value);
-  }
+  document.querySelectorAll('#rsvpWeddingPages>section').forEach(page=>page.classList.add('rsvp-page-shell'));
   GapLayout.render({state,eventId:viewedEventId,host:hostView,editing:SiteEditing.enabled,save:()=>saveState({refresh:false})});
   PageActions.sync();
   syncHostToolbar();
@@ -1565,6 +1560,7 @@ function render() {
   ElementAppearance.render({state,eventId:viewedEventId,host:hostView,enabled:SiteEditing.enabled,
     setImage:(image,url)=>{const key=image.id==='rsvpFirstPageImage'?'rsvpHeaderImage':image.id==='eventHeaderImage'?'siteHeaderImage':null;if(!key)return false;state[key]=url;const field=SiteEditing.editorFor(image.closest('.header-art'))?.fields?.[0];if(field)field.value=url;return true;},
     save:()=>saveState({refresh:false}),format:(value,options)=>formatEditableText(value,options),upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url});
+  GapLayout.refresh();
 }
 
 function renderInlineEditing() {
@@ -2150,9 +2146,9 @@ function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   renderRsvpAttire();
   renderRsvpEventHeader();
   document.querySelector('#rsvpDialog').showModal();
-  // Apply saved tab ordering and custom pages on the first open for guests too.
-  render();
   RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>{GapLayout.refresh();ElementAppearance.refreshControls();syncHostToolbar();}});
+  // Render saved layout only after the RSVP flow has hidden inactive questions.
+  render();
 });}
 // Every gathering uses these same two editable text slots and the same HTML layout.
 function rsvpFirstPageTextFields() {

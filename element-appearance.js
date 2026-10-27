@@ -23,6 +23,13 @@
     return parts.join('>');
   }
   const contentText='#rsvpFirstPageText,#rsvpFirstPageDetails,#rsvpDishQuestionText,#eventHeaderText,#hostNotesContent,.bride-groom-content,.perfect-experience-content,.what-to-expect-content,.wedding-party-description,.wedding-timeline-copy,.guest-attire-requirements,#weddingPartyAttireIntroText,.wedding-party-attire-note';
+  const surfaceKeys=['backgroundColor','backgroundAlpha','backgroundImage','imageFit','borderColor','borderAlpha','borderWidth','borderRadius'];
+  const flatCopy=element=>element.matches?.(contentText) && element.parentElement?.matches('.wedding-tab-content,.wedding-party-card,.gathering-subpage');
+  const contentSurface=element=>element.matches?.('.wedding-tab-content') && element.matches(contentText) && !flatCopy(element);
+  function surfaceElement(target){
+    if(!target.matches?.('.rsvp-page-shell'))return target;
+    const panels=[...target.querySelectorAll('.wedding-tab-content,.wedding-party-card')];return panels.find(panel=>!panel.closest('[hidden]') && panel.getClientRects().length) || panels[0] || target;
+  }
   function group(target){
     if(!target?.matches || !target.closest)return null;
     if(target.matches('.event-dock'))return 'toolbar';
@@ -49,10 +56,10 @@
     return null;
   }
   function find(path){
-    if(path.startsWith('@group:'))return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,#dishListDialog *')].filter(element=>group(element)===path.slice(7));
+    if(path.startsWith('@group:'))return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,#dishListDialog *')].filter(element=>group(element)===path.slice(7) || path==='@group:inner-containers' && contentSurface(element));
     try{return [...document.querySelectorAll(path)];}catch{return [];}
   }
-  function appearancePath(target){if(target.matches?.('[data-shared-details]'))return '[data-shared-details]';const kind=group(target);return kind==='toolbar'?'.event-dock':kind?'@group:'+kind:selector(target);}
+  function appearancePath(target,values){if(contentSurface(target) && values && Object.keys(values).every(key=>surfaceKeys.includes(key)))return '@group:inner-containers';if(target.matches?.('[data-shared-details]'))return '[data-shared-details]';const kind=group(target);return kind==='toolbar'?'.event-dock':kind?'@group:'+kind:selector(target);}
   function colorParts(value){
     const hex=/^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.exec(String(value).trim());
     if(hex){let digits=hex[1];if(digits.length<5)digits=[...digits].map(char=>char+char).join('');return {hex:'#'+digits.slice(0,6).toLowerCase(),alpha:digits.length===8?Math.round(parseInt(digits.slice(6),16)/255*100):100};}
@@ -92,6 +99,8 @@
     apply();replaceImage(image,url);context.save();
   }
   function paint(element,values){
+    if(element.matches?.('.rsvp-page-shell'))return;
+    if(flatCopy(element))values=Object.fromEntries(Object.entries(values).filter(([key])=>!surfaceKeys.includes(key)));
     const image=imageElement(element);
     if(image && Object.hasOwn(values,'imageSource')){
       const url=imageUrl(values.imageSource);if(url!==null){if(!imageOriginals.has(image))imageOriginals.set(image,Object.fromEntries(['src','srcset','hidden'].map(key=>[key,image.getAttribute(key)])));replaceImage(image,url);}
@@ -164,8 +173,8 @@
   function apply(){
     restore(false);applyText();
     for(const [path,values] of Object.entries(context?.state.elementAppearance || {}).sort(([a],[b])=>(a==='[data-shared-details]'?2:Number(a.startsWith('@group:')))-(b==='[data-shared-details]'?2:Number(b.startsWith('@group:'))) || a.length-b.length))for(const element of find(path)){
-      paint(element,values);
-      if(path.startsWith('@group:')){
+      paint(element,path==='@group:inner-containers' && contentSurface(element)?Object.fromEntries(Object.entries(values).filter(([key])=>surfaceKeys.includes(key))):values);
+      if(path.startsWith('@group:') && !contentSurface(element) && !element.matches?.('.rsvp-page-shell')){
         const typography=Object.fromEntries(Object.entries(values).filter(([key])=>['fontFamily','fontSize','fontWeight','fontStyle','textDecoration','textColor','textAlpha','textHighlight','textHighlightAlpha'].includes(key)));
         for(const part of element.querySelectorAll('span,strong,b,em,i,u,output'))paint(part,typography);
       }
@@ -180,13 +189,13 @@
   function refreshControls(){ElementEditor.render(context);}
   if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply();if(records.some(record=>record.type==='attributes'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
   globalThis.ElementAppearance={
-    textParts,label,isSurface,imageElement,updateImage,
+    textParts,label,isSurface,surfaceElement,imageElement,updateImage,
     group,
-    values:target=>({...context?.state.elementAppearance?.[selector(target)],...context?.state.elementAppearance?.[appearancePath(target)]}),
+    values:target=>({...context?.state.elementAppearance?.[selector(target)],...context?.state.elementAppearance?.[appearancePath(target)],...(contentSurface(target)?Object.fromEntries(Object.entries(context?.state.elementAppearance?.['@group:inner-containers'] || {}).filter(([key])=>surfaceKeys.includes(key))):{})}),
     update(target,values){
       if(!context?.host || !context.enabled)return;
-      const styles=context.state.elementAppearance??={},path=appearancePath(target);
-      if(path!==selector(target))for(const oldPath of Object.keys(styles))if(!oldPath.startsWith('@group:') && oldPath!==path && find(oldPath).some(element=>appearancePath(element)===path))for(const key of Object.keys(values))delete styles[oldPath][key];
+      const styles=context.state.elementAppearance??={},path=appearancePath(target,values);
+      if(path!==selector(target))for(const oldPath of Object.keys(styles))if(!oldPath.startsWith('@group:') && oldPath!==path && find(oldPath).some(element=>appearancePath(element,values)===path))for(const key of Object.keys(values))delete styles[oldPath][key];
       if(path==='.event-dock' && (values.toolbarTextColor || values.toolbarSelectedColor))for(const key of ['textColor','textAlpha'])if(styles['@group:toolbar-options'])delete styles['@group:toolbar-options'][key];
       if(path==='.event-dock' && (values.toolbarOptionBackground || values.toolbarSelectedBackground))for(const key of ['backgroundColor','backgroundAlpha','backgroundImage'])if(styles['@group:toolbar-options'])delete styles['@group:toolbar-options'][key];
       styles[path]={...styles[path],...values};apply();context.save();
