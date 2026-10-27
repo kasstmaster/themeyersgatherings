@@ -1023,3 +1023,6 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 #rsvpDialog{overflow-anchor:none}
 
 #accountsDialog .editor-dialog-footer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+
+/* Empty shared text slots remain selectable for hosts without adding saved content. */
+.site-edit-mode [data-editor-empty]{min-height:1.5em;outline:1px dashed rgba(200,45,45,.55);outline-offset:2px}

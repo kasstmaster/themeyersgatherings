@@ -4,8 +4,12 @@
   const observed=new Set();
   function fit(element) {
     if(element.closest?.('.inline-editor,.inline-edit-tools'))return;
-    element.style.removeProperty('font-size');
     element.style.removeProperty('--fitted-text-scale');
+    // Fit from the saved size, not the theme default. Redraws must not erase
+    // the gathering's authored typography while measuring available width.
+    const authored=globalThis.ElementAppearance?.values?.(element)?.fontSize;
+    if(Number.isFinite(authored) && authored>=8 && authored<=96)element.style.setProperty('font-size',`calc(${authored}px * var(--fitted-text-scale,1))`,'important');
+    else element.style.removeProperty('font-size');
     const width=element.clientWidth;
     if(!width || !element.textContent.trim())return;
     const maximum=parseFloat(getComputedStyle(element).fontSize);

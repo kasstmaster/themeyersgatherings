@@ -51,6 +51,7 @@
     const textBlock=fields.some(spec=>spec.type==='textarea') && !target.matches('section');if(textBlock)textRoots.add(target);
     if(!enabled || !context.host || editTargets.has(target))return;
     editTargets.set(target,{fields,title,commit,options,textBlock,visual:Boolean(fields[0]?.visual)});cleanup.push(()=>editTargets.delete(target));
+    if(fields.length===1 && ['text','page','notes'].includes(title) && !target.textContent.trim()){target.dataset.editorEmpty='';cleanup.push(()=>target.removeAttribute('data-editor-empty'));}
   }
   function portal(target,title,sources,prepare){if(!target || !enabled || !context.host)return;const entry=editTargets.get(target) || {};entry.portal={title,sources,prepare};editTargets.set(target,entry);cleanup.push(()=>editTargets.delete(target));}
   function formatTextForTarget(target, value, format=context.format) {
@@ -58,7 +59,7 @@
   }
   function staticTextElements(root) {
     // Text blocks, headings and captions can be changed without changing links or controls.
-    return [...root.querySelectorAll('h1,h2,h3,h4,p,footer address')].filter(element =>
+    return [...root.querySelectorAll('h1,h2,h3,h4,h5,h6,p,footer address')].filter(element =>
       !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.element-editor-toolbar,#hostToolsPanel,#editItemsButton,#rsvpFirstPageText,#rsvpFirstPageDetails,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
       !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#rsvpDeadline,#signedInAccountName,#customGatheringHeading,#weddingPartyHeading,#weddingPartyKicker'));
   }
@@ -176,11 +177,11 @@
         const isSubpage = nav.classList.contains('matron-info-tabs');
         const panel = node('section', undefined, `gathering-page inline-custom-page${isSubpage ? ' gathering-subpage' : ''}`);
         if(nav.closest('.fullscreen-flow'))panel.classList.add('flow-panel');
-        if(context.eventId==='wedding')panel.classList.add('wedding-tab-page');
+        panel.classList.add('wedding-tab-page');
         panel.id = `custom-page-${page.id}`; panel.setAttribute('role','tabpanel');
         const heading = isSubpage ? 'h3' : 'h2';
         panel.innerHTML = (config.externalHeading?'':`<p class="section-kicker"></p><${heading}>${context.escape(page.title)}</${heading}>`)+`<div class="bride-groom-content">${context.format(page.content)}</div>`;
-        if(context.eventId==='wedding')panel.querySelector('.bride-groom-content').classList.add('wedding-tab-content');
+        panel.querySelector('.bride-groom-content').classList.add('wedding-tab-content');
         if(page.weddingDefault==='details')panel.querySelector('.bride-groom-content').setAttribute('data-shared-details','');
         const intro=panel.querySelector('.section-kicker');
         if(intro)intro.innerHTML=formatTextForTarget(intro,page.intro || '');

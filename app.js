@@ -442,10 +442,10 @@ function setGatheringDetail(key,value) {
     captureGatheringHistory();state=GatheringHistory.startNext(appState,viewedEventId,value);
   } else SharedDetails.setDetail(appState.events,viewedEventId,key,value);
 }
-function saveState({ refresh = !SiteEditing.portalOpen && !SiteEditing.flushing } = {}) {
+function saveState({ refresh = !SiteEditing.portalOpen && !SiteEditing.flushing, eventId = viewedEventId, eventState = state } = {}) {
   SiteEditing.recordUndo();
   captureGatheringHistory();
-  appState.events[viewedEventId] = state;
+  if(eventId!=='gathering-home')appState.events[eventId] = eventState;
   appState.savedAt=new Date().toISOString();
   const storedLocally = storeLocalState(appState);
   localStateRevision += 1;
@@ -568,6 +568,7 @@ async function loadSharedState({ allowActiveEditor = false } = {}) {
     }
     if (!response.ok) throw new Error(`Shared state load failed (${response.status})`);
     const saved = normalizeState(await response.json());
+    if(allowActiveEditor)commitAllPendingEditorInputs();
     if (attempt!==sharedLoadNumber || localStateRevision !== revisionBeforeLoad || sharedSavePending || sharedSaveInProgress || (!allowActiveEditor && hasActiveEditor())) return;
     if (stateContentSignature(saved) === stateContentSignature(normalizeState(structuredClone(appState)))) return true;
     // The checked-in repository file is read-only when no Worker is set up.
@@ -575,6 +576,7 @@ async function loadSharedState({ allowActiveEditor = false } = {}) {
     // richer local state (most visibly, newly added accounts) on refresh or
     // when the window regains focus.
     if (!SHARED_STATE_URL && stateRecoveryScore(appState) > stateRecoveryScore(saved)) return;
+    finishGatheringBuilderSession();
     appState = saved;
     viewedEventId = GuestPlanning.retainedEvent(viewedEventId, appState.events, appState.activeEventId);
     state = appState.events[viewedEventId];
@@ -1189,6 +1191,7 @@ function showSignedInDestination() {
   window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 }
 function enterEvent(eventId, { preserveWeddingView = false } = {}) {
+  finishGatheringBuilderSession();
   const nextState = appState.events[eventId];
   if (!nextState || !EVENT_DETAILS[eventId]) {
     showToast('That gathering is no longer available. Please choose another gathering.');
@@ -1474,26 +1477,42 @@ function renderGatheringPages(features,hostView) {
   document.querySelector('.menu-section').hidden=!features.menu || !hostView;
   document.querySelector('#copyMenuButton').hidden=state.items.length===0;
 }
+// All builder modules receive the same ID-bound data and persistence context.
+// Wedding capabilities extend page content, never the editor or its storage.
+function gatheringBuilderContext(eventId=viewedEventId) {
+  const home=eventId==='gathering-home';
+  const owner=appState;
+  const data=home?(appState.gatheringHome??={}):appState.events[eventId];
+  const save=(options={})=>{
+    if(appState!==owner || !home && !appState.events[eventId])return;
+    saveState({refresh:!SiteEditing.flushing,...options,eventId,eventState:home?data:appState.events[eventId]});
+  };
+  return {state:data,eventId,host:isHostView(),enabled:SiteEditing.enabled,editing:SiteEditing.enabled,
+    save,refresh:render,format:(value,options)=>formatEditableText(value,options),escape:escapeHtml,
+    upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url};
+}
+function finishGatheringBuilderSession() {
+  commitAllPendingEditorInputs();
+  SiteEditing.beforeRender();
+  ElementAppearance.restore();
+  GapLayout.beforeRender();
+}
 // The shared gathering chooser has site-wide editing state, independent of every event.
 function renderGatheringHome() {
-  const home=appState.gatheringHome??={};
-  const host=isHostView();
   document.body.className='theme-wedding';
   applyGatheringColors({});
   document.title='The Meyers';
   renderEventSelection();
   updateSignedInAccountBanner();
   updateHostToolsPanel();
-  const format=(value,options)=>formatEditableText(value,options);
-  const save=()=>saveState({refresh:!SiteEditing.flushing});
-  SiteEditing.render({host,eventId:'gathering-home',state:home,save,refresh:render,format,escape:escapeHtml});
+  const builder=gatheringBuilderContext('gathering-home');
+  SiteEditing.render(builder);
   SiteEditing.staticText(document.querySelector('#eventSelectionPage'));
-  GapLayout.render({state:home,eventId:'gathering-home',host,editing:SiteEditing.enabled,save:()=>saveState({refresh:false})});
+  GapLayout.render({...builder,save:()=>builder.save({refresh:false})});
   PageActions.sync();
   syncHostToolbar();
   renderRsvpPageNavigation();
-  ElementAppearance.render({state:home,eventId:'gathering-home',scope:'#eventSelectionPage',host,enabled:SiteEditing.enabled,
-    save:()=>saveState({refresh:false}),format,upload:async file=>(await uploadTemplateBackground(`home-appearance-${crypto.randomUUID()}`,file)).url});
+  ElementAppearance.render({...builder,scope:'#eventSelectionPage',save:()=>builder.save({refresh:false})});
 }
 function render() {
   ElementAppearance.restore();
@@ -1565,23 +1584,26 @@ function render() {
   RsvpFlow.refresh();
   document.querySelector('#eventPage').dataset.hostHome=String(hostView);
   document.querySelectorAll('#rsvpWeddingPages>section').forEach(page=>page.classList.add('rsvp-page-shell'));
-  GapLayout.render({state,eventId:viewedEventId,host:hostView,editing:SiteEditing.enabled,save:()=>saveState({refresh:false})});
+  const builder=gatheringBuilderContext();
+  GapLayout.render({...builder,save:()=>builder.save({refresh:false})});
   PageActions.sync();
   syncHostToolbar();
   renderWeddingPageToolbar();
   renderHostFirstPageActions();
   renderRsvpPageNavigation();
-  ElementAppearance.render({state,eventId:viewedEventId,host:hostView,enabled:SiteEditing.enabled,
+  ElementAppearance.render({...builder,
     setImage:(image,url)=>{const key=image.id==='rsvpFirstPageImage'?'rsvpHeaderImage':image.id==='eventHeaderImage'?'siteHeaderImage':null;if(!key)return false;state[key]=url;const field=SiteEditing.editorFor(image.closest('.header-art'))?.fields?.[0];if(field)field.value=url;return true;},
-    save:()=>saveState({refresh:false}),format:(value,options)=>formatEditableText(value,options),upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url});
+    save:()=>builder.save({refresh:false})});
   GapLayout.refresh();
 }
 
-function renderInlineEditing() {
+function renderInlineEditing(eventState=state) {
+  const state=eventState;
+  const builder=gatheringBuilderContext();
   for(const map of [state.elementAppearance,state.textAppearance])if(map)for(const key of Object.keys(map)){const next=key.replace(/^#eventPage>main>section:nth-of-type\(1\)/,'#hostRsvpCounters');if(next!==key){map[next]??=map[key];delete map[key];}}
 
   // Preserve edited copy when page content moves to a different container.
-  if(viewedEventId==='wedding' && state.siteText) {
+  if(state.siteText) {
     const attireTextIds=['registryAttireKicker','registryAttireLead','registryAttireBudgetNote','registryAttireShoppingIntro','registryAttireClosing'];
     const movedText=[['#weddingMediaUpload>p:nth-of-type(1)','#weddingMediaIntro'],['#weddingMediaUpload>p:nth-of-type(2)','#weddingMediaUploadNotice'],...attireTextIds.map((id,index)=>[`#registryAffordableAttire>p:nth-of-type(${index+1})`,`#${id}`])];
     for(const [oldKey,newKey] of movedText) {
@@ -1590,9 +1612,8 @@ function renderInlineEditing() {
       }
     }
   }
-  SiteEditing.render({ host: isHostView(), eventId: viewedEventId, state,
+  SiteEditing.render({...builder,
     party: Boolean(state.weddingPartyMembers?.some(member => weddingPartyPersonMatches(member.name, signedInPersonName))),
-    save: () => saveState({refresh:!SiteEditing.flushing}), refresh: render,
     directSaved: () => {
       syncGatheringDefinitions(appState.events);
       document.querySelectorAll('[data-switch-event]').forEach(button => {
@@ -1678,7 +1699,7 @@ function renderInlineEditing() {
   SiteEditing.staticText(document.querySelector('#eventPage'));
   SiteEditing.staticText(document.querySelector('#rsvpDialog'));
   document.querySelectorAll('#eventPage [role="tablist"],#rsvpWeddingPages [role="tablist"],#weddingPartyTabs').forEach(nav => {
-    if(nav.id==='gatheringTabs' ? !features.menu && !features.notes : !features.weddingPages)return;
+    if(nav.id==='gatheringTabs' ? !features.menu && !features.notes : nav.id!=='weddingPartyTabs' && !features.weddingPages)return;
     const config = { available: nav.id==='brideGroomTabs' && selectedWeddingTab==='couple' && viewedEventId==='wedding' };
     if(nav.id==='weddingPartyTabs')Object.assign(config,{toolbar:true,allowNoSelection:true,pageHost:document.querySelector('#rsvpWeddingPages'),panelIds:['whatToExpectSection','brideGroomSection','weddingTimelineSection','hostNotesSection'],scroll:true,
       hidePage:page=>page.weddingDefault==='details',
@@ -1707,7 +1728,8 @@ function renderInlineEditing() {
   renderRsvpInlineEditing();
   SiteEditing.movableText(document.querySelector('#weddingMediaSection'),{contentRoot:document.querySelector('#weddingMediaUpload'),headerIds:['weddingMediaIntro']});
 }
-function renderRsvpInlineEditing() {
+function renderRsvpInlineEditing(eventState=state) {
+  const state=eventState;
   if (!SiteEditing.enabled) {document.querySelector('#weddingRsvpGuests')?.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());return;}
   const header=document.querySelector('#rsvpEventHeader .header-art');
   if(header)SiteEditing.field(header,'header image',[{label:'RSVP first-page banner URL (empty to remove)',type:'url',value:state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header}],([value])=>{state.rsvpHeaderImage=value;},{key:'rsvp-first-page-banner'});
@@ -1755,7 +1777,7 @@ function renderRsvpPageNavigation(){
   if(nav.hidden)return;
   const restoreOrder=()=>{const order=state.rsvpToolbarOrder || [];const rank=button=>{if(button.dataset.pageKey==='media')return -1;const index=order.indexOf(button.dataset.pageKey);return index<0?order.length:index;};[...nav.children].sort((a,b)=>rank(a)-rank(b)).forEach(button=>nav.append(button));};
   const add=(title,source)=>{
-    const key=source?.dataset.weddingTab || source?.dataset.gatheringTab || 'details';
+    const key=source?.dataset.weddingTab || source?.dataset.gatheringTab || source?.getAttribute('aria-controls') || 'details';
     const button=document.createElement('button');button.type='button';button.title=title;button.id=`rsvp-nav-${key}`;button.dataset.pageKey=key;button.setAttribute('aria-label',title);button.setAttribute('aria-pressed',String(source?source.getAttribute('aria-selected')==='true':selectedWeddingTab==='details'));
     button.innerHTML=source?.querySelector('svg')?.outerHTML || '<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z"/></svg>';
     const label=document.createElement('span');
@@ -1776,9 +1798,17 @@ function renderRsvpPageNavigation(){
     });
   };
   const media=document.querySelector('#uploadPhotosButton');add(media.textContent.trim(),media);
-  if(!GatheringFeatures.forGathering(viewedEventId).weddingPages){document.querySelectorAll('#gatheringTabs>button[data-gathering-tab]').forEach(button=>{if(isHostView() && !button.hidden)add(button.textContent.trim(),button);});restoreOrder();return;}
-  document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{if(['party','attire','registry'].includes(button.dataset.weddingTab) && (button.dataset.weddingTab!=='party' || isHostView() || isSignedInWeddingPartyMember()))add(button.textContent.trim(),button);});
-  add(state.rsvpDetailsTitle || 'Details');restoreOrder();
+  const weddingPages=GatheringFeatures.forGathering(viewedEventId).weddingPages;
+  document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{
+    const page=button.dataset.weddingTab;
+    if(!page && !button.hidden || weddingPages && ['party','attire','registry'].includes(page) && (page!=='party' || isHostView() || isSignedInWeddingPartyMember()))add(button.textContent.trim(),button);
+  });
+  if(weddingPages)add(state.rsvpDetailsTitle || 'Details');
+  else document.querySelectorAll('#gatheringTabs>button').forEach(button=>{if(isHostView() && !button.hidden)add(button.textContent.trim(),button);});
+  restoreOrder();
+  SiteEditing.field(nav,'pages',[],()=>{});
+  const editor=SiteEditing.editorFor(nav),sourceEditor=SiteEditing.editorFor(document.querySelector('#weddingPartyTabs'));
+  if(editor && sourceEditor?.addPage)editor.addPage=sourceEditor.addPage;
 }
 function renderHostFirstPageActions(){
   const menu=document.querySelector('#hostFirstPageActions');menu.hidden=!isHostView();menu.replaceChildren();if(!isHostView())return;
@@ -3449,6 +3479,7 @@ async function signIntoAccount(account,person) {
 }
 function restoreHostSession() {
   if(!hostAuthenticated)return;
+  finishGatheringBuilderSession();
   const previous=hostReturnSession;hostReturnSession=null;hostWeddingPartyViewName='';
   guestName=previous?.guestName || HOST_DISPLAY_NAME;signedInPersonName=previous?.signedInPersonName || '';
   viewedEventId=GuestPlanning.retainedEvent(previous?.eventId || viewedEventId,appState.events,viewedEventId);state=appState.events[viewedEventId];

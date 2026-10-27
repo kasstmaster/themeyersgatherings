@@ -56,8 +56,8 @@ test('Attire places its kicker and title before the shared content container',()
 });
 test('moving Attire headings preserves saved edits and migration is repeatable',()=>{
  const saved={siteText:{'#registryAffordableAttire>p:nth-of-type(1)':'Edited kicker','#registryAffordableAttire>p:nth-of-type(2)':'Edited introduction','#registryAffordableAttire>p:nth-of-type(5)':'Edited closing'}};
- const start=source.indexOf('function renderInlineEditing()');
- const c=vm.createContext({state:saved,viewedEventId:'wedding'});
+ const start=source.indexOf('function renderInlineEditing(');
+ const c=vm.createContext({state:saved,viewedEventId:'wedding',gatheringBuilderContext:()=>({})});
  vm.runInContext(source.slice(start,source.indexOf('  SiteEditing.render(',start))+'}',c);
  c.renderInlineEditing();c.renderInlineEditing();
  assert.equal(saved.siteText['#registryAttireKicker'],'Edited kicker');

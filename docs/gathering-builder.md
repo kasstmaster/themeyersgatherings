@@ -1,0 +1,22 @@
+# Shared gathering builder
+
+All existing and newly created gatherings use the same builder. The shared DOM retains some historical `wedding` IDs for compatibility with saved selectors; these IDs do not select a separate editor.
+
+- `app.js:gatheringBuilderContext` creates the ID-bound context consumed by `SiteEditing`, `ElementEditor`, `ElementAppearance`, and `GapLayout`. Content and appearance use the same formatter and persistence path.
+- `inline-editing.js` registers editable fields, text, pages, tabs, undo/redo, and text placement. `element-editor.js` supplies the single selection-based rich-text/formatting sidebar and autosave.
+- `element-appearance.js` owns formatting groups and per-text-box styling. Title and introduction groups are separate. Groups share styling only inside the selected gathering. `fitted-text.js` fits titles from their saved font size rather than replacing it with a theme default.
+- `GatheringFeatures` enables optional pages and RSVP capabilities. Wedding meal choices, wedding-party responsibilities, attire, shared wedding details, and timelines extend the content; they use the same builder and rendering/editing components.
+
+## Data and session boundaries
+
+Gathering data stays in `appState.events[gatheringId]`. Existing keys remain intact: `siteText`, `textAppearance`, `elementAppearance`, `sitePages`, `siteTabTitles`, `siteTabOrder`, `siteElementOrder`, `siteElementPlacements`, `siteGaps`, and `siteSpacing`. RSVP header slots, dates, addresses, menus, RSVPs and wedding-specific settings also remain in that event object. No content migration or conversion into a new schema is required. Existing legacy-selector migrations continue to preserve moved content.
+
+The chooser uses `appState.gatheringHome`, independent of every gathering. Accounts and other explicitly site-wide services remain outside the builder's per-gathering content. Dropbox infrastructure is shared; galleries and gathering links remain event-specific.
+
+`finishGatheringBuilderSession` flushes pending text and controls, releases the selection, cancels its autosave timer, and restores temporary styles before changing the active gathering or replacing shared state. Field callbacks capture their event state. A context saves by its original gathering ID and cannot overwrite a replacement application state after a reload. Address edits update the selected gathering's own header and invitation fields, even if another gathering has the same address text.
+
+Empty text slots have a small host-only editing outline so they can be selected and double-clicked. Guest rendering and saved text remain empty.
+
+## Verification
+
+Run `npm test` for state ownership, field bindings, formatting, feature permissions and RSVP behavior. With a local HTTP server on `127.0.0.1:8041`, run `scripts/verify-shared-gathering-builder.cjs` through Playwright. It blocks external traffic, creates a gathering through the real UI, edits titles/introductions and formatting in four gatherings, switches before autosave completes, compares untouched event objects, reloads local storage, and verifies desktop/mobile editing. It also preserves the wedding meal configuration. The other browser scripts cover layout, count menus, toolbars and wedding-specific flows.
