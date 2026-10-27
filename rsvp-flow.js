@@ -76,7 +76,9 @@
     return true;
   }
   back.addEventListener('click',()=>{const all=steps(),index=all.findIndex(step=>step.key===key);if(index>0){key=all[index-1].key;show(true);}});
-  dialog.querySelector('.modal-close').addEventListener('click',()=>dialog.close());
+  function exitQuestions(){if(active && context && key!==steps()[0].key){key=steps()[0].key;show(true);return true;}return false;}
+  dialog.querySelector('.modal-close').addEventListener('click',()=>{if(!exitQuestions())dialog.close();});
+  dialog.addEventListener('cancel',event=>{if(exitQuestions())event.preventDefault();});
   dialog.addEventListener('close',()=>{active=false;heading.hidden=false;heading.textContent=defaultHeading;kicker.textContent=defaultKicker;kicker.hidden=false;childAge.hidden=true;form.querySelectorAll('[data-rsvp-flow-hidden]').forEach(element=>element.removeAttribute('data-rsvp-flow-hidden'));});
   globalThis.RsvpFlow={first:()=>{if(active && context){key=steps()[0].key;show(true);}},start,submit,refresh:()=>show()};
 })();
