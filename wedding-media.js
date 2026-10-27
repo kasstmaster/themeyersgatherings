@@ -29,6 +29,7 @@
     node('weddingMediaLinkForm').hidden=mode!=='link';
     node('weddingMediaChooseUpload').setAttribute('aria-expanded',String(mode==='upload'));
     node('weddingMediaShareLink').setAttribute('aria-expanded',String(mode==='link'));
+    node('weddingMediaChooseUpload').setAttribute('aria-pressed',String(mode==='upload'));node('weddingMediaShareLink').setAttribute('aria-pressed',String(mode==='link'));
     if(mode==='upload')DropboxUpload.show(current,api);
     if(mode==='link')node('weddingMediaLink').focus();
   }

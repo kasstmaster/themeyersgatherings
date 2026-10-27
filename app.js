@@ -1763,7 +1763,7 @@ function renderHostFirstPageActions(){
   const menu=document.querySelector('#hostFirstPageActions');menu.hidden=!isHostView();menu.replaceChildren();if(!isHostView())return;
   const add=(title,source)=>{
     if(['party','attire','registry'].includes(source?.dataset.weddingTab) || source?.dataset.gatheringTab || title==='Details')return;
-    const button=document.createElement('button');button.type='button';
+    const button=document.createElement('button');button.type='button';button.setAttribute('aria-pressed',String(source?source.getAttribute('aria-selected')==='true':selectedWeddingTab==='details'));
     button.innerHTML='<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z"/></svg>';
     const icon=source?.querySelector('svg');if(icon)button.firstElementChild.replaceWith(icon.cloneNode(true));
     const label=document.createElement('span');label.textContent=title;button.append(label);menu.append(button);

@@ -55,11 +55,16 @@
     if(target.matches('.flow-panel'))return 'inner-containers';
     return null;
   }
+  const stateGroups=['buttons','tabs','toolbar-options'];
+  function selectedState(target){return stateGroups.includes(group(target))?(target.matches('[aria-selected="true"],[aria-pressed="true"],[aria-current="page"]')?'selected':'unselected'):null;}
   function find(path){
-    if(path.startsWith('@group:'))return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,#dishListDialog *')].filter(element=>group(element)===path.slice(7) || path==='@group:inner-containers' && contentSurface(element));
+    if(path.startsWith('@group:')){
+      const [kind,state]=path.slice(7).split(':');
+      return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,#dishListDialog *')].filter(element=>(group(element)===kind && (!state || selectedState(element)===state)) || path==='@group:inner-containers' && contentSurface(element));
+    }
     try{return [...document.querySelectorAll(path)];}catch{return [];}
   }
-  function appearancePath(target,values){if(contentSurface(target) && values && Object.keys(values).every(key=>surfaceKeys.includes(key)))return '@group:inner-containers';if(target.matches?.('[data-shared-details]'))return '[data-shared-details]';const kind=group(target);return kind==='toolbar'?'.event-dock':kind?'@group:'+kind:selector(target);}
+  function appearancePath(target,values){if(contentSurface(target) && values && Object.keys(values).every(key=>surfaceKeys.includes(key)))return '@group:inner-containers';if(target.matches?.('[data-shared-details]'))return '[data-shared-details]';const kind=group(target);return kind==='toolbar'?'.event-dock':kind?'@group:'+kind+(selectedState(target)?':'+selectedState(target):''):selector(target);}
   function colorParts(value){
     const hex=/^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.exec(String(value).trim());
     if(hex){let digits=hex[1];if(digits.length<5)digits=[...digits].map(char=>char+char).join('');return {hex:'#'+digits.slice(0,6).toLowerCase(),alpha:digits.length===8?Math.round(parseInt(digits.slice(6),16)/255*100):100};}
@@ -187,17 +192,27 @@
     return style.backgroundImage!=='none' || colorParts(style.backgroundColor).alpha>0 || ['Top','Right','Bottom','Left'].some(side=>parseFloat(style['border'+side+'Width'])>0 && style['border'+side+'Style']!=='none');
   }
   function refreshControls(){ElementEditor.render(context);}
-  if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply();if(records.some(record=>record.type==='attributes'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
+  if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply();if(records.some(record=>record.type==='attributes' && record.attributeName==='open'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open','aria-selected','aria-pressed','aria-current']});
   globalThis.ElementAppearance={
     textParts,label,isSurface,surfaceElement,imageElement,updateImage,
-    group,
-    values:target=>({...context?.state.elementAppearance?.[selector(target)],...context?.state.elementAppearance?.[appearancePath(target)],...(contentSurface(target)?Object.fromEntries(Object.entries(context?.state.elementAppearance?.['@group:inner-containers'] || {}).filter(([key])=>surfaceKeys.includes(key))):{})}),
+    group,selectedState,
+    values:target=>({...context?.state.elementAppearance?.[selector(target)],...(stateGroups.includes(group(target))?context?.state.elementAppearance?.['@group:'+group(target)]:{}),...context?.state.elementAppearance?.[appearancePath(target)],...(contentSurface(target)?Object.fromEntries(Object.entries(context?.state.elementAppearance?.['@group:inner-containers'] || {}).filter(([key])=>surfaceKeys.includes(key))):{})}),
     update(target,values){
       if(!context?.host || !context.enabled)return;
       const styles=context.state.elementAppearance??={},path=appearancePath(target,values);
-      if(path!==selector(target))for(const oldPath of Object.keys(styles))if(!oldPath.startsWith('@group:') && oldPath!==path && find(oldPath).some(element=>appearancePath(element,values)===path))for(const key of Object.keys(values))delete styles[oldPath][key];
-      if(path==='.event-dock' && (values.toolbarTextColor || values.toolbarSelectedColor))for(const key of ['textColor','textAlpha'])if(styles['@group:toolbar-options'])delete styles['@group:toolbar-options'][key];
-      if(path==='.event-dock' && (values.toolbarOptionBackground || values.toolbarSelectedBackground))for(const key of ['backgroundColor','backgroundAlpha','backgroundImage'])if(styles['@group:toolbar-options'])delete styles['@group:toolbar-options'][key];
+      if(path!==selector(target) && !selectedState(target))for(const oldPath of Object.keys(styles))if(!oldPath.startsWith('@group:') && oldPath!==path && find(oldPath).some(element=>appearancePath(element,values)===path))for(const key of Object.keys(values))delete styles[oldPath][key];
+      if(path==='.event-dock'){
+        const clear=(keys,state)=>{
+          const legacy=styles['@group:toolbar-options'];
+          if(legacy)for(const key of keys)if(Object.hasOwn(legacy,key)){
+            for(const variant of ['selected','unselected']){const option=styles['@group:toolbar-options:'+variant]??={};option[key]??=legacy[key];}
+            delete legacy[key];
+          }
+          for(const key of keys)if(styles['@group:toolbar-options:'+state])delete styles['@group:toolbar-options:'+state][key];
+        };
+        if(values.toolbarTextColor)clear(['textColor','textAlpha'],'unselected');if(values.toolbarSelectedColor)clear(['textColor','textAlpha'],'selected');
+        if(values.toolbarOptionBackground)clear(['backgroundColor','backgroundAlpha','backgroundImage'],'unselected');if(values.toolbarSelectedBackground)clear(['backgroundColor','backgroundAlpha','backgroundImage'],'selected');
+      }
       styles[path]={...styles[path],...values};apply();context.save();
     },
     upload:file=>context.upload(file),
