@@ -22,9 +22,10 @@
       toolbar.append(actions);
     }
   }
-  function toolbarSurface(control){
-    const inRsvp=Boolean(control.closest('#rsvpPageToolbar') || control.closest('#hostToolsPanel') && document.getElementById('rsvpDialog').open);
-    if(control.closest('#hostToolsPanel')){const chooser=document.querySelector('#eventSelectionPage:not([hidden])');if(visible(chooser) && !globalThis.activeHostDialog?.())return chooser;const dialog=globalThis.activeHostDialog?.();if(dialog && dialog.id!=='rsvpDialog')return dialog.querySelector('section,form') || dialog;}
+  function toolbarSurface(){
+    const inRsvp=document.getElementById('rsvpDialog').open;
+    const chooser=document.querySelector('#eventSelectionPage:not([hidden])');if(visible(chooser) && !globalThis.activeHostDialog?.())return chooser;
+    const dialog=globalThis.activeHostDialog?.();if(dialog && dialog.id!=='rsvpDialog')return dialog.querySelector('section,form') || dialog;
     const navs=inRsvp?['weddingPartyTabs']:['weddingHostTabs','gatheringTabs'];
     for(const id of navs){
       const nav=document.getElementById(id);
@@ -117,7 +118,8 @@
     const control=event.target.closest('[data-page-export]');
     if(!control)return;
     event.preventDefault();
-    const surface=toolbarSurface(control);
+    if(document.getElementById('rsvpDialog').open && document.getElementById('rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden') && globalThis.activeHostDialog?.()?.id==='rsvpDialog')globalThis.RsvpFlow?.first();
+    const surface=toolbarSurface();
     const exported=exportPage(surface);
     const page=exported && {...exported,headerHtml:printHeader(surface)};
     if(!page)return;
