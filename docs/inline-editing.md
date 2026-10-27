@@ -18,7 +18,7 @@ Clicking a navigation button selects it for editing. Use **Use Button** in the t
 
 Page labels expose movement and deletion actions in **Text**. Select a tab group's container to add a page. Private host pages and party audience restrictions remain unchanged. Existing manual tab order remains saved per gathering.
 
-For Wedding Party member management, select the Responsibilities container and open **Format → Edit party members**. For Attire media, select the Attire page container and use **Format → Edit images and videos**. For meal definitions, select the Menu container and use **Format → Edit meal options**. These settings appear inside the compact toolbar; they do not replace page containers. Meal names, audience restrictions, addition, and removal remain available.
+For Wedding Party member management, select the Responsibilities container and open **Format → Edit party members**. For Attire media, select the Attire page container and use **Format → Edit images and videos**. To edit dishes or Wedding meal choices, choose **Edit → Menu**. These settings appear inside the compact toolbar; they do not replace page containers. Meal names, audience restrictions, addition, and removal remain available.
 
 Background images may be PNG, JPEG, or WebP, uploaded through the existing authenticated host upload service. Appearance overrides and text edits remain separate for each gathering. Previously saved colors and images continue to apply.
 
@@ -28,7 +28,7 @@ Serve the repository locally on port 8041, then run `node scripts/verify-element
 
 ## Host navigation and account sessions
 
-The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **All Gatherings** returns everyone to gathering selection. **Accounts** and **History** are host-only fixed corner icons. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the editing toolbar.
+The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **All Gatherings** returns everyone to gathering selection. **Menu**, **Accounts** and **History** are fixed host editing controls directly below Templates. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the editing toolbar.
 
 In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, the account’s normal pages appear, with Edit and the host toolbar retained for the authenticated host. **Leave account** sits immediately left of Edit. Host management actions return to the host context; ordinary guests never see these controls. Accounts without gathering access have disabled sign-in icons.
 
@@ -49,7 +49,7 @@ colors; Background contains overall and selected/unselected option backgrounds.
 Each setting includes a color picker, hex input and opacity. These settings apply
 to every option, including the guest toolbar for the same gathering.
 
-Accounts and History are fixed icons at the top-left beside the chooser’s +.
+Accounts and History appear below Menu in the edit toolbar. The chooser’s + stays at the top-left.
 The Meyers returns any signed-in user to gathering selection. Wedding Information,
 Attire, Registry and Details live in the toolbar, with Print Page last.
 
@@ -112,3 +112,5 @@ Photos & Videos is a shared toolbar option immediately after All Gatherings, wit
 The ↑ Gap and → Gap labels retain the existing vertical-strip and horizontal-band behavior respectively. Both support dragging from the fixed action area.
 
 After a gathering is selected, each role keeps its full permitted toolbar through pages, RSVP questions and dialogs. The same toolbar moves into the active dialog; guests and wedding party members do not receive host options. Choosing a page from RSVP returns to the gathering information view without submitting. Print Page leaves the questions before preparing a printable page. Gathering-specific options are hidden on the gathering selection page. Run `node scripts/verify-persistent-role-toolbar.cjs`.
+
+Menu opens only the selected gathering’s menu controls. Potluck menus reuse the dish editor, including quantities, categories and claims; Wedding reuses the same meal-choice editor as the RSVP settings. Accounts and History keep their existing management screens and are hidden outside host edit mode. Run `node scripts/verify-editor-management.cjs`.

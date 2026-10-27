@@ -995,3 +995,10 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 .element-editor-context-actions{display:flex;flex-wrap:wrap;gap:6px}
 .element-editor-context-actions:has(>button:not([hidden])){padding-top:6px}
 .element-editor-context-actions:not(:has(>button:not([hidden]))){display:none}
+
+.element-editor-management{display:grid;gap:6px}.element-editor-management>button{width:100%}
+.has-host-toolbar.site-edit-mode .element-editor-toolbar{padding-top:10px}
+.has-host-toolbar.site-edit-mode:has(#newGatheringButton:not([hidden])) .element-editor-toolbar{padding-top:48px}
+#menuEditorContent .inline-meal-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;margin:12px 0}
+#menuEditorContent .inline-meal-row>*{min-width:0}
+@media(max-width:600px){#menuEditorContent .inline-meal-row{grid-template-columns:minmax(0,1fr)} }

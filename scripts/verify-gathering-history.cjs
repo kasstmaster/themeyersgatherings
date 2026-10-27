@@ -25,12 +25,12 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
     hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;viewedEventId='christmas';state=event;showSignedInDestination();render();
   });
   const locked=await page.evaluate(()=>structuredClone(appState.gatheringHistory.christmas['2025-12-25']));
-  await page.locator('#editAccountsButton').click();page.once('dialog',dialog=>dialog.accept());await page.locator('[data-account-name="Jane Smith"] .account-delete-button').click();await page.locator('#accountsDialog .modal-close').click();
+  if(!await page.evaluate(()=>SiteEditing.enabled))await page.locator('#editItemsButton').click();await page.locator('#editAccountsButton').click();page.once('dialog',dialog=>dialog.accept());await page.locator('[data-account-name="Jane Smith"] .account-delete-button').click();await page.locator('#accountsDialog .modal-close').click();
   await page.reload();await page.waitForFunction(()=>typeof startApp==='function');await page.evaluate(()=>{hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;enterEvent('christmas');});
   assert.equal(await page.evaluate(()=>appState.accounts.some(account=>account.name==='Jane Smith')),false,'deleted account stays deleted after reload');
   await page.evaluate(()=>{state.homeAddress='Different venue';state.hostNotes='Changed notes';state.items[0].name='Changed dish';state.items[0].claims=[];saveState();});
   assert.deepEqual(await page.evaluate(()=>appState.gatheringHistory.christmas['2025-12-25']),locked);
-  await page.locator('#gatheringHistoryButton').click();
+  if(!await page.evaluate(()=>SiteEditing.enabled))await page.locator('#editItemsButton').click();await page.locator('#gatheringHistoryButton').click();
   const content=await page.locator('#gatheringHistoryContent').textContent();
   for(const text of ['Jane Smith','123 Old Street','Original gathering venue','Ham','Special pie','Beef','No nuts','Original private notes','Alex Doe','No Reply'])assert.ok(content.includes(text),text);
   for(const text of ['Changed notes','Different venue','Changed dish'])assert.ok(!content.includes(text),text);
@@ -42,11 +42,11 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   await page.reload();await page.waitForFunction(()=>typeof startApp==='function');await page.evaluate(()=>{hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;enterEvent('christmas');});
   assert.deepEqual(await page.evaluate(()=>[state.eventDate,state.rsvps.length]),['2030-12-25',0],'recovery backup must not restore the prior year');
   await page.evaluate(()=>{state.eventDate='2026-01-01';state.hostNotes='A second occurrence';render();});
-  await page.locator('#gatheringHistoryButton').click();assert.equal(await page.locator('#gatheringHistoryDate option').count(),2);
+  if(!await page.evaluate(()=>SiteEditing.enabled))await page.locator('#editItemsButton').click();await page.locator('#gatheringHistoryButton').click();assert.equal(await page.locator('#gatheringHistoryDate option').count(),2);
   await page.locator('#gatheringHistoryDate').selectOption('2025-12-25');assert.ok((await page.locator('#gatheringHistoryContent').textContent()).includes('Original private notes'));
   await page.locator('#gatheringHistoryDate').selectOption('2026-01-01');assert.ok((await page.locator('#gatheringHistoryContent').textContent()).includes('A second occurrence'));
   await page.locator('#closeGatheringHistory').click();await page.reload();await page.waitForFunction(()=>typeof startApp==='function');
-  await page.evaluate(()=>{hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;enterEvent('christmas');});await page.locator('#gatheringHistoryButton').click();await page.locator('#gatheringHistoryDate').selectOption('2025-12-25');assert.ok((await page.locator('#gatheringHistoryContent').textContent()).includes('123 Old Street'));
+  await page.evaluate(()=>{hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;enterEvent('christmas');});if(!await page.evaluate(()=>SiteEditing.enabled))await page.locator('#editItemsButton').click();await page.locator('#gatheringHistoryButton').click();await page.locator('#gatheringHistoryDate').selectOption('2025-12-25');assert.ok((await page.locator('#gatheringHistoryContent').textContent()).includes('123 Old Street'));
   await page.locator('#closeGatheringHistory').click();await page.evaluate(()=>{hostAuthenticated=false;guestName='Alex Doe';signedInPersonName='Alex Doe';render();});assert.equal(await page.locator('#gatheringHistoryButton').isVisible(),false);
   assert.deepEqual(errors,[]);console.log('Automatic history, frozen deleted-account details, meals/claims/notes, read-only reports, next occurrence resets, date selection, reload and host-only UI passed.');await browser.close();
 })().catch(error=>{console.error(error);process.exit(1);});
