@@ -6,7 +6,7 @@ await page.evaluate(()=>{localStateRevision+=1;appState=normalizeState(initialAp
 
 await page.locator('#hostHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});await page.locator('#editItemsButton').click();
 const check=async selector=>{await page.waitForFunction(selector=>{const bar=document.querySelector('.element-editor-toolbar'),content=document.querySelector(selector);return bar && content && content.getBoundingClientRect().left>=bar.getBoundingClientRect().right-1;},selector);assert.equal(await page.locator('.editor-ribbon-space').count(),0);const bar=await page.locator('.element-editor-toolbar').boundingBox();assert.equal(bar.x,0);assert.ok(bar.height>=840);assert.ok(bar.width<250);};
-await check('#eventSelectionPage .event-selection-card');
+await check('#eventSelectionPage .event-selection-card');assert.equal(await page.locator('#editItemsButton').isVisible(),false);
 await page.evaluate(()=>{state.rsvpIntroText='Welcome friends';showSignedInDestination();openRsvp();});await check('#rsvpForm');
 assert.equal(await page.locator('[data-editor-chooser]').count(),0);
 assert.deepEqual(await page.locator('.element-editor-row>[data-editor-group]').allTextContents(),['Format']);

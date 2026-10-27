@@ -1,6 +1,6 @@
 # Editing the website
 
-Sign in as the host and choose the fixed **Edit** button at the top right. Click an element to select it. A red outline identifies the selected element, and one fixed vertical toolbar stays on the left. The page uses the remaining width, shrinking containers when needed so the toolbar never covers them. The fixed Edit button hides while the toolbar is open and returns after Done. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
+Sign in as the host and choose the **Edit** option after Print Page in the host toolbar. Click an element to select it. A red outline identifies the selected element, and one fixed vertical toolbar stays on the left. The page uses the remaining width, shrinking containers when needed so the toolbar never covers them. The Edit option hides while the toolbar is open and returns after Done. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
 
 The Format panel opens automatically when you select an element and combines the applicable controls:
 
@@ -30,7 +30,7 @@ Serve the repository locally on port 8041, then run `node scripts/verify-element
 
 The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **All Gatherings** returns everyone to gathering selection. **Menu**, **Accounts** and **History** are fixed host editing controls directly below Templates. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the editing toolbar.
 
-In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, the account’s normal pages appear, with Edit and the host toolbar retained for the authenticated host. **Leave account** sits immediately left of Edit. Host management actions return to the host context; ordinary guests never see these controls. Accounts without gathering access have disabled sign-in icons.
+In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, the account’s normal pages appear, with the host toolbar and its Edit option retained for the authenticated host. **Leave account** stays at the top right. Host management actions return to the host context; ordinary guests never see these controls. Accounts without gathering access have disabled sign-in icons.
 
 Run `node scripts/verify-host-toolbar.cjs` with the same local browser setup to check persistent controls across dialogs, Home, per-person sign-in, host return, Templates placement, and mobile layout.
 
@@ -120,3 +120,5 @@ Fixed actions use paired rows: Save / Done, ↑ Gap / → Gap, Use Button / Cont
 Fixed row order is Undo / Redo, Save / Done, divider, Menu / Templates, Accounts / History, divider, ↑ Gap / → Gap, then Use Button / Container. Formatting scrolls below these actions.
 
 Every gathering uses the same summary-item count button styling, including Dishes needed. Hover adds no underline. Counts keep shared value and title appearance groups, separately from the shared count-list groups and editor controls.
+
+Edit is a host-only toolbar option with a pencil icon, immediately after Print Page. The same option follows the toolbar through the chooser, gathering pages, RSVP steps and dialogs. Done returns from edit mode.
