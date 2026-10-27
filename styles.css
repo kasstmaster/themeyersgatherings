@@ -965,3 +965,12 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 @media(max-width:600px){.element-editor-toolbar :is(button,select,input,textarea){font-size:11px;padding:5px 4px}.element-editor-toolbar :is(.element-editor-row,.element-editor-panel) label{font-size:11px}.site-edit-mode #hostQuickActions button{width:36px;height:36px;padding:7px}.site-edit-mode #hostQuickActions svg{width:20px;height:20px}}
 
 .element-editor-toolbar{overscroll-behavior:contain}.element-editor-toolbar .element-editor-settings{overflow-x:auto}
+
+/* Editing controls always use a dark theme, independent of gathering colors. */
+.element-editor-toolbar{color-scheme:dark;background:#171b22;color:#f0f3f7;border-color:#485365;box-shadow:2px 0 7px #0006}
+.element-editor-toolbar :is(button,select,input,textarea){background:#252c37;color:#f0f3f7;border-color:#586579;accent-color:#8cbfff}
+.element-editor-toolbar button:is([aria-expanded="true"],[aria-pressed="true"]){background:#354f70;border-color:#9bc7ff}
+.element-editor-toolbar button:hover:not(:disabled){background:#354255}
+.element-editor-toolbar :is(button,select,input,textarea):focus-visible{outline:2px solid #9bc7ff;outline-offset:1px}
+.element-editor-toolbar .element-editor-panel{border-color:#485365}
+.element-editor-toolbar [data-editor-selection]:empty{display:none}

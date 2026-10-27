@@ -108,7 +108,7 @@
     typing=false;for(const element of editables){element.removeAttribute('contenteditable');element.removeAttribute('spellcheck');}
     editables=[];target?.classList.remove('element-editor-selected');target=null;entry=null;range=null;fieldDraft=null;dirty=false;
     const panel=toolbar?.querySelector('[data-editor-panel]');if(panel){panel.replaceChildren();panel.hidden=true;}
-    if(toolbar){toolbar.querySelector('[data-editor-state]')?.closest('label').setAttribute('hidden','');toolbar.querySelector('[data-editor-selection]').textContent='Click an element to edit';toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=true);}
+    if(toolbar){toolbar.querySelector('[data-editor-state]')?.closest('label').setAttribute('hidden','');toolbar.querySelector('[data-editor-selection]').textContent='';syncChooser();toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=true);}
   }
   function commitToolbarInput(){const input=document.activeElement;if(toolbar?.contains(input) && input.matches('[data-editor-committed]') && input.value!==input.dataset.editorCommitted)input.dispatchEvent(new Event('change',{bubbles:true}));}
   function refreshUndo(){const control=toolbar?.querySelector('[data-editor-undo]');if(control)control.disabled=!(SiteEditing.canUndo || dirty || [...(toolbar?.querySelectorAll('[data-editor-committed]') || [])].some(input=>input.value!==input.dataset.editorCommitted) || fieldDraft?.inputs.some((input,index)=>input.value!==String(fieldDraft.entry.fields[index].value??'')));}
@@ -211,15 +211,23 @@
       }
     }
   }
+  function syncChooser(){
+    const chooser=toolbar?.querySelector('[data-editor-chooser]');if(!chooser)return;
+    if(!target){chooser.value='';return;}
+    const value=ElementAppearance.selector(target),title=ElementAppearance.label(target);
+    let option=[...chooser.options].find(option=>option.value===value);
+    if(!option){option=node('option');option.value=value;chooser.append(option);}
+    option.textContent=title;chooser.value=value;
+  }
   function select(element){
     if(element===target)return;
     release();target=element;entry=SiteEditing.editorFor(target);
     if(!entry?.fields && (target.matches('button,a,h1,h2,h3,h4,h5,h6,p,li,time,legend,address,output,.dish-title,.summary-item,.summary-stat,.counter-row,label') || ['count-values','count-titles','dish-details','dish-claimants'].includes(ElementAppearance.group(target)))){SiteEditing.textElement(target,ElementAppearance.label(target));entry=SiteEditing.editorFor(target);}
     target.classList.add('element-editor-selected');
     if(SiteEditing.movableTextRoot(target)){target.draggable=true;restores.push(()=>target.draggable=true);}
-    if(toolbar.querySelector('[data-editor-chooser]'))toolbar.querySelector('[data-editor-chooser]').value=ElementAppearance.selector(target);
+    syncChooser();
     const kind=ElementAppearance.group(target);const stateControl=toolbar.querySelector('[data-editor-state]');if(stateControl){stateControl.closest('label').hidden=!ElementAppearance.selectedState(target);stateControl.value=ElementAppearance.selectedState(target) || 'unselected';}
-    toolbar.querySelector('[data-editor-selection]').textContent=ElementAppearance.label(target)+(kind?' · Shared '+(ElementAppearance.selectedState(target)?ElementAppearance.selectedState(target)+' ':'')+kind.replaceAll('-',' '):'');
+    toolbar.querySelector('[data-editor-selection]').textContent=kind?'Shared '+(ElementAppearance.selectedState(target)?ElementAppearance.selectedState(target)+' ':'')+kind.replaceAll('-',' '):'';
     toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=!entry?.options?.actions?.some(([title])=>title===button.dataset.editorMove));
     const fields=entry?.fields;
     const readonly=Boolean(fields?.[0]?.readonly || fields?.length===1 && !['text','page','notes'].includes(entry.title));
@@ -269,8 +277,8 @@
       toolbar=node('div');toolbar.className='element-editor-toolbar';toolbar.setAttribute('role','toolbar');toolbar.setAttribute('aria-label','Element editor');
       const row=node('div');row.className='element-editor-row';toolbar.append(row);
       const chooser=node('select');chooser.dataset.editorChooser='';chooser.setAttribute('aria-label','Select an element');row.append(chooser);chooser.addEventListener('change',()=>{const element=document.querySelector(chooser.value);if(element)select(element);});
-      const selection=node('span','Click an element to edit');selection.dataset.editorSelection='';row.append(selection);
-      const stateControl=selectInput(row,'Formatting state',['unselected','selected'],'unselected',value=>{if(!target)return;commitToolbarInput();flush();ElementAppearance.editState(target,value);toolbar.querySelector('[data-editor-selection]').textContent=ElementAppearance.label(target)+' · Shared '+value+' '+ElementAppearance.group(target);if(panelName){const name=panelName;panelName='';showPanel(name);}});selection.before(stateControl.closest('label'));stateControl.dataset.editorState='';for(const option of stateControl.options)option.textContent=option.value==='selected'?'Selected':'Unselected';stateControl.closest('label').hidden=true;
+      const selection=node('span');selection.dataset.editorSelection='';row.append(selection);
+      const stateControl=selectInput(row,'Formatting state',['unselected','selected'],'unselected',value=>{if(!target)return;commitToolbarInput();flush();ElementAppearance.editState(target,value);toolbar.querySelector('[data-editor-selection]').textContent='Shared '+value+' '+ElementAppearance.group(target);if(panelName){const name=panelName;panelName='';showPanel(name);}});selection.before(stateControl.closest('label'));stateControl.dataset.editorState='';for(const option of stateControl.options)option.textContent=option.value==='selected'?'Selected':'Unselected';stateControl.closest('label').hidden=true;
       for(const title of ['Text','Lists','Background','Border']){const control=button(title,()=>showPanel(title),row);control.dataset.editorGroup=title;control.setAttribute('aria-expanded','false');}
       for(const [title,axis] of [['Vertical gap','x'],['Horizontal gap','y']]){
         const control=button(title,()=>{
@@ -303,7 +311,7 @@
     if(!sidebarResize){sidebarResize=new ResizeObserver(sizeSidebar);sidebarResize.observe(toolbar);}
     const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=false;toolbar.querySelector('.element-editor-row').append(templates);}
     const chooser=toolbar.querySelector('[data-editor-chooser]');chooser.replaceChildren();const hint=node('option','Select an element');hint.value='';chooser.append(hint);
-    for(const element of [...new Set([...SiteEditing.editorTargets,...GapLayout.elements(),...root.querySelectorAll('*')].filter(element=>SiteEditing.editorFor(element) || GapLayout.isGap(element) || ['containers','inner-containers'].includes(ElementAppearance.group(element))))].filter(element=>root.contains(element) && !element.parentElement.closest('[hidden],[data-rsvp-flow-hidden],dialog:not([open])') && !element.hasAttribute('data-rsvp-flow-hidden') && (!element.hidden || SiteEditing.editorFor(element)?.fields?.every(spec=>!spec.value)))){const option=node('option',ElementAppearance.label(element));option.value=ElementAppearance.selector(element);chooser.append(option);}chooser.value=target?ElementAppearance.selector(target):'';refreshUndo();sizeSidebar();
+    for(const element of [...new Set([...SiteEditing.editorTargets,...GapLayout.elements(),...root.querySelectorAll('*')].filter(element=>SiteEditing.editorFor(element) || GapLayout.isGap(element) || ['containers','inner-containers'].includes(ElementAppearance.group(element))))].filter(element=>root.contains(element) && !element.parentElement.closest('[hidden],[data-rsvp-flow-hidden],dialog:not([open])') && !element.hasAttribute('data-rsvp-flow-hidden') && (!element.hidden || SiteEditing.editorFor(element)?.fields?.every(spec=>!spec.value)))){const option=node('option',ElementAppearance.label(element));option.value=ElementAppearance.selector(element);chooser.append(option);}syncChooser();refreshUndo();sizeSidebar();
   }
   function beforeRender(){release();sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',()=>{rememberSelection();if(!toolbar?.contains(document.activeElement))syncTextControls();});
