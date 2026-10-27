@@ -977,7 +977,6 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 .dish-list-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .dish-list-summary #dishListTotals{margin:0!important}
 
-.element-editor-row>hr{width:100%;border:0;border-top:1px solid #485365;margin:6px 0}
 .element-editor-history{display:flex;gap:6px}.element-editor-history>button{flex:1}
 .element-editor-toolbar [data-editor-templates]>button{width:100%}
 
@@ -990,3 +989,9 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 
 /* Photos & Videos is reached through the shared gathering toolbar. */
 #weddingRsvpUploadToolbar{display:none!important}
+
+.element-editor-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+.element-editor-pair>button{width:100%;white-space:normal}
+.element-editor-context-actions{display:flex;flex-wrap:wrap;gap:6px}
+.element-editor-context-actions:has(>button:not([hidden])){padding-top:6px}
+.element-editor-context-actions:not(:has(>button:not([hidden]))){display:none}

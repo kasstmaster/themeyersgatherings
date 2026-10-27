@@ -163,7 +163,7 @@
     if(!panelName || !target)return;
     if(name==='Gap'){
       if(GapLayout.isGap(target)){if(target.matches('gathering-gap'))selectInput(panel,'Gap direction',['Vertical','Horizontal'],GapLayout.getAxis(target)==='x'?'Vertical':'Horizontal',value=>GapLayout.setAxis(target,value==='Vertical'?'x':'y'));const current=GapLayout.getSize(target);const number=labelInput(panel,'Gap size (px)','number',current,value=>GapLayout.setSize(target,value));number.min=0;number.max=1000;const slider=labelInput(panel,'Gap size','range',Math.min(current,300),value=>{number.value=value;GapLayout.setSize(target,value);});slider.min=0;slider.max=300;button('Remove gap',()=>{GapLayout.remove(target);release();},panel);}
-      else panel.append(node('span','Drag Vertical gap or Horizontal gap from the toolbar, or click one to add it after the selection.'));
+      else panel.append(node('span','Drag ↑ Gap or → Gap from the toolbar, or click one to add it after the selection.'));
     }
     const textual=editables.length>0 && !target.matches('img,video');
     if(name==='Format' && target.matches('.event-dock')){
@@ -274,33 +274,34 @@
       const selection=node('span');selection.dataset.editorSelection='';row.append(selection);
       const stateControl=selectInput(row,'Formatting state',['unselected','selected'],'unselected',value=>{if(!target)return;commitToolbarInput();flush();ElementAppearance.editState(target,value);toolbar.querySelector('[data-editor-selection]').textContent='Shared '+value+' '+ElementAppearance.group(target);if(panelName){const name=panelName;panelName='';showPanel(name);}});selection.before(stateControl.closest('label'));stateControl.dataset.editorState='';for(const option of stateControl.options)option.textContent=option.value==='selected'?'Selected':'Unselected';stateControl.closest('label').hidden=true;
       for(const title of ['Format']){const control=button(title,()=>{panelName='';showPanel(title);},row);row.prepend(control);control.dataset.editorGroup=title;control.setAttribute('aria-expanded','false');}
-      const separator=()=>row.append(node('hr'));separator();
-      for(const [title,axis] of [['Vertical gap','x'],['Horizontal gap','y']]){
+      const gaps=node('div');gaps.className='element-editor-pair';gaps.dataset.editorGaps='';
+      for(const [title,axis] of [['↑ Gap','x'],['→ Gap','y']]){
         const control=button(title,()=>{
           if(!target){status('Select an element to add a gap after it, or drag this gap between elements.');return;}
           if(GapLayout.isGap(target)){GapLayout.setAxis(target,axis);panelName='';showPanel('Gap');}
           else{const gap=GapLayout.addAfter(target,axis);if(gap)select(gap);}
-        },row);control.draggable=true;control.dataset.newGap=axis;control.dataset.gapDirection=axis;control.dataset.editorGroup='Gap';control.title=axis==='x'?'Drag to the left or right of an element':'Drag above or below an element';control.setAttribute('aria-expanded','false');
+        },gaps);control.draggable=true;control.dataset.newGap=axis;control.dataset.gapDirection=axis;control.dataset.editorGroup='Gap';control.title=axis==='x'?'Drag to the left or right of an element':'Drag above or below an element';control.setAttribute('aria-expanded','false');
       }
+      const moves=node('div');moves.className='element-editor-context-actions';
       for(const title of ['Move left','Move right','Move up','Move down']){
         const move=button(title,()=>{
           if(!target)return;const path=ElementAppearance.selector(target);flush();
           const current=document.querySelector(path),record=current && SiteEditing.editorFor(current);
           record?.options?.actions?.find(([name])=>name===title)?.[1]();
           const next=document.querySelector(path);if(next){select(next);editables[0]?.focus({preventScroll:true});}
-        },row);move.dataset.editorMove=title;move.hidden=true;
+        },moves);move.dataset.editorMove=title;move.hidden=true;
       }
-      separator();
-      const open=button('Open page / use button',()=>{if(!target)return;const current=target;release();allowAction=true;try{current.click();}finally{allowAction=false;}},row);open.dataset.editorOpen='';open.disabled=true;
-      const parent=button('Select container',()=>{if(target?.parentElement && !target.matches('body,dialog')){flush();select(target.parentElement);}},row);parent.title='Select the container around this element';
-      separator();const templatesSlot=node('span');templatesSlot.dataset.editorTemplates='';row.append(templatesSlot);separator();
+      const actions=node('div');actions.className='element-editor-pair';actions.dataset.editorActions='';
+      const open=button('Use Button',()=>{if(!target)return;const current=target;release();allowAction=true;try{current.click();}finally{allowAction=false;}},actions);open.dataset.editorOpen='';open.disabled=true;
+      const parent=button('Container',()=>{if(target?.parentElement && !target.matches('body,dialog')){flush();select(target.parentElement);}},actions);parent.title='Select the container around this element';
+      const templatesSlot=node('span');templatesSlot.dataset.editorTemplates='';
       const history=node('div');history.className='element-editor-history';row.append(history);
       const undo=button('Undo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.undo()?'Change undone.':'There is no change to undo, or the data has changed elsewhere.');},history);undo.dataset.editorUndo='';undo.setAttribute('aria-label','Undo');undo.title='Undo';undo.disabled=true;
       const redo=button('Redo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.redo()?'Change redone.':'There is no change to redo, or the data has changed elsewhere.');},history);redo.dataset.editorRedo='';redo.setAttribute('aria-label','Redo');redo.title='Redo';redo.disabled=true;
       const save=button('Save',()=>{commitToolbarInput();const structured=flush();SiteEditing.endUndoGroup();if(structured)SiteEditing.editorContext.refresh();status('Saved.');},row);
       const done=button('Done Editing',()=>{commitToolbarInput();SiteEditing.endUndoGroup();SiteEditing.toggle(()=>SiteEditing.editorContext.refresh());},row);
-      const top=node('div');top.className='element-editor-top';top.append(history,save,done);toolbar.prepend(top);
-      const panel=node('div');panel.dataset.editorPanel='';panel.className='element-editor-panel';panel.hidden=true;row.querySelector('hr').before(panel);
+      const top=node('div');top.className='element-editor-top';top.append(history,save,done,gaps,actions,templatesSlot,moves);toolbar.prepend(top);
+      const panel=node('div');panel.dataset.editorPanel='';panel.className='element-editor-panel';panel.hidden=true;row.append(panel);
       const live=node('span');live.dataset.editorStatus='';live.setAttribute('role','status');toolbar.append(live);
       toolbar.addEventListener('focusin',event=>{if(event.target.matches('input,select,textarea'))SiteEditing.beginUndoGroup();});
       toolbar.addEventListener('focusout',event=>{if(event.target.matches('input[type="color"]') && !event.relatedTarget)return;SiteEditing.endUndoGroup();});
