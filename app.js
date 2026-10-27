@@ -1028,7 +1028,7 @@ function updateHeaderImage(event) {
 function isViewingAsGuest() { return hostAuthenticated && Boolean(hostWeddingPartyViewName); }
 function isHostView() { return hostAuthenticated && !isViewingAsGuest(); }
 const hostDialogStack=[];
-const persistentHostControls=['hostToolsPanel','cancelViewAsButton','hostQuickActions'].map(id=>document.getElementById(id));
+const persistentHostControls=['hostToolsPanel','cancelViewAsButton'].map(id=>document.getElementById(id));
 function activeHostDialog(){return hostDialogStack.filter(dialog=>dialog.open).at(-1) || [...document.querySelectorAll('dialog[open]')].at(-1);}
 function hasGatheringToolbarContext(){return Boolean((guestName || hostAuthenticated) && document.querySelector('#eventSelectionPage').hidden && availableEventIds().includes(viewedEventId));}
 function syncHostToolbar(records=[]) {
@@ -1037,14 +1037,15 @@ function syncHostToolbar(records=[]) {
     if(record.target.open)hostDialogStack.push(record.target);
   }
   persistentHostControls[0].hidden=!hostAuthenticated;
-  document.querySelector('#hostQuickActions').hidden=!hostAuthenticated;
+  document.querySelector('#hostQuickActions').hidden=true;
   const owner=activeHostDialog() || document.body;
   for(const control of persistentHostControls)if(control.parentElement!==owner)owner.append(control);
-  document.querySelector('#newGatheringButton').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || Boolean(activeHostDialog());
+  const create=document.querySelector('#newGatheringButton');create.hidden=!hostAuthenticated;
   document.querySelector('#cancelViewAsButton').hidden=!isViewingAsGuest();
   document.body.style.setProperty('--host-shortcuts-width',document.querySelector('#hostQuickActions').getBoundingClientRect().width+'px');
   const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated || SiteEditing.enabled;edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
-  const hostToolbar=document.querySelector('#hostToolsPanel');if(edit.parentElement!==hostToolbar || hostToolbar.lastElementChild!==edit)hostToolbar.append(edit);
+  const hostToolbar=document.querySelector('#hostToolsPanel');if(edit.parentElement!==hostToolbar || edit.nextElementSibling!==create || hostToolbar.lastElementChild!==create)hostToolbar.append(edit,create);
+  for(const button of hostToolbar.querySelectorAll('button')){const label=button.querySelector('span')?.textContent.trim() || button.getAttribute('aria-label') || '';if(label){button.title=label;if(!button.hasAttribute('aria-label'))button.setAttribute('aria-label',label);}}
   document.querySelector('#cancelViewAsButton').style.right='0px';
   document.body.classList.toggle('has-host-toolbar',hostAuthenticated);
   document.querySelector('#rsvpPageToolbar').classList.toggle('host-toolbar-replaced',hostAuthenticated);
@@ -1165,6 +1166,17 @@ function renderAttireVideoCollection(sectionSelector, containerSelector) {
   document.querySelector(containerSelector).innerHTML = videos.map(({ video, url, uploaded }, index) => uploaded
     ? `<video controls playsinline preload="metadata" aria-label="${escapeAttribute(video.name)}"><source src="${escapeAttribute(url)}" type="${escapeAttribute(video.contentType)}">Your browser does not support this video. <a href="${escapeAttribute(url)}">Download video</a></video>`
     : `<iframe src="${escapeAttribute(url)}" title="Formal attire tip ${index + 1}" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`).join('');
+}
+let gatheringScrollFrame=0;
+function scrollGatheringPage(element){
+  cancelAnimationFrame(gatheringScrollFrame);
+  const page=element?.closest('#rsvpWeddingPages>section') || element;if(!page)return;
+  gatheringScrollFrame=requestAnimationFrame(()=>{gatheringScrollFrame=requestAnimationFrame(()=>{
+    if(!page.isConnected || page.closest('[hidden],[data-rsvp-flow-hidden]') || !page.getClientRects().length)return;
+    const owner=page.closest('dialog[open]') || document.scrollingElement;
+    const origin=owner===document.scrollingElement?0:owner.getBoundingClientRect().top+owner.clientTop;
+    owner.scrollTo({top:Math.max(0,owner.scrollTop+page.getBoundingClientRect().top-origin-16),behavior:'instant'});
+  });});
 }
 function showSignedInDestination() {
   document.querySelector('#signInPage').hidden = true;
@@ -1742,7 +1754,7 @@ function renderRsvpPageNavigation(){
   const restoreOrder=()=>{const order=state.rsvpToolbarOrder || [];const rank=button=>{if(button.dataset.pageKey==='media')return -1;const index=order.indexOf(button.dataset.pageKey);return index<0?order.length:index;};[...nav.children].sort((a,b)=>rank(a)-rank(b)).forEach(button=>nav.append(button));};
   const add=(title,source)=>{
     const key=source?.dataset.weddingTab || source?.dataset.gatheringTab || 'details';
-    const button=document.createElement('button');button.type='button';button.id=`rsvp-nav-${key}`;button.dataset.pageKey=key;button.setAttribute('aria-label',title);button.setAttribute('aria-pressed',String(source?source.getAttribute('aria-selected')==='true':selectedWeddingTab==='details'));
+    const button=document.createElement('button');button.type='button';button.title=title;button.id=`rsvp-nav-${key}`;button.dataset.pageKey=key;button.setAttribute('aria-label',title);button.setAttribute('aria-pressed',String(source?source.getAttribute('aria-selected')==='true':selectedWeddingTab==='details'));
     button.innerHTML=source?.querySelector('svg')?.outerHTML || '<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z"/></svg>';
     const label=document.createElement('span');
     label.textContent=title;
@@ -1758,7 +1770,7 @@ function renderRsvpPageNavigation(){
       RsvpFlow.first();
       SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);SiteEditing.resetTabSelection('weddingHostTabs',viewedEventId);SiteEditing.resetTabSelection('gatheringTabs',viewedEventId);
       if(source)ElementEditor.activate(source);else{selectedWeddingTab='details';selectedGuestTab='details';render();}
-      [...document.querySelectorAll('#rsvpWeddingPages>section')].find(element=>!element.hidden && element.getClientRects().length)?.scrollIntoView({block:'start',behavior:'auto'});
+      scrollGatheringPage([...document.querySelectorAll('#rsvpWeddingPages>section')].find(element=>!element.hidden && element.getClientRects().length));
     });
   };
   const media=document.querySelector('#uploadPhotosButton');add(media.textContent.trim(),media);
@@ -1781,7 +1793,7 @@ function renderHostFirstPageActions(){
     RsvpFlow.first();SiteEditing.resetTabSelection('weddingHostTabs',viewedEventId);SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);SiteEditing.resetTabSelection('gatheringTabs',viewedEventId);
     if(source)ElementEditor.activate(source);else{selectedWeddingTab='details';selectedGuestTab='details';selectedGatheringTab='details';render();}
     const page=source?document.getElementById(source.getAttribute('aria-controls')):[...document.querySelectorAll('#rsvpWeddingPages>section')].find(element=>!element.hidden && element.getClientRects().length);
-    page?.scrollIntoView({block:'start',behavior:'auto'});
+    scrollGatheringPage(page);
   });};
   if(GatheringFeatures.forGathering(viewedEventId).weddingPages){
     document.querySelectorAll('#weddingHostTabs>button').forEach(button=>{if(!button.hidden)add(button.textContent.trim(),button);});
@@ -1907,7 +1919,7 @@ document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav
   if(nav.id==='weddingPartyTabs')SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
   if(['attire','details'].includes(selectedWeddingTab))selectedGuestTab=selectedWeddingTab;
   render();
-  if(nav.id==='weddingPartyTabs')document.getElementById(button.getAttribute('aria-controls'))?.scrollIntoView({block:'start',behavior:'auto'});
+  if(nav.id==='weddingPartyTabs')scrollGatheringPage(document.getElementById(button.getAttribute('aria-controls')));
 }));
 document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav.addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -1919,14 +1931,14 @@ document.querySelectorAll('#weddingPartyTabs,#weddingHostTabs').forEach(nav=>nav
   selectedWeddingTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.weddingTab;
   if(event.currentTarget.id==='weddingPartyTabs')SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
   render();
-  const selected=event.currentTarget.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`);selected.focus();
-  if(event.currentTarget.id==='weddingPartyTabs')document.getElementById(selected.getAttribute('aria-controls'))?.scrollIntoView({block:'start',behavior:'auto'});
+  const selected=event.currentTarget.querySelector(`[data-wedding-tab="${selectedWeddingTab}"]`);selected.focus({preventScroll:true});
+  if(event.currentTarget.id==='weddingPartyTabs')scrollGatheringPage(document.getElementById(selected.getAttribute('aria-controls')));
 }));
 document.querySelector('#guestInfoTabs').addEventListener('click', event => {
   const button = event.target.closest('[data-guest-tab]');
   if (!button) return;
   selectedGuestTab = button.dataset.guestTab;
-  render();
+  render();scrollGatheringPage(document.querySelector('#guestInfoTabs'));
 });
 document.querySelector('#guestInfoTabs').addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -1936,7 +1948,7 @@ document.querySelector('#guestInfoTabs').addEventListener('keydown', event => {
   const direction = event.key === 'ArrowRight' ? 1 : -1;
   selectedGuestTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.guestTab;
   render();
-  document.querySelector(`[data-guest-tab="${selectedGuestTab}"]`).focus();
+  document.querySelector(`[data-guest-tab="${selectedGuestTab}"]`).focus({preventScroll:true});scrollGatheringPage(document.querySelector('#guestInfoTabs'));
 });
 document.querySelector('#adminAddBrideGroomPage').addEventListener('click', () => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
@@ -1955,7 +1967,7 @@ document.querySelector('#brideGroomTabs').addEventListener('click', event => {
   const button = event.target.closest('[data-bride-groom-page]');
   if (!button) return;
   selectedBrideGroomPage = button.dataset.brideGroomPage;
-  render();
+  render();scrollGatheringPage(document.querySelector('#brideGroomTabs'));
 });
 document.querySelector('#brideGroomTabs').addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -1965,7 +1977,7 @@ document.querySelector('#brideGroomTabs').addEventListener('keydown', event => {
   const direction = event.key === 'ArrowRight' ? 1 : -1;
   selectedBrideGroomPage = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.brideGroomPage;
   render();
-  document.querySelector(`[data-bride-groom-page="${CSS.escape(selectedBrideGroomPage)}"]`).focus();
+  document.querySelector(`[data-bride-groom-page="${CSS.escape(selectedBrideGroomPage)}"]`).focus({preventScroll:true});scrollGatheringPage(document.querySelector('#brideGroomTabs'));
 });
 document.querySelector('#adminPerfectExperienceContent').addEventListener('change', event => {
   if (!hostAuthenticated || viewedEventId !== 'wedding') return;
@@ -2009,7 +2021,7 @@ document.querySelector('#matronInfoTabs').addEventListener('click', event => {
   const button = event.target.closest('[data-matron-tab]');
   if (!button) return;
   selectedMatronTab = button.dataset.matronTab;
-  render();
+  render();scrollGatheringPage(document.querySelector('#matronInfoTabs'));
 });
 document.querySelector('#matronInfoTabs').addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -2019,7 +2031,7 @@ document.querySelector('#matronInfoTabs').addEventListener('keydown', event => {
   const direction = event.key === 'ArrowRight' ? 1 : -1;
   selectedMatronTab = tabs[(currentIndex + direction + tabs.length) % tabs.length].dataset.matronTab;
   render();
-  document.querySelector(`[data-matron-tab="${CSS.escape(selectedMatronTab)}"]`).focus();
+  document.querySelector(`[data-matron-tab="${CSS.escape(selectedMatronTab)}"]`).focus({preventScroll:true});scrollGatheringPage(document.querySelector('#matronInfoTabs'));
 });
 document.querySelector('#claimQuantityForm').addEventListener('submit', event => {
   event.preventDefault();
@@ -2201,7 +2213,7 @@ document.querySelector('#rsvpDialog').addEventListener('close',()=>{
     SiteEditing.resetTabSelection('weddingPartyTabs',viewedEventId);
     showSignedInDestination();
     openRsvp({page:'registry'});
-    document.querySelector('#registrySection').scrollIntoView({block:'start',behavior:'auto'});
+    scrollGatheringPage(document.querySelector('#registrySection'));
     return;
   }
   if(!isHostView()){
@@ -3401,7 +3413,7 @@ function populateClearClaimControls() {
 document.querySelector('#gatheringTabs').addEventListener('click', event => {
   const button = event.target.closest('[data-gathering-tab]');
   if (!button || button.hidden || (button.dataset.gatheringTab === 'notes' && !isHostView())) return;
-  selectedGatheringTab = button.dataset.gatheringTab; render();document.getElementById(button.getAttribute('aria-controls'))?.scrollIntoView({block:'start',behavior:'auto'});
+  selectedGatheringTab = button.dataset.gatheringTab; render();scrollGatheringPage(document.getElementById(button.getAttribute('aria-controls')));
 });
 document.querySelector('#gatheringTabs').addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
@@ -3409,7 +3421,7 @@ document.querySelector('#gatheringTabs').addEventListener('keydown', event => {
   const tabs = [...document.querySelectorAll('[data-gathering-tab]:not([hidden])')];
   const current = tabs.findIndex(button => button.getAttribute('aria-selected') === 'true');
   const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (current + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-  tabs[next].click(); tabs[next].focus();
+  tabs[next].click(); tabs[next].focus({preventScroll:true});
 });
 document.querySelector('#adminHostNotes').addEventListener('change', event => {
   if (!isHostView() || !GatheringFeatures.forGathering(viewedEventId).notes) return;
@@ -3822,9 +3834,12 @@ for (let index = 0; index < 40; index += 1) {
   sparkleField.append(sparkle);
 }
 
-// New gatherings can only be opened from the host gathering chooser.
-document.querySelector('#newGatheringButton').addEventListener('click',()=>{
-  if(!isHostView() || document.querySelector('#eventSelectionPage').hidden || activeHostDialog())return;
+// Authenticated hosts can create a gathering wherever the toolbar appears.
+document.querySelector('#newGatheringButton').addEventListener('click',async()=>{
+  if(!hostAuthenticated || document.querySelector('#newGatheringDialog').open)return;
+  commitAllPendingEditorInputs();
+  if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
+  if(SiteEditing.enabled)SiteEditing.toggle(render);
   document.querySelector('#newGatheringForm').reset();
   document.querySelector('#newGatheringAddress').value=SharedDetails.homeAddress(state);
   showSiteDialog(document.querySelector('#newGatheringDialog'));

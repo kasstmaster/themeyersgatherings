@@ -170,7 +170,7 @@
       tab.hidden=Boolean(config.hidePage?.(page));
       tabKeys.set(tab, `custom:${page.id}`);
       nav.append(tab); cleanup.push(() => tab.remove());
-      tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh();if(config.scroll)document.getElementById(`custom-page-${page.id}`)?.scrollIntoView({block:'start',behavior:'auto'}); });
+      tab.addEventListener('click', () => { selectedCustom.set(selectionKey, page.id); context.refresh();if(config.scroll)globalThis.scrollGatheringPage?.(document.getElementById(`custom-page-${page.id}`)); });
       if (enabled && context.host) field(tab,'text',[{label:'Page title',value:page.title,required:true}],([title])=>{page.title=title;},{actions:[['Move left',()=>moveTab(tab,-1)],['Move right',()=>moveTab(tab,1)],['Delete page',()=>{if(window.confirm(`Delete the “${page.title}” page?`)){state.sitePages=state.sitePages.filter(item=>item.id!==page.id);context.save();}}]]});
       if (selected?.id === page.id) {
         const isSubpage = nav.classList.contains('matron-info-tabs');

@@ -995,7 +995,6 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 
 .element-editor-management{display:grid;gap:6px}.element-editor-management>button{width:100%}
 .has-host-toolbar.site-edit-mode .element-editor-toolbar{padding-top:10px}
-.has-host-toolbar.site-edit-mode:has(#newGatheringButton:not([hidden])) .element-editor-toolbar{padding-top:48px}
 #menuEditorContent .inline-meal-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;margin:12px 0}
 #menuEditorContent .inline-meal-row>*{min-width:0}
 @media(max-width:600px){#menuEditorContent .inline-meal-row{grid-template-columns:minmax(0,1fr)} }
@@ -1016,3 +1015,9 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 
 .element-editor-top>hr{width:100%;border:0;border-top:1px solid #485365;margin:3px 0}
 .event-dock :is(button,a)[hidden]{display:none!important}
+
+#newGatheringButton>span{white-space:normal;overflow-wrap:anywhere;text-align:center}
+
+/* Host actions retain accessible labels and tooltips while showing only icons. */
+#hostToolsPanel button>span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+#rsvpDialog{overflow-anchor:none}

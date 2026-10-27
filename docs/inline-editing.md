@@ -28,7 +28,7 @@ Serve the repository locally on port 8041, then run `node scripts/verify-element
 
 ## Host navigation and account sessions
 
-The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **All Gatherings** returns everyone to gathering selection. **Menu**, **Accounts** and **History** are fixed host editing controls directly below Templates. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the editing toolbar.
+The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **All Gatherings** returns everyone to gathering selection. **Menu**, **Accounts** and **History** are fixed host editing controls directly below Templates. **Create Gathering** follows Edit in the host toolbar everywhere it appears. Gathering shortcuts remain available to guests. **Templates** is in the editing toolbar.
 
 In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, the account’s normal pages appear, with the host toolbar and its Edit option retained for the authenticated host. **Leave account** stays at the top right. Host management actions return to the host context; ordinary guests never see these controls. Accounts without gathering access have disabled sign-in icons.
 
@@ -49,7 +49,7 @@ colors; Background contains overall and selected/unselected option backgrounds.
 Each setting includes a color picker, hex input and opacity. These settings apply
 to every option, including the guest toolbar for the same gathering.
 
-Accounts and History appear below Menu in the edit toolbar. The chooser’s + stays at the top-left.
+Accounts and History appear below Menu in the edit toolbar. Create Gathering is in the host toolbar.
 The Meyers returns any signed-in user to gathering selection. Wedding Information,
 Attire, Registry and Details live in the toolbar, with Print Page last.
 
@@ -122,3 +122,7 @@ Fixed row order is Undo / Redo, Save / Done, divider, Menu / Templates, Accounts
 Every gathering uses the same summary-item count button styling, including Dishes needed. Hover adds no underline. Counts keep shared value and title appearance groups, separately from the shared count-list groups and editor controls.
 
 Edit is a host-only toolbar option with a pencil icon, immediately after Print Page. The same option follows the toolbar through the chooser, gathering pages, RSVP steps and dialogs. Done returns from edit mode.
+
+The plus icon and Create Gathering label form a host-only toolbar option after Edit, including the chooser, gathering pages, RSVP steps and dialogs. Hosts can also use it during account previews; it restores the host session before creating a gathering.
+
+The main host toolbar displays icons only, retaining accessible names and hover tooltips. Guest and wedding-party toolbars keep visible labels. All main and nested gathering tabs use one dialog-local scroll helper after layout settles; keyboard focus does not scroll, and tab redraws disable automatic scroll anchoring. Run `node scripts/verify-tab-scroll-stability.cjs` and `node scripts/verify-persistent-role-toolbar.cjs`.
