@@ -231,6 +231,26 @@ Documentation status must explicitly state either:
 
 Do not modify unrelated documentation unnecessarily.
 
+### Repository documentation review checklist
+
+For every relevant task, review the actual changed implementation against:
+
+| Change area | Documentation to review/update |
+| --- | --- |
+| User flows, host controls, supported features | `README.md`, `docs/inline-editing.md` |
+| Shared builder, formatting groups, data ownership, persistence | `docs/gathering-architecture.md`, `docs/gathering-builder.md` |
+| Invitations, QR modes, quantities and exports | `docs/invitations.md` |
+| Hosting, deployment triggers, origins, account boundaries and configuration names | `docs/custom-domain.md`, relevant README setup sections |
+| Confirmed unresolved architecture/data-protection issues | `docs/documentation-architecture-audit.md` or a clearly linked successor audit |
+
+Use the code, workflow YAML and configuration files to verify current behavior. Permanent requirements remain normative: if the implementation violates a rule, record the deviation and a separate follow-up rather than rewriting the rule to legitimize it. Distinguish source inspection, locally reproduced behavior and unverified live configuration.
+
+Document current controls and commands in their primary guide; replace verified obsolete instructions instead of appending contradictory historical behavior. Keep historical audit results explicitly dated. Do not claim optional browser scripts are covered by `npm test` or CI unless the workflow actually invokes them. Check relative Markdown links and referenced file paths when changing documentation.
+
+For documentation-only requests, change only documentation/development instructions unless the user explicitly expands scope. Report code defects without fixing them, avoid live state reads that can trigger archival, and use disposable synthetic fixtures for reproductions. Verify the final changed-file list excludes application source, workflows/configuration, dependencies and saved data. For a change that affects published behavior, update documentation in the same task; a summary saying “no documentation needed” must explain why behavior/setup/architecture did not change.
+
+Every final task summary must identify documentation files updated and their purpose, or explicitly say which relevant documentation was reviewed and why no update was needed. Include remaining uncertainties and validation limits; never present an audit as proof that all integrations or architectural requirements are satisfied. Current audit findings are tracked exceptions needing work, not permission to add similar exceptions.
+
 ## 11. Code Review and Change Verification
 
 Before completing a development task, check for:

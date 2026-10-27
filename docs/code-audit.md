@@ -1,4 +1,6 @@
-# Code audit
+# Historical code audit
+
+This is a historical record of fixes at the baseline below, not a current architecture certification or current test count. For the 2026-10-27 documentation audit, unresolved implementation findings and executed validation, see [the current audit](documentation-architecture-audit.md).
 
 This audit covers the shared frontend, gathering-specific RSVP behavior, editing,
 state persistence, deployment bundle, and worker code. The audited starting point

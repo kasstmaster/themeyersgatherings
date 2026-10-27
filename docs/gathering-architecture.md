@@ -1,149 +1,66 @@
-# Shared gathering implementation
+# Gathering architecture: implementation and required boundaries
 
-Thanksgiving, Christmas and all custom gatherings use the same standard feature
-object in `gathering-features.js`, renderers in `app.js`, RSVP journey in
-`rsvp-flow.js`, and layout rules in `styles.css`. Wedding enables additional
-pages, role visibility, named guests and meals through its feature definition.
-Accounts, children, invitations, attendance lists and editing remain shared.
+The permanent requirements are in [AGENTS.md](../AGENTS.md). This document describes current implementation, not proof that every requirement is satisfied. Confirmed deviations are tracked in the [documentation and architecture audit](documentation-architecture-audit.md).
 
-Hosts select gatherings into the same first RSVP page as guests. Host counters
-sit below RSVP; individual first-page buttons expose private planning pages. Wedding hosts start
-on Bride & Groom; guests retain their permitted default page. There is no
-separate host home layout.
+## One shared builder
 
-## Themes and new gatherings
+Thanksgiving, Christmas, Wedding and custom IDs share `index.html`, `app.js`, the RSVP journey and the editor modules. Historical `wedding` IDs/classes/endpoints are compatibility identifiers, not evidence of a second builder. `gathering-features.js` supplies standard and Wedding capabilities; new gatherings receive the standard definition and a neutral white/gray theme. Existing unmarked custom records keep legacy theme behavior.
 
-The creation form stores `gatheringTheme: 'neutral'`. Its white/gray palette is
-CSS variables on `body.theme-neutral`, not another layout. Existing custom
-records without that marker retain their previous theme. Built-in holidays keep
-their palettes and artwork. Do not set the marker in `makeEvent`: normalization
-uses that factory for existing records as well as new ones.
+| Responsibility | Current owner |
+| --- | --- |
+| Event definitions, active event, page composition, local/shared persistence | `app.js` |
+| ID-bound editor data/save context; teardown before switching/reload | `gatheringBuilderContext`, `finishGatheringBuilderSession` in `app.js` |
+| Fields, custom pages, tabs, independent content, undo/redo metadata | `inline-editing.js` |
+| One selection-based editor, rich text, formatting controls, autosave | `element-editor.js` |
+| Shared appearance groups, overrides, image replacement | `element-appearance.js` |
+| Inline style markup and safe text rendering | `text-styles.js` and the formatter in `app.js` |
+| Largest-fit heading/date measurement using authored sizes | `fitted-text.js` |
+| Saved spacing, padding and text placement | `gap-layout.js`, `SiteEditing.movableText` |
+| Shared question flow, validation/navigation, children/guests/meals | `rsvp-flow.js`, `child-picker.js`, `guest-planning.js`, `app.js` |
+| Print/email from the role toolbar | `page-actions.js` |
+| Legacy palette rendering | `gathering-palette.js` (no separate palette editor) |
 
-Saved per-element styles remain scoped to each gathering. Legacy saved palette
-colors still render through `gathering-palette.js`; its old editing dialog has
-been removed. Retain legacy palette selector identities while those records
-remain supported.
+Wedding capabilities add party/role visibility, attire, registry, addresses and meals. They must continue to extend these components. Main/custom page editing is registered for standard gatherings as well as Wedding. Specialized cards may have different content/layout without another editor implementation.
 
-## One editor
+## Data scopes
 
-`inline-editing.js` registers editable field, text, tab and structured-form
-metadata. `element-editor.js` owns the fixed toolbar and selection behavior;
-`element-appearance.js` applies saved element styles. `text-styles.js` and the
-shared editable-text formatter preserve selected text formatting and line breaks.
-`gap-layout.js` manages editable spacing. The former overlay/textarea editor,
-separate appearance popup and palette popup are removed.
+| Scope | Current storage |
+| --- | --- |
+| Gathering content/design/RSVP/menu/details | `appState.events[gatheringId]` |
+| Page text | `sitePages` entries, `siteText`, canonical page fields; per-box `textAppearance` |
+| Gathering-wide styles | `elementAppearance['@group:<kind>']`, plus selected/unselected variants |
+| Layout | `siteTabOrder`, `rsvpToolbarOrder`, `siteElementOrder`, `siteElementPlacements`, `siteGaps`, `siteSpacing` in the event |
+| Chooser design | `appState.gatheringHome` |
+| Household identities/children/QR tokens | `appState.accounts`; event access/invites/quantities/guest allowances use gathering keys |
+| Invitation templates | Website-level array with `eventId` ownership; event selects its template ID |
+| Archived occurrences | `gatheringHistory[gatheringId][date]` snapshots |
+| Website identity | `sharedSite`, including the global footer name |
+| Media | Event-specific published folder settings; **account-wide R2 gallery/session ownership currently lacks event separation** |
 
-Keep layout and typography in shared rules. Theme-specific rules should hold
-colors and artwork; Wedding-only content can retain its specialized layouts.
-Host-authored text formatting is content and must not be reset by rendering.
+Shared formatting does not share words: a title group changes fonts/colors/alignment in one gathering; a page title edit changes that page's content. Introductions use their own group. Page-content boxes have independent rich formatting by design. Count values/titles, count lists, dish statuses/claimants, outer/inner surfaces and selected/unselected controls are deliberately distinct groups. Admin/editor controls are outside public appearance groups.
 
-## Verification
+Legacy per-element style selectors remain supported. A new group edit clears conflicting properties on matching individual entries; untouched legacy data may still override group values. Selector keys and historical IDs require compatibility handling when markup moves.
 
-Run `npm test`. Local Chromium scripts block external requests and live state
-writes, and expect the site served on port 8041:
+## Session and persistence lifecycle
 
-- `verify-gathering-consistency.cjs`: creation, neutral colors, legacy themes,
-  common desktop/mobile geometry, and isolated saved appearance edits.
-- `verify-host-rsvp-home.cjs`: host pages, counters, navigation and guest privacy.
-- `verify-element-ribbon.cjs`: shared toolbar and selected-text formatting.
-- `verify-host-toolbar.cjs`: host controls, account switching and creation.
-- `verify-gap-editing.cjs`, `verify-editor-offset.cjs`,
-  `verify-modal-scrolling.cjs`, `verify-rsvp-status-icon.cjs`: spacing, toolbar
-  layout, scrolling and response status.
+Editor contexts capture the application object, gathering ID and event data. The context's save function writes under that ID and refuses to save into a replacement application object after shared-state reload. Pending text/structured inputs finish before switching; selection cleanup cancels its autosave timer and restores temporary appearance. Undo/redo resets at event/session boundaries.
 
-Older optional browser scripts may describe superseded UI and should be updated
-before use; they are not part of `npm test`.
+Local persistence has a primary copy, backup, pending-save marker and timestamp-based/recovery selection. Startup attempts the configured shared endpoint or fallback file. Rendering/normalization supports legacy records. Shared polling avoids replacing active edits and pending saves. An upload sends the **whole application JSON** to the service; this does not provide field-level or gathering-level merge protection between devices.
 
-## Shared photos and videos
+The service writes state to a separate GitHub repository and preserves archived histories. It retries GitHub SHA conflicts but reuses the submitted snapshot for current data. The [audit](documentation-architecture-audit.md) documents the resulting stale-write risk and access-control limitations. Do not describe local event isolation tests as proof of multi-device conflict safety.
 
-Every gathering uses `renderGatheringMedia`, the same media DOM, `wedding-media.js`
-and `dropbox-upload.js`. The historical `/wedding-media` endpoint and storage
-prefix remain stable so existing uploads and galleries keep working. Sessions
-include the selected gathering ID; the service checks account access to that
-gathering rather than requiring Wedding access. Older clients omit the ID and
-retain Wedding authorization. All gatherings use the existing Dropbox connection
-and destination; private galleries remain scoped to the account. New gatherings
-receive this feature automatically without copied markup or configuration.
+## Shared pages and integration boundaries
 
-Run `scripts/verify-shared-uploads.cjs` for desktop/mobile guest and host access
-across Wedding, holidays and a newly created gathering. Worker tests cover
-authorization, ownership, links and file access.
+Guests default to Photos & Videos; host defaults are Bride & Groom for Wedding and Notes otherwise. All Gatherings is the chooser action. Photos & Videos follows it; Print Page offers print/email; host Edit/Done and Create Gathering follow Print Page. Host options are icons with labels exposed through accessibility/tooltips. Role options persist across gathering pages/questions/dialogs; gathering-specific options disappear on the chooser.
 
-Each gathering also has an optional `mediaGalleryUrl` and `mediaGalleryLabel`.
-The combined Photos & Videos page shows a disabled folder button until the host supplies a
-link. In Edit mode, select that button to set its label and Dropbox folder URL
-in the shared toolbar. The saved link is available to every guest who can open
-that gathering; it is separate from the account's private upload receipts.
-Removing the URL returns the button to its pending state. Dropbox sharing
-permissions determine access and download availability for the linked folder.
+Wedding Timeline moves one canonical panel between Bride & Groom and party information. Details has one canonical Wedding record exposed in its intended locations. These are intentional same-content views within one gathering, unlike independent custom pages. The reused Wedding Party heading currently has a separate page-content leakage issue recorded in the audit.
 
-The Photos & Videos surface combines the gallery and sharing flow without tabs.
-Share Your Photos & Videos reveals Upload and Share Link actions. Exactly one
-form is visible at a time; collapsing sharing hides both forms. The gallery and
-host-published folder link remain available below the sharing flow.
+Photo sharing uses one page/client and the `/wedding-media` API for every gathering. Admission checks the requested event's access, but session/gallery ownership and Dropbox paths currently use the household rather than the event. All gatherings intentionally share the Dropbox connection; per-event gallery separation remains unresolved. Published `mediaGalleryUrl`/`mediaGalleryLabel` are event-owned.
 
-Guests, including wedding party members, start on Photos & Videos in every
- gathering. Hosts retain their planning defaults (Bride & Groom for Wedding,
-Notes for standard gatherings). Photos & Videos remains a button under RSVP.
-Information, Attire, Registry and Details use shared toolbar navigation, with
-Print Page last. Personal information navigation labels show only the member’s first name. Wedding RSVP starts
-with attire for guests and wedding party members; party attire uses the same
-role filtering and private gallery renderer as the main Attire page.
+AnyList updates website-wide household identity data and relevant references while preserving website-owned settings. Invitations use event-owned templates and permissions. Neither integration requires copying the gathering editor. The service and static site deploy in separate Cloudflare accounts from the same repository; see [hosting](custom-domain.md).
 
-Toolbar appearance is shared through the `.event-dock` saved appearance entry
-within each gathering. The editor exposes selected/unselected text and icon
-colors, selected/unselected option backgrounds, and overall background/border
-controls with hex, color pickers and opacity. Root toolbar editing propagates
-these colors to all its options and to the guest toolbar for that gathering.
-Accounts and History are fixed host-only corner shortcuts beside the chooser's
-+ button. The Meyers is the shared home action for hosts and guests.
+## Verification and future maintenance
 
-## Shared appearance groups within a gathering
+`npm test` covers state/context bindings, formatting, feature permissions and integrations through local fixtures. The shared-builder CI workflow runs it and a production build on PRs/main. Browser regressions are optional local scripts, not automatically run by that workflow. See the [editing guide](inline-editing.md#known-limitations-and-verification) and [audit validation inventory](documentation-architecture-audit.md#validation-and-limits).
 
-`ElementAppearance.group` classifies buttons, toolbar options, tabs, titles,
-counts, outer containers and inner containers once for every gathering. New
-appearance edits save under `@group:<kind>` in that gathering’s
-`elementAppearance`. Rendering applies the group to existing and subsequently
-rendered matching elements, including RSVP steps. Editing fonts, sizes, emphasis
-and colors on buttons/titles/counts/tabs stores typography independently of
-content. Names, labels and page wording still save to their individual fields.
-Rich content text boxes retain their individual appearance and selected-text
-formatting. Admin dialogs are outside these public component groups.
-
-Existing per-element styles remain supported; a new group edit supersedes the
-same properties on matching individual elements. Other gatherings keep their
-own appearance data. Toolbar selected/unselected controls remain shared and
-clear conflicting option-level color edits when changed.
-
-`verify-grouped-appearance.cjs` checks propagation through RSVP, distinct words,
-independent content formatting, structural groups and gathering isolation.
-`verify-toolbar-colors.cjs` and `verify-rsvp-page-navigation.cjs` cover shared
-toolbar states, guest defaults, navigation, shortcuts and role-specific attire.
-
-Timeline is a sub-tab inside Bride & Groom, reusing its page selector
-and keyboard handling. The original timeline fields and section ID remain for
-saved content, appearance and printing. First-page action buttons precede the
-counters; the shared Attire icon is a bow tie.
-
-Wedding party personal information has Responsibilities, shared Timeline and
-shared Details tabs. Timeline moves the same DOM panel between Bride & Groom
-and the personal information area, with one set of timeline fields. Details
-reads and saves the same canonical default Details page, falling back to the
-legacy Details field when needed. Shared Details content boxes also share their
-appearance selector, so text-box appearance edits follow the content wherever
-it appears. Personal navigation labels show only the signed-in member’s first
-name. Ordinary guests cannot open the private personal-information Timeline.
-
-Notes uses a host-only toolbar option wherever planning pages are
-enabled, rather than first-page buttons. They use the same toolbar navigation
-component as the Wedding page options, before Print Page.
-
-The shared element editor isolates clicks and key events inside the active
-contenteditable title from tab navigation. Its top-level Move left/right actions
-flush pending text, resolve fresh metadata after redraws, and reselect the moved
-tab. Sub-tabs use `siteTabOrder`; toolbar page options use `rsvpToolbarOrder` so
-reordering them does not interact with first-page Photos & Videos or fixed
-home/print actions. `verify-tab-editing.cjs` exercises real keyboard/caret input,
-normal navigation outside editing, local persistence and both ordering paths.
-
-The host Dishes needed counter opens the dish overview dialog instead of a Menu page. The overview groups all items by remaining need while preserving claimant names; RSVP selections keep covered items checked/disabled in their original categories and exclude them from the active household’s draft. The shared RSVP flow handles X/Escape as one-level-back navigation from questions.
+Do not fix the documented exceptions by duplicating a builder, resetting saved state, or weakening the requirements. Separate development tasks must add targeted regressions, preserve legacy content and keep the documentation aligned with the resulting behavior.

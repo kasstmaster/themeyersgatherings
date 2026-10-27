@@ -1,270 +1,153 @@
-# The Meyers Family Events
+# The Meyers Gatherings
 
-A warm, responsive Thanksgiving and Christmas potluck and RSVP page that can be hosted for free with GitHub Pages.
+A shared, vanilla JavaScript application for family gatherings, RSVP journeys, potluck planning, invitations, and photos/videos. Thanksgiving, Christmas, Wedding, and newly created gatherings use one builder/editor; Wedding enables additional pages, party roles, attire, and meal choices.
 
-## Edit the website
+The primary website is **https://themeyers.ilymmd.com/**. GitHub Pages remains a compatibility entry for existing invitation links. Source lives in this repository; live shared JSON is configured separately through the Cloudflare service Worker.
 
-Sign in as the host and choose **Edit website** to edit content in place. See [the editing guide](docs/inline-editing.md) for tabs, media, RSVP meals, and linked details.
+## Guides
 
-## Publish on GitHub Pages
+- [Editing and host controls](docs/inline-editing.md)
+- [Architecture and data scopes](docs/gathering-architecture.md)
+- [Builder implementation and persistence](docs/gathering-builder.md)
+- [Invitations and QR codes](docs/invitations.md)
+- [Hosting and domain configuration](docs/custom-domain.md)
+- [Current documentation and architecture audit](docs/documentation-architecture-audit.md)
+- [Permanent development and documentation rules](AGENTS.md)
 
-1. Push this repository to GitHub.
-2. Open **Settings → Pages** in the repository.
-3. Under **Build and deployment**, select **Deploy from a branch**.
-4. Choose your main branch and the `/ (root)` folder, then click **Save**.
+## Current gathering behavior
 
-GitHub will provide a public link you can share with your guests.
+All users sign in to the gathering-selection page. Guests enter their name through the first-name, last-name, and optional-suffix steps. Available gatherings depend on their household's **Give Access** setting. Account QR links restrict name lookup to one household; they do not replace the name-entry flow.
 
-## Custom domain path
+Selecting a gathering opens its RSVP entry surface. Guests and wedding party members initially see **Photos & Videos**; hosts start on **Bride & Groom** for Wedding and **Notes** for standard gatherings. The **RSVP** button opens the questions. Its icon shows unanswered, attending, or declined status; gathering-selection cards also show submitted response status. From questions, X/Escape returns to the same gathering's information surface; closing that surface returns to All Gatherings. A completed Wedding RSVP opens Registry; standard completion returns to gathering selection.
 
-See [the custom-domain migration guide](docs/custom-domain.md) for publishing at
-`https://themeyers.ilymmd.com/` as a separate installable app while preserving existing invitation QR links.
+The fixed toolbar retains the current role's permitted options across gathering pages, questions, and dialogs. Gathering-specific options are hidden on the chooser. **All Gatherings** is the home action; **Photos & Videos** follows it. **Print Page** offers Print and Email in one dialog. Hosts also have **Edit/Done** and **Create Gathering**; their main toolbar uses icons with accessible names and hover labels. Guests retain visible labels.
 
-## Save everything permanently in GitHub
+Standard gatherings provide potluck dishes and host Notes. Wedding adds Bride & Groom, Registry, guest/party Attire, Details, Responsibilities and personal pages. Timeline is a shared subpage of Bride & Groom and wedding-party information. Details content is shared between its intended Wedding locations. Role-based Attire shows the appropriate Ladies/Gentlemen panels. These are extensions of the shared editor, not separate builders.
 
-The published menu can appear to be synced even when syncing is off because its
-defaults are part of `app.js` and `data/app-state.json`. Browser-created
-accounts, claims, and RSVPs are different: they can cross devices only when the
-`shared-state-url` in `index.html` points to the deployed Worker below. The host
-dashboard reports **Saved on this device only** until that URL is configured;
-afterward, every save uploads the complete state (including menus, accounts,
-claims, and RSVPs) together.
+## Host editing and planning
 
-The app always loads `data/app-state.json` from this repository before opening
-the sign-in dialog. That checked-in file is the canonical fallback on every
-phone and computer, so accounts, RSVPs, claims, dates, and menu edits placed in
-it do not depend on browser storage. Edit and commit that JSON file whenever you
-want to manually replace the published state.
+Use **Edit** after Print Page. It becomes **Done** while the dark editor sidebar is open. Click an element to select it; double-click editable text to type. One Format panel provides applicable text, alignment, lists, background/image/opacity, and border controls. **Use Button** follows a selected button while editing; **Container** selects its parent. The two gap actions support positioning and sizing spaces.
 
-GitHub Pages cannot write to its own repository, and putting a GitHub token in
-browser JavaScript would let every visitor steal it. This repository therefore
-includes a small Cloudflare Worker in `github-state-worker/`. It keeps the token
-secret and commits the complete account, event, menu, claim, and RSVP state to a
-JSON file in GitHub after every change. Every device reads the newest committed
-state when the page opens, regains focus, and every 30 seconds.
+Text autosaves after a short pause (currently 800 ms); many appearance controls save immediately. Done flushes pending edits. There is no general Save or Done button in the sidebar. Undo/Redo cover the current editing session. Structured controls may still have Apply, and management dialogs have their own actions. See the [editing guide](docs/inline-editing.md) for exact controls and exceptions.
 
-### One-time setup
+Formatting groups apply to matching elements **within the selected gathering**, including its RSVP pages. Titles and introductions are separate groups. Outer/inner containers, count values/titles, count lists, dish-status buttons, and selected/unselected toolbar/tab/button states have distinct groupings. Rich page-content text boxes keep their own formatting. Words and page content remain independent. The chooser uses its own `gatheringHome` settings. See the audit for remaining scope violations.
 
-1. Create a **private** GitHub repository for the data. A private repository is
-   strongly recommended because the JSON contains guest names and RSVP details.
-2. Create a fine-grained GitHub personal access token with access only to that
-   repository and **Contents: Read and write** permission.
-3. Edit `github-state-worker/wrangler.toml`: set `GITHUB_REPOSITORY` to
-   `owner/repository`, set `ALLOWED_ORIGIN` to the exact GitHub Pages origin (and use the comma-separated `ALLOWED_ORIGINS` for additional website origins)
-   (include a repository path only in the Pages URL, not in the origin), and
-   change the branch or state path if needed.
-4. Create the invitation artwork bucket, then deploy the Worker from the
-   repository root. Worker source changes are not deployed by GitHub Pages, so
-   rerun the deploy command after pulling Worker updates:
+The sidebar provides **Menu / Templates** and **Accounts / History**. Menu edits potluck categories, items, quantities and units, or Wedding meal choices. The host **Dishes needed** counter opens the dish overview; there is no separate host Menu page. Still-needed rows precede claimed rows. The compact **Copy menu** action exports one list with claimed/needed status and no claimant names. In RSVP, fully claimed dishes remain in their original categories, checked and unavailable to a different household.
 
-   ```sh
-   npx wrangler r2 bucket create meyers-invitation-backgrounds
-   cd github-state-worker
-   npx wrangler secret put GITHUB_TOKEN
-   npx wrangler secret put HOST_PASSWORD
-   npx wrangler deploy
-   ```
+Other host counts open Invited, Attending, Not attending, and No Response lists. Counts display adults/children; list totals include households. These details and claimant names are host-only in the interface. This UI restriction is not equivalent to server-side protection of the shared JSON; see [access limitations](#access-and-data-protection-limitations).
 
-5. Copy the deployed `workers.dev` URL into the `shared-state-url` meta tag in
-   `index.html`, commit, and publish. Do **not** add the token to
-   `wrangler.toml`, `app.js`, or any committed file.
-6. On the device that currently has the desired data, reload the published site
-   and make one change. The worker creates `data/app-state.json`; subsequent
-   edits create normal Git commits, so state is shared across devices and can be
-   recovered from Git history. If there is no browser data to preserve, the
-   first change starts from the defaults in `app.js`.
+## Accounts, children, and invitations
 
-To keep the Worker current after this one-time setup, add
-`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` under **Settings → Secrets
-and variables → Actions** in this website repository. The API token needs
-Workers Scripts edit and R2 edit access. Changes to `github-state-worker/` on
-`main` will then run the **Deploy shared-state Worker** workflow automatically;
-it creates the artwork bucket when needed and deploys the current Worker. The
-workflow can also be started manually from the Actions tab to resolve an
-“invitation upload endpoint is not deployed” message.
+Accounts are website-wide household records. **Give Access**, **Invite**, invitation quantities/group membership and guest allowances are keyed by gathering. Invite controls invitation output and invited totals; it does not grant sign-in access. A small person icon beside a name opens that household's session for host preview. The authenticated host retains host controls; **Leave account** restores their session. The Accounts footer has **Sync** and **Save** side by side.
 
-The Worker is required for changes made *inside the website* to be committed
-automatically. Without a Worker URL, visitors can still read the same committed
-`data/app-state.json` on every device, while website edits remain local until
-you copy them into the file and commit it.
+Each adult responds separately. Child selection uses saved household children, **No Children**, and **Another child** for additional names; unchecking an added name removes it. Guest choices and named guest allowances depend on gathering capabilities. Wedding meal cards use the attendee and child data; meal audiences distinguish adults, children, or both. Deadline handling permits attendance updates while restricting later changes to named guests/meals where configured. It is no longer a children-only numeric counter.
 
-Invitation template metadata and field coordinates use that shared JSON state.
-Uploaded PNG, JPEG, and WebP backgrounds are deliberately not put in either Git
-repository: the Worker stores their bytes in its `INVITATION_BACKGROUNDS` R2
-bucket. If you use a different bucket name, change the binding in
-`wrangler.toml` before deploying. The browser saves only the runtime
-background URL, media type, and original pixel dimensions in template records.
+Templates is a visual invitation editor. A template belongs to its gathering, with original-image coordinates, text fields and QR placement. Artwork is PNG/JPEG/WebP runtime data in R2, not committed invitation images. Invitation downloads use account quantities and invitation groups, producing uniquely named PNGs/ZIPs. Account-specific QR output requires an existing `qrToken`; general-login QR output does not. Email invitation output uses the browser's file-sharing API when supported, with download as the fallback. [Invitation details](docs/invitations.md).
 
-If GitHub or the worker is temporarily unavailable, the change remains in that
-browser and the site shows a sync warning. Make another change after service is
-restored to commit the latest complete state. The repository remains the durable
-shared copy; browser storage is only an offline fallback.
+History snapshots completed gatherings by date using the Los Angeles calendar day. Snapshots preserve their event/account view. Starting the next occurrence deliberately resets responses, claims and access/invitation selections while retaining layout/setup; it also clears Notes and removes `custom-` menu items. This is an explicit host action, separate from ordinary editing. The service Worker also runs hourly history capture.
 
-## Customize
+## Photos & Videos and Dropbox
 
-- Enter the host password in **First Name** and select **Next**. Guests enter First Name, select Next, enter Last Name, select Next, then enter an optional Suffix and select Get Started. Guests can sign in to each gathering where their account has **Give Access** checked; there is no global gathering activation switch. The separate **Invite** checkbox includes an account in invitation downloads and invited-family totals without granting sign-in access. Both settings apply only to the gathering currently being viewed. After signing in, guests choose from the gatherings available to them and can switch between them with the fixed event bar at the bottom of the page. Each event keeps its own date, menu, claims, RSVPs, invitation list, and sign-in access, while account names and other account settings are shared. You can also edit the viewed event menu, clear a selected quantity of a family's dish claim, RSVP, and claim dishes as **The Host**. The **Host tools** button is only visible after the host signs in.
-- Update `HOST_PASSWORD` near the top of `app.js`. Host password matching is case-insensitive.
-- Guest names and RSVP details are private in the interface: only a signed-in host can open the guest list or see who claimed a food item. Guests can still see the aggregate attendance and dish counts.
-- `GUEST_ACCOUNTS` in `app.js` supplies the initial invited households. You can then manage accounts from **Host tools** without editing code. Write shared first names with commas and separate households with a slash. For example, `Damon,Presley Patterson/Presley,Damon Hall` lets Damon Patterson, Presley Patterson, Presley Hall, and Damon Hall sign in with their own first and last names. RSVP and food entries use the first household's last name, so this example appears as **The Pattersons**. A last name ending in `s`, such as `Stevens`, appears as **The Stevens'**. Matching is case-insensitive.
-- Update `defaultItems` in `app.js` to change the initial menu.
-- In **Host tools → Edit menu**, add, rename, or remove quantity types such as **Dozen**, **Package**, **Tray**, or **Case**, then choose a type for each requested quantity. Guests will see and claim the quantity in the selected unit.
+Every gathering uses the same Photos & Videos page and `/wedding-media` service. **Share Your Photos & Videos** reveals **Upload** or **Share Link**; choosing one hides the other. Upload progress/errors remain visible, and the gallery refreshes after a successful complete batch. There is no manual Refresh button.
 
-> **Important:** When `shared-state-url` is blank, sign-ups are stored only in
-> each visitor's browser and are not shared or committed to GitHub. The app
-> retains a local backup and will recover the browser copy containing the most
-> accounts, RSVPs, and claims if an empty state was previously loaded. Older
-> saved copies are upgraded without deleting their guest data. Also note
-> that last-name sign-in on a
-> static website is only a convenience—not secure authentication—because
-> visitors can view the site's source code. Protect the shared endpoint with
-> appropriate access controls if RSVP names must remain private.
+The host can set the **View & Download Photos & Videos** label and folder URL through its editor. Until a URL is supplied, the link is disabled and a pending message appears. This published link is gathering-specific. Dropbox folder sharing permissions control access/downloads.
 
-## Wedding party responsibilities and personal pages
+Uploads use the hosts' single Dropbox connection. The website gallery lists account-owned receipts, links and legacy files; it does not fetch new Dropbox file bytes. **Current limitation:** that account gallery and its storage namespace are shared across gatherings; only session admission and the manually published folder-link settings use the gathering ID. This is a confirmed isolation issue in the audit, not a documented guarantee of per-gathering gallery separation.
 
-In the Wedding gathering, open **Wedding Details → Wedding Party Members**. Each
-wedding party member has responsibilities and page editors directly below their
-name and role after you select **Edit**, with a **+** button
-for adding personal pages. Select **Done** on the member card to hide the editors. You can rename, edit, and delete these pages like the
-extra Bride & Groom pages. Members see their own responsibilities and personal
-pages; the host can edit all members and preview each person's view.
+To provision Dropbox on an existing service deployment:
 
-**The Perfect Experience** and **Attire** are the shared Wedding Party pages.
-The Wedding Timeline remains available to the host. The former role descriptions
-and Bachelorette Party Info page are removed; responsibilities start blank and
-are no longer inherited from titles. New personal content uses the existing
-local backup and shared-state saving flow.
+1. Create/configure an App Folder Dropbox app with `files.content.write`.
+2. Register `https://<service-worker-host>/dropbox/callback` as its exact redirect URI. The checked-in frontend currently targets `curly-sun-ef0f.kassandraraudman.workers.dev`; confirm the deployed service before configuring callbacks.
+3. Store `DROPBOX_APP_KEY` and `DROPBOX_APP_SECRET` as encrypted secrets on the **service** Worker, not the static-site Worker.
+4. As host, open Photos & Videos → Share Your Photos & Videos → Upload → Connect Dropbox. Complete authorization and return to the site. Check connection is host-only.
 
-## Guest attire video uploads
+The service uses offline OAuth/PKCE and private R2 connection records. Transfers use 8 MiB chunks. The current destination code uses `/Wedding Uploads/<account>/<uploader>/...` for all gatherings; the Dropbox app's outer folder name is configured by Dropbox, not by this repository. No live authorization/upload was performed during the documentation audit.
 
-In **Wedding Details → Guest Attire Tip Videos**, keep adding YouTube or Vimeo
-links or choose a video from your computer and select **Upload video**. Uploads
-support MP4, WebM, and Ogg files up to 50 MB. The upload reports progress, and
-uploaded videos play with native controls and can be removed from the same list.
-
-Deploy the updated Cloudflare Worker before using uploads on the published
-site. Videos use the existing `INVITATION_BACKGROUNDS` R2 binding under a separate
-`attire-videos/` prefix; no additional bucket or secrets are required. Only video
-metadata is stored in shared JSON, so uploads survive reloads and work across
-devices. The Worker supports byte-range playback for seeking.
+Wedding attire-tip videos are a separate host feature: YouTube/Vimeo links or MP4/WebM/Ogg uploads up to 50 MB, stored under `attire-videos/` in the existing R2 bucket with byte-range playback. This size limit does not describe Dropbox photo/video transfers.
 
 ## AnyList Address Book sync
 
-The **Host tools → Sync AnyList Address Book** button starts a private GitHub
-Actions job through the Cloudflare Worker. The job logs in to AnyList, reads the
-structured `name` and category of each real item in `Address Book`, and never
-calls an AnyList mutation method. Notes/descriptions are counted for safe
-logging but are not passed to the account converter. The action rereads the
-latest state file and its SHA immediately before writing; a conflicting update
-is retried against the new version. It only appends `{ "name": "…",
-"selected": false }` records. Existing records and all of their properties are
-left byte-for-byte equivalent in the parsed state.
+Accounts → **Sync** calls the host-authenticated service, which dispatches `sync-anylist.yml`. The job reads AnyList through the Node `anylist` package; it does not mutate the AnyList list. It reconciles categories/people into website households, including names, addresses, children from item notes, aliases and category IDs. It adds accounts, updates linked accounts, skips ambiguous matches, and migrates relevant name references while preserving website-owned permissions and existing QR tokens. Missing QR tokens are backfilled. It is **not append-only**.
 
-The AnyList client is Node-oriented and uses AnyList's unofficial/private
-service, so it runs in GitHub Actions rather than in the Cloudflare Workers
-runtime. The Worker only verifies the host, dispatches the action, and reads its
-non-secret result. Because this is an unofficial integration, an AnyList service
-change may require updating the `anylist` dependency or adapter.
+The job re-reads the latest state and retries conflicting GitHub writes. Its logs include category/household names as well as counts, so logs must be treated as personal data. It uses an unofficial service; upstream AnyList changes can require adapter/dependency updates.
 
-### Required configuration (do this before deploying)
+Configure these in the repository that actually executes the workflow:
 
-In **`kasstmaster/thanksgiving` → Settings → Secrets and variables → Actions**,
-add:
-
-| Kind | Name | Value |
+| Kind | Name | Purpose/default |
 | --- | --- | --- |
-| Secret | `ANYLIST_EMAIL` | AnyList account email with read access to the list |
-| Secret | `ANYLIST_PASSWORD` | That AnyList account's password |
-| Secret | `STATE_REPOSITORY_TOKEN` | Fine-grained token scoped to `kasstmaster/themeyersevents-data`, with **Contents: Read and write** |
+| Secret | `ANYLIST_EMAIL`, `ANYLIST_PASSWORD` | AnyList credentials |
+| Secret | `STATE_REPOSITORY_TOKEN` | Contents read/write access to the state repository |
 | Variable | `ANYLIST_LIST_NAME` | `Address Book` |
-| Variable | `STATE_REPOSITORY` | `kasstmaster/themeyersevents-data` |
+| Variable | `STATE_REPOSITORY` | Target state repository; required |
 | Variable | `STATE_BRANCH` | `main` |
 | Variable | `STATE_PATH` | `data/app-state.json` |
 
-In Cloudflare, add the host password as an encrypted Worker secret (use the
-same value configured as `HOST_PASSWORD` in `app.js`):
+The dispatch supplies required `sync_id`; scripts read it as `SYNC_ID`. The service's `GITHUB_TOKEN` needs Actions read/write on the workflow repository and Contents read/write on the state repository.
+
+**Configuration requiring confirmation:** `github-state-worker/wrangler.toml` currently dispatches to `kasstmaster/thanksgiving`, while this repository also contains the workflow. Do not assume moving/renaming the website repository changed the dispatch target. Confirm the intended execution repository, its secrets/variables, and live Worker configuration before a future sync change.
+
+## Local development and tests
+
+Use Node.js 24 for the application tests/build, matching CI. AnyList's separate workflow currently uses Node.js 22 and installs its dependency with `npm install --ignore-scripts`. The static frontend and Node test suite do not require an application bundler or a running Worker.
+
+```sh
+python3 -m http.server 8041 --bind 127.0.0.1
+# In another terminal:
+npm test
+node scripts/build-domain-site.js /tmp/meyers-site-review
+```
+
+Open `http://127.0.0.1:8041/` for local inspection. The checked-in HTML points at a live backend; use the provided **local-only browser harnesses**, which strip that URL and block external requests, for synthetic editing tests. Do not manually sign into a live backend or submit test RSVPs/uploads as part of a documentation audit.
+
+The build refuses to overwrite existing `themeyers/` or `themeyersgatherings/` output directories; choose a new output directory for each run. It stages one frontend, hashes local asset URLs, and emits a legacy redirect. `.domain-site/` is ignored.
+
+Selected browser scripts require locally available `playwright` and `/usr/bin/chromium`. If needed, install Playwright locally without committing dependency changes (`npm install --no-save --package-lock=false playwright`) and provide Chromium through your environment. For the shared-builder harness:
+
+```sh
+node scripts/verify-shared-gathering-builder.cjs
+```
+
+It creates synthetic gatherings, edits content/styles/custom pages, switches before autosave, reloads, and checks desktop/mobile isolation. Browser scripts are not automatically run by `npm test`. Some older scripts still target removed controls; consult the [audit validation inventory](docs/documentation-architecture-audit.md#validation-and-limits) before treating them as release checks.
+
+## Persistence and configuration
+
+`appState.events[gatheringId]` stores gathering data and designs. `gatheringHome` stores chooser formatting; `accounts`, `invitationTemplates` and `sharedSite` contain intentionally website-wide records, with event ownership on templates and gathering-keyed account settings. Browser storage retains a primary copy, a backup and pending-save state. Normalization upgrades older records; see the audit for a destructive Christmas menu-version exception.
+
+`index.html` supplies `shared-state-url` and `repository-state-url`. Startup attempts the configured shared service before sign-in. When there is no shared URL, the repository-state URL is a fallback seed, not an unconditional authoritative replacement for a richer/recent local copy. New `savedAt` local copies take precedence over older recovery candidates. Changes queue local persistence and a complete-state upload; failures retain pending state and retry, including on focus/visibility return. Polling occurs every 30 seconds when safe; active editors, dialogs and pending saves defer replacement.
+
+No service URL means edits remain browser-local. A private state repository alone does not make the public frontend's copy or service endpoint private. The service currently accepts complete-state writes; it is not a per-field merge API.
+
+| Location | Non-secret configuration | Secret names only |
+| --- | --- | --- |
+| `github-state-worker/wrangler.toml` | `GITHUB_REPOSITORY`, `GITHUB_BRANCH`, `GITHUB_STATE_PATH`, `ALLOWED_ORIGIN`, `ALLOWED_ORIGINS`, `GITHUB_WORKFLOW_REPOSITORY`, `GITHUB_WORKFLOW_BRANCH`; R2 binding and hourly cron | `GITHUB_TOKEN`, `HOST_PASSWORD`; optional `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET` |
+| Workflow execution repository | AnyList state/list variables above | `ANYLIST_EMAIL`, `ANYLIST_PASSWORD`, `STATE_REPOSITORY_TOKEN` |
+| Website repository Actions | Deploy both Cloudflare accounts | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_DOMAIN_API_TOKEN`, `CLOUDFLARE_DOMAIN_ACCOUNT_ID` |
+| `index.html` | Shared-service and fallback URLs | No secrets belong here |
+
+The checked-in state repository target is `kasstmaster/themeyersevents-data`, branch `main`, path `data/app-state.json`. Confirm actual deployed values before maintenance. CORS values are **origins only** (scheme/host/optional port), never repository paths. Provision the configured `INVITATION_BACKGROUNDS` R2 bucket before deploying the service; the current workflow does not create it.
+
+For first-time Worker secret setup, run from the service directory, selecting the correct Cloudflare account:
 
 ```sh
 cd github-state-worker
-npx wrangler secret put HOST_PASSWORD
+npx wrangler@4.151.1 secret put GITHUB_TOKEN
+npx wrangler@4.151.1 secret put HOST_PASSWORD
 ```
 
-The Worker's existing `GITHUB_TOKEN` must be a fine-grained token scoped to both
-`kasstmaster/thanksgiving` and `kasstmaster/themeyersevents-data`. It needs
-**Actions: Read and write** on the website repository to dispatch the workflow,
-and **Contents: Read and write** on the data repository for the existing shared
-state endpoint (the AnyList status check itself only reads there). Never place
-this token or `STATE_REPOSITORY_TOKEN` in `wrangler.toml`.
+Enter values only at the secure prompt. The current frontend uses a source-visible host-password comparison; do not add actual credential values to documentation or treat this as secure server authentication. Redesigning that mechanism is a separate audit finding.
 
-Finally, set these non-secret values in `github-state-worker/wrangler.toml`:
+## Hosting and release
 
-* `GITHUB_REPOSITORY="kasstmaster/themeyersevents-data"`
-* `GITHUB_BRANCH="main"`
-* `GITHUB_STATE_PATH="data/app-state.json"`
-* `GITHUB_WORKFLOW_REPOSITORY="kasstmaster/thanksgiving"`
-* `GITHUB_WORKFLOW_BRANCH="main"`
+The application is served by `domain-site-worker/`; `github-state-worker/` handles state, uploads, AnyList dispatch, Dropbox and history. They deploy to separate Cloudflare accounts. GitHub Pages remains enabled for legacy links, whose query/fragment is preserved when redirecting to the canonical subdomain.
 
-The two repository settings intentionally differ: the workflow code lives in
-`kasstmaster/thanksgiving`, while both the existing website and the AnyList job
-read and write the live state in `kasstmaster/themeyersevents-data`.
+`.github/workflows/deploy-state-worker.yml` runs on **every main push** or manual dispatch. In one sequential job it runs compatibility tests, builds the frontend, deploys the existing service, checks domain-account credentials, deploys the website routes, and verifies public website/assets/legacy routing. Both credential pairs must remain in their original account roles. It does not install secrets or create the R2 bucket. [Complete domain instructions](docs/custom-domain.md).
 
-After it reconciles the address book, the job also gives every account missing
-QR access a cryptographically random 256-bit `qrToken`. Existing tokens are
-never replaced, including when AnyList changes an account name or household
-membership. The status shown in **Manage accounts** reports how many accounts
-received QR access, or that every account already had it. Existing installations
-need no separate migration: run **Sync AnyList Address Book** once to backfill
-older accounts.
+`.github/workflows/validate-gathering-builder.yml` runs the Node tests and production build on pull requests and main pushes. `sync-anylist.yml` is a separately dispatched job. Do not confuse those workflows with the GitHub Pages build/deploy or assume a frontend publication deploys the service by itself.
 
-Hosts can then select **QR** beside an account in **Manage accounts** to preview
-its code, download a transparent PNG or SVG, or open and copy the clickable
-sign-in link shown below the download buttons. The QR contains only a GitHub
-Pages-compatible route in the form
-`#/signin/account/<secure-random-token>`—never an account ID or guest name. That
-page still requires the guest's first name, last name, and optional suffix. It
-uses the normal name matcher and session flow, but limits the lookup to the
-current members of the account identified by the token. Invalid account links
-show one generic error.
+The installable app has its own manifest, rose icons and offline reconnect screen. Its service worker caches only that generic offline page, not live RSVP/account/gallery data. The cache-busting build does not migrate browser storage between origins.
 
-Then deploy the Worker manually and push the workflow. No deployment is
-performed by this repository change. Sync logs include counts and outcomes but
-never credentials, cookies, authorization headers, or token values.
+## Access and data-protection limitations
 
-### Wedding photos and videos
+UI role restrictions, account QR lookup and media-session checks exist, but they do not establish a secure authentication boundary for the whole application. The shared-state GET/PUT handlers do not require host/guest credentials; CORS is not authentication. Frontend source includes the host comparison value, and shared JSON/static fallback assets must not be assumed confidential. Whole-state writes can overwrite newer data from another device. These findings, media scope and remaining editing/data-migration problems are recorded with evidence and follow-up tasks in the [audit report](docs/documentation-architecture-audit.md). No application fixes are included in this documentation update.
 
-Every gathering's **Photos & Videos** page lets guests select multiple photos and videos and upload directly to the hosts' connected Dropbox. Guests can also submit an external photo-sharing link.
-
-The gallery on the combined **Photos & Videos** page retains files and sharing links previously submitted to the website, with its account/host access controls. New Dropbox submissions are managed in Dropbox and are not mirrored into the website gallery. Guests can still leave an external photo-sharing link on the website.
-
-### Connect Dropbox for uploads inside the wedding website
-
-1. Deploy/merge the updated website and Worker. The existing Worker deployment workflow runs for changes under `github-state-worker/` when Cloudflare deployment secrets are configured.
-2. In the Dropbox app console, keep **App Folder** access and enable **files.content.write**. Under **Settings → Redirect URIs**, add exactly:
-   `https://curly-sun-ef0f.kassandraraudman.workers.dev/dropbox/callback`
-3. In Cloudflare **Workers & Pages → curly-sun-ef0f → Settings → Variables and Secrets**, add two **Secret** values: `DROPBOX_APP_KEY` (the Dropbox app key) and `DROPBOX_APP_SECRET` (the Dropbox app secret). Save/deploy these settings. Never put the app secret or tokens in website code, GitHub files, or chat.
-4. Sign in as host, open a gathering → RSVP → Photos & Videos → Share Your Photos & Videos → Upload, and click **Connect Dropbox**. Approve access in Dropbox. Close the confirmation tab and return to the website. Connection status rechecks automatically; use **Check connection** if it is still shown. Connection buttons hide while connected and return if access is lost.
-5. Test an upload from a phone. Files arrive under **Apps → The Meyers 2027 → Wedding Uploads → account name → uploader name**. This is separate from the existing file-request folder.
-
-The backend requests offline OAuth access with a one-time state and PKCE challenge, stores the renewable connection in the private R2 `dropbox-private/` namespace, and renews short-lived Dropbox access tokens server-side. Only the host can start the connection or inspect connection settings. Guests use their existing website sign-in and never authorize their own Dropbox accounts. Dropbox tokens, upload-session IDs, and destination paths are never returned to guests. Transfers use 8 MiB chunks to avoid the old 15 MB/50 MB website file-size limits; Dropbox storage and service limits still apply. The website gallery shows account-private upload confirmations and host attribution, rather than exposing Dropbox folder access. Download/preview access to new Dropbox file bytes is not requested by the write-only app permission.
-
-### Invitation quantities and person-specific guests
-
-In **Accounts**, select the gathering and set **Invitations to print** for each account (default 1; 0 excludes the account from invitation downloads). **Download All Invitations** and **Email All Invitations** honor those quantities in either QR mode, with uniquely named PNG copies in one ZIP. An individual invitation preview also downloads its account's selected quantity.
-
-Under **Allow a guest for**, check each named adult who may bring one guest to that gathering. Permissions and quantities are independent for each gathering. Older account-wide plus-one totals are flagged for assignment; the website does not guess which adult receives them.
-
-Families RSVP separately for each adult, selecting Attending or Not attending. An attending person with a guest allowance must enter the guest's name or select **NO GUEST**. Children remain a numerical count. Wedding meal cards use the resulting adult/guest names and Child 1, Child 2, etc., and preserve choices by person when attendance changes. Hosts can see individual attendance and guest names in the RSVP list. Existing RSVP totals are retained until a family updates its response.
-
-## Shared page actions
-
-`page-actions.js` owns Print Page and Email Page for every gathering. The shared
-render calls `PageActions.sync()` after built-in and custom tab pages are rendered.
-It discovers page containers and `aria-controls` relationships, so new pages need
-no separate print/email markup or handlers. Actions stay outside the title layout,
-and exports use only the selected, visible page. Hidden pages and gallery session
-URLs are excluded. Printing uses the device print dialog; email opens its composer.
-
-Browser verification (against a local static server):
-
-```sh
-BASE_URL=http://127.0.0.1:8765 node scripts/verify-page-actions.cjs
-```
+Future changes must follow [AGENTS.md](AGENTS.md), update relevant documentation, and state documentation status in their final task summary.

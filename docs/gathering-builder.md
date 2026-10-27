@@ -1,6 +1,6 @@
 # Shared gathering builder
 
-All existing and newly created gatherings use the same builder. The shared DOM retains some historical `wedding` IDs for compatibility with saved selectors; these IDs do not select a separate editor.
+All existing and newly created gatherings use the same builder for the common editing path. This does not certify every specialized page or integration against the permanent rules; known exceptions are listed in [the architecture audit](documentation-architecture-audit.md). The shared DOM retains some historical `wedding` IDs for compatibility with saved selectors; these IDs do not select a separate editor.
 
 - `app.js:gatheringBuilderContext` creates the ID-bound context consumed by `SiteEditing`, `ElementEditor`, `ElementAppearance`, and `GapLayout`. Content and appearance use the same formatter and persistence path.
 - `inline-editing.js` registers editable fields, text, pages, tabs, undo/redo, and text placement. `element-editor.js` supplies the single selection-based rich-text/formatting sidebar and autosave.
@@ -9,9 +9,9 @@ All existing and newly created gatherings use the same builder. The shared DOM r
 
 ## Data and session boundaries
 
-Gathering data stays in `appState.events[gatheringId]`. Existing keys remain intact: `siteText`, `textAppearance`, `elementAppearance`, `sitePages`, `siteTabTitles`, `siteTabOrder`, `siteElementOrder`, `siteElementPlacements`, `siteGaps`, and `siteSpacing`. RSVP header slots, dates, addresses, menus, RSVPs and wedding-specific settings also remain in that event object. No content migration or conversion into a new schema is required. Existing legacy-selector migrations continue to preserve moved content.
+Gathering data stays in `appState.events[gatheringId]`. Existing keys remain intact: `siteText`, `textAppearance`, `elementAppearance`, `sitePages`, `siteTabTitles`, `siteTabOrder`, `siteElementOrder`, `siteElementPlacements`, `siteGaps`, and `siteSpacing`. RSVP header slots, dates, addresses, menus, RSVPs and wedding-specific settings also remain in that event object. The shared-context refactor did not require conversion into a new schema. Normalization still contains legacy migrations, including a Christmas menu-replacement exception documented in the audit. Existing legacy-selector migrations continue to preserve moved content.
 
-The chooser uses `appState.gatheringHome`, independent of every gathering. Accounts and other explicitly site-wide services remain outside the builder's per-gathering content. Dropbox infrastructure is shared; galleries and gathering links remain event-specific.
+The chooser uses `appState.gatheringHome`, independent of every gathering. Accounts and other explicitly site-wide services remain outside the builder's per-gathering content. Dropbox infrastructure is shared. Published folder links are event-specific, but the current R2 gallery is account-wide across gatherings; see the audit rather than assuming it has event isolation.
 
 `finishGatheringBuilderSession` flushes pending text and controls, releases the selection, cancels its autosave timer, and restores temporary styles before changing the active gathering or replacing shared state. Field callbacks capture their event state. A context saves by its original gathering ID and cannot overwrite a replacement application state after a reload. Address edits update the selected gathering's own header and invitation fields, even if another gathering has the same address text.
 

@@ -14,10 +14,7 @@ secrets in the original account. It does not attempt to register ilymmd.com rout
 The website Worker needs only static assets and the domain routes; it receives no
 service-account credentials, storage bindings, or Dropbox secrets.
 
-Both deployments run from the existing GitHub Actions workflow in isolated jobs.
-The service deploys before the website so its CORS configuration is ready. The
-frontend is built once from this repository, shared between jobs as an artifact,
-and deployed without maintaining a second editable copy of the source.
+Both deployments run sequentially in one job in `.github/workflows/deploy-state-worker.yml` on every main push or manual dispatch. The service deploys before the website. The frontend is built once into `.domain-site` in that job and deployed from its asset binding, without maintaining another editable source copy. This workflow does not create the R2 bucket or install runtime secrets; provision those in the service account first.
 
 ## Required one-time GitHub setup
 
@@ -39,7 +36,7 @@ In the Cloudflare account that contains **ilymmd.com**:
 Keep `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` unchanged: they deploy the
 existing service Worker in the other account. Do not paste token values into chat.
 
-The website job stops with a specific missing-secret annotation if either new
+The domain-credential step stops with a specific missing-secret annotation if either new
 secret is absent. No extra R2 bucket or Dropbox connection is needed in the domain
 account. The ilymmd.com hostname must be proxied through Cloudflare for Worker
 routes to apply.
@@ -84,6 +81,8 @@ QR links use ordinary HTTPS. Whether a QR opens the installed app or the browser
 is controlled by the operating system; this setup cannot force that choice.
 
 ## Validation and release
+
+The separate `validate-gathering-builder.yml` workflow runs `npm test` and the frontend build on pull requests and main pushes. The deployment workflow runs its listed compatibility-test subset, then deployment and read-only live verification. Optional browser scripts are not automatically part of those workflows. The GitHub Pages build/deploy is also separate.
 
 ```sh
 node scripts/build-domain-site.js .domain-site
