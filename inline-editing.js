@@ -1,13 +1,13 @@
 /* Shared field/page metadata for the single selection-based editing toolbar. */
 (() => {
   let enabled=false,flushing=false,context;
-  const cleanup=[],editTargets=new Map(),textRoots=new Set(),originals=new Map(),selectedCustom=new Map();
+  const cleanup=[],editTargets=new Map(),textRoots=new Set(),originals=new Map(),selectedCustom=new Map(),layoutOriginals=new Map();
   const node=(tag,text,className)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;if(className)element.className=className;return element;};
   function button(text,action,parent,label=text){
     if(!parent || !enabled || !context.host)return;
     const entry=editTargets.get(parent) || {};entry.options??={};entry.options.actions??=[];entry.options.actions.push([label,action]);editTargets.set(parent,entry);cleanup.push(()=>editTargets.delete(parent));
   }
-  function beforeRender(){ElementEditor.beforeRender();textRoots.clear();while(cleanup.length)cleanup.pop()();}
+  function beforeRender(){ElementEditor.beforeRender();textRoots.clear();while(cleanup.length)cleanup.pop()();for(const [parent,children] of layoutOriginals)for(const child of children)if(child.parentElement===parent)parent.append(child);layoutOriginals.clear();}
   function render(ctx){context=ctx;if(!ctx.host)enabled=false;const toggle=document.querySelector('#editItemsButton');toggle.textContent='Edit';toggle.setAttribute('aria-pressed',String(enabled));document.querySelector('#invitationTemplatesButton').hidden=!ctx.host || !enabled;document.body.classList.toggle('site-edit-mode',enabled && ctx.host);}
   function field(target,title,fields,commit,options={}){
     if(!target)return;
@@ -171,6 +171,29 @@
       if (first.getAttribute('aria-selected') !== 'true') queueMicrotask(() => { if (first.isConnected) first.click(); });
     }
   }
+  function movableText(root){
+    for(const text of root.querySelectorAll('p[id]'))if(!layoutOriginals.has(text.parentElement))layoutOriginals.set(text.parentElement,[...text.parentElement.children]);
+    const orders=context.state.siteElementOrder || {};
+    for(const [path,ids] of Object.entries(orders)){
+      let parent;try{parent=document.querySelector(path);}catch{continue;}
+      if(!parent || !root.contains(parent) || !Array.isArray(ids))continue;
+      const children=[...parent.children].filter(child=>!child.matches('.existing-layout-gap,gathering-gap'));
+      const ordered=ids.map(id=>children.find(child=>ElementAppearance.selector(child)===id)).filter(Boolean);
+      for(const child of children)if(!ordered.includes(child))ordered.push(child);
+      for(const child of ordered)parent.append(child);
+    }
+    if(!enabled || !context.host)return;
+    for(const text of root.querySelectorAll('p[id]')){
+      const record=editTargets.get(text);if(!record || text.closest('[role="status"],[role="alert"]'))continue;
+      const move=direction=>{
+        const parent=text.parentElement,children=[...parent.children].filter(child=>!child.matches('.existing-layout-gap,gathering-gap'));
+        const neighbor=children[children.indexOf(text)+direction];if(!neighbor)return;
+        if(direction<0)parent.insertBefore(text,neighbor);else parent.insertBefore(neighbor,text);
+        context.state.siteElementOrder??={};context.state.siteElementOrder[ElementAppearance.selector(parent)]=[...parent.children].filter(child=>!child.matches('.existing-layout-gap,gathering-gap')).map(child=>ElementAppearance.selector(child));context.save();
+      };
+      record.options??={};record.options.actions??=[];record.options.actions.push(['Move up',()=>move(-1)],['Move down',()=>move(1)]);
+    }
+  }
   function textOwner(element){for(let current=element;current;current=current.parentElement)if(textRoots.has(current) || editTargets.get(current)?.textBlock || editTargets.get(current)?.visual)return current;return null;}
   function textElement(target){
     field(target,'text',[{label:'Text',type:target.matches('button,a') && !ElementAppearance.isMultiline(target)?'text':'textarea',visual:true,readonly:['count-values','dish-details','dish-claimants'].includes(ElementAppearance.group(target)) || target.matches('.summary-item,.summary-stat,.counter-row,output,.event-selection-choices>button,label:has(input,select,textarea)'),value:ElementAppearance.textValue(target)}],()=>{},{key:`text-style:${ElementAppearance.selector(target)}`,placement:'element-edit'});
@@ -180,7 +203,7 @@
     settings(target,title,build){if(!target || !enabled || !context.host)return;const entry=editTargets.get(target) || {};entry.settings={title,build};editTargets.set(target,entry);cleanup.push(()=>editTargets.delete(target));},
     editorFor:target=>editTargets.get(target),get editorTargets(){return [...editTargets.keys()];},
     persist(action){flushing=true;try{action?.();context.save();}finally{flushing=false;}},get editorContext(){return context;},
-    beforeRender,render,field,portal,staticText,applyStaticText,tabs,button,textElement,textOwner,
+    beforeRender,render,field,portal,staticText,applyStaticText,tabs,button,textElement,textOwner,movableText,
     resetTabSelection(navId,eventId=context?.eventId){selectedCustom.delete(`${eventId}:${navId}`);},
     flush(){ElementEditor.flush();},get flushing(){return flushing;},get portalOpen(){return Boolean(document.querySelector('.inline-portal-editor'));},
     get enabled(){return enabled && context?.host;},toggle(refresh){if(enabled)this.flush();enabled=!enabled;refresh();}

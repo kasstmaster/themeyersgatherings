@@ -142,7 +142,7 @@
       fieldDraft={inputs:controls,entry};
       button('Apply',()=>{if(!controls.every(input=>input.reportValidity()))return;flush();const values=controls.map(input=>input.value);SiteEditing.persist(()=>{entry.commit?.(values);fields.forEach((spec,index)=>{spec.value=values[index];});});SiteEditing.editorContext.refresh();},parent);
     }
-    for(const [title,action] of entry?.options?.actions || [])if(!['Move left','Move right'].includes(title))button(title,()=>{flush();action();},parent);
+    for(const [title,action] of entry?.options?.actions || [])if(!['Move left','Move right','Move up','Move down'].includes(title))button(title,()=>{flush();action();},parent);
     if(entry?.addPage){const input=labelInput(parent,'New page title','text','',()=>{});button('Add page',()=>{if(input.value.trim()){flush();entry.addPage(input.value.trim());}},parent);}
     if(entry?.settings)button('Edit '+entry.settings.title,()=>{flush();closeSettings();parent.querySelector('.element-editor-settings')?.remove();const area=node('div');area.className='element-editor-settings';parent.append(area);entry.settings.build(area);},parent);
     if(entry?.portal){
@@ -261,7 +261,7 @@
       const chooser=node('select');chooser.dataset.editorChooser='';chooser.setAttribute('aria-label','Select an element');row.append(chooser);chooser.addEventListener('change',()=>{const element=document.querySelector(chooser.value);if(element)select(element);});
       const selection=node('span','Click an element to edit');selection.dataset.editorSelection='';row.append(selection);
       for(const title of ['Text','Lists','Background','Border','Gap']){const control=button(title,()=>showPanel(title),row);control.dataset.editorGroup=title;control.setAttribute('aria-expanded','false');if(title==='Gap'){control.draggable=true;control.dataset.newGap='';control.title='Drag a new gap between elements';}}
-      for(const title of ['Move left','Move right']){
+      for(const title of ['Move left','Move right','Move up','Move down']){
         const move=button(title,()=>{
           if(!target)return;const path=ElementAppearance.selector(target);flush();
           const current=document.querySelector(path),record=current && SiteEditing.editorFor(current);

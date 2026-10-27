@@ -933,3 +933,5 @@ body.theme-neutral{--navy:#303030;--navy-2:#666666;--body-background:#f3f3f3;--s
 .menu-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
 .rsvp-dish-covered{opacity:.55;filter:grayscale(1)}.rsvp-dish-covered label{cursor:not-allowed}
 @media(max-width:800px){.menu-status-grid{grid-template-columns:1fr}}
+
+.media-upload-feedback{padding:12px;margin:14px 0;border:1px solid currentColor;border-radius:6px}.media-upload-feedback p{margin:0 0 8px}.media-upload-feedback progress{width:100%;height:16px}.media-upload-feedback[data-state="error"]{border-width:2px}

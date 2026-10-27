@@ -1700,6 +1700,7 @@ function renderInlineEditing() {
   });
   document.querySelectorAll('.event-dock').forEach(toolbar=>SiteEditing.field(toolbar,'toolbar',[],()=>{}));
   renderRsvpInlineEditing();
+  SiteEditing.movableText(document.querySelector('#weddingMediaSection'));
 }
 function renderRsvpInlineEditing() {
   if (!SiteEditing.enabled) {document.querySelector('#weddingRsvpGuests')?.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());return;}
