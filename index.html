@@ -429,18 +429,17 @@
       </form>
     </dialog>
 
-    <dialog id="dishListDialog" aria-label="All dishes">
-      <div class="modal-card dish-list-card">
+    <dialog id="dishListDialog" aria-labelledby="dishListHeading">
+      <form method="dialog" class="modal-card dish-list-card">
         <button id="closeDishListButton" type="button" class="modal-close" aria-label="Close dishes">×</button>
-      <section id="gatheringMenuSection" class="menu-section gathering-page" aria-label="Available dishes">
-        <div class="menu-heading">
-          <h2>All dishes</h2>
-          <button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button>
-        </div>
-        <div id="menuGrid" class="menu-grid"></div>
-      </section>
-
-      </div>
+        <p class="section-kicker">Our family table</p>
+        <section id="gatheringMenuSection" class="menu-section" aria-label="All dishes">
+          <div class="menu-heading"><h2 id="dishListHeading">Dishes needed</h2><button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button></div>
+          <p id="dishListTotals" class="invited-people-total"></p>
+          <div id="menuGrid" class="guest-list"></div>
+        </section>
+        <div class="modal-dialog-footer"><button class="primary-button" value="default">Close</button></div>
+      </form>
     </dialog>
 
     <dialog id="guestListDialog">

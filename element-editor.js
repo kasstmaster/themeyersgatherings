@@ -159,8 +159,8 @@
     toolbar.querySelectorAll('[data-editor-group]').forEach(control=>control.setAttribute('aria-expanded',String(control.dataset.editorGroup===panelName)));
     if(!panelName || !target)return;
     if(name==='Gap'){
-      if(GapLayout.isGap(target)){const current=GapLayout.getSize(target);const number=labelInput(panel,'Gap size (px)','number',current,value=>GapLayout.setSize(target,value));number.min=0;number.max=1000;const slider=labelInput(panel,'Gap size','range',Math.min(current,300),value=>{number.value=value;GapLayout.setSize(target,value);});slider.min=0;slider.max=300;button('Remove gap',()=>{GapLayout.remove(target);release();},panel);}
-      else{button('Add gap after selection',()=>{const gap=GapLayout.addAfter(target);if(gap)select(gap);else status('Drag Gap from the toolbar between page elements.');},panel);panel.append(node('span','Drag Gap from the toolbar to place a new spacer.'));}
+      if(GapLayout.isGap(target)){if(target.matches('gathering-gap'))selectInput(panel,'Gap direction',['Vertical','Horizontal'],GapLayout.getAxis(target)==='x'?'Horizontal':'Vertical',value=>GapLayout.setAxis(target,value==='Horizontal'?'x':'y'));const current=GapLayout.getSize(target);const number=labelInput(panel,'Gap size (px)','number',current,value=>GapLayout.setSize(target,value));number.min=0;number.max=1000;const slider=labelInput(panel,'Gap size','range',Math.min(current,300),value=>{number.value=value;GapLayout.setSize(target,value);});slider.min=0;slider.max=300;button('Remove gap',()=>{GapLayout.remove(target);release();},panel);}
+      else{for(const [title,axis] of [['Vertical gap','y'],['Horizontal gap','x']]){const control=button(title,()=>{const gap=GapLayout.addAfter(target,axis);if(gap)select(gap);},panel);control.draggable=true;control.dataset.newGap=axis;}panel.append(node('span','Click to add after selection, or drag between elements.'));}
     }
     if(name==='Text' && target.matches('.event-dock')){
       colorControls(panel,'Unselected text and icons','toolbarTextColor','toolbarTextAlpha','--toolbar-text');
@@ -211,7 +211,7 @@
   function select(element){
     if(element===target)return;
     release();target=element;entry=SiteEditing.editorFor(target);
-    if(!entry?.fields && (target.matches('button,a,h1,h2,h3,h4,h5,h6,p,li,time,legend,address,output,.summary-item,.summary-stat,.counter-row,label') || ['count-values','count-titles','dish-details','dish-claimants'].includes(ElementAppearance.group(target)))){SiteEditing.textElement(target,ElementAppearance.label(target));entry=SiteEditing.editorFor(target);}
+    if(!entry?.fields && (target.matches('button,a,h1,h2,h3,h4,h5,h6,p,li,time,legend,address,output,.dish-title,.summary-item,.summary-stat,.counter-row,label') || ['count-values','count-titles','dish-details','dish-claimants'].includes(ElementAppearance.group(target)))){SiteEditing.textElement(target,ElementAppearance.label(target));entry=SiteEditing.editorFor(target);}
     target.classList.add('element-editor-selected');
     if(SiteEditing.movableTextRoot(target)){target.draggable=false;restores.push(()=>target.draggable=true);}
     if(toolbar.querySelector('[data-editor-chooser]'))toolbar.querySelector('[data-editor-chooser]').value=ElementAppearance.selector(target);
@@ -238,6 +238,7 @@
     const gap=start.closest('gathering-gap,.existing-layout-gap');if(gap)return gap;
     const root=(globalThis.activeHostDialog?.() || [...document.querySelectorAll('dialog[open]')].at(-1)) || document.querySelector('#eventPage:not([hidden])') || document.body;
     if(!root.contains(start) || start.closest(excluded))return null;
+    const dishTitle=start.closest('.dish-title');if(dishTitle && root.contains(dishTitle))return dishTitle;
     const claimants=start.closest('.dish-claimants');if(claimants && root.contains(claimants))return claimants;
     const dishDetails=start.closest('.dish-status,.rsvp-dish-choice small');if(dishDetails && root.contains(dishDetails))return dishDetails;
     const countPart=start.closest('.summary-item>strong,.summary-stat>strong,.summary-item>span,.summary-stat>span,.counter-row>div>output,.counter-row>div>strong,.counter-row>div>span');
