@@ -10,11 +10,11 @@ assert.equal(await page.locator('#copyMenuButton').evaluate(e=>e.getBoundingClie
 await page.evaluate(()=>{navigator.clipboard.writeText=async text=>window.copiedMenu=text;});await page.locator('#copyMenuButton').click();assert.equal(await page.evaluate(()=>window.copiedMenu===menuCopyText()),true);await page.locator('#closeDishListButton').click();
 await page.locator('#rsvpPageNavigation').getByRole('button',{name:'Photos & Videos',exact:true}).click();await page.locator('#editItemsButton').click();
 assert.equal(await page.getByRole('button',{name:'Gap',exact:true}).count(),0);
-assert.equal(await page.getByRole('button',{name:'Vertical gap',exact:true}).isVisible(),true);assert.equal(await page.getByRole('button',{name:'Horizontal gap',exact:true}).isVisible(),true);
-await page.getByRole('button',{name:'Horizontal gap',exact:true}).dragTo(page.locator('#weddingMediaIntro'),{targetPosition:{x:30,y:2}});
+assert.equal(await page.getByRole('button',{name:'↑ Gap',exact:true}).isVisible(),true);assert.equal(await page.getByRole('button',{name:'→ Gap',exact:true}).isVisible(),true);
+await page.getByRole('button',{name:'→ Gap',exact:true}).dragTo(page.locator('#weddingMediaIntro'),{targetPosition:{x:30,y:2}});
 assert.equal(await page.locator('gathering-gap').getAttribute('data-gap-axis'),'y');assert.equal(await page.locator('gathering-gap').getAttribute('aria-orientation'),'horizontal');
 await page.getByLabel('Gap size (px)',{exact:true}).fill('32');await page.getByLabel('Gap size (px)',{exact:true}).press('Tab');assert.equal(await page.locator('gathering-gap').evaluate(e=>e.getBoundingClientRect().height),32);await page.getByRole('button',{name:'Remove gap',exact:true}).click();
-await page.getByRole('button',{name:'Vertical gap',exact:true}).dragTo(page.locator('#weddingMediaShare'),{targetPosition:{x:2,y:5}});
+await page.getByRole('button',{name:'↑ Gap',exact:true}).dragTo(page.locator('#weddingMediaShare'),{targetPosition:{x:2,y:5}});
 assert.equal(await page.locator('gathering-gap').getAttribute('data-gap-axis'),'x');assert.equal(await page.locator('gathering-gap').getAttribute('aria-orientation'),'vertical');
 await page.getByLabel('Gap size (px)',{exact:true}).fill('40');await page.getByLabel('Gap size (px)',{exact:true}).press('Tab');assert.equal(await page.locator('gathering-gap').evaluate(e=>e.getBoundingClientRect().width),40);
 await page.getByLabel('Gap direction',{exact:true}).selectOption('Horizontal');assert.equal(await page.locator('gathering-gap').getAttribute('data-gap-axis'),'y');await page.getByLabel('Gap direction',{exact:true}).selectOption('Vertical');await page.getByRole('button',{name:'Done Editing',exact:true}).click();await page.evaluate(()=>render());assert.equal(await page.locator('gathering-gap').getAttribute('data-gap-axis'),'x');assert.equal(await page.locator('gathering-gap').evaluate(e=>e.getBoundingClientRect().width),40);

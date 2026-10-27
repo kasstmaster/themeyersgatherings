@@ -12,9 +12,9 @@ The Format panel opens automatically when you select an element and combines the
 
 Each text box, button, count value, count title, or container is one logical element. A button's label, background, and border use the same toolbar. Counts remain calculated; formatting does not replace live totals. Text uses the same safe formatting renderer in all existing and newly created gatherings.
 
-Use **Select container** to edit the surface around an element. **Save** saves the selection, and **Done editing** saves pending changes and exits edit mode. Switching selection or leaving the page saves pending text changes. Appearance changes save immediately.
+Use **Container** to edit the surface around an element. **Save** saves the selection, and **Done editing** saves pending changes and exits edit mode. Switching selection or leaving the page saves pending text changes. Appearance changes save immediately.
 
-Clicking a navigation button selects it for editing. Use **Open page / use button** in the toolbar to follow it while staying in edit mode. This lets you visit each page individually. Outside edit mode buttons work normally. Editing RSVP questions advances through pages without submitting an RSVP.
+Clicking a navigation button selects it for editing. Use **Use Button** in the toolbar to follow it while staying in edit mode. This lets you visit each page individually. Outside edit mode buttons work normally. Editing RSVP questions advances through pages without submitting an RSVP.
 
 Page labels expose movement and deletion actions in **Text**. Select a tab group's container to add a page. Private host pages and party audience restrictions remain unchanged. Existing manual tab order remains saved per gathering.
 
@@ -103,8 +103,10 @@ A single click selects a text box for formatting and dragging; double-click ente
 
 Photos & Videos keeps its title and intro above the shared inner panel. All remaining page text and controls stay inside that panel, including paragraphs moved outside it by older saved layouts. Body text can be dragged within the inner panel; the intro remains above it. Run `node scripts/verify-media-container-alignment.cjs` and `node scripts/verify-media-text-drag.cjs`.
 
-The left editor keeps Undo / Redo, Save, and Done Editing pinned at the top. Format opens automatically on selection; text boxes include lists, buttons and titles show typography without lists, containers show surfaces and relevant settings, and gaps show sizing. Separate launchers for Text, Lists, Background and Border are removed. Vertical gap and Horizontal gap follow, then Open page / use button and Select container, then Templates, separated by divider lines. Published frontend asset URLs include content hashes so updated editor files replace cached copies.
+The left editor keeps Undo / Redo, Save, and Done Editing pinned at the top. Format opens automatically on selection; text boxes include lists, buttons and titles show typography without lists, containers show surfaces and relevant settings, and gaps show sizing. Separate launchers for Text, Lists, Background and Border are removed. Below Done Editing, ↑ Gap and → Gap share a row, followed by Use Button and Container in another row, then Templates. These actions stay fixed; only formatting scrolls. Published frontend asset URLs include content hashes so updated editor files replace cached copies.
 
 Count menus (Dishes needed, Invited, Attending, Not attending and No Response) have dedicated shared appearance groups for their cards, headings, totals, rows, item/household titles, names, details and controls. These groups are isolated from RSVP/page titles, buttons, containers and dish choices. Existing and new gatherings use the same count-list grouping. Run `node scripts/verify-count-list-formatting.cjs`.
 
 Photos & Videos is a shared toolbar option immediately after All Gatherings, with no duplicate front-page button. This ordering applies to hosts and guests in all gatherings; Print Page remains last.
+
+The ↑ Gap and → Gap labels retain the existing vertical-strip and horizontal-band behavior respectively. Both support dragging from the fixed action area.
