@@ -3530,7 +3530,7 @@ document.querySelector('#syncAnyListButton').addEventListener('click', async eve
       : 'Unable to sync AnyList Address Book. Existing accounts were not changed.');
   } finally {
     button.disabled = false;
-    button.textContent = 'Sync AnyList Address Book';
+    button.textContent = 'Sync';
     accountList.inert=false;
   }
 });
