@@ -8,7 +8,7 @@ const closeCode=source.slice(source.indexOf("document.querySelector('#rsvpDialog
 function close({event='thanksgiving',host=false,saved=false,fromEntry=false}={}){
  const destinations=[],form={dataset:{saved:String(saved),fromEntry:String(fromEntry)}};
  let handler;
- const context=vm.createContext({viewedEventId:event,GatheringFeatures,SiteEditing:{resetTabSelection(){}},openRsvp:()=>destinations.push('registry'),isHostView:()=>host,document:{querySelector:selector=>selector==='#rsvpForm'?form:{scrollIntoView(){},addEventListener:(type,callback)=>{handler=callback;}}},showEventSelection:()=>destinations.push('welcome'),showSignedInDestination:()=>destinations.push('gathering'),render:()=>destinations.push('render')});
+ const context=vm.createContext({scrollGatheringPage(){},viewedEventId:event,GatheringFeatures,SiteEditing:{resetTabSelection(){}},openRsvp:()=>destinations.push('registry'),isHostView:()=>host,document:{querySelector:selector=>selector==='#rsvpForm'?form:{scrollIntoView(){},addEventListener:(type,callback)=>{handler=callback;}}},showEventSelection:()=>destinations.push('welcome'),showSignedInDestination:()=>destinations.push('gathering'),render:()=>destinations.push('render')});
  vm.runInContext(closeCode,context);handler();return {destinations,form};
 }
 test('non-Wedding gathering guests return home on RSVP cancel or completion',()=>{
@@ -30,7 +30,7 @@ test('guest sign-in stays at welcome for all gatherings instead of resuming a pe
  const code=source.slice(start,source.indexOf('\n});',start));
  for(const event of ['thanksgiving','christmas','new-gathering','wedding']){
   const calls=[];
-  const context=vm.createContext({viewedEventId:event,GatheringFeatures,availableEventIds:()=>[event],pendingAccountAction:()=>calls.push('action'),showEventSelection:()=>calls.push('welcome')});
+  const context=vm.createContext({scrollGatheringPage(){},viewedEventId:event,GatheringFeatures,availableEventIds:()=>[event],pendingAccountAction:()=>calls.push('action'),showEventSelection:()=>calls.push('welcome')});
   vm.runInContext(code,context);
   assert.deepEqual(calls,['welcome']);
   assert.equal(context.pendingAccountAction,null);

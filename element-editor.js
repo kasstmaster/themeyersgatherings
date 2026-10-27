@@ -139,7 +139,7 @@
   }
   function fieldsPanel(parent){
     const fields=entry?.fields || [];
-    if(fields.length && (fields.length>1 || !editables.length || !['text','page','notes'].includes(entry.title))){
+    if(fields.length && (target.closest('#hostToolsPanel') || fields.length>1 || !editables.length || !['text','page','notes'].includes(entry.title))){
       const controls=fields.map(spec=>spec.options?selectInput(parent,spec.label,spec.options,spec.value,()=>{}):labelInput(parent,spec.label,spec.type || 'text',spec.value,()=>{}));
       controls.forEach((input,index)=>{input.addEventListener('input',refreshUndo);input.addEventListener('change',refreshUndo);const spec=fields[index];input.required=Boolean(spec.required);if(spec.min!==undefined)input.min=spec.min;});
       fieldDraft={inputs:controls,entry};
@@ -326,7 +326,7 @@
     const rect=target.getBoundingClientRect();target.draggable=!typing || Math.min(event.clientX-rect.left,rect.right-event.clientX,event.clientY-rect.top,rect.bottom-event.clientY)<=6;
   },true);
   document.addEventListener('click',event=>{
-    if(!context?.host || !context.enabled || allowAction || event.target.closest(excluded) || event.target.closest('#editItemsButton,#hostToolsPanel .host-tool-actions,#hostQuickActions,#hostToolsButton,#invitationTemplatesButton'))return;
+    if(!context?.host || !context.enabled || allowAction || event.target.closest(excluded) || event.target.closest('#editItemsButton,#newGatheringButton,#hostToolsPanel .host-tool-actions,#hostQuickActions,#hostToolsButton,#invitationTemplatesButton'))return;
     if(target && editables.some(part=>part.contains(event.target))){event.stopImmediatePropagation();if(target.matches('button,a,[role="tab"]'))event.preventDefault();return;}
     const element=pick(event.target);if(!element)return;
     event.preventDefault();event.stopImmediatePropagation();select(element);
