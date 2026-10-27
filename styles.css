@@ -865,8 +865,7 @@ gathering-gap{display:block;position:relative;box-sizing:border-box;flex-shrink:
 
 .element-editor-row{flex-wrap:nowrap;overflow-x:auto}.element-editor-row>*{flex-shrink:0}.element-editor-row [data-editor-chooser]{max-width:160px}.element-editor-row>[data-editor-selection]{max-width:120px}
 
-.editor-ribbon-space{display:block;flex:none;width:100%;margin:0;padding:0;border:0;pointer-events:none}
-@media print{.editor-ribbon-space{display:none!important}}
+
 
 /* A modal owns page scrolling; its card grows naturally within that scroll area. */
 html:has(dialog:modal),body:has(dialog:modal){overflow:hidden}
@@ -942,3 +941,27 @@ gathering-gap[data-gap-axis="x"]{clear:none;vertical-align:middle}.gap-drop-mark
 #rsvpDialog #rsvpWeddingPages :is(.wedding-tab-content,.wedding-party-card,.gathering-subpage)>:is(.bride-groom-content,.what-to-expect-content,.perfect-experience-content,.wedding-party-description){background:transparent;border:0;box-shadow:none;padding:0;min-height:0}
 
 .element-editor-toolbar button:disabled{opacity:.45;cursor:default}
+
+/* The editor occupies a left rail; only the available content area becomes narrower. */
+.element-editor-toolbar,.has-host-toolbar.site-edit-mode .element-editor-toolbar{top:0;bottom:0;left:0;right:auto;width:clamp(110px,18vw,220px);max-width:45vw;height:100dvh;padding:48px 10px 12px;border:0;border-right:1px solid #aab3be;overflow-y:auto;overflow-x:hidden;box-shadow:2px 0 7px #0002}
+.element-editor-toolbar .element-editor-row,.element-editor-toolbar .element-editor-panel{display:flex;flex-direction:column;align-items:stretch;flex-wrap:nowrap;overflow-x:visible;gap:6px;padding-left:0;max-height:none}
+.element-editor-toolbar .element-editor-row>*{flex-shrink:0;max-width:100%}
+.element-editor-toolbar .element-editor-row>[data-editor-selection]{white-space:normal;overflow-wrap:anywhere;margin:0;max-width:100%}
+.element-editor-toolbar .element-editor-row [data-editor-chooser]{width:100%;max-width:100%}
+.element-editor-toolbar :is(button,select,input,textarea){max-width:100%;box-sizing:border-box}
+.element-editor-toolbar .element-editor-row>button{width:100%;white-space:normal}
+.element-editor-toolbar :is(.element-editor-row,.element-editor-panel) label{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;margin:0;font:12px Arial,sans-serif;color:inherit}
+.element-editor-toolbar .element-editor-settings{flex-direction:column;max-height:none;overflow:visible}
+.element-editor-toolbar .element-editor-panel{padding:10px 0 0;margin-top:10px}
+.element-editor-toolbar [data-editor-status]{display:block;margin-top:8px}
+body[data-editor-sidebar-root]>:is(#eventSelectionPage,#eventPage,#signInPage,#attirePage){margin-left:var(--editor-sidebar-width,220px);width:calc(100% - var(--editor-sidebar-width,220px));box-sizing:border-box}
+dialog.fullscreen-dialog[data-editor-sidebar-root]{left:var(--editor-sidebar-width,220px);right:0;width:calc(100% - var(--editor-sidebar-width,220px));box-sizing:border-box}
+dialog[data-editor-sidebar-root]:not(.fullscreen-dialog){left:var(--editor-sidebar-width,220px);right:0;max-width:calc(100vw - var(--editor-sidebar-width,220px) - 24px)}
+dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:100%;box-sizing:border-box}
+.site-edit-mode :is(#hostToolsPanel,#rsvpPageToolbar,#eventDock){left:var(--editor-sidebar-width,220px)}
+.site-edit-mode :is(section,article,h1,h2,h3,h4,p,time,.event-header-text,gathering-gap){scroll-margin-top:24px;scroll-margin-left:var(--editor-sidebar-width,220px)}
+@media print{body[data-editor-sidebar-root]>:is(#eventSelectionPage,#eventPage,#signInPage,#attirePage){margin-left:0;width:100%}dialog[data-editor-sidebar-root]{left:0;width:100%;max-width:none}}
+
+@media(max-width:600px){.element-editor-toolbar :is(button,select,input,textarea){font-size:11px;padding:5px 4px}.element-editor-toolbar :is(.element-editor-row,.element-editor-panel) label{font-size:11px}.site-edit-mode #hostQuickActions button{width:36px;height:36px;padding:7px}.site-edit-mode #hostQuickActions svg{width:20px;height:20px}}
+
+.element-editor-toolbar{overscroll-behavior:contain}.element-editor-toolbar .element-editor-settings{overflow-x:auto}

@@ -1,6 +1,6 @@
 # Editing the website
 
-Sign in as the host and choose the fixed **Edit** button at the top right. Click an element to select it. A red outline identifies the selected element, and one fixed toolbar stays at the top of the page. The page sits below it and adjusts automatically when toolbar panels open or the screen changes size. The fixed Edit button hides while the toolbar is open and returns after Done editing. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
+Sign in as the host and choose the fixed **Edit** button at the top right. Click an element to select it. A red outline identifies the selected element, and one fixed vertical toolbar stays on the left. The page uses the remaining width, shrinking containers when needed so the toolbar never covers them. The fixed Edit button hides while the toolbar is open and returns after Done editing. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
 
 The toolbar has five expandable groups:
 
@@ -28,7 +28,7 @@ Serve the repository locally on port 8041, then run `node scripts/verify-element
 
 ## Host navigation and account sessions
 
-The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **The Meyers** returns everyone to gathering selection. **Accounts** and **History** are host-only fixed corner icons. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the top editing toolbar.
+The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **The Meyers** returns everyone to gathering selection. **Accounts** and **History** are host-only fixed corner icons. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the editing toolbar.
 
 In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, the account’s normal pages appear, with Edit and the host toolbar retained for the authenticated host. **Leave account** sits immediately left of Edit. Host management actions return to the host context; ordinary guests never see these controls. Accounts without gathering access have disabled sign-in icons.
 
@@ -101,3 +101,5 @@ Buttons, tabs, and toolbar options each have separate selected and unselected ap
 Selecting a button, tab, or toolbar option shows a Formatting state selector for Selected and Unselected. It previews the chosen state without navigating or changing the active page; saved appearance remains shared by state. Container color-wheel/slider updates within one control interaction are coalesced into one Undo action, and pending toolbar fields can be undone before Save. This does not revert existing saved colors.
 
 A single click selects a text box for formatting and dragging; double-click enters inline text editing. While typing, drag its border to move it. Vertical side gaps reserve left/right room on the anchored element rather than taking a line above a block. Their size and side persist across redraws. Run `node scripts/verify-editor-interactions.cjs`.
+
+Photos & Videos keeps its title and intro above the shared inner panel. All remaining page text and controls stay inside that panel, including paragraphs moved outside it by older saved layouts. Body text can be dragged within the inner panel; the intro remains above it. Run `node scripts/verify-media-container-alignment.cjs` and `node scripts/verify-media-text-drag.cjs`.

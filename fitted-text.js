@@ -1,6 +1,6 @@
 // All gatherings share one sizing rule for RSVP titles and the first-page date.
 (() => {
-  const selector='#rsvpFirstPageDate,#rsvpDialog h1,#rsvpDialog h2,#rsvpDialog h3,#rsvpDialog h4,#rsvpDialog h5,#rsvpDialog h6,#rsvpDialog legend';
+  const selector='#rsvpFirstPageDate,#rsvpDialog h1,#rsvpDialog h2,#rsvpDialog h3,#rsvpDialog h4,#rsvpDialog h5,#rsvpDialog h6,#rsvpDialog legend,.site-edit-mode #rsvpConfirmEvent>span,.site-edit-mode #hostFirstPageActions button>span,.site-edit-mode #weddingRsvpUploadToolbar button>span,.site-edit-mode #rsvpDialog .primary-button:not(:has(>span))';
   const observed=new Set();
   function fit(element) {
     if(element.closest?.('.inline-editor,.inline-edit-tools'))return;

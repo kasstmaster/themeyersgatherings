@@ -205,7 +205,7 @@
       if (first.getAttribute('aria-selected') !== 'true') queueMicrotask(() => { if (first.isConnected) first.click(); });
     }
   }
-  function movableText(root){
+  function movableText(root,{contentRoot=null,headerIds=[]}={}){
     for(const text of root.querySelectorAll('p[id]'))if(!layoutOriginals.has(text.parentElement))layoutOriginals.set(text.parentElement,[...text.parentElement.children]);
     for(const [path,placement] of Object.entries(context.state.siteElementPlacements || {})){
       let text,parent,before;try{text=document.querySelector(path);parent=document.querySelector(placement.parent);before=placement.before?document.querySelector(placement.before):null;}catch{continue;}
@@ -220,10 +220,11 @@
       for(const child of children)if(!ordered.includes(child))ordered.push(child);
       for(const child of ordered)parent.append(child);
     }
+    if(contentRoot){for(const id of headerIds){const text=root.querySelector('#'+CSS.escape(id));if(text && (text.parentElement!==root || [...root.children].indexOf(text)>[...root.children].indexOf(contentRoot)))root.insertBefore(text,contentRoot);}const children=[...root.children],panelIndex=children.indexOf(contentRoot),bodyTexts=children.filter(text=>text.matches('p[id]') && !headerIds.includes(text.id));contentRoot.prepend(...bodyTexts.filter(text=>children.indexOf(text)<panelIndex));contentRoot.append(...bodyTexts.filter(text=>children.indexOf(text)>panelIndex));}
     if(!enabled || !context.host)return;
     for(const text of root.querySelectorAll('p[id]')){
       const record=editTargets.get(text);if(!record || text.closest('[role="status"],[role="alert"]'))continue;
-      text.draggable=true;cleanup.push(()=>text.removeAttribute('draggable'));record.options??={};record.options.movableRoot=root;
+      text.draggable=true;cleanup.push(()=>text.removeAttribute('draggable'));record.options??={};record.options.movableRoot=contentRoot && !headerIds.includes(text.id)?contentRoot:root;record.options.headerOnly=headerIds.includes(text.id);
       const move=direction=>{
         const parent=text.parentElement,children=[...parent.children].filter(child=>!child.matches('.existing-layout-gap,gathering-gap'));
         const neighbor=children[children.indexOf(text)+direction];if(!neighbor)return;
@@ -239,7 +240,7 @@
   }
   function canMoveText(text,anchor){
     const info=movableTextRoot(text),parent=anchor?.parentElement;
-    return Boolean(info && text!==anchor && !text.contains(anchor) && info.root.contains(parent) && parent.matches('div,section,article') && !anchor.closest('.wedding-media-gallery,[role="status"],[role="alert"],.element-editor-toolbar'));
+    return Boolean(info && (!editTargets.get(text)?.options?.headerOnly || anchor.parentElement===info.root) && text!==anchor && !text.contains(anchor) && info.root.contains(parent) && parent.matches('div,section,article') && !anchor.closest('.wedding-media-gallery,[role="status"],[role="alert"],.element-editor-toolbar'));
   }
   function moveTextTo(text,anchor,before){
     if(!canMoveText(text,anchor))return null;
