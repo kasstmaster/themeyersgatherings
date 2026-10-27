@@ -1,53 +1,41 @@
-# AGENTS.md — Permanent Website Architecture Rules
+# AGENTS.md — Permanent Project Development Rules
 
 ## Project Overview
 
-This website manages multiple family gatherings, each containing its own pages, content, design settings, guest information, and gathering-specific features.
+The Meyers Gatherings website manages multiple family gatherings using one shared application.
 
-The website must use **ONE shared gathering builder and editing system** while allowing each gathering to maintain its own independent design and data.
+All gatherings must share the same underlying builder, editor, rendering logic, and functionality while maintaining independent gathering designs, settings, and content.
 
-These architectural principles must be preserved during all future development.
+These rules apply to all future development, including new features, bug fixes, improvements, and refactors.
+
+Before modifying code, inspect the relevant existing implementation and preserve the architecture described below.
 
 ---
 
-## Existing Infrastructure and Data Protection
+## 1. Shared Builder Architecture
 
-This website uses GitHub Pages, a Cloudflare Worker, and a separate GitHub data repository for persistent shared state.
-
-When modifying shared builder functionality, gathering formatting, or page content:
-
-- Preserve the existing shared-state architecture.
-- Maintain compatibility with existing saved gathering data.
-- Do not accidentally reset, overwrite, or migrate guest accounts, RSVPs, menus, or other saved information.
-- Keep gathering-specific data isolated while preserving intentional shared account information.
-- Ensure changes remain compatible with the existing Cloudflare Worker and save/load functionality.
-- Do not introduce unnecessary modifications to the separate data repository.
-- Preserve all existing integrations, including AnyList, Dropbox, and invitation generation.
-
-Consult README.md and other relevant project documentation before changing related infrastructure.
-
-## One Shared Gathering Builder
-
-ALL gatherings, existing and future, must use the same underlying builder code.
+ALL gatherings, existing and future, must use the same underlying builder and editing systems.
 
 Shared functionality includes:
 
 - Title and introduction editing
-- Rich-text editing toolbar
-- Formatting controls
+- Rich-text editing and formatting controls
 - Outer and inner container editing
-- Buttons, toolbar items, and tabs
-- Layout and rendering components
+- Button, tab, and toolbar editing
+- Layout and rendering functionality
+- Page creation and editing
 - Save and load functionality
-- General page-building features
+- Other shared website-building features
 
-**Rule:** When shared builder functionality is improved, fixed, or expanded, the improvement must automatically apply to ALL gatherings.
+Changes to shared builder code must apply consistently to every gathering.
 
-Never create separate implementations of shared functionality for individual gatherings when the existing shared system can support them.
+Never duplicate shared functionality unnecessarily or create separate gathering-specific implementations when the shared system can support the feature.
 
-## Gathering-Wide Shared Formatting
+Fix shared problems in the shared implementation rather than applying individual gathering-specific workarounds.
 
-Each gathering has its own design system.
+## 2. Gathering-Wide Shared Formatting
+
+Each gathering has its own independent design system.
 
 Within a gathering, elements of the same type must share their formatting and appearance settings.
 
@@ -60,188 +48,244 @@ This includes:
 - Tabs
 - Titles
 - Introductions
-- Any future elements designated as gathering-wide style types
-
-For example, changing the background color of one outer container should update all outer containers belonging to the same gathering.
-
-Changing the font, size, color, or alignment of one title should update all titles throughout that gathering.
-
-**Rule:** Formatting changes made to a shared element type must apply to every matching element within the CURRENT gathering, but never to another gathering.
-
-Different element types must maintain separate formatting configurations.
-
-For example, title formatting and introduction formatting must remain independent of each other.
-
-## Independent Page Content
-
-Although formatting is shared within a gathering, page-specific content must remain independent.
+- Future elements designated as shared formatting types
 
 For example:
 
-**Page 1**
-- Title: Welcome
-- Introduction: We're excited to celebrate with you!
+Changing the background of one outer container must update matching outer containers throughout the current gathering.
 
-**Page 2**
-- Title: Event Details
-- Introduction: Here's everything you need to know.
+Changing a title's font, size, color, alignment, or other shared appearance properties must update matching titles throughout the current gathering.
 
-Both pages must use the same title formatting and introduction formatting while retaining their own unique text.
+Changing introduction formatting must update matching introductions throughout the current gathering.
 
-Editing the actual title or introduction text must only modify the selected page.
+Different element types must maintain separate formatting configurations.
 
-**Rule: Shared formatting does not mean shared text content.**
+Title formatting must not automatically alter introduction formatting.
 
-This distinction must be preserved throughout the entire website.
+**Permanent rule: Formatting changes to shared element types affect the current gathering only, never other gatherings.**
 
-## Independent Gathering Settings
+New pages must automatically inherit their gathering's established formatting settings.
+
+New gatherings must support the same formatting functionality while maintaining independent designs.
+
+## 3. Independent Page Content
+
+Pages may share formatting without sharing content.
+
+Each page must retain independently editable:
+
+- Title text
+- Introduction text
+- Page-specific written content
+- Other data intended to belong to that page
+
+For example:
+
+Page A may contain the title "Welcome."
+
+Page B may contain the title "Event Details."
+
+Both titles must use the gathering's shared title formatting while retaining their different text.
+
+Editing the text on Page A must never modify Page B's text.
+
+**Permanent rule: Shared formatting does not mean shared page content.**
+
+## 4. Independent Gathering Data
 
 Each gathering must maintain its own:
 
-- Gathering-wide appearance and formatting settings
-- Page content
+- Appearance and formatting configurations
+- Pages and content
 - Titles and introductions
-- Guest information
-- RSVP information and responses
-- Menus and gathering-specific configurations
-- Other independently editable gathering data
+- Event dates and details
+- RSVP information
+- Menus and selections
+- Gathering-specific settings and customizations
 
-Formatting changes made in Gathering A must never affect Gathering B.
+Use the correct gathering identifiers when reading, editing, and saving gathering-specific data.
 
-Gathering-specific data must be associated with the correct gathering ID.
+Never allow formatting, content, or settings to accidentally carry over between gatherings.
 
-**Rule: Gatherings share builder functionality, not their individual data or design settings.**
+Preserve intentionally shared information, such as shared account records, where required by the existing application architecture.
 
-## Architecture and Data Management
+## 5. Gathering-Specific Features
 
-Use reusable shared components and gathering-scoped formatting configurations.
+Some features are intentionally restricted to particular gathering types.
 
-- Keep shared builder logic centralized.
-- Keep gathering-specific design settings separate.
-- Keep page-specific text content separate from formatting.
-- Ensure every edit is associated with the correct gathering and, when applicable, page.
-- Avoid duplicating editing or rendering logic.
-- Prevent editing state from leaking between gatherings.
-- Ensure newly created pages inherit the current gathering's formatting.
-- Ensure newly created gatherings receive the same builder functionality.
+For example, wedding-specific menus or wedding party functionality may not apply to other gatherings.
 
-Preserve existing saved data, layouts, settings, and behavior when modifying or refactoring the architecture.
+Gathering-specific features are allowed, but should extend or configure the shared application architecture whenever practical.
 
-Do not migrate, overwrite, reset, or replace saved data unnecessarily.
+Do not duplicate the entire builder to accommodate a gathering-specific feature.
 
-## Gathering-Specific Features
+Do not force gathering-specific functionality onto unrelated gatherings.
 
-Some features are intentionally available only in certain gathering types.
+## 6. Existing Infrastructure and Data Protection
 
-For example, wedding-specific RSVP menus may not be needed for other gatherings.
+Preserve the website's existing integrations and infrastructure, including:
 
-These features must remain supported without requiring separate copies of the entire builder.
+- GitHub Pages
+- Cloudflare Worker shared-state functionality
+- The separate GitHub data repository
+- AnyList synchronization
+- Dropbox functionality
+- Invitation and QR-code systems
+- Existing guest accounts, RSVPs, menus, and gathering information
 
-**Rule:** Gathering-specific functionality should extend or configure the shared builder, not replace or duplicate it.
+Inspect the relevant code and documentation before modifying these systems.
 
-## Future Features and Additions
+Never unnecessarily overwrite, reset, migrate, or replace saved user data.
 
-Every new feature, modification, improvement, or bug fix must follow these architectural rules.
+Maintain backward compatibility with existing saved state wherever possible.
 
-Before implementing a change:
+Never commit passwords, private tokens, API secrets, credentials, or sensitive guest information into public source code or documentation.
 
-1. Determine whether the functionality belongs in the shared builder.
-2. Reuse existing shared components and formatting systems.
-3. Determine whether the associated data belongs to the gathering, page, or another appropriate scope.
-4. Preserve gathering-wide formatting behavior.
-5. Preserve independent page content.
-6. Ensure the change works for existing and future gatherings.
-7. Protect existing saved data and functionality.
+Do not change deployment infrastructure unless required by the task.
 
-New design elements should use the gathering-wide formatting system by default when they represent a shared visual element type.
+## 7. Future Development Requirements
 
-If a feature requires independent formatting, implement that exception intentionally rather than accidentally creating inconsistent behavior.
+For every future feature, improvement, bug fix, or refactor:
 
-## Editing, Saving, and Loading
+1. Inspect the relevant existing implementation.
+2. Determine whether functionality belongs in the shared builder.
+3. Reuse existing components whenever possible.
+4. Determine the correct scope of associated data: website-wide, gathering-wide, page-specific, or another intentionally defined scope.
+5. Preserve gathering-wide formatting behavior.
+6. Preserve independent page content.
+7. Ensure existing and future gatherings use shared functionality consistently.
+8. Preserve existing integrations and saved data.
+9. Avoid duplicated functionality and unnecessary workarounds.
+10. Verify that unrelated gatherings and features continue working.
 
-All editing functionality must work consistently throughout the website.
+Do not silently introduce architectural exceptions.
 
-Verify that:
+If a requested change conflicts with these permanent rules, explain the conflict before proceeding.
 
-- Editing titles and introductions works on every page.
-- Formatting a title updates matching titles in the current gathering.
-- Formatting an introduction updates matching introductions in the current gathering.
-- Editing page text never modifies another page's text.
-- Changing gathering-wide formatting never changes another gathering.
-- Switching gatherings displays the correct content and formatting.
-- Refreshing the page retains saved changes.
-- New pages inherit existing gathering-wide formatting.
-- New gatherings use the same shared builder functionality.
+## 8. Editing and Persistence Requirements
 
-Fix problems in the shared implementation rather than applying individual gathering-specific patches.
+Shared editing functionality must behave consistently throughout every gathering.
 
-## Automated Testing
+Verify relevant changes against these expectations:
 
-Maintain automated regression tests for the shared gathering architecture.
+- Titles and introductions remain editable on every page.
+- Matching titles share formatting within a gathering.
+- Matching introductions share formatting within a gathering.
+- Page text remains independent.
+- Gathering formatting remains independent.
+- Switching gatherings displays the correct settings.
+- Refreshing retains saved changes.
+- Newly created pages inherit gathering formatting.
+- Newly created gatherings use the shared builder.
+- Existing content and settings remain preserved.
 
-Tests should cover:
+Where practical, use the same shared editing and persistence logic across all gathering types.
 
-- Shared builder functionality across multiple gatherings.
-- Independent data between gatherings.
+## 9. Automated Testing
+
+Maintain automated regression tests for important shared architecture behavior.
+
+Tests should verify:
+
+- Shared editor functionality across multiple gatherings.
 - Gathering-wide formatting synchronization.
-- Independent title and introduction text.
-- Correct save/load behavior.
+- Independent formatting between gatherings.
+- Independent title and introduction content between pages.
+- Save and reload persistence.
 - Switching between gatherings.
-- Refresh persistence.
 - Newly created pages and gatherings.
-- Preservation of gathering-specific features.
+- Preservation of gathering-specific functionality.
+- Compatibility with existing saved state.
 
-Run relevant tests after changes to the builder, editor, formatting system, or persistence logic.
+Run relevant tests after modifying shared builder, formatting, rendering, or persistence code.
 
-Integrate these tests with the existing GitHub Actions workflow where practical so regressions are detected before merging changes.
+Integrate appropriate tests into existing GitHub Actions workflows where practical.
 
-## Code Review Rules
+Report tests that fail or cannot be run.
 
-Flag changes that:
+Do not claim testing succeeded unless the tests were actually executed.
 
-- Duplicate shared builder or editor functionality.
-- Introduce unnecessary gathering-specific implementations.
-- Prevent matching elements from sharing gathering-wide formatting.
-- Cause page-specific content to become shared unintentionally.
-- Allow formatting or data to leak between gatherings.
-- Break saving, refreshing, or switching gatherings.
-- Remove existing functionality or alter saved data unnecessarily.
+## 10. Automatic Documentation Maintenance
 
-Prioritize maintainability, consistency, and preservation of existing functionality.
+Project documentation must remain synchronized with the implemented code.
 
-## Permanent Development Requirement
+Documentation maintenance is part of every relevant development task, not a separate task the user must request.
 
-These are permanent architectural requirements for this repository.
+For every future change:
 
-They apply to all future:
+1. Review whether the change affects README.md or other existing documentation.
+2. Update README.md when user-facing functionality, features, setup instructions, integrations, or configuration change.
+3. Update relevant technical documentation when architecture or implementation details change.
+4. Keep AGENTS.md accurate when approved architectural requirements change.
+5. Never silently weaken, remove, or contradict permanent architectural rules.
+6. Remove outdated documentation only after verifying it is obsolete.
+7. Document implemented functionality rather than planned or assumed behavior.
+8. Keep instructions accurate, organized, and understandable.
+9. Never include passwords, access tokens, API keys, or other secrets.
+10. Include documentation status in every development task summary.
 
-- Features
-- Additions
-- Improvements
-- Bug fixes
-- Refactors
-- New gathering types
-- New page types
-- New editable elements
+Documentation status must explicitly state either:
 
-The website must always follow these three architectural layers:
+- Which documentation files were updated and why.
+- Or that documentation was reviewed and no changes were necessary.
 
-**Layer 1 — Website-Wide Shared Builder Code**
+Do not modify unrelated documentation unnecessarily.
 
-Every gathering uses the same underlying editing and rendering functionality.
+## 11. Code Review and Change Verification
 
-**Layer 2 — Gathering-Wide Shared Formatting**
+Before completing a development task, check for:
 
-Matching element types within a gathering share their appearance and formatting settings.
+- Unnecessary duplication of builder functionality.
+- Gathering-specific workarounds for shared problems.
+- Accidental sharing of page-specific content.
+- Formatting changes affecting unrelated gatherings.
+- Broken save/load functionality.
+- Regressions in existing features.
+- Unnecessary changes to saved data or infrastructure.
+- Missing automated tests where appropriate.
+- Documentation that no longer matches the implementation.
 
-Each gathering maintains its own independent design.
+Provide a final summary containing:
 
-**Layer 3 — Page-Specific Independent Content**
+- Changes implemented
+- Tests executed and results
+- Documentation updated or reviewed
+- Any unresolved issues or limitations
 
-Each page retains its own unique text and other page-specific content while inheriting the gathering's shared formatting.
+## 12. Permanent Architectural Model
 
-**Never violate these three layers unless explicitly instructed to change the architecture.**
+The website must preserve three primary architectural layers.
 
-When future requests introduce new requirements, preserve these rules and extend the existing systems instead of duplicating functionality.
+### Layer 1 — Website-Wide Shared Builder Code
 
-Before modifying these architectural principles, explain the conflict and request approval.
+All gatherings use the same underlying builder, editor, rendering logic, and shared functionality.
+
+### Layer 2 — Gathering-Wide Shared Formatting
+
+Matching element types within a gathering share appearance settings.
+
+Each gathering maintains its own independent formatting and design.
+
+### Layer 3 — Page-Specific Independent Content
+
+Each page retains its own written content and page-specific data while inheriting the gathering's shared formatting.
+
+These three layers are permanent architectural requirements.
+
+Future development must preserve these boundaries unless explicitly authorized to change them.
+
+**Shared code across all gatherings. Shared formatting within each gathering. Independent content on each page.**
+
+---
+
+## 13. Instruction Priority
+
+These instructions are intended to guide development throughout this repository.
+
+If existing documentation contradicts the actual implementation, investigate and correct the documentation.
+
+If an incoming request conflicts with these architectural requirements, explain the conflict and request clarification before changing the architecture.
+
+Do not make unnecessary modifications to working systems merely to reorganize code.
+
+Preserve existing functionality, data compatibility, and maintainability.
