@@ -1,6 +1,6 @@
 # Editing the website
 
-Sign in as the host and choose the fixed **Edit** button at the top right. Click an element to select it. A red outline identifies the selected element, and one fixed vertical toolbar stays on the left. The page uses the remaining width, shrinking containers when needed so the toolbar never covers them. The fixed Edit button hides while the toolbar is open and returns after Done editing. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
+Sign in as the host and choose the fixed **Edit** button at the top right. Click an element to select it. A red outline identifies the selected element, and one fixed vertical toolbar stays on the left. The page uses the remaining width, shrinking containers when needed so the toolbar never covers them. The fixed Edit button hides while the toolbar is open and returns after Done. The page keeps its normal layout, including Attire, Responsibilities, and meal cards. Guests never see the editor.
 
 The Format panel opens automatically when you select an element and combines the applicable controls:
 
@@ -12,7 +12,7 @@ The Format panel opens automatically when you select an element and combines the
 
 Each text box, button, count value, count title, or container is one logical element. A button's label, background, and border use the same toolbar. Counts remain calculated; formatting does not replace live totals. Text uses the same safe formatting renderer in all existing and newly created gatherings.
 
-Use **Container** to edit the surface around an element. **Save** saves the selection, and **Done editing** saves pending changes and exits edit mode. Switching selection or leaving the page saves pending text changes. Appearance changes save immediately.
+Use **Container** to edit the surface around an element. **Save** saves the selection, and **Done** saves pending changes and exits edit mode. Switching selection or leaving the page saves pending text changes. Appearance changes save immediately.
 
 Clicking a navigation button selects it for editing. Use **Use Button** in the toolbar to follow it while staying in edit mode. This lets you visit each page individually. Outside edit mode buttons work normally. Editing RSVP questions advances through pages without submitting an RSVP.
 
@@ -103,7 +103,7 @@ A single click selects a text box for formatting and dragging; double-click ente
 
 Photos & Videos keeps its title and intro above the shared inner panel. All remaining page text and controls stay inside that panel, including paragraphs moved outside it by older saved layouts. Body text can be dragged within the inner panel; the intro remains above it. Run `node scripts/verify-media-container-alignment.cjs` and `node scripts/verify-media-text-drag.cjs`.
 
-The left editor keeps Undo / Redo, Save, and Done Editing pinned at the top. Format opens automatically on selection; text boxes include lists, buttons and titles show typography without lists, containers show surfaces and relevant settings, and gaps show sizing. Separate launchers for Text, Lists, Background and Border are removed. Below Done Editing, ↑ Gap and → Gap share a row, followed by Use Button and Container in another row, then Templates. These actions stay fixed; only formatting scrolls. Published frontend asset URLs include content hashes so updated editor files replace cached copies.
+The left editor keeps Undo / Redo, Save, and Done pinned at the top. Format opens automatically on selection; text boxes include lists, buttons and titles show typography without lists, containers show surfaces and relevant settings, and gaps show sizing. Separate launchers for Text, Lists, Background and Border are removed. Below Done, ↑ Gap and → Gap share a row, followed by Use Button and Container in another row, then Templates. These actions stay fixed; only formatting scrolls. Published frontend asset URLs include content hashes so updated editor files replace cached copies.
 
 Count menus (Dishes needed, Invited, Attending, Not attending and No Response) have dedicated shared appearance groups for their cards, headings, totals, rows, item/household titles, names, details and controls. These groups are isolated from RSVP/page titles, buttons, containers and dish choices. Existing and new gatherings use the same count-list grouping. Run `node scripts/verify-count-list-formatting.cjs`.
 
@@ -114,3 +114,5 @@ The ↑ Gap and → Gap labels retain the existing vertical-strip and horizontal
 After a gathering is selected, each role keeps its full permitted toolbar through pages, RSVP questions and dialogs. The same toolbar moves into the active dialog; guests and wedding party members do not receive host options. Choosing a page from RSVP returns to the gathering information view without submitting. Print Page leaves the questions before preparing a printable page. Gathering-specific options are hidden on the gathering selection page. Run `node scripts/verify-persistent-role-toolbar.cjs`.
 
 Menu opens only the selected gathering’s menu controls. Potluck menus reuse the dish editor, including quantities, categories and claims; Wedding reuses the same meal-choice editor as the RSVP settings. Accounts and History keep their existing management screens and are hidden outside host edit mode. Run `node scripts/verify-editor-management.cjs`.
+
+Fixed actions use paired rows: Save / Done, ↑ Gap / → Gap, Use Button / Container, Menu / Templates, and Accounts / History. Only the formatting area scrolls.

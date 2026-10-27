@@ -13,7 +13,7 @@ const verify=async toolbar=>{
  for(const part of [normal,normal.locator('span'),normal.locator('svg')])assert.equal(await part.evaluate(e=>getComputedStyle(e).color),'rgb(18, 52, 86)');
  for(const part of [selected,selected.locator('span'),selected.locator('svg')])assert.equal(await part.evaluate(e=>getComputedStyle(e).color),'rgb(170, 187, 204)');
  assert.equal(await normal.evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)');assert.equal(await selected.evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(51, 68, 85)');assert.equal(await page.locator(toolbar).evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(238, 238, 238)');
-};await verify('#hostToolsPanel');await page.getByRole('button',{name:'Done Editing',exact:true}).click();
+};await verify('#hostToolsPanel');await page.getByRole('button',{name:'Done',exact:true}).click();
 assert.equal(await page.evaluate(()=>state.elementAppearance['.event-dock'].toolbarTextColor),'#123456');
 await page.evaluate(async()=>{await closeHostDialogs();hostAuthenticated=false;guestName='Casey Example';signedInPersonName='Casey Example';enterEvent('wedding');});await page.locator('#rsvpPageNavigation').getByRole('button',{name:'Registry',exact:true}).click();await verify('#rsvpPageToolbar');
 await page.locator('#guestHomeButton').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});assert.equal(await page.locator('#guestHomeButton').textContent(),'The Meyers');assert.equal(await page.locator('#hostQuickActions').isVisible(),false);
