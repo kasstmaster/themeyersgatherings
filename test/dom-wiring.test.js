@@ -222,7 +222,7 @@ test('Bride & Groom is a host-only Markdown page edited from wedding details', a
   assert.match(styles, /\.editor-dialog-footer\{[^}]*position:sticky[^}]*bottom:-38px/);
   for (const dialogId of ['adminDialog', 'accountsDialog', 'invitationTemplatesDialog']) {
     const editorDialog = html.match(new RegExp(`<dialog id="${dialogId}"[\\s\\S]*?</dialog>`))?.[0] || '';
-    assert.match(editorDialog, /class="editor-dialog-footer">[\s\S]*?>Done(?: editing)?<\/button>/);
+    assert.match(editorDialog, dialogId==='accountsDialog'?/class="editor-dialog-footer">[\s\S]*?>Sync<\/button>[\s\S]*?>Save<\/button>/:/class="editor-dialog-footer">[\s\S]*?>Done(?: editing)?<\/button>/);
   }
   const editor = html.match(/<textarea id="adminBrideGroomContent"[^>]*>/)?.[0] || '';
   assert.doesNotMatch(editor, /maxlength/);
