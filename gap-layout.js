@@ -1,6 +1,6 @@
 /* Saved vertical spacers use stable anchors and the same layout in every gathering. */
 (() => {
-  let context,dragging,marker,placement,movingSpace;
+  let context,dragging,marker,placement,movingSpace,draggingText;
   const nodes=new Map(),virtuals=new Map(),virtualInfo=new WeakMap(),originalStyles=[];
   const excluded='.editor-ribbon-space,#hostToolsPanel,.element-editor-toolbar,.host-fixed-edit,.gap-drop-marker,.existing-layout-gap,.editor-dialog,#newGatheringDialog,#gatheringHistoryDialog';
   const find=selector=>{try{return document.querySelector(selector);}catch{return null;}};
@@ -116,20 +116,24 @@
   function clearMarker(){marker?.remove();marker=null;placement=null;}
   document.addEventListener('dragstart',event=>{
     if(!enabled())return;
+    const text=SiteEditing.movableTextRoot(event.target);
+    if(text && text.text.draggable){draggingText=text.text;dragging='text';document.body.classList.add('dragging-gap');event.dataTransfer.setData('application/x-gathering-text',ElementAppearance.selector(draggingText));event.dataTransfer.effectAllowed='move';return;}
     const gap=event.target.closest('gathering-gap,.existing-layout-gap,[data-new-gap]');if(!gap)return;
     movingSpace=virtualInfo.get(gap)?{element:gap,size:virtualInfo.get(gap).size}:null;dragging=gap.dataset.gapId || (movingSpace?'existing':'new');document.body.classList.add('dragging-gap');event.dataTransfer.setData('application/x-gathering-gap',dragging);event.dataTransfer.effectAllowed=dragging==='new'?'copy':'move';
   });
   document.addEventListener('dragover',event=>{
     if(!enabled() || !dragging)return;
-    const element=candidate(event.target);if(!element || element.dataset.gapId===dragging){clearMarker();return;}
+    const element=candidate(event.target);if(!element || element.dataset.gapId===dragging || draggingText && !SiteEditing.canMoveText(draggingText,element)){clearMarker();return;}
     event.preventDefault();const rect=element.getBoundingClientRect(),before=event.clientY<rect.top+rect.height/2;placement={element,before};
     if(!marker){marker=document.createElement('div');marker.className='gap-drop-marker';(globalThis.activeHostDialog?.() || document.body).append(marker);}
     Object.assign(marker.style,{left:rect.left+'px',top:(before?rect.top:rect.bottom)+'px',width:rect.width+'px'});
   });
   document.addEventListener('drop',event=>{
     if(!enabled() || !dragging || !placement)return;
-    event.preventDefault();const {element,before}=placement;if(movingSpace)setSize(movingSpace.element,0);const result=put(element,before,['new','existing'].includes(dragging)?null:dragging);if(result && movingSpace)setSize(result,movingSpace.size);movingSpace=null;clearMarker();dragging=null;document.body.classList.remove('dragging-gap');if(result)ElementEditor.select(result);
+    event.preventDefault();const {element,before}=placement;
+    if(draggingText){const result=SiteEditing.moveTextTo(draggingText,element,before);draggingText=null;clearMarker();dragging=null;document.body.classList.remove('dragging-gap');if(result)ElementEditor.select(result);return;}
+    if(movingSpace)setSize(movingSpace.element,0);const result=put(element,before,['new','existing'].includes(dragging)?null:dragging);if(result && movingSpace)setSize(result,movingSpace.size);movingSpace=null;clearMarker();dragging=null;document.body.classList.remove('dragging-gap');if(result)ElementEditor.select(result);
   });
-  document.addEventListener('dragend',()=>{dragging=null;movingSpace=null;document.body.classList.remove('dragging-gap');clearMarker();});
+  document.addEventListener('dragend',()=>{dragging=null;draggingText=null;movingSpace=null;document.body.classList.remove('dragging-gap');clearMarker();});
   globalThis.GapLayout={render,refresh:()=>{if(context)render(context);},beforeRender,setSize,remove,addAfter:element=>put(candidate(element),false),getSize,isGap:element=>element?.matches('gathering-gap,.existing-layout-gap'),elements:()=>[...nodes.values(),...virtuals.values()]};
 })();

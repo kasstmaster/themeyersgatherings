@@ -213,6 +213,7 @@
     release();target=element;entry=SiteEditing.editorFor(target);
     if(!entry?.fields && (target.matches('button,a,h1,h2,h3,h4,h5,h6,p,li,time,legend,address,output,.summary-item,.summary-stat,.counter-row,label') || ['count-values','count-titles','dish-details','dish-claimants'].includes(ElementAppearance.group(target)))){SiteEditing.textElement(target,ElementAppearance.label(target));entry=SiteEditing.editorFor(target);}
     target.classList.add('element-editor-selected');
+    if(SiteEditing.movableTextRoot(target)){target.draggable=false;restores.push(()=>target.draggable=true);}
     if(toolbar.querySelector('[data-editor-chooser]'))toolbar.querySelector('[data-editor-chooser]').value=ElementAppearance.selector(target);
     const kind=ElementAppearance.group(target);
     toolbar.querySelector('[data-editor-selection]').textContent=ElementAppearance.label(target)+(kind?' · Shared '+kind.replaceAll('-',' '):'');
@@ -286,6 +287,10 @@
   }
   function beforeRender(){release();ribbonResize?.disconnect();ribbonResize=null;ribbonSpace?.remove();ribbonSpace=null;const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',()=>{rememberSelection();if(!toolbar?.contains(document.activeElement))syncTextControls();});
+  document.addEventListener('pointerdown',event=>{
+    if(!target || !SiteEditing.movableTextRoot(target) || !target.contains(event.target))return;
+    const rect=target.getBoundingClientRect();target.draggable=Math.min(event.clientX-rect.left,rect.right-event.clientX,event.clientY-rect.top,rect.bottom-event.clientY)<=6;
+  },true);
   document.addEventListener('click',event=>{
     if(!context?.host || !context.enabled || allowAction || event.target.closest(excluded) || event.target.closest('#editItemsButton,#hostToolsPanel .host-tool-actions,#hostQuickActions,#hostToolsButton,#invitationTemplatesButton'))return;
     if(target && editables.some(part=>part.contains(event.target))){event.stopImmediatePropagation();if(target.matches('button,a,[role="tab"]'))event.preventDefault();return;}

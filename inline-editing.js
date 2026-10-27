@@ -7,7 +7,7 @@
     if(!parent || !enabled || !context.host)return;
     const entry=editTargets.get(parent) || {};entry.options??={};entry.options.actions??=[];entry.options.actions.push([label,action]);editTargets.set(parent,entry);cleanup.push(()=>editTargets.delete(parent));
   }
-  function beforeRender(){ElementEditor.beforeRender();textRoots.clear();while(cleanup.length)cleanup.pop()();for(const [parent,children] of layoutOriginals)for(const child of children)if(child.parentElement===parent)parent.append(child);layoutOriginals.clear();}
+  function beforeRender(){ElementEditor.beforeRender();textRoots.clear();while(cleanup.length)cleanup.pop()();for(const [parent,children] of layoutOriginals)for(const child of children)if(child.isConnected && parent.isConnected)parent.append(child);layoutOriginals.clear();}
   function render(ctx){context=ctx;if(!ctx.host)enabled=false;const toggle=document.querySelector('#editItemsButton');toggle.textContent='Edit';toggle.setAttribute('aria-pressed',String(enabled));document.querySelector('#invitationTemplatesButton').hidden=!ctx.host || !enabled;document.body.classList.toggle('site-edit-mode',enabled && ctx.host);}
   function field(target,title,fields,commit,options={}){
     if(!target)return;
@@ -173,6 +173,10 @@
   }
   function movableText(root){
     for(const text of root.querySelectorAll('p[id]'))if(!layoutOriginals.has(text.parentElement))layoutOriginals.set(text.parentElement,[...text.parentElement.children]);
+    for(const [path,placement] of Object.entries(context.state.siteElementPlacements || {})){
+      let text,parent,before;try{text=document.querySelector(path);parent=document.querySelector(placement.parent);before=placement.before?document.querySelector(placement.before):null;}catch{continue;}
+      if(text?.matches('p[id]') && root.contains(text) && root.contains(parent) && !text.contains(parent) && (!before || before.parentElement===parent))parent.insertBefore(text,before);
+    }
     const orders=context.state.siteElementOrder || {};
     for(const [path,ids] of Object.entries(orders)){
       let parent;try{parent=document.querySelector(path);}catch{continue;}
@@ -185,6 +189,7 @@
     if(!enabled || !context.host)return;
     for(const text of root.querySelectorAll('p[id]')){
       const record=editTargets.get(text);if(!record || text.closest('[role="status"],[role="alert"]'))continue;
+      text.draggable=true;cleanup.push(()=>text.removeAttribute('draggable'));record.options??={};record.options.movableRoot=root;
       const move=direction=>{
         const parent=text.parentElement,children=[...parent.children].filter(child=>!child.matches('.existing-layout-gap,gathering-gap'));
         const neighbor=children[children.indexOf(text)+direction];if(!neighbor)return;
@@ -193,6 +198,26 @@
       };
       record.options??={};record.options.actions??=[];record.options.actions.push(['Move up',()=>move(-1)],['Move down',()=>move(1)]);
     }
+  }
+  function movableTextRoot(element){
+    const text=element?.closest('p[id]'),root=text && editTargets.get(text)?.options?.movableRoot;
+    return enabled && context.host && root?{text,root}:null;
+  }
+  function canMoveText(text,anchor){
+    const info=movableTextRoot(text),parent=anchor?.parentElement;
+    return Boolean(info && text!==anchor && !text.contains(anchor) && info.root.contains(parent) && parent.matches('div,section,article') && !anchor.closest('.wedding-media-gallery,[role="status"],[role="alert"],.element-editor-toolbar'));
+  }
+  function moveTextTo(text,anchor,before){
+    if(!canMoveText(text,anchor))return null;
+    SiteEditing.flush();const path=ElementAppearance.selector(text),oldParent=text.parentElement,parent=anchor.parentElement;
+    let oldNext=text.nextElementSibling;while(oldNext?.matches('.existing-layout-gap,gathering-gap'))oldNext=oldNext.nextElementSibling;
+    let next=before?anchor:anchor.nextElementSibling;while(next?.matches('.existing-layout-gap,gathering-gap'))next=next.nextElementSibling;if(next===text)return text;
+    const placements=context.state.siteElementPlacements??={};
+    for(const placement of Object.values(placements))if(placement.before===path)placement.before=oldNext?ElementAppearance.selector(oldNext):null;
+    parent.insertBefore(text,next);
+    placements[path]={parent:ElementAppearance.selector(parent),before:next?ElementAppearance.selector(next):null};
+    if(context.state.siteElementOrder){delete context.state.siteElementOrder[ElementAppearance.selector(oldParent)];delete context.state.siteElementOrder[ElementAppearance.selector(parent)];}
+    context.save();return document.querySelector(path);
   }
   function textOwner(element){for(let current=element;current;current=current.parentElement)if(textRoots.has(current) || editTargets.get(current)?.textBlock || editTargets.get(current)?.visual)return current;return null;}
   function textElement(target){
@@ -203,7 +228,7 @@
     settings(target,title,build){if(!target || !enabled || !context.host)return;const entry=editTargets.get(target) || {};entry.settings={title,build};editTargets.set(target,entry);cleanup.push(()=>editTargets.delete(target));},
     editorFor:target=>editTargets.get(target),get editorTargets(){return [...editTargets.keys()];},
     persist(action){flushing=true;try{action?.();context.save();}finally{flushing=false;}},get editorContext(){return context;},
-    beforeRender,render,field,portal,staticText,applyStaticText,tabs,button,textElement,textOwner,movableText,
+    beforeRender,render,field,portal,staticText,applyStaticText,tabs,button,textElement,textOwner,movableText,movableTextRoot,canMoveText,moveTextTo,
     resetTabSelection(navId,eventId=context?.eventId){selectedCustom.delete(`${eventId}:${navId}`);},
     flush(){ElementEditor.flush();},get flushing(){return flushing;},get portalOpen(){return Boolean(document.querySelector('.inline-portal-editor'));},
     get enabled(){return enabled && context?.host;},toggle(refresh){if(enabled)this.flush();enabled=!enabled;refresh();}
