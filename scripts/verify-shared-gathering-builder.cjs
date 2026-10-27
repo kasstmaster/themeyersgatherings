@@ -60,6 +60,8 @@ const assert=require('node:assert/strict');
    // Add and edit a page through the same toolbar container in every gathering.
    await page.locator('#rsvp-nav-media').click();await page.getByRole('button',{name:'Container',exact:true}).click();
    await page.getByLabel('New page title',{exact:true}).fill(`Extra page ${index+1}`);await page.getByRole('button',{name:'Add page',exact:true}).click();
+   assert.equal(await page.locator('.inline-custom-page h2').evaluate(e=>getComputedStyle(e).fontFamily.includes('Georgia') || getComputedStyle(e).fontFamily.includes('Arial')),true);
+   assert.equal(await page.locator('.inline-custom-page .section-kicker').evaluate(e=>getComputedStyle(e).textAlign),'right');
    await editText('.inline-custom-page .section-kicker',`Extra introduction ${index+1}`);
    await editText('.inline-custom-page h2',`Extra title ${index+1}`);
    await editText('.inline-custom-page .bride-groom-content',`Extra content ${index+1}`);
