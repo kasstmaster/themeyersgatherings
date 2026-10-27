@@ -987,3 +987,6 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 .element-editor-toolbar{display:flex;flex-direction:column;overflow:hidden}
 .element-editor-top{position:static;flex:none}
 .element-editor-toolbar .element-editor-row{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+
+/* Photos & Videos is reached through the shared gathering toolbar. */
+#weddingRsvpUploadToolbar{display:none!important}

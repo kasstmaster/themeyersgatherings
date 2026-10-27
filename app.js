@@ -1056,7 +1056,7 @@ function syncHostToolbar(records=[]) {
   if(guestHome.parentElement!==guestHomeOwner)guestHomeOwner.prepend(guestHome);
   guestHome.hidden=hostAuthenticated || !guestName;
   const print=document.querySelector('#hostToolsPanel [data-page-export]');if(print)print.hidden=Boolean(document.querySelector('#rsvpDialog').open && document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden'));
-  const navigation=document.querySelector('#rsvpPageNavigation');if(navigation)navigation.hidden=(!GatheringFeatures.forGathering(viewedEventId).weddingPages && !isHostView()) || !document.querySelector('#rsvpDialog').open || document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden');
+  const navigation=document.querySelector('#rsvpPageNavigation');if(navigation)navigation.hidden=!document.querySelector('#rsvpDialog').open || document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden');
   if(SiteEditing.enabled)ElementEditor.refresh();
 }
 document.addEventListener('close',()=>syncHostToolbar(),true);
@@ -1735,9 +1735,9 @@ function renderRsvpPageNavigation(){
   const nav=document.querySelector('#rsvpPageNavigation');nav.replaceChildren();
   const owner=document.querySelector(hostAuthenticated?'#hostToolsPanel':'#rsvpPageToolbar');
   const print=owner.querySelector('[data-toolbar-page-actions]');owner.insertBefore(nav,print);
-  nav.hidden=(!GatheringFeatures.forGathering(viewedEventId).weddingPages && !isHostView()) || !document.querySelector('#rsvpDialog').open || document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden');
+  nav.hidden=!document.querySelector('#rsvpDialog').open || document.querySelector('#rsvpEventConfirmation').hasAttribute('data-rsvp-flow-hidden');
   if(nav.hidden)return;
-  const restoreOrder=()=>{const order=state.rsvpToolbarOrder || [];const rank=button=>{const index=order.indexOf(button.dataset.pageKey);return index<0?order.length:index;};[...nav.children].sort((a,b)=>rank(a)-rank(b)).forEach(button=>nav.append(button));};
+  const restoreOrder=()=>{const order=state.rsvpToolbarOrder || [];const rank=button=>{if(button.dataset.pageKey==='media')return -1;const index=order.indexOf(button.dataset.pageKey);return index<0?order.length:index;};[...nav.children].sort((a,b)=>rank(a)-rank(b)).forEach(button=>nav.append(button));};
   const add=(title,source)=>{
     const key=source?.dataset.weddingTab || source?.dataset.gatheringTab || 'details';
     const button=document.createElement('button');button.type='button';button.id=`rsvp-nav-${key}`;button.dataset.pageKey=key;button.setAttribute('aria-label',title);button.setAttribute('aria-pressed',String(source?source.getAttribute('aria-selected')==='true':selectedWeddingTab==='details'));
@@ -1745,7 +1745,7 @@ function renderRsvpPageNavigation(){
     const label=document.createElement('span');
     label.textContent=title;
     button.append(label);nav.append(button);
-    const move=direction=>{const buttons=[...nav.children],index=buttons.indexOf(button),neighbor=buttons[index+direction];if(!neighbor)return;if(direction<0)nav.insertBefore(button,neighbor);else nav.insertBefore(neighbor,button);state.rsvpToolbarOrder=[...nav.children].map(button=>button.dataset.pageKey);saveState();};
+    const move=direction=>{const buttons=[...nav.children],index=buttons.indexOf(button),neighbor=buttons[index+direction];if(!neighbor || button.dataset.pageKey==='media' || neighbor.dataset.pageKey==='media')return;if(direction<0)nav.insertBefore(button,neighbor);else nav.insertBefore(neighbor,button);state.rsvpToolbarOrder=[...nav.children].map(button=>button.dataset.pageKey);saveState();};
     const entry=source && SiteEditing.editorFor(source),actions=[...(entry?.options?.actions || []).filter(([title])=>!['Move left','Move right'].includes(title)),['Move left',()=>move(-1)],['Move right',()=>move(1)]];
     SiteEditing.field(button,entry?.title || 'text',entry?.fields || [{label:'Page title',value:title,required:true}],entry?.commit || (([title])=>{state.rsvpDetailsTitle=title;}),{...entry?.options,actions});
     button.addEventListener('click',()=>{
@@ -1755,6 +1755,7 @@ function renderRsvpPageNavigation(){
       [...document.querySelectorAll('#rsvpWeddingPages>section')].find(element=>!element.hidden && element.getClientRects().length)?.scrollIntoView({block:'start',behavior:'auto'});
     });
   };
+  const media=document.querySelector('#uploadPhotosButton');add(media.textContent.trim(),media);
   if(!GatheringFeatures.forGathering(viewedEventId).weddingPages){document.querySelectorAll('#gatheringTabs>button[data-gathering-tab]').forEach(button=>{if(!button.hidden)add(button.textContent.trim(),button);});restoreOrder();return;}
   document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{if(!button.hidden && ['party','attire','registry'].includes(button.dataset.weddingTab))add(button.textContent.trim(),button);});
   add(state.rsvpDetailsTitle || 'Details');restoreOrder();
@@ -1762,7 +1763,7 @@ function renderRsvpPageNavigation(){
 function renderHostFirstPageActions(){
   const menu=document.querySelector('#hostFirstPageActions');menu.hidden=!isHostView();menu.replaceChildren();if(!isHostView())return;
   const add=(title,source)=>{
-    if(['party','attire','registry'].includes(source?.dataset.weddingTab) || source?.dataset.gatheringTab || title==='Details')return;
+    if(['party','attire','registry','media'].includes(source?.dataset.weddingTab) || source?.dataset.gatheringTab || title==='Details')return;
     const button=document.createElement('button');button.type='button';button.setAttribute('aria-pressed',String(source?source.getAttribute('aria-selected')==='true':selectedWeddingTab==='details'));
     button.innerHTML='<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h12l4 4v16H4V2Zm3 7v2h10V9H7Zm0 5v2h10v-2H7Z"/></svg>';
     const icon=source?.querySelector('svg');if(icon)button.firstElementChild.replaceWith(icon.cloneNode(true));

@@ -33,7 +33,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
       assert.equal(await page.locator('[data-wedding-tab="media"]').count(),0);
       const rsvp=await page.locator('#rsvpButton').boundingBox(),upload=await page.locator('#uploadPhotosButton').boundingBox();
       assert.ok(upload.y>rsvp.y+rsvp.height);assert.equal(upload.x,rsvp.x);
-      await page.locator('#uploadPhotosButton').click();
+      await page.locator('#rsvp-nav-media').click();
       const rect=await page.locator('#weddingMediaDialog').boundingBox();assert.equal(rect.x,0);assert.equal(rect.y,0);assert.equal(rect.width,width);assert.equal(rect.height,900);
       assert.equal(await page.locator('#weddingMediaUpload').isVisible(),true);
       await page.evaluate(()=>renderRsvpAttire());
@@ -63,7 +63,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
       await page.locator('[data-media-tab="view"]').click();assert.equal(await page.locator('#weddingMediaView').isVisible(),true);
       await page.locator('[data-media-tab="upload"]').click();assert.equal(await page.locator('#weddingMediaUpload').isVisible(),true);
       await page.locator('#weddingMediaDialog [data-close-wedding-media]').last().click();assert.equal(await page.locator('#weddingMediaDialog').isVisible(),false);
-      await page.locator('#uploadPhotosButton').click();await page.keyboard.press('Escape');assert.equal(await page.locator('#weddingMediaDialog').isVisible(),false);
+      await page.locator('#rsvp-nav-media').click();await page.keyboard.press('Escape');assert.equal(await page.locator('#weddingMediaDialog').isVisible(),false);
       assert.equal(await page.locator('#eventPage').isVisible(),true);
     }
     await page.evaluate(()=>{viewedEventId='thanksgiving';state=appState.events.thanksgiving;render();});assert.equal(await page.locator('#uploadPhotosButton').isVisible(),false);
