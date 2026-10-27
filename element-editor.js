@@ -1,6 +1,6 @@
 /* One fixed, selection-based editor for every gathering. No page content is replaced. */
 (() => {
-  let ribbonSpace,ribbonResize;
+  let sidebarResize,sidebarRoot;
   let context,toolbar,target,entry,range,fieldDraft,dirty=false,panelName='',restores=[],portalRestores=[],editables=[],allowAction=false,typing=false;
   const excluded='.gap-drop-marker,#newGatheringDialog,#gatheringHistoryDialog,#invitationEditorDialog,#invitationPreviewDialog,.page-export-options,.element-editor-toolbar,.editor-dialog,.appearance-editor,.inline-overlay-layer';
   const node=(tag,text)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;return element;};
@@ -256,7 +256,11 @@
     }
     return null;
   }
-  function sizeRibbon(){if(!toolbar || !ribbonSpace)return;const height=Math.ceil(toolbar.getBoundingClientRect().height);if(ribbonSpace.style.height!==height+'px'){ribbonSpace.style.height=height+'px';globalThis.GapLayout?.refresh();}}
+  function sizeSidebar(){
+    if(!toolbar)return;const width=Math.ceil(toolbar.getBoundingClientRect().width),value=width+'px';
+    if(document.body.style.getPropertyValue('--editor-sidebar-width')!==value){document.body.style.setProperty('--editor-sidebar-width',value);globalThis.GapLayout?.refresh();}
+  }
+
   function render(ctx){
     context=ctx;
     if(!ctx?.host || !ctx.enabled){beforeRender();return;}
@@ -294,14 +298,14 @@
       toolbar.addEventListener('focusout',event=>{if(event.target.matches('input[type="color"]') && !event.relatedTarget)return;SiteEditing.endUndoGroup();});
       toolbar.addEventListener('pointerdown',event=>{rememberSelection();if(event.target.matches('input,select,textarea'))SiteEditing.beginUndoGroup();else SiteEditing.endUndoGroup();if(event.target.matches('button:not([draggable="true"])'))event.preventDefault();});
     }
+    if(sidebarRoot!==root){sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=root;root.setAttribute('data-editor-sidebar-root','');}
     if(toolbar.parentElement!==root)root.append(toolbar);
-    if(!ribbonSpace){ribbonSpace=node('editor-ribbon-space');ribbonSpace.className='editor-ribbon-space';ribbonSpace.setAttribute('aria-hidden','true');ribbonResize=new ResizeObserver(sizeRibbon);ribbonResize.observe(toolbar);}
-    if(ribbonSpace.parentElement!==root)root.prepend(ribbonSpace);
+    if(!sidebarResize){sidebarResize=new ResizeObserver(sizeSidebar);sidebarResize.observe(toolbar);}
     const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=false;toolbar.querySelector('.element-editor-row').append(templates);}
     const chooser=toolbar.querySelector('[data-editor-chooser]');chooser.replaceChildren();const hint=node('option','Select an element');hint.value='';chooser.append(hint);
-    for(const element of [...new Set([...SiteEditing.editorTargets,...GapLayout.elements(),...root.querySelectorAll('*')].filter(element=>SiteEditing.editorFor(element) || GapLayout.isGap(element) || ['containers','inner-containers'].includes(ElementAppearance.group(element))))].filter(element=>root.contains(element) && !element.parentElement.closest('[hidden],[data-rsvp-flow-hidden],dialog:not([open])') && !element.hasAttribute('data-rsvp-flow-hidden') && (!element.hidden || SiteEditing.editorFor(element)?.fields?.every(spec=>!spec.value)))){const option=node('option',ElementAppearance.label(element));option.value=ElementAppearance.selector(element);chooser.append(option);}chooser.value=target?ElementAppearance.selector(target):'';refreshUndo();sizeRibbon();
+    for(const element of [...new Set([...SiteEditing.editorTargets,...GapLayout.elements(),...root.querySelectorAll('*')].filter(element=>SiteEditing.editorFor(element) || GapLayout.isGap(element) || ['containers','inner-containers'].includes(ElementAppearance.group(element))))].filter(element=>root.contains(element) && !element.parentElement.closest('[hidden],[data-rsvp-flow-hidden],dialog:not([open])') && !element.hasAttribute('data-rsvp-flow-hidden') && (!element.hidden || SiteEditing.editorFor(element)?.fields?.every(spec=>!spec.value)))){const option=node('option',ElementAppearance.label(element));option.value=ElementAppearance.selector(element);chooser.append(option);}chooser.value=target?ElementAppearance.selector(target):'';refreshUndo();sizeSidebar();
   }
-  function beforeRender(){release();ribbonResize?.disconnect();ribbonResize=null;ribbonSpace?.remove();ribbonSpace=null;const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}toolbar?.remove();toolbar=null;panelName='';}
+  function beforeRender(){release();sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',()=>{rememberSelection();if(!toolbar?.contains(document.activeElement))syncTextControls();});
   document.addEventListener('pointerdown',event=>{
     if(context?.enabled && toolbar && !toolbar.contains(event.target))SiteEditing.endUndoGroup();

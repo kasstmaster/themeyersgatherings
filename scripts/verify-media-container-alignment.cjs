@@ -5,7 +5,8 @@ await page.evaluate(()=>{localStateRevision+=1;appState=normalizeState(initialAp
 for(const width of [1280,390]){
  await page.setViewportSize({width,height:900});
  for(const id of ['wedding','thanksgiving','christmas']){
-  await page.evaluate(id=>enterEvent(id),id);await page.locator('#hostFirstPageActions').getByRole('button',{name:'Photos & Videos',exact:true}).click();
+  await page.evaluate(id=>{appState.events[id].siteElementPlacements={'#mediaGalleryDescription':{parent:'#weddingMediaSection',before:'#weddingMediaUpload'},'#sharedGalleryPending':{parent:'#weddingMediaSection',before:null}};enterEvent(id);},id);await page.locator('#hostFirstPageActions').getByRole('button',{name:'Photos & Videos',exact:true}).click();
+  assert.equal(await page.locator('#weddingMediaIntro').evaluate(e=>e.parentElement.id),'weddingMediaSection');assert.equal(await page.locator('#weddingMediaHeading').evaluate(e=>e.parentElement.id),'weddingMediaSection');
   const media=await page.locator('#weddingMediaUpload').evaluate(e=>{const rect=e.getBoundingClientRect(),page=e.parentElement.getBoundingClientRect();return {left:rect.left,width:rect.width,pageLeft:page.left,pageWidth:page.width};});assert.ok(Math.abs(media.left-media.pageLeft)<1);assert.ok(Math.abs(media.width-media.pageWidth)<1);
   for(const selector of ['#weddingMediaShare','#sharedGalleryLink','#sharedGalleryPending','#mediaGalleryDescription','#weddingMediaGallery'])assert.equal(await page.locator(selector).evaluate(e=>document.querySelector('#weddingMediaUpload').contains(e)),true);
   if(id==='wedding'){await page.locator('#rsvp-nav-registry').click();const registry=await page.locator('#registrySection .registry-gift-note').evaluate(e=>({left:e.getBoundingClientRect().left,width:e.getBoundingClientRect().width}));assert.ok(Math.abs(media.left-registry.left)<1);assert.ok(Math.abs(media.width-registry.width)<1);}
