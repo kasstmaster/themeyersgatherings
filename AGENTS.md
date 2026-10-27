@@ -8,9 +8,25 @@ The website must use **ONE shared gathering builder and editing system** while a
 
 These architectural principles must be preserved during all future development.
 
+## Existing Infrastructure and Data Protection
+
+This website uses GitHub Pages, a Cloudflare Worker, and a separate GitHub data repository for persistent shared state.
+
+When modifying shared builder functionality, gathering formatting, or page content:
+
+- Preserve the existing shared-state architecture.
+- Maintain compatibility with existing saved gathering data.
+- Do not accidentally reset, overwrite, or migrate guest accounts, RSVPs, menus, or other saved information.
+- Keep gathering-specific data isolated while preserving intentional shared account information.
+- Ensure changes remain compatible with the existing Cloudflare Worker and save/load functionality.
+- Do not introduce unnecessary modifications to the separate data repository.
+- Preserve all existing integrations, including AnyList, Dropbox, and invitation generation.
+
+Consult README.md and other relevant project documentation before changing related infrastructure.
+
 ---
 
-## 1. One Shared Gathering Builder
+## One Shared Gathering Builder
 
 ALL gatherings, existing and future, must use the same underlying builder code.
 
@@ -29,7 +45,7 @@ Shared functionality includes:
 
 Never create separate implementations of shared functionality for individual gatherings when the existing shared system can support them.
 
-## 2. Gathering-Wide Shared Formatting
+## Gathering-Wide Shared Formatting
 
 Each gathering has its own design system.
 
@@ -56,7 +72,7 @@ Different element types must maintain separate formatting configurations.
 
 For example, title formatting and introduction formatting must remain independent of each other.
 
-## 3. Independent Page Content
+## Independent Page Content
 
 Although formatting is shared within a gathering, page-specific content must remain independent.
 
@@ -78,7 +94,7 @@ Editing the actual title or introduction text must only modify the selected page
 
 This distinction must be preserved throughout the entire website.
 
-## 4. Independent Gathering Settings
+## Independent Gathering Settings
 
 Each gathering must maintain its own:
 
@@ -96,7 +112,7 @@ Gathering-specific data must be associated with the correct gathering ID.
 
 **Rule: Gatherings share builder functionality, not their individual data or design settings.**
 
-## 5. Architecture and Data Management
+## Architecture and Data Management
 
 Use reusable shared components and gathering-scoped formatting configurations.
 
@@ -113,7 +129,7 @@ Preserve existing saved data, layouts, settings, and behavior when modifying or 
 
 Do not migrate, overwrite, reset, or replace saved data unnecessarily.
 
-## 6. Gathering-Specific Features
+## Gathering-Specific Features
 
 Some features are intentionally available only in certain gathering types.
 
@@ -123,7 +139,7 @@ These features must remain supported without requiring separate copies of the en
 
 **Rule:** Gathering-specific functionality should extend or configure the shared builder, not replace or duplicate it.
 
-## 7. Future Features and Additions
+## Future Features and Additions
 
 Every new feature, modification, improvement, or bug fix must follow these architectural rules.
 
@@ -141,7 +157,7 @@ New design elements should use the gathering-wide formatting system by default w
 
 If a feature requires independent formatting, implement that exception intentionally rather than accidentally creating inconsistent behavior.
 
-## 8. Editing, Saving, and Loading
+## Editing, Saving, and Loading
 
 All editing functionality must work consistently throughout the website.
 
@@ -159,7 +175,7 @@ Verify that:
 
 Fix problems in the shared implementation rather than applying individual gathering-specific patches.
 
-## 9. Automated Testing
+## Automated Testing
 
 Maintain automated regression tests for the shared gathering architecture.
 
@@ -179,7 +195,7 @@ Run relevant tests after changes to the builder, editor, formatting system, or p
 
 Integrate these tests with the existing GitHub Actions workflow where practical so regressions are detected before merging changes.
 
-## 10. Code Review Rules
+## Code Review Rules
 
 Flag changes that:
 
@@ -193,7 +209,7 @@ Flag changes that:
 
 Prioritize maintainability, consistency, and preservation of existing functionality.
 
-## 11. Permanent Development Requirement
+## Permanent Development Requirement
 
 These are permanent architectural requirements for this repository.
 
