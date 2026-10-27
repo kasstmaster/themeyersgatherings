@@ -295,8 +295,8 @@
       const parent=button('Select container',()=>{if(target?.parentElement && !target.matches('body,dialog')){flush();select(target.parentElement);}},row);parent.title='Select the container around this element';
       separator();const templatesSlot=node('span');templatesSlot.dataset.editorTemplates='';row.append(templatesSlot);separator();
       const history=node('div');history.className='element-editor-history';row.append(history);
-      const undo=button('⬅️',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.undo()?'Change undone.':'There is no change to undo, or the data has changed elsewhere.');},history);undo.dataset.editorUndo='';undo.setAttribute('aria-label','Undo');undo.title='Undo';undo.disabled=true;
-      const redo=button('➡️',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.redo()?'Change redone.':'There is no change to redo, or the data has changed elsewhere.');},history);redo.dataset.editorRedo='';redo.setAttribute('aria-label','Redo');redo.title='Redo';redo.disabled=true;
+      const undo=button('Undo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.undo()?'Change undone.':'There is no change to undo, or the data has changed elsewhere.');},history);undo.dataset.editorUndo='';undo.setAttribute('aria-label','Undo');undo.title='Undo';undo.disabled=true;
+      const redo=button('Redo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.redo()?'Change redone.':'There is no change to redo, or the data has changed elsewhere.');},history);redo.dataset.editorRedo='';redo.setAttribute('aria-label','Redo');redo.title='Redo';redo.disabled=true;
       const save=button('Save',()=>{commitToolbarInput();const structured=flush();SiteEditing.endUndoGroup();if(structured)SiteEditing.editorContext.refresh();status('Saved.');},row);
       const done=button('Done Editing',()=>{commitToolbarInput();SiteEditing.endUndoGroup();SiteEditing.toggle(()=>SiteEditing.editorContext.refresh());},row);
       const top=node('div');top.className='element-editor-top';top.append(history,save,done);toolbar.prepend(top);

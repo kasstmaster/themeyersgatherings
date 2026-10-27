@@ -8,7 +8,7 @@ for(const width of [1280,390]){
  await page.setViewportSize({width,height:900});
  for(const id of ['wedding','thanksgiving','christmas']){
   await page.evaluate(async id=>{await closeHostDialogs();hostAuthenticated=false;hostWeddingPartyViewName='';guestName='Casey Example';signedInPersonName='Casey Example';enterEvent(id);},id);
-  assert.equal(await page.locator('#weddingMediaSection').isVisible(),true);assert.equal(await page.locator('#uploadPhotosButton').isVisible(),true);
+  assert.equal(await page.locator('#weddingMediaSection').isVisible(),true);assert.equal(await page.locator('#rsvp-nav-media').isVisible(),true);
   if(id==='wedding'){
    assert.equal(await page.locator('#rsvpPageNavigation').getByRole('button',{name:"Casey",exact:true}).isVisible(),true);
    assert.equal(await page.locator('#rsvpPageNavigation button').first().locator('br').count(),0);

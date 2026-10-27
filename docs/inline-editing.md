@@ -28,7 +28,7 @@ Serve the repository locally on port 8041, then run `node scripts/verify-element
 
 ## Host navigation and account sessions
 
-The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **The Meyers** returns everyone to gathering selection. **Accounts** and **History** are host-only fixed corner icons. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the editing toolbar.
+The fixed host toolbar is available on the gathering selection page, RSVP screens, and other dialogs. **All Gatherings** returns everyone to gathering selection. **Accounts** and **History** are host-only fixed corner icons. The **+** new-gathering action appears at the top-left only on the host gathering chooser. Gathering shortcuts remain available to guests. **Templates** is in the editing toolbar.
 
 In **Accounts**, click the small person icon beside an adult's name to enter that person's household session. **Leave account** restores the host session. During the account session, the account’s normal pages appear, with Edit and the host toolbar retained for the authenticated host. **Leave account** sits immediately left of Edit. Host management actions return to the host context; ordinary guests never see these controls. Accounts without gathering access have disabled sign-in icons.
 
@@ -40,7 +40,7 @@ Run `node scripts/verify-gap-editing.cjs` to verify editable existing spacing, s
 
 Choosing a gathering as host opens its first RSVP page. The host counters appear directly below RSVP. The previous host home page is removed. Wedding hosts default to Bride & Groom; guests retain their normal Details or personal Wedding Party default.
 
-Host first-page buttons open Bride & Groom, Photos & Videos and custom pages. Notes is a host toolbar option. The Dishes needed counter opens the host dish overview. Personal-name, Attire, Registry and Details options also live in the toolbar, followed by Print Page. Timeline is shared between the Bride & Groom sub-tabs and wedding party personal-information sub-tabs. Private host buttons and counters stay hidden in guest views. This navigation also works during editing; click a page label to rename or reorder it.
+Host first-page buttons open Bride & Groom and custom pages. Photos & Videos is in the toolbar. Notes is a host toolbar option. The Dishes needed counter opens the host dish overview. Personal-name, Attire, Registry and Details options also live in the toolbar, followed by Print Page. Timeline is shared between the Bride & Groom sub-tabs and wedding party personal-information sub-tabs. Private host buttons and counters stay hidden in guest views. This navigation also works during editing; click a page label to rename or reorder it.
 
 Run `node scripts/verify-host-rsvp-home.cjs` to check host landing, counter placement, page switching, standard gatherings, and guest privacy.
 
@@ -89,7 +89,7 @@ In Edit mode, Photos & Videos text boxes also support drag-and-drop using the sa
 
 The dish counter uses the same modal card and compact list rows as the other count dialogs. Remaining quantities appear first as “Dish (1 of 2) still needed”; claimed quantities appear below per household as “Dish (1 of 2) Raudman”. Partially claimed dishes therefore appear in both groups. Copy menu retains its export behavior with a smaller button. In the Gap panel, choose or drag Vertical gap or Horizontal gap; explicit gaps also have a direction selector and size control. Existing gaps default to vertical. Run `node scripts/verify-compact-dishes-and-gaps.cjs`.
 
-The editing toolbar includes ⬅️ Undo and ➡️ Redo for up to 50 saved changes in the current editing session. A new edit clears redo history. Undo restores only the properties changed by that action and preserves unrelated RSVP data; it refuses to overwrite a conflicting later change. Pending text formatting is saved before undoing. Run `node scripts/verify-editor-undo.cjs`.
+The editing toolbar includes Undo and Redo for up to 50 saved changes in the current editing session. A new edit clears redo history. Undo restores only the properties changed by that action and preserves unrelated RSVP data; it refuses to overwrite a conflicting later change. Pending text formatting is saved before undoing. Run `node scripts/verify-editor-undo.cjs`.
 
 RSVP layout now initializes after inactive questions are hidden, hides empty navigation footers, and applies saved spacing after appearance. Page wrappers are layout-only: the full RSVP form is the outer surface, and content panels/counts are shared inner surfaces. Content text formatting remains independent. This removes the extra painted Wedding layer and unused bottom reserve while preserving Attire, Responsibilities, and meal layouts. Run `node scripts/verify-first-open-and-layers.cjs`.
 
@@ -103,6 +103,8 @@ A single click selects a text box for formatting and dragging; double-click ente
 
 Photos & Videos keeps its title and intro above the shared inner panel. All remaining page text and controls stay inside that panel, including paragraphs moved outside it by older saved layouts. Body text can be dragged within the inner panel; the intro remains above it. Run `node scripts/verify-media-container-alignment.cjs` and `node scripts/verify-media-text-drag.cjs`.
 
-The left editor keeps ⬅️ / ➡️, Save, and Done Editing pinned at the top. Format opens automatically on selection; text boxes include lists, buttons and titles show typography without lists, containers show surfaces and relevant settings, and gaps show sizing. Separate launchers for Text, Lists, Background and Border are removed. Vertical gap and Horizontal gap follow, then Open page / use button and Select container, then Templates, separated by divider lines. Published frontend asset URLs include content hashes so updated editor files replace cached copies.
+The left editor keeps Undo / Redo, Save, and Done Editing pinned at the top. Format opens automatically on selection; text boxes include lists, buttons and titles show typography without lists, containers show surfaces and relevant settings, and gaps show sizing. Separate launchers for Text, Lists, Background and Border are removed. Vertical gap and Horizontal gap follow, then Open page / use button and Select container, then Templates, separated by divider lines. Published frontend asset URLs include content hashes so updated editor files replace cached copies.
 
 Count menus (Dishes needed, Invited, Attending, Not attending and No Response) have dedicated shared appearance groups for their cards, headings, totals, rows, item/household titles, names, details and controls. These groups are isolated from RSVP/page titles, buttons, containers and dish choices. Existing and new gatherings use the same count-list grouping. Run `node scripts/verify-count-list-formatting.cjs`.
+
+Photos & Videos is a shared toolbar option immediately after All Gatherings, with no duplicate front-page button. This ordering applies to hosts and guests in all gatherings; Print Page remains last.

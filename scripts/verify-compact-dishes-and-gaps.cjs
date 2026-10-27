@@ -8,7 +8,7 @@ assert.deepEqual(await page.locator('#dishListDialog .modal-card').evaluate(e=>(
 const rows=(await page.locator('#menuGrid .dish-list-row').allTextContents()).map(text=>text.replace(/\s+/g,' ').trim());assert.deepEqual(rows,['Ham (1 of 1) still needed','Stuffing (1 of 2) still needed','Stuffing (1 of 2) Raudman','Pie (2 of 2) Meyer']);
 assert.equal(await page.locator('#copyMenuButton').evaluate(e=>e.getBoundingClientRect().height<34),true);
 await page.evaluate(()=>{navigator.clipboard.writeText=async text=>window.copiedMenu=text;});await page.locator('#copyMenuButton').click();assert.equal(await page.evaluate(()=>window.copiedMenu===menuCopyText()),true);await page.locator('#closeDishListButton').click();
-await page.locator('#hostFirstPageActions').getByRole('button',{name:'Photos & Videos',exact:true}).click();await page.locator('#editItemsButton').click();
+await page.locator('#rsvpPageNavigation').getByRole('button',{name:'Photos & Videos',exact:true}).click();await page.locator('#editItemsButton').click();
 assert.equal(await page.getByRole('button',{name:'Gap',exact:true}).count(),0);
 assert.equal(await page.getByRole('button',{name:'Vertical gap',exact:true}).isVisible(),true);assert.equal(await page.getByRole('button',{name:'Horizontal gap',exact:true}).isVisible(),true);
 await page.getByRole('button',{name:'Horizontal gap',exact:true}).dragTo(page.locator('#weddingMediaIntro'),{targetPosition:{x:30,y:2}});
