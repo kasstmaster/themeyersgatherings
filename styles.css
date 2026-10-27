@@ -863,7 +863,7 @@ gathering-gap{display:block;position:relative;box-sizing:border-box;flex-shrink:
 
 .site-edit-mode :is(section,article,h1,h2,h3,h4,p,time,.event-header-text,gathering-gap){scroll-margin-top:160px}
 
-.element-editor-row{flex-wrap:nowrap;overflow-x:auto}.element-editor-row>*{flex-shrink:0}.element-editor-row [data-editor-chooser]{max-width:160px}.element-editor-row>[data-editor-selection]{max-width:120px}
+.element-editor-row{flex-wrap:nowrap;overflow-x:auto}.element-editor-row>*{flex-shrink:0}.element-editor-row>[data-editor-selection]{max-width:120px}
 
 
 
@@ -947,7 +947,6 @@ gathering-gap[data-gap-axis="x"]{clear:none;vertical-align:middle}.gap-drop-mark
 .element-editor-toolbar .element-editor-row,.element-editor-toolbar .element-editor-panel{display:flex;flex-direction:column;align-items:stretch;flex-wrap:nowrap;overflow-x:visible;gap:6px;padding-left:0;max-height:none}
 .element-editor-toolbar .element-editor-row>*{flex-shrink:0;max-width:100%}
 .element-editor-toolbar .element-editor-row>[data-editor-selection]{white-space:normal;overflow-wrap:anywhere;margin:0;max-width:100%}
-.element-editor-toolbar .element-editor-row [data-editor-chooser]{width:100%;max-width:100%}
 .element-editor-toolbar :is(button,select,input,textarea){max-width:100%;box-sizing:border-box}
 .element-editor-toolbar .element-editor-row>button{width:100%;white-space:normal}
 .element-editor-toolbar :is(.element-editor-row,.element-editor-panel) label{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;margin:0;font:12px Arial,sans-serif;color:inherit}

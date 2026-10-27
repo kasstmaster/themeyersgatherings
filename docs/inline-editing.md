@@ -12,7 +12,7 @@ The toolbar has five expandable groups:
 
 Each text box, button, count value, count title, or container is one logical element. A button's label, background, and border use the same toolbar. Counts remain calculated; formatting does not replace live totals. Text uses the same safe formatting renderer in all existing and newly created gatherings.
 
-Use **Select container** to edit the surface around an element. The **Select an element** menu also reaches empty text boxes without adding placeholders or changing their size. **Save** saves the selection, and **Done editing** saves pending changes and exits edit mode. Switching selection or leaving the page saves pending text changes. Appearance changes save immediately.
+Use **Select container** to edit the surface around an element. **Save** saves the selection, and **Done editing** saves pending changes and exits edit mode. Switching selection or leaving the page saves pending text changes. Appearance changes save immediately.
 
 Clicking a navigation button selects it for editing. Use **Open page / use button** in the toolbar to follow it while staying in edit mode. This lets you visit each page individually. Outside edit mode buttons work normally. Editing RSVP questions advances through pages without submitting an RSVP.
 
@@ -40,12 +40,11 @@ Run `node scripts/verify-gap-editing.cjs` to verify editable existing spacing, s
 
 Choosing a gathering as host opens its first RSVP page. The host counters appear directly below RSVP. The previous host home page is removed. Wedding hosts default to Bride & Groom; guests retain their normal Details or personal Wedding Party default.
 
-Host first-page buttons open Bride & Groom, Photos & Videos and custom pages. Notes is a host toolbar option. The Dishes needed counter opens the host dish overview. Personal-name, Attire, Registry and Details options also live in the toolbar, followed by Print Page. Timeline is shared between the Bride & Groom sub-tabs and wedding party personal-information sub-tabs. Private host buttons and counters stay hidden in guest views. This navigation also works during editing; choose an original page label through Select an element to rename or reorder it.
+Host first-page buttons open Bride & Groom, Photos & Videos and custom pages. Notes is a host toolbar option. The Dishes needed counter opens the host dish overview. Personal-name, Attire, Registry and Details options also live in the toolbar, followed by Print Page. Timeline is shared between the Bride & Groom sub-tabs and wedding party personal-information sub-tabs. Private host buttons and counters stay hidden in guest views. This navigation also works during editing; click a page label to rename or reorder it.
 
 Run `node scripts/verify-host-rsvp-home.cjs` to check host landing, counter placement, page switching, standard gatherings, and guest privacy.
 
-Toolbar colors: in Edit mode, click the toolbar background or choose its toolbar
-element from Select an element. Text contains selected/unselected text and icon
+Toolbar colors: in Edit mode, click the toolbar background. Text contains selected/unselected text and icon
 colors; Background contains overall and selected/unselected option backgrounds.
 Each setting includes a color picker, hex input and opacity. These settings apply
 to every option, including the guest toolbar for the same gathering.
