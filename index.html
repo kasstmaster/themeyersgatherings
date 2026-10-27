@@ -134,12 +134,11 @@
     </nav>
     <nav id="hostQuickActions" aria-label="Host shortcuts" hidden>
         <button id="newGatheringButton" class="host-fixed-add" hidden type="button" aria-label="New gathering" title="New gathering"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2h4v8h8v4h-8v8h-4v-8H2v-4h8V2Z"/></svg></button>
-        <button id="editAccountsButton" aria-label="Accounts" title="Accounts" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10ZM3 22v-3a9 7 0 0 1 18 0v3H3Z"/></svg></button>
-        <button id="gatheringHistoryButton" aria-label="History" title="History" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9H1l4-5 4 5H6a6 6 0 1 0 6-6V3Zm-1 4h2v5l4 2-1 2-5-3V7Z"/></svg></button>
     </nav>
     <button id="editItemsButton" class="host-fixed-edit" type="button" hidden>Edit</button>
         <button id="cancelViewAsButton" class="host-fixed-edit" type="button" hidden>Leave account</button>
     <button id="invitationTemplatesButton" type="button" hidden>Templates</button>
+    <div id="hostEditorManagement" hidden><button id="editAccountsButton" type="button">Accounts</button><button id="gatheringHistoryButton" type="button">History</button></div>
 
     <main hidden></main>
 
@@ -635,6 +634,12 @@
     </dialog>
 
 
+
+    <dialog id="menuEditorDialog" class="wide-dialog editor-dialog" aria-labelledby="menuEditorHeading"><form method="dialog" class="modal-card">
+      <button class="modal-close" value="cancel" aria-label="Close menu editor">×</button>
+      <p class="section-kicker">Gathering menu</p><h2 id="menuEditorHeading">Menu</h2>
+      <div id="menuEditorContent"></div>
+    </form></dialog>
 
     <dialog id="accountsDialog" class="wide-dialog editor-dialog">
       <form method="dialog" class="modal-card">

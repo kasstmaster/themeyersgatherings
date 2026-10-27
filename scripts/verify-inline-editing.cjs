@@ -29,7 +29,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
   const action = name => page.getByRole('button', { name, exact: true });
   assert.equal(await page.locator('.inline-edit-control').count(), 0);
   assert.deepEqual(await page.locator('.summary-strip>button').evaluateAll(buttons => buttons.map(button => button.id)), ['guestListButton', 'notAttendingButton', 'invitedListButton', 'editAccountsButton']);
-  await page.locator('#editAccountsButton').click(); assert.equal(await page.locator('#accountsDialog').isVisible(), true); await page.locator('#accountsDialog .modal-close').click();
+  if(!await page.evaluate(()=>SiteEditing.enabled))await page.locator('#editItemsButton').click();await page.locator('#editAccountsButton').click(); assert.equal(await page.locator('#accountsDialog').isVisible(), true); await page.locator('#accountsDialog .modal-close').click();
   await page.locator('#notAttendingButton').click(); assert.ok((await page.locator('#notAttendingList').textContent()).includes('Zero Person')); await page.locator('#notAttendingDialog .modal-close').click();
   await page.locator('#editItemsButton').click();
   assert.equal(await page.locator('#hostToolsPanel #invitationTemplatesButton').isVisible(), true);

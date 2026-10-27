@@ -20,7 +20,7 @@ const base = (process.env.BROWSER_TEST_URL || 'http://127.0.0.1:8041').replace(/
     appState=initialAppState();appState.accounts=[{name:'John,Jane,Joe Smith/Michael,Sally Jones',selectedEvents:{wedding:true,christmas:true},invitedEvents:{wedding:true},plusOnePeople:{wedding:['John Smith','Michael Jones']},signInAliases:[{name:'Michael Jones',alias:'Mike Jones'}]}];
     hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;viewedEventId='wedding';state=appState.events.wedding;state.weddingMealOptions=['Beef','Chicken'];state.rsvpDate='2030-01-01';showSignedInDestination();render();
   });
-  await page.locator('#editAccountsButton').click();
+  if(!await page.evaluate(()=>SiteEditing.enabled))await page.locator('#editItemsButton').click();await page.locator('#editAccountsButton').click();
   assert.equal(await page.locator('[data-invitation-quantity]').count(),0);
   await page.locator('[data-person-invitation="Michael Jones"]').fill('2');await page.locator('[data-person-invitation="Michael Jones"]').dispatchEvent('change');await page.locator('[data-person-invitation="Sally Jones"]').fill('2');await page.locator('[data-person-invitation="Sally Jones"]').dispatchEvent('change');
   assert.equal(await page.locator('[data-person-invitation="John Smith"]').inputValue(),'1');

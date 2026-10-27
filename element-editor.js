@@ -295,12 +295,14 @@
       const open=button('Use Button',()=>{if(!target)return;const current=target;release();allowAction=true;try{current.click();}finally{allowAction=false;}},actions);open.dataset.editorOpen='';open.disabled=true;
       const parent=button('Container',()=>{if(target?.parentElement && !target.matches('body,dialog')){flush();select(target.parentElement);}},actions);parent.title='Select the container around this element';
       const templatesSlot=node('span');templatesSlot.dataset.editorTemplates='';
+      const management=node('div');management.className='element-editor-management';management.dataset.editorManagement='';
+      const menu=button('Menu',()=>{commitToolbarInput();flush();globalThis.openMenuEditor?.();},management);menu.id='editMenuButton';
       const history=node('div');history.className='element-editor-history';row.append(history);
       const undo=button('Undo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.undo()?'Change undone.':'There is no change to undo, or the data has changed elsewhere.');},history);undo.dataset.editorUndo='';undo.setAttribute('aria-label','Undo');undo.title='Undo';undo.disabled=true;
       const redo=button('Redo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.redo()?'Change redone.':'There is no change to redo, or the data has changed elsewhere.');},history);redo.dataset.editorRedo='';redo.setAttribute('aria-label','Redo');redo.title='Redo';redo.disabled=true;
       const save=button('Save',()=>{commitToolbarInput();const structured=flush();SiteEditing.endUndoGroup();if(structured)SiteEditing.editorContext.refresh();status('Saved.');},row);
       const done=button('Done Editing',()=>{commitToolbarInput();SiteEditing.endUndoGroup();SiteEditing.toggle(()=>SiteEditing.editorContext.refresh());},row);
-      const top=node('div');top.className='element-editor-top';top.append(history,save,done,gaps,actions,templatesSlot,moves);toolbar.prepend(top);
+      const top=node('div');top.className='element-editor-top';top.append(history,save,done,gaps,actions,templatesSlot,management,moves);toolbar.prepend(top);
       const panel=node('div');panel.dataset.editorPanel='';panel.className='element-editor-panel';panel.hidden=true;row.append(panel);
       const live=node('span');live.dataset.editorStatus='';live.setAttribute('role','status');toolbar.append(live);
       toolbar.addEventListener('focusin',event=>{if(event.target.matches('input,select,textarea'))SiteEditing.beginUndoGroup();});
@@ -311,9 +313,11 @@
     if(toolbar.parentElement!==root)root.append(toolbar);
     if(!sidebarResize){sidebarResize=new ResizeObserver(sizeSidebar);sidebarResize.observe(toolbar);}
     const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=false;toolbar.querySelector('[data-editor-templates]').append(templates);}
+    for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)toolbar.querySelector('[data-editor-management]').append(control);}
+    toolbar.querySelector('#editMenuButton').disabled=!globalThis.hasGatheringToolbarContext?.();
     refreshUndo();sizeSidebar();
   }
-  function beforeRender(){release();sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}toolbar?.remove();toolbar=null;panelName='';}
+  function beforeRender(){release();sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)document.querySelector('#hostEditorManagement').append(control);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',()=>{rememberSelection();if(!toolbar?.contains(document.activeElement))syncTextControls();});
   document.addEventListener('pointerdown',event=>{
     if(context?.enabled && toolbar && !toolbar.contains(event.target))SiteEditing.endUndoGroup();
