@@ -1,6 +1,6 @@
 /* One fixed, selection-based editor for every gathering. No page content is replaced. */
 (() => {
-  let sidebarResize,sidebarRoot;
+  let sidebarResize,sidebarRoot,autosaveTimer;
   let context,toolbar,target,entry,range,fieldDraft,dirty=false,panelName='',restores=[],portalRestores=[],editables=[],allowAction=false,typing=false;
   const excluded='.gap-drop-marker,#newGatheringDialog,#gatheringHistoryDialog,#invitationEditorDialog,#invitationPreviewDialog,.page-export-options,.element-editor-toolbar,.editor-dialog,.appearance-editor,.inline-overlay-layer';
   const node=(tag,text)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;return element;};
@@ -78,6 +78,8 @@
     if(!existing){span.append(range.extractContents());range.insertNode(span);}range.selectNodeContents(span);restoreSelection();dirty=true;refreshUndo();
   }
   function flush(){
+    clearTimeout(autosaveTimer);
+    commitToolbarInput();
     let structured=false;
     if(fieldDraft && fieldDraft.inputs.some((input,index)=>input.value!==String(fieldDraft.entry.fields[index].value??''))){
       const {inputs,entry:record}=fieldDraft;if(!inputs.every(input=>input.reportValidity()))return false;
@@ -111,7 +113,8 @@
     if(toolbar){toolbar.querySelector('[data-editor-state]')?.closest('label').setAttribute('hidden','');toolbar.querySelector('[data-editor-selection]').textContent='';toolbar.querySelector('[data-editor-open]').disabled=true;toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=true);}
   }
   function commitToolbarInput(){const input=document.activeElement;if(toolbar?.contains(input) && input.matches('[data-editor-committed]') && input.value!==input.dataset.editorCommitted)input.dispatchEvent(new Event('change',{bubbles:true}));}
-  function refreshUndo(){const redo=toolbar?.querySelector('[data-editor-redo]');if(redo)redo.disabled=!SiteEditing.canRedo;const control=toolbar?.querySelector('[data-editor-undo]');if(control)control.disabled=!(SiteEditing.canUndo || dirty || [...(toolbar?.querySelectorAll('[data-editor-committed]') || [])].some(input=>input.value!==input.dataset.editorCommitted) || fieldDraft?.inputs.some((input,index)=>input.value!==String(fieldDraft.entry.fields[index].value??'')));}
+  function scheduleAutosave(){clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>{if(context?.enabled && SiteEditing.enabled)flush();},800);}
+  function refreshUndo(){scheduleAutosave();const redo=toolbar?.querySelector('[data-editor-redo]');if(redo)redo.disabled=!SiteEditing.canRedo;const control=toolbar?.querySelector('[data-editor-undo]');if(control)control.disabled=!(SiteEditing.canUndo || dirty || [...(toolbar?.querySelectorAll('[data-editor-committed]') || [])].some(input=>input.value!==input.dataset.editorCommitted) || fieldDraft?.inputs.some((input,index)=>input.value!==String(fieldDraft.entry.fields[index].value??'')));}
   function status(text){const live=toolbar?.querySelector('[data-editor-status]');if(live)live.textContent=text;}
   function labelInput(parent,title,type,value,change){
     const label=node('label',title);const input=node(type==='textarea'?'textarea':'input');if(type==='textarea')input.rows=2;else input.type=type;input.value=value??'';input.setAttribute('aria-label',title);label.append(input);parent.append(label);input.dataset.editorCommitted=input.value;const commit=()=>{if(!input.isConnected || !target)return;change(input.value,input);input.dataset.editorCommitted=input.value;refreshUndo();};input.addEventListener('change',commit);input.addEventListener('input',()=>{if(['number','range','color'].includes(type))commit();else refreshUndo();});return input;
@@ -301,9 +304,7 @@
       const history=node('div');history.className='element-editor-history';row.append(history);
       const undo=button('Undo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.undo()?'Change undone.':'There is no change to undo, or the data has changed elsewhere.');},history);undo.dataset.editorUndo='';undo.setAttribute('aria-label','Undo');undo.title='Undo';undo.disabled=true;
       const redo=button('Redo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.redo()?'Change redone.':'There is no change to redo, or the data has changed elsewhere.');},history);redo.dataset.editorRedo='';redo.setAttribute('aria-label','Redo');redo.title='Redo';redo.disabled=true;
-      const save=button('Save',()=>{commitToolbarInput();const structured=flush();SiteEditing.endUndoGroup();if(structured)SiteEditing.editorContext.refresh();status('Saved.');},row);
-      const done=button('Done',()=>{commitToolbarInput();SiteEditing.endUndoGroup();SiteEditing.toggle(()=>SiteEditing.editorContext.refresh());},row);
-      const top=node('div');top.className='element-editor-top';const saveDone=node('div');saveDone.className='element-editor-pair';saveDone.dataset.editorSaveDone='';saveDone.append(save,done);top.append(history,saveDone,node('hr'),menuTemplates,management,node('hr'),gaps,actions,moves);toolbar.prepend(top);
+      const top=node('div');top.className='element-editor-top';top.append(history,node('hr'),menuTemplates,management,node('hr'),gaps,actions,moves);toolbar.prepend(top);
       const panel=node('div');panel.dataset.editorPanel='';panel.className='element-editor-panel';panel.hidden=true;row.append(panel);
       const live=node('span');live.dataset.editorStatus='';live.setAttribute('role','status');toolbar.append(live);
       toolbar.addEventListener('focusin',event=>{if(event.target.matches('input,select,textarea'))SiteEditing.beginUndoGroup();});

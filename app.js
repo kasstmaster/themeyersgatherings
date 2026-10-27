@@ -1043,7 +1043,9 @@ function syncHostToolbar(records=[]) {
   const create=document.querySelector('#newGatheringButton');create.hidden=!hostAuthenticated;
   document.querySelector('#cancelViewAsButton').hidden=!isViewingAsGuest();
   document.body.style.setProperty('--host-shortcuts-width',document.querySelector('#hostQuickActions').getBoundingClientRect().width+'px');
-  const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated || SiteEditing.enabled;edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
+  const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated;edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
+  const editLabel=SiteEditing.enabled?'Done':'Edit';edit.querySelector('span').textContent=editLabel;edit.setAttribute('aria-label',editLabel);
+  edit.querySelector('svg').innerHTML=SiteEditing.enabled?'<path d="m5 12 4 4L19 6"/>':'<path d="m16 3 5 5L8 21H3v-5L16 3Z"/><path d="m14 5 5 5"/>';
   const hostToolbar=document.querySelector('#hostToolsPanel');if(edit.parentElement!==hostToolbar || edit.nextElementSibling!==create || hostToolbar.lastElementChild!==create)hostToolbar.append(edit,create);
   for(const button of hostToolbar.querySelectorAll('button')){const label=button.querySelector('span')?.textContent.trim() || button.getAttribute('aria-label') || '';if(label){button.title=label;if(!button.hasAttribute('aria-label'))button.setAttribute('aria-label',label);}}
   document.querySelector('#cancelViewAsButton').style.right='0px';
