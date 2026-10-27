@@ -110,3 +110,5 @@ Count menus (Dishes needed, Invited, Attending, Not attending and No Response) h
 Photos & Videos is a shared toolbar option immediately after All Gatherings, with no duplicate front-page button. This ordering applies to hosts and guests in all gatherings; Print Page remains last.
 
 The ↑ Gap and → Gap labels retain the existing vertical-strip and horizontal-band behavior respectively. Both support dragging from the fixed action area.
+
+After a gathering is selected, each role keeps its full permitted toolbar through pages, RSVP questions and dialogs. The same toolbar moves into the active dialog; guests and wedding party members do not receive host options. Choosing a page from RSVP returns to the gathering information view without submitting. Print Page leaves the questions before preparing a printable page. Gathering-specific options are hidden on the gathering selection page. Run `node scripts/verify-persistent-role-toolbar.cjs`.
