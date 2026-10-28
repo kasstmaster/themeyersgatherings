@@ -1117,11 +1117,24 @@ function setSignInStep(step) {
 document.querySelector('#signInBack').addEventListener('click', () => setSignInStep(Math.max(0, signInStep - 1)));
 function updateSignedInAccountBanner() {
   const signedInAccount = document.querySelector('#signedInAccount');
+  document.querySelector('#accountLogoutButton').hidden=!guestName || document.querySelector('#eventSelectionPage').hidden;
   signedInAccount.hidden = !guestName || !document.querySelector('#signInPage').hidden;
   document.querySelector('#signedInAccountName').textContent = guestName === HOST_DISPLAY_NAME ? 'Host' : accountContactGroups(signedInPersonName || guestName)[0]?.surname || invitedAccountDisplayName(guestName);
   if (!document.querySelector('#eventSelectionPage').hidden) document.querySelector('#eventSelectionPage').before(signedInAccount);
   else document.querySelector('#eventPage .site-header').after(signedInAccount);
 }
+document.querySelector('#accountLogoutButton').addEventListener('click',async()=>{
+  const button=document.querySelector('#accountLogoutButton');if(button.disabled)return;button.disabled=true;
+  try{
+    commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
+    clearTimeout(sharedSaveTimer);
+    if(sharedSavePending&&!sharedSaveInProgress)await saveSharedState();
+    if((sharedSavePending||sharedSaveInProgress)&&!retainPrivateDraft()){showToast('Your pending changes could not be preserved. Please wait for saving before logging out.');return;}
+    await StateClient.signOut(SHARED_STATE_URL);clearTimeout(sharedSaveTimer);sharedSavePending=false;
+    try{localStorage.removeItem(SHARED_SAVE_PENDING_KEY);}catch{/* The draft is already preserved. */}
+    history.replaceState(null,'',location.pathname+location.search);location.reload();
+  }finally{button.disabled=false;}
+});
 function showSignInPage() {
   document.querySelector('#signInPage').hidden = false;
   document.querySelector('#eventSelectionPage').hidden = true;
@@ -1901,7 +1914,7 @@ function openCustomItem(category) {
   });
 }
 
-let signInBusy=false;
+let signInBusy=false,restoringSession=false;
 function prepareAuthorizedState(saved){
  const defaults=normalizeState(structuredClone(saved));
  return {...defaults,...saved,accounts:saved.accounts,events:Object.fromEntries(Object.entries(saved.events).map(([id,event])=>[id,{...defaults.events[id],...event,...(event.weddingPartyMembers?{weddingPartyMembers:WeddingParty.normalizeMembers(event.weddingPartyMembers)}:{})}]))};
@@ -1914,6 +1927,7 @@ function applyAuthorizedSession(result){
 }
 function finishHostSignIn(result){
     applyAuthorizedSession(result);
+    if(result.persistent===false)showToast('Signed in for this visit. Persistent sign-in is temporarily unavailable.');
     hostAuthenticated = true;hostReturnSession=null;hostWeddingPartyViewName='';
     selectedGatheringTab = null;
     guestName = HOST_DISPLAY_NAME;
@@ -1931,6 +1945,11 @@ function finishHostSignIn(result){
     for(const input of document.querySelectorAll('#guestSignInFields input'))input.value='';
     if (action) action();
 }
+function finishGuestSignIn(account,person){
+  selectedGatheringTab=null;guestName=account.name;
+  signedInPersonName=accountPersonName(person,account)||person;selectedWeddingTab='guest';
+  document.querySelector('#accountPasswordError').textContent='';pendingAccountAction=null;showEventSelection();
+}
 function maskHostCandidate(){
  const input=document.querySelector('#accountFirstName');
  input.type=input.value.length>=24?'password':'text';
@@ -1938,7 +1957,7 @@ function maskHostCandidate(){
 document.querySelector('#accountFirstName').addEventListener('input',maskHostCandidate);
 document.querySelector('#accountFirstName').addEventListener('change',maskHostCandidate);
 document.querySelector('#passwordForm').addEventListener('submit', async event => {
-  event.preventDefault();if(signInBusy)return;
+  event.preventDefault();if(signInBusy||restoringSession)return;
   const firstNameInput = document.querySelector('#accountFirstName');
   if(signInStep===0&&firstNameInput.value.length>=24&&SHARED_STATE_URL){
     signInBusy=true;const button=document.querySelector('#signInSubmit');button.disabled=true;
@@ -1967,17 +1986,11 @@ document.querySelector('#passwordForm').addEventListener('submit', async event =
   if (!firstName || !lastName) { document.querySelector('#accountPasswordError').textContent = 'Enter your first and last name, plus your suffix if you have one.'; return; }
   let account;
   if(SHARED_STATE_URL){
-    try{const result=await StateClient.signIn(SHARED_STATE_URL,{role:'guest',name:accountName,qrToken:accountQrTokenFromLocation()||undefined});applyAuthorizedSession(result);account=appState.accounts[0];}
+    try{const result=await StateClient.signIn(SHARED_STATE_URL,{role:'guest',name:accountName,qrToken:accountQrTokenFromLocation()||undefined});applyAuthorizedSession(result);if(result.persistent===false)showToast('Signed in for this visit. Persistent sign-in is temporarily unavailable.');account=appState.accounts[0];}
     catch(error){document.querySelector('#accountPasswordError').textContent=error.message;return;}
   }else account=accountForSignIn(accountName);
   if(!account){document.querySelector('#accountPasswordError').textContent='Sign-in details were not recognized.';return;}
-  selectedGatheringTab = null;
-  guestName = account.name;
-  signedInPersonName = accountPersonName(accountName, account) || accountName;
-  selectedWeddingTab = 'guest';
-  document.querySelector('#accountPasswordError').textContent = '';
-  showEventSelection();
-  pendingAccountAction = null;
+  finishGuestSignIn(account,accountName);
 });
 document.querySelector('#eventSelectionChoices').addEventListener('click', event => {
   const button = event.target.closest('[data-enter-event]');
@@ -3833,6 +3846,18 @@ document.querySelector('#adminAddButton').addEventListener('click', () => {
 });
 
 async function startApp() {
+  if(SHARED_STATE_URL){
+    restoringSession=true;document.querySelector('#signInSubmit').disabled=true;
+    try{
+      const result=await StateClient.resume(SHARED_STATE_URL,accountQrTokenFromLocation()||undefined);
+      if(result){
+        if(result.role==='host')finishHostSignIn(result);
+        else{applyAuthorizedSession(result);finishGuestSignIn(appState.accounts[0],result.person);}
+        return;
+      }
+    }catch{document.querySelector('#accountPasswordError').textContent='Could not restore your sign-in. Reconnect and refresh, or sign in again.';}
+    finally{restoringSession=false;document.querySelector('#signInSubmit').disabled=false;}
+  }
   // Wait for a configured shared copy before allowing sign-in. Without one,
   // retain the richest recoverable browser copy instead of replacing it.
   await loadSharedState();
@@ -3890,6 +3915,7 @@ window.addEventListener('online', () => {
     loadSharedState();
   }
 });
+window.addEventListener('hashchange',()=>{if(isAccountQrRoute())location.reload();});
 window.addEventListener('pagehide', commitAllPendingEditorInputs);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') commitAllPendingEditorInputs();

@@ -38,3 +38,28 @@ test('an in-flight save preserves subsequent edits for a separate revision-check
  await api.signIn('https://test',{role:'host',password:'test'});api.remember(initial,'first');const draft=structuredClone(initial);draft.events.one.title='First edit';const pending=api.save('https://test',draft);draft.events.one.title='Second edit';release();await pending;await api.save('https://test',draft);
  assert.equal(requests[1].headers['If-Match'],'second');assert.equal(JSON.parse(requests[1].body).changes[0].value,'Second edit');
 });
+
+test('persistent login uses the first-party bridge without storing tokens, and offline logout blocks restoration',async()=>{
+ const stored=new Map(),requests=[];let offline=false;
+ const context=vm.createContext({structuredClone,location:{origin:'https://themeyers.ilymmd.com'},localStorage:{getItem:key=>stored.get(key),setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},fetch:async(url,options)=>{requests.push({url,options});if(offline)throw new TypeError('Offline');return Response.json({token:'opaque-runtime-session',role:'guest',person:'Casey Example',state:initial,revision:'one'});}});
+ vm.runInContext(protocol+client,context);const api=context.StateClient;
+ await api.signIn('https://service',{role:'guest',name:'Casey Example'});assert.equal(requests[0].url,'https://service/auth/login');assert.equal(requests[1].url,'/session/auth/session');assert.equal(stored.size,0);
+ await api.resume('https://service','printed-qr');assert.equal(requests[2].url,'/session/auth/session');assert.equal(JSON.parse(requests[2].options.body).qrToken,'printed-qr');
+ offline=true;await api.signOut('https://service');assert.equal(api.authenticated,false);assert.equal(stored.size,1);assert.ok(!JSON.stringify([...stored]).includes('opaque-runtime-session'));
+ const count=requests.length;assert.equal(await api.resume('https://service'),null);assert.equal(requests.length,count);
+});
+test('logout supersedes a pending persistent restore',async()=>{
+ let release;
+ const context=vm.createContext({structuredClone,location:{origin:'https://themeyers.ilymmd.com'},fetch:async url=>url.endsWith('/auth/session')?await new Promise(resolve=>release=()=>resolve(Response.json({token:'late-token',role:'host',revision:'one'}))):Response.json({})});
+ vm.runInContext(protocol+client,context);const api=context.StateClient,pending=api.resume('https://service');await api.signOut('https://service');release();assert.equal(await pending,null);assert.equal(api.authenticated,false);
+});
+
+test('replacing a login persists the new session, never an older runtime authorization',async()=>{
+ let count=0;const persisted=[];
+ const context=vm.createContext({structuredClone,location:{origin:'https://themeyers.ilymmd.com'},fetch:async(url,options)=>{
+  if(url.endsWith('/auth/login')){count++;return Response.json({token:'session-'+count,role:count===1?'host':'guest',revision:'one'});}
+  persisted.push(options.headers.Authorization);return Response.json({token:options.headers.Authorization.slice(7),role:count===1?'host':'guest',revision:'one'});
+ }});vm.runInContext(protocol+client,context);const api=context.StateClient;
+ await api.signIn('https://service',{role:'host'});await api.signIn('https://service',{role:'guest'});
+ assert.deepEqual(persisted,['Bearer session-1','Bearer session-2']);assert.equal(api.headers().Authorization,'Bearer session-2');assert.equal(api.role,'guest');
+});

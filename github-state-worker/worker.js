@@ -234,16 +234,24 @@ async function writeConditional(env,next,sha) {
 async function secureState(request,env,url,actor) {
  if(url.pathname!=='/auth/login'&&!actor)return jsonResponse(request,env,{error:'Sign in to continue.'},401);
  if(url.pathname==='/auth/login'&&request.method!=='POST')return jsonResponse(request,env,{error:'Method not allowed.'},405);
- if(url.pathname.startsWith('/auth/')&&!['/auth/login','/auth/logout'].includes(url.pathname))return jsonResponse(request,env,{error:'Not found.'},404);
+ if(url.pathname.startsWith('/auth/')&&!['/auth/login','/auth/logout','/auth/session'].includes(url.pathname))return jsonResponse(request,env,{error:'Not found.'},404);
  let result,state;
  const load=async()=>{if(!result){result=await readState(env);if(result.status!==200)throw Object.assign(new Error('Shared state is unavailable.'),{status:503});state=JSON.parse(result.text);}return state;};
  if(url.pathname==='/auth/login'&&request.method==='POST'){
   const session=await login(request,env,load);if(session.next==='guest')return jsonResponse(request,env,{next:'guest'});await load();return jsonResponse(request,env,{token:session.token,expires:session.expires,role:session.identity.role,person:session.identity.person,state:projectState(state,session.identity),revision:result.sha});
  }
+ if(url.pathname==='/auth/logout'&&request.method==='POST'){await logout(request,env);return response(request,env,null,204);}
  await load();
  if(!actor)return jsonResponse(request,env,{error:'Sign in to continue.'},401);
- if(url.pathname==='/auth/logout'&&request.method==='POST'){await logout(request,env);return response(request,env,null,204);}
  if(actor.role!=='host'&&!accountForActor(state,actor))return jsonResponse(request,env,{error:'Session no longer valid.'},401);
+ if(url.pathname==='/auth/session'){
+  if(request.method!=='POST')return jsonResponse(request,env,{error:'Method not allowed.'},405);
+  const input=await boundedJson(request,8192),account=actor.role==='guest'?accountForActor(state,actor):null;
+  if(!input||typeof input!=='object'||Array.isArray(input))return jsonResponse(request,env,{error:'Invalid request.'},400);
+  if(input.qrToken&&account&&account.qrToken!==input.qrToken)return jsonResponse(request,env,{error:'Sign in for this invitation.'},401);
+  const view=projectState(state,actor);if(actor.role==='guest'&&!Object.keys(view.events).length)return jsonResponse(request,env,{error:'Session no longer valid.'},401);
+  return jsonResponse(request,env,{token:request.headers.get('Authorization').slice(7),expires:actor.expires,role:actor.role,person:actor.person,state:view,revision:result.sha});
+ }
  if(request.method==='GET'){
   if(GatheringHistory.archiveDue(state)){const archived=await writeState(env,null,{historyOnly:true});if(archived.status!==200)return jsonResponse(request,env,{error:'Could not preserve history.'},503);result=await readState(env);if(result.status!==200)return jsonResponse(request,env,{error:'State unavailable.'},503);state=JSON.parse(result.text);}
   return jsonResponse(request,env,{state:projectState(state,actor),revision:result.sha});
