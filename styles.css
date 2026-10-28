@@ -1060,3 +1060,5 @@ dialog:modal:not(.fullscreen-dialog){bottom:var(--toolbar-clearance,0px);max-hei
 .admin-items>.menu-category-start{border-top:1px solid var(--border);margin-top:8px;padding-top:12px}
 
 #menuEditorDialog .admin-items{max-height:none;overflow:visible}.menu-editor-navigation{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.menu-editor-navigation button{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--ink);font:inherit;white-space:nowrap}.menu-editor-navigation button[aria-pressed=true]{background:var(--navy);color:white}
+
+.menu-copy-controls{margin:12px 0}.menu-copy-controls>div:not([hidden]){display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.menu-copy-controls [role=status]{flex-basis:100%;margin:0}

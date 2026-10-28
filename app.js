@@ -2850,6 +2850,27 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
     : '<p class="guest-empty">No one is currently invited.</p>');
   showSiteDialog(document.querySelector('#invitedListDialog'));
 });
+function renderMenuCopyControls(container,type,refresh){
+  container.querySelector(':scope > [data-menu-copy-controls]')?.remove();
+  const eventId=viewedEventId,target=state,wrapper=document.createElement('div');wrapper.dataset.menuCopyControls=type;wrapper.className='menu-copy-controls';
+  const toggle=document.createElement('button');toggle.type='button';toggle.textContent='Copy from';toggle.setAttribute('aria-expanded','false');
+  const controls=document.createElement('div');controls.hidden=true;
+  const gathering=document.createElement('select');gathering.setAttribute('aria-label','Copy from gathering');
+  for(const [id,event] of Object.entries(appState.events)){if(id===eventId||id==='wedding')continue;const option=document.createElement('option');option.value=id;option.textContent=event.gatheringName||EVENT_DETAILS[id]?.name||id;gathering.append(option);}
+  const menu=document.createElement('select');menu.setAttribute('aria-label','Menu to copy');
+  for(const [value,title] of [['potluck','Potluck'],['sit-down','Sit Down Dinner']]){const option=document.createElement('option');option.value=value;option.textContent=title;menu.append(option);}menu.value=type;
+  const copy=document.createElement('button');copy.type='button';copy.textContent='Copy items';copy.disabled=!gathering.options.length;
+  const status=document.createElement('p');status.setAttribute('role','status');
+  toggle.addEventListener('click',()=>{controls.hidden=!controls.hidden;toggle.setAttribute('aria-expanded',String(!controls.hidden));});
+  copy.addEventListener('click',()=>{
+    if(!hostAuthenticated||eventId!==viewedEventId||!appState.events[gathering.value])return;
+    commitAllPendingEditorInputs();
+    const result=GuestPlanning.copyMenuItems(target,appState.events[gathering.value],type,menu.value);
+    if(result.added){saveState();refresh();}
+    status.textContent=`${result.added} item${result.added===1?'':'s'} copied; ${result.skipped} already present or empty.`;
+  });
+  controls.append(gathering,menu,copy,status);wrapper.append(toggle,controls);container.insertBefore(wrapper,container.children[1]||null);
+}
 function renderDinnerPlanEditor(area){
   const event=state,eventId=viewedEventId,plan=GatheringFeatures.dinnerPlan(eventId,event);
   if(!plan)return;
@@ -2885,7 +2906,7 @@ function renderDinnerPlanEditor(area){
   const name=document.createElement('input');name.placeholder='New preparation dish';name.maxLength=150;name.setAttribute('aria-label','New preparation dish');
   const button=document.createElement('button');button.type='button';button.textContent='Add dish';
   button.addEventListener('click',()=>{if(!name.value.trim()){name.focus();return;}event.sitDownMenu=[...(event.sitDownMenu||[]),{id:crypto.randomUUID(),name:name.value.trim(),category:'Main Table'}];name.value='';saveState();draw();});
-  add.append(name,button);panel.append(add);draw();
+  add.append(name,button);panel.append(add);draw();renderMenuCopyControls(panel,'sit-down',draw);
 }
 let menuEditorSection='potluck';
 function openMenuEditor(){
@@ -2897,7 +2918,7 @@ function openMenuEditor(){
     renderDinnerPlanEditor(area);
     openAdmin();
     const fields=document.querySelector('#menuAdminFields'),anchor=document.createComment('menu fields home'),hidden=fields.hidden;
-    fields.before(anchor);fields.hidden=false;area.append(fields);
+    fields.before(anchor);fields.hidden=false;area.append(fields);renderMenuCopyControls(fields,'potluck',openAdmin);
     const units=document.querySelector('#menuQuantityTypes'),unitsAnchor=document.createComment('quantity types home');
     units.before(unitsAnchor);area.append(units);
     const sitDown=document.querySelector('#sitDownDinnerMenu');area.append(sitDown);

@@ -119,6 +119,29 @@
     return [...items].sort((a,b)=>rank(a)-rank(b));
   }
   function menuRows(items){const ordered=menuOrder(items);return ordered.map((item,index)=>({item,startsCategory:index>0&&item.category!==ordered[index-1].category}));}
+  function copyMenuItems(target,source,targetType,sourceType){
+    const key=type=>type==='sit-down'?'sitDownMenu':'items';
+    const normalizeName=value=>String(value||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('en-US');
+    const existing=target[key(targetType)]||[],names=new Set(existing.map(item=>normalizeName(item.name)));
+    const added=[];let skipped=0;
+    for(const item of source[key(sourceType)]||[]){
+      const name=String(item.name||'').trim();if(!name||names.has(normalizeName(name))){skipped++;continue;}
+      names.add(normalizeName(name));
+      const copy={id:crypto.randomUUID(),name,category:item.category||'Main Table'};
+      if(targetType!=='sit-down'){
+        copy.id='host-'+copy.id;copy.needed=Number.isSafeInteger(item.needed)&&item.needed>0?item.needed:1;copy.optional=!!item.optional;copy.claims=[];copy.unit=item.unit||'item';
+        const sourceUnit=(source.quantityUnits||[]).find(unit=>unit.id===copy.unit);
+        if(sourceUnit){
+          const units=target.quantityUnits||[],match=units.find(unit=>normalizeName(unit.label)===normalizeName(sourceUnit.label));
+          if(match)copy.unit=match.id;
+          else{const unit={id:'unit-'+crypto.randomUUID(),label:sourceUnit.label};target.quantityUnits=[...units,unit];copy.unit=unit.id;}
+        }else if(!['item','dozen'].includes(copy.unit))copy.unit='item';
+      }
+      added.push(copy);
+    }
+    if(added.length)target[key(targetType)]=[...existing,...added];
+    return {added:added.length,skipped};
+  }
   const allDeclined=people=>Array.isArray(people)&&people.length>0&&people.every(person=>person.attending===false);
-  globalThis.GuestPlanning={allDeclined,foodCategories,menuOrder,menuRows,childLabel,childLabels,guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
+  globalThis.GuestPlanning={allDeclined,foodCategories,menuOrder,menuRows,copyMenuItems,childLabel,childLabels,guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();

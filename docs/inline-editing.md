@@ -98,3 +98,5 @@ Potluck and private preparation dishes use the same labeled Remove button and th
 Both menu edit lists show a small divider only when the food category changes, without category titles or dividers between items in the same category.
 
 The Menu popup keeps Dinner plan, Clear a Claim and the section buttons in a shared header, in that order. They stay visible when switching Potluck, Sit Down Dinner or Quantity Types; only the section content changes.
+
+Copy from is available in both menu sections. Choose a source gathering and menu, then Copy items. Duplicate names (case/spacing variations included) are skipped rather than overwritten. Copied potluck entries retain amounts/units and start unclaimed; copied preparation options start unselected. Copying between menu types uses one item when no source quantity exists. Wedding is excluded. The source menu and active dinner plan are unchanged.

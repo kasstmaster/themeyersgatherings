@@ -175,3 +175,5 @@ Under **Edit → Menu**, top buttons open **Potluck**, **Sit Down Dinner** or **
 Guests with invitation-owned dish claims see **Your Dishes** in the gathering toolbar. It opens their dishes and quantities using the shared page layout; **Print Page** prints/emails that list. The option disappears when that invitation has no dishes, or the gathering uses a sit-down plan.
 
 Food uses one shared category order: mains, sides, appetizers, desserts, then drinks, while preserving each category’s item order. This applies to food lists, RSVP dish choices, menu editors and menu exports.
+
+Each non-wedding menu editor has **Copy from**: choose another gathering and its Potluck or Sit Down Dinner menu, then Copy items. Only missing dish names are added (ignoring case and extra spacing). Existing items, claims, yearly preparation selections and the active dinner plan stay unchanged; custom quantity types are matched or copied by label.

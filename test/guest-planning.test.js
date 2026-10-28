@@ -143,3 +143,14 @@ test('menu edit rows mark only category boundaries without modifying saved items
  const items=[{id:'dip',category:'Appetizers'},{id:'ham',category:'Main Table'},{id:'stuffing',category:'Sides'},{id:'potatoes',category:'Sides'}],before=JSON.stringify(items);
  assert.deepEqual(GuestPlanning.menuRows(items).map(({item,startsCategory})=>[item.id,startsCategory]),[['ham',false],['stuffing',true],['potatoes',false],['dip',true]]);assert.equal(JSON.stringify(items),before);
 });
+
+test('copy menus skips duplicate names and preserves destination records, claims, and yearly choices',()=>{
+ const source={items:[{id:'s1',name:'  HAM  ',category:'Main Table',needed:2,claims:['private']},{id:'s2',name:'Salad',category:'Sides',needed:3,unit:'tray',optional:true,claims:['private'],claimGroups:{private:{1:1}}},{id:'s3',name:'salad',category:'Sides'}],quantityUnits:[{id:'tray',label:'Tray'}]},before=structuredClone(source);
+ const target={items:[{id:'keep',name:'Ham',category:'Main Table',needed:1,claims:['existing']}],quantityUnits:[{id:'existing-tray',label:'tray'}],dinnerPlans:{2026:{type:'potluck',selectedItems:['keep-choice']}}};
+ assert.deepEqual(GuestPlanning.copyMenuItems(target,source,'potluck','potluck'),{added:1,skipped:2});
+ assert.deepEqual(target.items[0],{id:'keep',name:'Ham',category:'Main Table',needed:1,claims:['existing']});
+ assert.equal(target.items[1].name,'Salad');assert.equal(target.items[1].unit,'existing-tray');assert.equal(target.items[1].needed,3);assert.deepEqual(target.items[1].claims,[]);assert.equal(target.items[1].claimGroups,undefined);assert.notEqual(target.items[1].id,'s2');
+ assert.deepEqual(GuestPlanning.copyMenuItems(target,source,'potluck','potluck'),{added:0,skipped:3});assert.deepEqual(source,before);assert.deepEqual(target.dinnerPlans,{2026:{type:'potluck',selectedItems:['keep-choice']}});
+ const sitdown={sitDownMenu:[{id:'keep',name:'ham'}]};assert.deepEqual(GuestPlanning.copyMenuItems(sitdown,source,'sit-down','potluck'),{added:1,skipped:2});assert.deepEqual(Object.keys(sitdown.sitDownMenu[1]).sort(),['category','id','name']);
+ const next={items:[],quantityUnits:[]};GuestPlanning.copyMenuItems(next,{sitDownMenu:[{name:'Roast',category:'Main Table'}]},'potluck','sit-down');assert.equal(next.items[0].needed,1);assert.equal(next.items[0].unit,'item');assert.deepEqual(next.items[0].claims,[]);
+});
