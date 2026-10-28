@@ -88,10 +88,13 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   assert.equal(await page.locator('#accountFirstName').inputValue(),'');assert.equal(await page.evaluate(value=>JSON.stringify(appState).includes(value)||Object.keys(localStorage).some(key=>(localStorage.getItem(key)||'').includes(value))||location.href.includes(value),TEST_PASSWORD),false);
   // Configure a private, year-owned sit-down preparation menu through the actual host UI.
   await page.evaluate(()=>enterEvent('thanksgiving'));await page.evaluate(()=>SiteEditing.toggle(render));await page.evaluate(()=>openMenuEditor());
-  await page.getByLabel('Dinner plan',{exact:true}).selectOption('sit-down');
+  assert.equal(await page.getByLabel('Dinner plan',{exact:true}).inputValue(),'potluck');assert.equal(await page.locator('#sitDownDinnerMenu').isVisible(),true);
   await page.getByLabel('New preparation dish',{exact:true}).fill('Private Roast');await page.locator('#sitDownDinnerMenu').getByRole('button',{name:'Add dish',exact:true}).click();
   await page.getByLabel('Prepare Private Roast',{exact:true}).check();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
-  assert.equal(state.events.thanksgiving.dinnerPlans['2099'].type,'sit-down');assert.equal(state.events.thanksgiving.dinnerPlans['2099'].selectedItems.length,1);
+  assert.equal(state.events.thanksgiving.dinnerPlans['2099'].type,'potluck');assert.equal(state.events.thanksgiving.dinnerPlans['2099'].selectedItems.length,1);
+  await page.getByLabel('Dinner plan',{exact:true}).selectOption('sit-down');assert.equal(await page.locator('#menuAdminFields').isVisible(),true);
+  await page.locator('#adminItems [data-admin-id="ham"] input').fill('Updated Potluck Ham');await page.locator('#adminItems [data-admin-id="ham"] input').dispatchEvent('change');await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+  assert.equal(state.events.thanksgiving.dinnerPlans['2099'].type,'sit-down');assert.equal(state.events.thanksgiving.items[0].name,'Updated Potluck Ham');
   await page.locator('#menuEditorDialog .modal-close').click();await page.evaluate(()=>SiteEditing.toggle(render));
   const sitdownGuest=await browser.newPage();await sitdownGuest.route('**/*',route=>route.request().url().startsWith(base)?route.continue():route.abort());await sitdownGuest.goto(base+'/');
   await sitdownGuest.locator('#accountFirstName').fill('Casey');await sitdownGuest.locator('#signInSubmit').click();await sitdownGuest.locator('#accountLastName').fill('Example');await sitdownGuest.locator('#signInSubmit').click();await sitdownGuest.locator('#eventSelectionPage').waitFor({state:'visible'});
