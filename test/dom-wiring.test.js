@@ -143,11 +143,13 @@ test('account invitation preview opens immediately and reports its loading state
   assert.match(previewFunction, /Unable to preview the invitation/);
 });
 
-test('creating the first template assigns it to the viewed gathering', async () => {
-  const javascript = await readFile(new URL('../app.js', import.meta.url), 'utf8');
-  const createHandler = javascript.match(/#createTemplateButton'[\s\S]*?\n}\);/)?.[0] || '';
-
-  assert.match(createHandler, /template\.eventId = viewedEventId[\s\S]*appState\.invitationTemplates\.push\(template\)[\s\S]*state\.invitationTemplateId = template\.id[\s\S]*saveState\(\)/);
+test('new template drafts persist and assign only after required-value validation', async () => {
+  const javascript=await readFile(new URL('../app.js', import.meta.url),'utf8');
+  const create=javascript.slice(javascript.indexOf("document.querySelector('#createTemplateButton').addEventListener"),javascript.indexOf('function editorScale()'));
+  assert.doesNotMatch(create,/appState.invitationTemplates.push|saveState\(\)/);
+  const save=javascript.slice(javascript.indexOf("document.querySelector('#saveTemplateButton').addEventListener"),javascript.indexOf("document.querySelector('#templatePreviewAccount').addEventListener"));
+  assert.ok(save.indexOf('Invitation.validateTemplate')<save.indexOf('appState.invitationTemplates.push'));
+  assert.match(save,/state.invitationTemplateId=templateDraft.id/);
 });
 
 test('template manager only renders templates for the previewed gathering', async () => {

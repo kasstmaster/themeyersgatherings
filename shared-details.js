@@ -12,5 +12,11 @@
     event.addressLine1 = lines[0] || '';
     event.addressLine2 = lines.slice(1).join('\n');
   }
-  globalThis.SharedDetails = { homeAddress, setDetail };
+
+  function invitationValues(event={}) {
+    const address=[event.churchStreet,event.churchCityStateZip].filter(Boolean).join('\n') || homeAddress(event);
+    const lines=address.split(/\r?\n/),time=Object.hasOwn(event,'eventTime')?event.eventTime:event.ceremonyTime || event.churchTime || '';
+    return {...event,eventTime:time,ceremonyTime:time,address,addressLine1:lines[0] || '',addressLine2:lines.slice(1).join('\n'),receptionLocation:[event.venueStreet,event.venueCityStateZip].filter(Boolean).join('\n') || event.receptionLocation || '',cityStateZip:event.churchCityStateZip || lines.slice(1).join('\n') || event.cityStateZip || ''};
+  }
+  globalThis.SharedDetails = { homeAddress, setDetail, invitationValues };
 })();

@@ -2,6 +2,8 @@
   'use strict';
 
   const FIELD_DEFINITIONS = Object.freeze({
+    eventTime: { label: 'Event Time', type: 'text', formatter: 'plain' },
+    address: { label: 'Full Address', type: 'text', formatter: 'plain' },
     eventDate: { label: 'Event Date', type: 'text', formatter: 'weekday-month-ordinal-year' },
     rsvpBy: { label: 'RSVP By', type: 'text', formatter: 'by-short-month-day' },
     addressLine1: { label: 'Address Line 1', type: 'text', formatter: 'plain' },
@@ -82,10 +84,37 @@
     return { template: { ...template, background: { ...background }, updatedAt: new Date().toISOString() }, dimensionsChanged };
   }
   function fieldValue(field, eventState) {
+    eventState=root.SharedDetails?root.SharedDetails.invitationValues(eventState):{...eventState,eventTime:eventState.eventTime || eventState.ceremonyTime || eventState.churchTime || '',ceremonyTime:eventState.eventTime || eventState.ceremonyTime || eventState.churchTime || '',address:eventState.homeAddress || [eventState.addressLine1,eventState.addressLine2].filter(Boolean).join('\n')};
     const raw = field.key === 'rsvpBy' ? eventState.rsvpDate : field.key === 'customText' ? field.customText : eventState[field.key];
     if (field.key === 'eventDate') return formatEventDate(raw, field.formatter);
     if (field.key === 'rsvpBy') return formatRsvpDate(raw, field.formatter);
     return String(raw || '');
+  }
+
+  function mandatoryFields(background) {
+    const {width,height}=background;
+    return ['eventDate','eventTime','address','rsvpBy'].map((key,index)=>({...newField(key,width*.1,height*[.5,.59,.68,.85][index]),width:Math.round(width*.8),height:Math.round(height*(key==='address'?.15:.08)),fontSize:Math.min(28,Math.max(10,Math.round(width/24)))}));
+  }
+  function validateTemplate(template,event) {
+    const values=root.SharedDetails?root.SharedDetails.invitationValues(event):event || {};
+    const missing=[];
+    if(!parseDate(values.eventDate))missing.push('gathering date');
+    if(!String(values.eventTime ?? values.ceremonyTime ?? values.churchTime ?? '').trim())missing.push('time');
+    if(!String(values.address || values.homeAddress || values.addressLine1 || values.churchStreet || '').trim())missing.push('address');
+    if(!parseDate(values.rsvpDate))missing.push('RSVP-by date');
+    if(missing.length)throw new Error(`Complete ${missing.join(', ')} in Manage Gatherings before saving this template.`);
+    const fields=(template.fields || []).filter(field=>field.type==='text'&&field.width>0&&field.height>0&&field.x>=0&&field.y>=0&&field.x<template.background?.width&&field.y<template.background?.height);
+    const has=key=>fields.some(field=>field.key===key);
+    const absent=[];
+    if(!has('eventDate'))absent.push('Event Date');
+    if(!has('eventTime')&&!has('ceremonyTime'))absent.push('Event Time');
+    if(!has('address')&&(!has('addressLine1')||(String(values.addressLine2 || '').trim()&&!has('addressLine2'))))absent.push('Full Address (or both address lines)');
+    if(!has('rsvpBy'))absent.push('RSVP By');
+    if(absent.length)throw new Error(`Place the required fields on the invitation: ${absent.join(', ')}.`);
+    return true;
+  }
+  function copyForGathering(source,eventId,name,background) {
+    const template=duplicateTemplate(source,name);template.eventId=eventId;template.background={...background};return template;
   }
   function invitationModel(template, eventState, qrUrl) {
     if (!template) throw new Error('This gathering has no invitation template assigned.');
@@ -113,7 +142,7 @@
     if ('letterSpacing' in ctx) ctx.letterSpacing = `${field.letterSpacing || 0}px`;
     if ('wordSpacing' in ctx) ctx.wordSpacing = `${field.wordSpacing || 0}px`;
     const x = field.textAlign === 'center' ? field.x + field.width / 2 : field.textAlign === 'right' ? field.x + field.width : field.x;
-    ctx.fillText(text, x, field.y, field.width); ctx.restore();
+    String(text).split(/\r?\n/).forEach((line,index)=>ctx.fillText(line,x,field.y+index*field.fontSize*(field.lineHeight || 1.2),field.width)); ctx.restore();
   }
   function drawQr(ctx, qr, field) {
     const size = Math.min(field.width, field.height), count = qr.getModuleCount(), quiet = Math.max(4, field.quietZone || 4), modules = count + quiet * 2;
@@ -133,9 +162,9 @@
     return model.template.fields.filter(field => field.type === 'text').filter(field => {
       ctx.font = `${field.italic ? 'italic ' : ''}${field.fontWeight || 400} ${field.fontSize}px ${field.fontFamily || 'Georgia'}`;
       const value = model.values[field.id] || '';
-      return ctx.measureText(value).width + Math.max(0, value.length - 1) * (field.letterSpacing || 0) + (value.split(' ').length - 1) * (field.wordSpacing || 0) > field.width;
+      return value.split(/\r?\n/).some(line=>ctx.measureText(line).width + Math.max(0,line.length - 1)*(field.letterSpacing || 0)+(line.split(' ').length-1)*(field.wordSpacing || 0)>field.width) || value.split(/\r?\n/).length*field.fontSize*(field.lineHeight || 1.2)>field.height;
     }).map(field => field.label);
   }
-  root.Invitation = { FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowWarnings };
+  root.Invitation = { mandatoryFields, validateTemplate, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowWarnings };
   if (typeof module !== 'undefined') module.exports = root.Invitation;
 })(typeof globalThis !== 'undefined' ? globalThis : window);

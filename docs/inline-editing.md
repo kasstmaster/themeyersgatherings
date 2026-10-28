@@ -108,3 +108,5 @@ Potluck guests see a compact fixed reference bar during dish/contribution questi
 ### Year-specific gathering management
 
 The Host can use **Manage Gatherings** on the selection page to rename, cancel or delete a selected date and restore a deletion within 30 days. Cancel/delete require a separate warning and typed confirmation. These actions keep other years and their formatting/content independent. Guests use **View Past Gatherings** for read-only prior-year RSVP history and photos. See [the lifecycle guide](gathering-lifecycle.md).
+
+Gathering date, time, RSVP-by, and addresses now have one content-editing area in **Manage Gatherings**. Their page elements retain formatting selection, while core values are no longer changed through inline date/address fields or Templates. Templates keeps QR mode/assignment and supports **Copy from** with a new image; drafts are persisted only after mandatory-value/field validation. See [invitation editing](invitations.md).

@@ -293,7 +293,7 @@
       }
     }
     toolbar.querySelector('[data-editor-open]').disabled=!target.matches('button,a,[role="tab"],summary');
-    if(editables.length && !typing)status(SiteEditing.movableTextRoot(target)?'Double-click to edit text; drag to move.':'Double-click to edit text.');
+    if(editables.length && !typing)status(entry?.options?.contentReadOnly?'Formatting selected. Edit gathering information in Manage Gatherings.':SiteEditing.movableTextRoot(target)?'Double-click to edit text; drag to move.':'Double-click to edit text.');
     panelName='';showPanel(GapLayout.isGap(target)?'Gap':'Format');
   }
   function pick(start){
@@ -388,7 +388,7 @@
     if(part && typing){part.focus({preventScroll:true});const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY) || document.createRange();if(!part.contains(caret.startContainer)){caret.selectNodeContents(part);caret.collapse(false);}const selection=window.getSelection();selection.removeAllRanges();selection.addRange(caret);rememberSelection();}
   },true);
   document.addEventListener('dblclick',event=>{
-    if(!context?.enabled || !target || entry?.fields?.[0]?.readonly)return;
+    if(!context?.enabled || !target || entry?.fields?.[0]?.readonly || entry?.options?.contentReadOnly)return;
     const part=editables.find(part=>part.contains(event.target));if(!part)return;
     event.preventDefault();event.stopImmediatePropagation();typing=true;for(const editable of editables)editable.setAttribute('contenteditable','true');if(SiteEditing.movableTextRoot(target))target.draggable=false;
     part.focus({preventScroll:true});const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY);if(caret && part.contains(caret.startContainer)){const selection=window.getSelection();selection.removeAllRanges();selection.addRange(caret);rememberSelection();}
