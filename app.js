@@ -2403,7 +2403,7 @@ function renderRsvpDishes(){
       const claimedByOthers=!available&&!saved;
       const limit=Math.max(available,saved);
       const quantity=limit>1?`<label class="rsvp-dish-quantity" ${saved?'':'hidden'}><span>How many?</span><select data-rsvp-dish-quantity aria-label="Quantity of ${escapeAttribute(item.name)}" ${saved?'required':''}><option value="">Choose</option>${Array.from({length:limit},(_,index)=>{const quantity=index+1;return `<option value="${quantity}" ${quantity===saved?'selected':''}>${escapeHtml(formatQuantity(quantity,item))}</option>`;}).join('')}</select></label>`:'<input type="hidden" data-rsvp-dish-quantity value="1">';
-      return [`<div class="rsvp-dish-option${claimedByOthers?' rsvp-dish-covered':''}"><label class="rsvp-dish-choice"><input type="checkbox" data-rsvp-dish="${escapeAttribute(item.id)}" ${saved||claimedByOthers?'checked':''} ${claimedByOthers?'disabled':''}><span>${escapeHtml(item.name)}<small>${available?`${formatQuantity(available,item)} available`:'Already claimed'}</small></span></label>${quantity}</div>`];
+      return [`<div class="rsvp-dish-option${claimedByOthers?' rsvp-dish-covered':''}"><label class="rsvp-dish-choice"><input type="checkbox" data-rsvp-dish="${escapeAttribute(item.id)}" ${saved||claimedByOthers?'checked':''} ${claimedByOthers?'disabled data-rsvp-dish-unavailable':''}><span>${escapeHtml(item.name)}<small>${available?`${formatQuantity(available,item)} available`:'Already claimed'}</small></span></label>${quantity}</div>`];
     }).join('');return items?`<section class="rsvp-dish-category" data-rsvp-dish-category="${escapeAttribute(category)}"><h4>${escapeHtml(category)}</h4><div class="rsvp-dish-grid">${items}</div></section>`:'';
   }).join(''):'';
   if(enabled&&!document.querySelector('#rsvpDishChoices').textContent.trim())document.querySelector('#rsvpDishChoices').textContent='The listed dishes are covered. You can bring something else or go back and choose No.';
@@ -2442,7 +2442,7 @@ document.addEventListener('click',event=>{
 function rsvpDishDraft(){
   if(!rsvpDishesEnabled())return null;
   const yes=document.querySelector('#rsvpBringingDish').value==='yes';
-  const quantities=new Map([...document.querySelectorAll('[data-rsvp-dish]')].map(input=>[input.dataset.rsvpDish,yes&&input.checked&&!input.disabled?Number(input.closest('.rsvp-dish-option').querySelector('[data-rsvp-dish-quantity]').value):0]));
+  const quantities=new Map([...document.querySelectorAll('[data-rsvp-dish]')].map(input=>[input.dataset.rsvpDish,yes&&input.checked&&!input.disabled&&!input.hasAttribute('data-rsvp-dish-unavailable')?Number(input.closest('.rsvp-dish-option').querySelector('[data-rsvp-dish-quantity]').value):0]));
   const customs=yes&&document.querySelector('#rsvpCustomDish').checked?readCustomDishes():[];
   return {quantities,customs};
 }
@@ -2462,7 +2462,7 @@ function validateRsvpQuestion(key){
   });
   const draft=rsvpDishDraft();
   const choice=document.querySelector('#rsvpCustomDish');choice.setCustomValidity('');
-  if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.customs.length&&!document.querySelector('[data-rsvp-dish]:checked:not(:disabled)')){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
+  if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.customs.length&&!document.querySelector('[data-rsvp-dish]:checked:not(:disabled):not([data-rsvp-dish-unavailable])')){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
   return true;
 }
 function rsvpDishQuantity(item){
@@ -2525,7 +2525,7 @@ function applyRsvpDeadline() {
   const noticeText = GatheringFeatures.rsvp(viewedEventId).namedGuests?'The RSVP deadline has passed. You can still change who is attending and the number of children attending. Guest names, meals, and dietary notes are locked. Contact the hosts for other changes.':'The RSVP deadline has passed. You can still change who is attending and the number of children and guests attending.';
   if(notice.textContent!==noticeText)notice.textContent=noticeText;
   document.querySelectorAll('#rsvpForm [data-person-guest], #rsvpForm [data-person-guest-name], #rsvpForm [data-rsvp-meal], #rsvpForm [data-rsvp-dietary]').forEach(input => { input.disabled=locked; });
-  document.querySelectorAll('[data-rsvp-question] input,[data-rsvp-question] select').forEach(input=>{input.disabled=locked || !GatheringFeatures.rsvp(viewedEventId).contributions || SiteEditing.enabled;});
+  document.querySelectorAll('[data-rsvp-question] input,[data-rsvp-question] select').forEach(input=>{input.disabled=locked || !GatheringFeatures.rsvp(viewedEventId).contributions || SiteEditing.enabled || input.hasAttribute('data-rsvp-dish-unavailable');});
   if(changed)RsvpFlow.refresh();
 }
 setInterval(() => { if (document.querySelector('#rsvpDialog').open) applyRsvpDeadline(); }, 1000);

@@ -29,6 +29,7 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.locator('[data-rsvp-no-children]').check();await page.locator('#rsvpNext').click();
   await page.locator('[data-rsvp-no-guests]').check();await page.locator('#rsvpNext').click();
   await page.locator('[data-rsvp-dish-answer="yes"]').click();
+  await page.evaluate(()=>applyRsvpDeadline());assert.equal(await page.locator('[data-rsvp-dish="legacy-overflow"]').isDisabled(),true);
   await page.locator('#rsvpCustomDish').check();await page.locator('#rsvpNext').click();
   await page.locator('#rsvpCustomDishName').fill('Homemade Soup');await page.locator('#rsvpNext').click();
   await page.locator('#rsvpCustomDishQuantity').fill('2');await page.locator('#rsvpNext').click();

@@ -82,3 +82,5 @@ Custom RSVP contributions reuse the same name, quantity/unit and category questi
 Saved custom items remain on their gathering’s menu after claims are released and when starting the next occurrence. Only old claims are reset; the host can still delete items explicitly in Menu.
 
 Lowering a dish limit below existing claims does not block unrelated RSVP saves. Existing quantities can stay the same or decrease; new claims cannot increase the existing overflow. RSVP validation messages are displayed inside the RSVP page.
+
+RSVP refreshes preserve unavailable dish controls; showing a covered dish as checked does not claim it for the current invitation group.
