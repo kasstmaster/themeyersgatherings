@@ -22,7 +22,7 @@
       const font=element.style.fontFamily.replaceAll('"','').replaceAll("'",'');if(TextStyles.fonts.includes(font))styles.font=font;
       const size=parseFloat(element.style.fontSize.replace(/^calc\(/,''));if(size>=8 && size<=96)styles.size=Math.round(size);
       for(const [key,value] of [['color',element.style.color],['highlight',element.style.backgroundColor]])if(value){const parts=ElementAppearance.colorParts(value);styles[key]=parts.hex+(parts.alpha<100?Math.round(parts.alpha/100*255).toString(16).padStart(2,'0'):'');}
-      Object.assign(styles,TextStyles.effects(element.style,ElementAppearance.colorParts));
+      Object.assign(styles,TextStyles.effects(element.style,ElementAppearance.colorParts,()=>getComputedStyle(element)));
       let result=Object.keys(styles).length?TextStyles.mark(text,styles):text;
       if(element.matches('p,div,h1,h2,h3,h4,h5,h6'))result+='\n';
       return result;
@@ -34,7 +34,12 @@
     const selected=window.getSelection();
     const anchor=selected?.anchorNode;
     if(anchor && editables.some(part=>part.contains(anchor)))return anchor.nodeType===1?anchor:anchor.parentElement;
-    return editables[0] || target;
+    const root=editables[0] || target;
+    // Inline effects/fonts live on text spans, not necessarily the text-box
+    // root. With no highlighted range, show the first displayed text's style.
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let text;
+    while((text=walker.nextNode()))if(text.textContent.trim())return text.parentElement;
+    return root;
   }
   function ancestorsUntilTarget(element){const parents=[];for(let parent=element.parentElement;parent && target.contains(parent);parent=parent.parentElement)parents.push(parent);return parents;}
   function syncTextControls(){
@@ -81,14 +86,24 @@
 
     if(!editables.length)return;
     if(!restoreSelection() || range.collapsed){range=document.createRange();range.selectNodeContents(editables[0]);}
-    const existing=range.startContainer===range.endContainer && range.startContainer.nodeType===1 && range.startContainer.matches('span') && range.startOffset===0 && range.endOffset===range.startContainer.childNodes.length ? range.startContainer : null;
-    const span=existing || node('span');
+    const existing=range.startContainer===range.endContainer && range.startContainer.nodeType===1 && range.startContainer.matches('span') && !editables.includes(range.startContainer) && range.startOffset===0 && range.endOffset===range.startContainer.childNodes.length ? range.startContainer : null;
+    const span=existing || node('span');span.classList.add('inline-text-appearance-style');
     if(key==='font')span.style.fontFamily=value;
     if(key==='size')span.style.fontSize=value+'px';
     if(key==='color'){span.style.color=value;span.className='text-selection-color';span.style.setProperty('--selection-text-color',value);}
     if(key==='highlight')span.style.backgroundColor=value;
-    if(key==='effects'){const css=TextStyles.properties(value);if(!css)return;span.style.cssText+=';'+css;}
-    if(!existing){span.append(range.extractContents());range.insertNode(span);}range.selectNodeContents(span);restoreSelection();dirty=true;refreshUndo();
+    if(key==='effects'){
+      const css=TextStyles.properties(value);if(!css)return;span.style.cssText+=';'+css;
+    }
+    if(!existing){span.append(range.extractContents());range.insertNode(span);}
+    if(key==='effects'){
+      // The new effect applies to the entire selection, including text that
+      // already has nested effects. Keep unrelated fonts, emphasis and links.
+      const properties=Object.hasOwn(value,'shadow')?['text-shadow']:[];
+      if(Object.hasOwn(value,'outline'))properties.push('-webkit-text-stroke-width','-webkit-text-stroke-color','paint-order');
+      for(const child of span.querySelectorAll('[style]'))for(const property of properties)child.style.removeProperty(property);
+    }
+    range.selectNodeContents(span);restoreSelection();dirty=true;refreshUndo();
   }
   function flush(){
     clearTimeout(autosaveTimer);

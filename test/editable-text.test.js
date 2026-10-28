@@ -114,3 +114,19 @@ test('text effects survive safe markup rendering without accepting arbitrary CSS
  assert.equal(restored.shadow,'#12345680');assert.equal(restored.outlineWidth,'1.5');
  assert.match(format(context.TextStyles.mark('Plain',{shadow:'none',outline:'none'})),/text-shadow:none/);
 });
+
+
+test('effect markup is protected from legacy palette rewriting after reload',()=>{
+ const shadow=format(context.TextStyles.mark('Shadow',{shadow:'#123456',shadowBlur:'0'}));
+ const outline=format(context.TextStyles.mark('Outline',{outline:'#fedcba',outlineWidth:'2'}));
+ assert.match(shadow,/<span class="inline-text-appearance-style"/);assert.match(outline,/<span class="inline-text-appearance-style"/);
+});
+test('legacy effect variables serialize their resolved colors without capturing inherited effects',()=>{
+ let resolves=0;
+ const inline={textShadow:'var(--old-shadow) 1px 2px 3px',webkitTextStrokeWidth:'2px',webkitTextStrokeColor:'var(--old-outline)'};
+ const computed={textShadow:'rgb(18, 52, 86) 1px 2px 3px',webkitTextStrokeColor:'rgb(254, 220, 186)'};
+ const color=value=>({hex:value==='rgb(18, 52, 86)'?'#123456':'#fedcba',alpha:100});
+ const saved=context.TextStyles.effects(inline,color,()=>{resolves++;return computed;});
+ assert.equal(saved.shadow,'#123456');assert.equal(saved.outline,'#fedcba');assert.equal(saved.outlineWidth,'2');assert.equal(resolves,1);
+ assert.deepEqual(Object.keys(context.TextStyles.effects({},color,()=>{throw new Error('Must not copy inherited styles');})),[]);
+});
