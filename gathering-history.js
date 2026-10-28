@@ -90,12 +90,14 @@
     if(action==='information') {
       if(!information||typeof information!=='object')throw new Error('Enter gathering information.');
       const {eventDate,rsvpDate,eventTime,address}=information;
+      if(name!==undefined&&(typeof name!=='string'||!name.trim()||name.trim().length>120))throw new Error('Enter a name of 1–120 characters.');
       const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
       if(!validDate(eventDate)||typeof rsvpDate!=='string'||rsvpDate&&!validDate(rsvpDate))throw new Error('Enter valid gathering and RSVP dates.');
       if([eventTime,address,information.venueTime || '',information.venueAddress || ''].some(value=>typeof value!=='string'||value.length>4000))throw new Error('Enter valid time and address information.');
       if(entry?.status==='cancelled'&&eventDate!==date)throw new Error('A cancelled date cannot be rescheduled.');
       if(eventDate!==date&&(app.gatheringHistory?.[id]?.[eventDate]||record(app,id,eventDate)||!current&&app.events?.[id]?.eventDate===eventDate))throw new Error('That date already has an occurrence.');
       for(const target of new Set([event,snapshot?.event].filter(Boolean))){
+        if(name!==undefined)target.gatheringName=name.trim();
         target.eventDate=eventDate;target.rsvpDate=rsvpDate;target.eventTime=eventTime.trim();
         SharedDetails.setDetail({[id]:target},id,'homeAddress',address.trim());
         if(id==='wedding'){
@@ -106,6 +108,7 @@
         }
         if(eventDate!==date)target.mediaPreviousDates=[...new Set([...(target.mediaPreviousDates || []),date])];
       }
+      if(snapshot&&name!==undefined)snapshot.name=name.trim();
       if(snapshot&&eventDate!==date){snapshot.date=eventDate;app.gatheringHistory[id][eventDate]=snapshot;delete app.gatheringHistory[id][date];}
       return;
     }
