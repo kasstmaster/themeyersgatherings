@@ -23,3 +23,12 @@ test('regular gathering pages use one feature definition and Wedding only overri
  const wedding=GatheringFeatures.forGathering('wedding');
  assert.equal(wedding.menu,false);assert.equal(wedding.notes,false);assert.equal(wedding.weddingPages,true);assert.equal(wedding.ceremonyAddresses,true);
 });
+
+test('yearly dinner plans are independent and Wedding keeps its existing RSVP behavior',()=>{
+ const event={eventDate:'2026-12-19',dinnerPlans:{2026:{type:'sit-down',selectedItems:['a']},2027:{type:'potluck',selectedItems:['b']}}};
+ assert.equal(GatheringFeatures.rsvp('christmas',event).contributions,false);
+ assert.deepEqual(GatheringFeatures.dinnerPlan('christmas',event),{year:'2026',type:'sit-down',selectedItems:['a']});
+ assert.equal(GatheringFeatures.rsvp('christmas',{...event,eventDate:'2027-12-19'}).contributions,true);
+ assert.equal(GatheringFeatures.dinnerPlan('wedding',event),null);assert.equal(GatheringFeatures.rsvp('wedding',event).meals,true);
+ assert.equal(GatheringFeatures.rsvp('new-gathering',{}).contributions,true);
+});

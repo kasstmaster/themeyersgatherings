@@ -169,3 +169,7 @@ Saved custom dishes remain part of that gathering’s menu for future selection,
 RSVP saves preserve existing dish claims that exceed a later menu limit, allowing unchanged or reduced quantities without permitting additional over-capacity claims. Validation errors appear within the RSVP page.
 
 Dishes already claimed by other invitation groups remain checked and unavailable through deadline/RSVP refreshes, and are never submitted as new selections for the current group.
+
+For non-wedding gatherings, **Edit → Menu → Dinner plan** selects Potluck or Full sit-down dinner for the event’s year. Potluck keeps contribution questions and shows guests only Invited/Attending totals; these totals cannot open private guest lists. Full sit-down dinner skips contribution questions and hides all guest counts. Its private preparation menu lets the host retain dish options and check which to prepare that year. Both menus persist independently when switching plans. Preparation options persist into later occurrences; each new year defaults to Potluck with no preparation choices until configured. Wedding retains its own menus and RSVP behavior.
+
+Guests with invitation-owned dish claims see **Your Dishes** in the gathering toolbar. It opens their dishes and quantities using the shared page layout; **Print Page** prints/emails that list. The option disappears when that invitation has no dishes, or the gathering uses a sit-down plan.

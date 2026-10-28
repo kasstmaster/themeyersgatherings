@@ -1,5 +1,6 @@
 import {actorAccount,eventAllowed} from './permissions.js';
 import '../guest-planning.js';
+import '../gathering-features.js';
 import '../invitation-groups.js';
 import '../wedding-party.js';
 import '../shared-state-protocol.js';
@@ -12,7 +13,7 @@ export function accountForActor(state,actor){
  return actorAccount(state,actor);
 }
 export function permittedEvents(state,actor){const account=accountForActor(state,actor);return actor.role==='host'?Object.keys(state.events):Object.keys(state.events).filter(id=>eventAllowed(account,id));}
-const privateSelector=/(?:hostNotes|brideGroom|weddingTimeline|weddingPartyPersonalPage|weddingPartyDetails|partySharedDetails|perfectExperience|weddingPartyHeading|weddingPartyKicker|count-list|admin|guestList|invited|noResponse|notAttending)/i;
+const privateSelector=/(?:sitDownDinner|hostNotes|brideGroom|weddingTimeline|weddingPartyPersonalPage|weddingPartyDetails|partySharedDetails|perfectExperience|weddingPartyHeading|weddingPartyKicker|count-list|admin|guestList|invited|noResponse|notAttending)/i;
 function allowedHeadingPath(path,member,allowedPages){
  const identity=WeddingParty.parseHeadingPath(path);if(!member||!identity)return false;
  const [kind,id,pageId]=identity;
@@ -37,6 +38,8 @@ export function projectState(state,actor){
  const events={};
  for(const id of permittedEvents(state,actor)){
   const original=state.events[id],event=pick(original,PUBLIC_KEYS);
+  const plan=GatheringFeatures.dinnerPlan(id,original);
+  if(plan){event.dinnerPlans={[plan.year]:{type:plan.type}};if(plan.type==='potluck')event.dinnerSummary=GatheringFeatures.dinnerCounts(state.accounts,id,original);}
   const member=WeddingParty.normalizeMembers(original.weddingPartyMembers||[]).find(value=>value.name?.trim().toLowerCase()===actor.person.trim().toLowerCase());
   event.weddingPartyMembers=member?[clone(member)]:[];
   const attire=member?WeddingParty.attireSections(member.title):[];
@@ -50,7 +53,7 @@ export function projectState(state,actor){
   event.siteText=textEntries({...WeddingParty.legacyHeadingText(original),...original.siteText},Boolean(member),pageIds,member);event.textAppearance=textEntries(original.textAppearance,Boolean(member),pageIds,member);
   event.siteTabTitles=textEntries(original.siteTabTitles,Boolean(member),pageIds);
   event.elementAppearance=Object.fromEntries(Object.entries(original.elementAppearance||{}).filter(([path])=>(path.startsWith('@group:')||!privateSelector.test(path))&&(!path.includes('party-heading:')||allowedHeadingPath(path,member,pageIds))).map(([key,value])=>[key,clone(value)]));
-  event.items=(original.items||[]).map(item=>({...clone(item),...(item.claimGroups?{claimGroups:pick(item.claimGroups,[account.name])}:{}),claims:(item.claims||[]).map(name=>name===account.name?name:'__other_claim__')}));
+  event.items=(plan?.type==='sit-down'?[]:original.items||[]).map(item=>({...clone(item),...(item.claimGroups?{claimGroups:pick(item.claimGroups,[account.name])}:{}),claims:(item.claims||[]).map(name=>name===account.name?name:'__other_claim__')}));
   event.rsvps=(original.rsvps||[]).filter(response=>response.name===account.name).map(clone);
   events[id]=event;
  }
@@ -104,7 +107,7 @@ export function updateFromChanges(state,actor,operations){
    next.events[id].rsvps=[...(source.rsvps||[]).filter(value=>value.name!==account.name),accepted];
   }
   if(!SAME(view.events[id].items,incoming.items)){
-   if(!Array.isArray(incoming.items)||id==='wedding')forbidden();
+   if(!Array.isArray(incoming.items)||id==='wedding'||GatheringFeatures.dinnerPlan(id,source)?.type==='sit-down')forbidden();
    const originals=new Map((source.items||[]).map(item=>[item.id,item]));
    if(new Set(incoming.items.map(item=>item.id)).size!==incoming.items.length)forbidden();
    next.events[id].items=incoming.items.map(item=>{

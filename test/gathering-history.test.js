@@ -29,3 +29,9 @@ test('stored snapshots override incoming modifications and omitted histories are
  assert.deepEqual(incoming.gatheringHistory,stored.gatheringHistory);incoming.gatheringHistory.christmas['2025-12-25'].accounts=[];
  GatheringHistory.preserve(incoming,stored);assert.equal(incoming.gatheringHistory.christmas['2025-12-25'].accounts.length,1);
 });
+
+test('future dinner plans keep reusable private options without inheriting another year selections',()=>{
+ const app=fixture();app.events.christmas.sitDownMenu=[{id:'a',name:'Roast'}];app.events.christmas.dinnerPlans={2025:{type:'sit-down',selectedItems:['a']}};
+ const next=GatheringHistory.startNext(app,'christmas','2026-12-25',new Date('2026-01-01'));
+ assert.deepEqual(next.sitDownMenu,[{id:'a',name:'Roast'}]);assert.equal(next.dinnerPlans[2026],undefined);assert.deepEqual(app.gatheringHistory.christmas['2025-12-25'].event.dinnerPlans[2025],{type:'sit-down',selectedItems:['a']});
+});
