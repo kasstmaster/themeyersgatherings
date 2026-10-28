@@ -142,6 +142,11 @@
     if(added.length)target[key(targetType)]=[...existing,...added];
     return {added:added.length,skipped};
   }
+  function singleDishStatus(item,quantity,claimed,units=[]){
+    if(Number(item.needed)!==1||Number(quantity)!==1)return null;
+    const unit=item.unit&&item.unit!=='item'?(units.find(value=>value.id===item.unit)?.label||(/^[a-z ]+$/i.test(item.unit)?item.unit:'')):'';
+    return `${unit?unit.toLocaleLowerCase()+' ':''}${claimed?'✓ CLAIMED':'needed'}`;
+  }
   const allDeclined=people=>Array.isArray(people)&&people.length>0&&people.every(person=>person.attending===false);
-  globalThis.GuestPlanning={allDeclined,foodCategories,menuOrder,menuRows,copyMenuItems,childLabel,childLabels,guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
+  globalThis.GuestPlanning={allDeclined,foodCategories,menuOrder,menuRows,copyMenuItems,singleDishStatus,childLabel,childLabels,guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();

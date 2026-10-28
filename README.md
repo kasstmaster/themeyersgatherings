@@ -177,3 +177,5 @@ Guests with invitation-owned dish claims see **Your Dishes** in the gathering to
 Food uses one shared category order: mains, sides, appetizers, desserts, then drinks, while preserving each category’s item order. This applies to food lists, RSVP dish choices, menu editors and menu exports.
 
 Each non-wedding menu editor has **Copy from**: choose another gathering and its Potluck or Sit Down Dinner menu, then Copy items. Only missing dish names are added (ignoring case and extra spacing). Existing items, claims, yearly preparation selections and the active dinner plan stay unchanged; custom quantity types are matched or copied by label.
+
+Single-unit dish labels omit “1 of 1” and numeric amounts: an ordinary item shows only needed/claimed, while a dozen, case or custom type keeps its type and status. Multi-unit quantities and host editing controls retain their amounts.

@@ -55,3 +55,8 @@ test('menu copies and prints put sides before appetizers, preserving each catego
  const names=[...page.html.matchAll(/<li>(.*?) - need/g)].map(match=>match[1]);
  assert.deepEqual(names,['Ham','Stuffing','Potatoes','Dip','Pie','Water']);
 });
+
+test('single items omit amounts and keep non-default quantity types in copy/print output',()=>{
+ const page=menu([item('Ham',1),item('Cookies',1,[],{unit:'dozen'}),item('Rolls',1,['PRIVATE'],{unit:'dozen'})]);
+ assert.match(page.text,/• Ham - needed/);assert.match(page.text,/• Cookies - dozen needed/);assert.match(page.text,/• Rolls dozen ✓ CLAIMED/);assert.doesNotMatch(page.text,/1 of 1|1 dozen|PRIVATE/);
+});

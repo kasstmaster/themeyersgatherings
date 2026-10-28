@@ -154,3 +154,13 @@ test('copy menus skips duplicate names and preserves destination records, claims
  const sitdown={sitDownMenu:[{id:'keep',name:'ham'}]};assert.deepEqual(GuestPlanning.copyMenuItems(sitdown,source,'sit-down','potluck'),{added:1,skipped:2});assert.deepEqual(Object.keys(sitdown.sitDownMenu[1]).sort(),['category','id','name']);
  const next={items:[],quantityUnits:[]};GuestPlanning.copyMenuItems(next,{sitDownMenu:[{name:'Roast',category:'Main Table'}]},'potluck','sit-down');assert.equal(next.items[0].needed,1);assert.equal(next.items[0].unit,'item');assert.deepEqual(next.items[0].claims,[]);
 });
+
+test('single dish status hides numbers and default Item but keeps custom type labels',()=>{
+ const units=[{id:'item',label:'Item'},{id:'dozen',label:'Dozen'},{id:'custom-case',label:'Case'}];
+ assert.equal(GuestPlanning.singleDishStatus({needed:1,unit:'item'},1,false,units),'needed');
+ assert.equal(GuestPlanning.singleDishStatus({needed:1,unit:'item'},1,true,units),'✓ CLAIMED');
+ assert.equal(GuestPlanning.singleDishStatus({needed:1,unit:'dozen'},1,false,units),'dozen needed');
+ assert.equal(GuestPlanning.singleDishStatus({needed:1,unit:'custom-case'},1,true,units),'case ✓ CLAIMED');
+ assert.equal(GuestPlanning.singleDishStatus({needed:2,unit:'dozen'},1,false,units),null);
+ assert.equal(GuestPlanning.singleDishStatus({needed:1,unit:'item'},2,true,units),null);
+});

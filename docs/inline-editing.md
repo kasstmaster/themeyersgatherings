@@ -100,3 +100,5 @@ Both menu edit lists show a small divider only when the food category changes, w
 The Menu popup keeps Dinner plan, Clear a Claim and the section buttons in a shared header, in that order. They stay visible when switching Potluck, Sit Down Dinner or Quantity Types; only the section content changes.
 
 Copy from is available in both menu sections. Choose a source gathering and menu, then Copy items. Duplicate names (case/spacing variations included) are skipped rather than overwritten. Copied potluck entries retain amounts/units and start unclaimed; copied preparation options start unselected. Copying between menu types uses one item when no source quantity exists. Wedding is excluded. The source menu and active dinner plan are unchanged.
+
+For one requested unit, dish lists, RSVP choices/review, Your Dishes and menu exports show status without a numeric amount. The default Item type is omitted; dozen/case/custom type labels remain. Multi-unit rows and host amount/type inputs are unchanged.
