@@ -2858,13 +2858,13 @@ function renderDinnerPlanEditor(area){
   const select=document.createElement('select');select.setAttribute('aria-label','Dinner plan');
   for(const [value,text] of [['potluck','Potluck'],['sit-down','Full sit-down dinner']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
   select.value=plan.type;label.append(title,select);section.append(label);
-  const panel=document.createElement('section');panel.id='sitDownDinnerMenu';panel.hidden=plan.type!=='sit-down';
+  const panel=document.createElement('section');panel.id='sitDownDinnerMenu';
   const heading=document.createElement('h3');heading.textContent='Private preparation menu';
   const intro=document.createElement('p');intro.textContent='Select the dishes you will prepare this year. Guests cannot see this menu.';
   const rows=document.createElement('div');panel.append(heading,intro,rows);section.append(panel);area.append(section);
   const current=()=>event.dinnerPlans?.[plan.year]||{type:select.value,selectedItems:[]};
   const store=changes=>{event.dinnerPlans={...event.dinnerPlans,[plan.year]:{...current(),...changes}};saveState({refresh:true});};
-  select.addEventListener('change',()=>{panel.hidden=select.value!=='sit-down';document.querySelector('#menuAdminFields').hidden=!panel.hidden;store({type:select.value});});
+  select.addEventListener('change',()=>{store({type:select.value});});
   const draw=()=>{
     rows.replaceChildren();
     for(const item of GuestPlanning.menuOrder(event.sitDownMenu||[])){
@@ -2896,7 +2896,7 @@ function openMenuEditor(){
     renderDinnerPlanEditor(area);
     openAdmin();
     const fields=document.querySelector('#menuAdminFields'),anchor=document.createComment('menu fields home'),hidden=fields.hidden;
-    fields.before(anchor);fields.hidden=GatheringFeatures.dinnerPlan(viewedEventId,state).type==='sit-down';area.append(fields);
+    fields.before(anchor);fields.hidden=false;area.append(fields);
     dialog.addEventListener('close',()=>{anchor.replaceWith(fields);fields.hidden=hidden;},{once:true});
   }
   showSiteDialog(dialog);
