@@ -99,3 +99,10 @@ test('rescheduling retains scoped photos, while a new occurrence does not inheri
  f.state.accounts[0].selectedEvents.one=true;
  const next=await open({eventId:'one'});assert.equal((await (await f.request('/wedding-media/',{headers:next})).json()).items.length,0);
 });
+test('Save gathering information persists its Name field through reload and isolates other dates',async t=>{
+ const f=await fixture(t),host=await f.login({role:'host',password:TEST_PASSWORD}),old=structuredClone(f.state.gatheringHistory);
+ const result=await f.manage(host,{action:'information',eventId:'one',date:'2026-11-25',name:'  Our Family Dinner  ',information:{eventDate:'2026-11-25',rsvpDate:'2026-11-12',eventTime:'2 PM',address:'Main St'}});assert.equal(result.status,200);
+ const reloaded=await (await f.request('/state',{headers:{Authorization:`Bearer ${host.token}`}})).json();assert.equal(reloaded.state.events.one.gatheringName,'Our Family Dinner');assert.deepEqual(f.state.gatheringHistory,old);
+ const archived=await f.manage(host,{action:'information',eventId:'one',date:'2025-11-25',name:'Last year’s dinner',information:{eventDate:'2025-11-25',rsvpDate:'2025-11-12',eventTime:'2 PM',address:'Old St'}});assert.equal(archived.status,200);assert.equal(f.state.gatheringHistory.one['2025-11-25'].name,'Last year’s dinner');assert.equal(f.state.gatheringHistory.one['2025-11-25'].event.gatheringName,'Last year’s dinner');assert.equal(f.state.events.one.gatheringName,'Our Family Dinner');assert.deepEqual(f.state.gatheringHistory.one['2024-11-25'],old.one['2024-11-25']);
+ const before=structuredClone(f.state);const invalid=await f.manage(host,{action:'information',eventId:'one',date:'2026-11-25',name:' ',information:{eventDate:'2026-11-25',rsvpDate:'',eventTime:'',address:''}});assert.equal(invalid.status,400);assert.deepEqual(f.state,before);
+});

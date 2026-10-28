@@ -86,7 +86,9 @@ const EVENT_DETAILS = {
   wedding: { name: 'Wedding', theme: 'wedding', header: 'https://i.ibb.co/KjtXKDRn/Wedding-Header-Website-No-Border.png' }
 };
 
+const DEFAULT_EVENT_DETAILS=structuredClone(EVENT_DETAILS);
 function syncGatheringDefinitions(events) {
+  for(const [id,defaults] of Object.entries(DEFAULT_EVENT_DETAILS))EVENT_DETAILS[id].name=String(events?.[id]?.gatheringName || defaults.name);
   for (const id of Object.keys(EVENT_DETAILS)) if (!['thanksgiving','christmas','wedding'].includes(id)) delete EVENT_DETAILS[id];
   for (const [id,event] of Object.entries(events || {})) {
     if (['thanksgiving','christmas','wedding'].includes(id) || !event?.gatheringName) continue;
@@ -4257,7 +4259,7 @@ for(const button of document.querySelectorAll('[data-manage-gathering]'))button.
     document.querySelector('#gatheringActionWarning').textContent=command.action==='cancel'?'Guests will see it marked Cancelled and cannot open it. After its date it will be removed from the website. Other years stay unchanged.':'This date will disappear from guests immediately. You can restore it for 30 days; afterward the website will remove this occurrence and its history. GitHub backups and Dropbox files stay untouched.';
     document.querySelector('#gatheringActionPhrase').textContent=`Type ${phrase} to confirm.`;document.querySelector('#gatheringActionConfirmation').value='';document.querySelector('#gatheringActionError').textContent='';showSiteDialog(document.querySelector('#confirmGatheringAction'));return;
   }
-  button.disabled=true;try{await submitGatheringCommand(command);}catch(error){renderManagedGathering();document.querySelector('#managedGatheringStatus').textContent=error.message;}
+  button.disabled=true;try{await submitGatheringCommand(command);}catch(error){button.disabled=false;document.querySelector('#managedGatheringStatus').textContent=error.message;}
 });
 document.querySelector('#confirmGatheringForm').addEventListener('submit',async event=>{
   event.preventDefault();if(!pendingGatheringCommand)return;const button=document.querySelector('#gatheringActionSubmit');button.disabled=true;
