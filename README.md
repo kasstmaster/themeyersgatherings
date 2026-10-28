@@ -161,3 +161,5 @@ Name-only identification is intentionally not strong authentication: someone who
 Future changes must follow [AGENTS.md](AGENTS.md), update relevant documentation, and state documentation status in their final task summary.
 
 Claimed dishes under each family in Attending form a compact, undivided list ordered by menu category (mains through drinks), preserving item order within categories and adding no category headings.
+
+In the RSVP contribution questions, “I’ll bring something else” supports multiple custom items. After entering an item’s name, quantity/unit and category, choose **Add another item** to enter the next one. Review shows all items; saving claims each for the current invitation group.
