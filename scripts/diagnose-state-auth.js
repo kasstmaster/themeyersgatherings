@@ -13,6 +13,8 @@ export async function diagnose(env,fetcher=fetch) {
     report.healthReady=body.ready===true;
     report.healthCommit=/^[a-f0-9]{40}$/.test(body.commit||'')?body.commit:null;
     report.healthCommitMatches=body.commit===expected;
+    report.checks={};
+    for(const key of ['activationReady','hostPasswordReady','storageReady','githubReady','releaseCommitReady'])if(typeof body.checks?.[key]==='boolean')report.checks[key]=body.checks[key];
   } catch {report.healthRequestOrJsonFailed=true;}
   if(env.CLOUDFLARE_API_TOKEN&&env.CLOUDFLARE_ACCOUNT_ID) {
     const base='https://api.cloudflare.com/client/v4/accounts/'+env.CLOUDFLARE_ACCOUNT_ID+'/workers/scripts/curly-sun-ef0f';

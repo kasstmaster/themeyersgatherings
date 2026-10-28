@@ -68,3 +68,9 @@ No automatic rollback restores the old unauthenticated Worker. No release failur
 ## Validation limits
 
 Local regressions cover exact redirect artifacts, QR/query preservation, preflight permission/configuration failures, readiness without private reads, wrong-commit blocking, anonymous denial, frontend commit receipts and workflow ordering. These use synthetic API responses. They do not establish current live credential permissions, deployed configuration, actual maintenance, real backup verification or successful production cutover.
+
+## Diagnosing a blocked secure-service gate
+
+If service deployment succeeds but publication is blocked, inspect the active version and harmless `/health/state-auth` response before any retry. The response exposes only a validated release commit and boolean checks: `activationReady` (exact approved marker), `hostPasswordReady` (minimum server password requirement), `storageReady`, `githubReady`, and `releaseCommitReady`. A false check keeps status 503; diagnostics do not bypass authorization or weaken publication gates. No secret values, password lengths or hashes, state records or API bodies are emitted. The service verifier logs an allowlisted diagnostic with HTTP status, readiness, protocol/commit matches and those boolean checks only.
+
+`scripts/diagnose-state-auth.js` can additionally read active Cloudflare version metadata and binding names/types with the existing service token; it never calls the shared-state endpoint or changes configuration. Never log the full settings response or secret contents. Check the exact active commit: a green deployment action alone is insufficient. If an encrypted value fails the readiness check, an owner may need to correct it privately; do not invent a new password, restore old credentials or disable the gate. Keep the frontend blocked until the approved secure backend is ready, then publish a frontend built from the same reviewed source commit.
