@@ -2230,6 +2230,7 @@ function captureRsvpMeals() {
   return rsvpMealDraft;
 }
 function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
+  document.querySelector('#rsvpSaveError').hidden=true;
   if(document.querySelector('#rsvpDialog').open)return;
   if(document.querySelector('#eventPage').hidden)showSignedInDestination();
   if(GatheringFeatures.forGathering(viewedEventId).weddingPages){
@@ -2398,7 +2399,7 @@ function renderRsvpDishes(){
   choices.innerHTML=enabled?categories.map(category=>{
     const items=state.items.filter(item=>item.category===category).flatMap(item=>{
       const saved=rsvpDishQuantity(item);
-      const available=Math.max(0,item.needed-item.claims.length+saved);
+      const available=Math.max(saved,item.needed-item.claims.length+saved);
       const claimedByOthers=!available&&!saved;
       const limit=Math.max(available,saved);
       const quantity=limit>1?`<label class="rsvp-dish-quantity" ${saved?'':'hidden'}><span>How many?</span><select data-rsvp-dish-quantity aria-label="Quantity of ${escapeAttribute(item.name)}" ${saved?'required':''}><option value="">Choose</option>${Array.from({length:limit},(_,index)=>{const quantity=index+1;return `<option value="${quantity}" ${quantity===saved?'selected':''}>${escapeHtml(formatQuantity(quantity,item))}</option>`;}).join('')}</select></label>`:'<input type="hidden" data-rsvp-dish-quantity value="1">';
@@ -2472,7 +2473,7 @@ function setRsvpDishQuantity(item,quantity){
 }
 function applyRsvpDishes(draft){
   if(!draft)return true;
-  for(const [id,quantity] of draft.quantities){const item=state.items.find(item=>item.id===id);if(quantity>0&&(!item||!Number.isInteger(quantity)||quantity>Math.max(0,item.needed-item.claims.length+rsvpDishQuantity(item))))return false;}
+  for(const [id,quantity] of draft.quantities){const item=state.items.find(item=>item.id===id);if(quantity>0&&(!item||!Number.isInteger(quantity)||quantity>Math.max(rsvpDishQuantity(item),item.needed-item.claims.length+rsvpDishQuantity(item))))return false;}
   for(const item of state.items)setRsvpDishQuantity(item,draft.quantities.get(item.id)||0);
   for(const item of draft.customs||[]){state.items.push(setRsvpDishQuantity({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:[]},item.quantity));}
   return true;
@@ -2615,24 +2616,26 @@ function renderWeddingRsvpMenu(selections = []) {
   renderRsvpInlineEditing();
   RsvpFlow.refresh();
 }
+function showRsvpSaveError(message){const error=document.querySelector('#rsvpSaveError');error.textContent=message;error.hidden=false;}
 document.querySelector('#rsvpForm').addEventListener('submit', event => {
   if (event.submitter?.value === 'cancel') return;
   const form = document.querySelector('#rsvpForm');
-  if (form.dataset.eventId !== viewedEventId || form.dataset.accountName !== guestName || form.dataset.personName !== signedInPersonName || form.dataset.invitation !== String(currentInvitationNumber())) { event.preventDefault(); form.closest('dialog').close(); showToast('Please reopen RSVP for the current account and gathering.'); return; }
+  document.querySelector('#rsvpSaveError').hidden=true;
+  if (form.dataset.eventId !== viewedEventId || form.dataset.accountName !== guestName || form.dataset.personName !== signedInPersonName || form.dataset.invitation !== String(currentInvitationNumber())) { event.preventDefault(); form.closest('dialog').close(); showRsvpSaveError('Please reopen RSVP for the current account and gathering.'); return; }
   if(!RsvpFlow.submit(event)){event.preventDefault();return;}
   updateRsvpPeople();
   const people = readRsvpPeople().map(person=>person.attending===false?{...person,guestChoice:'no-guest',guestName:''}:person);
-  if(people.some(person=>person.attending!==true && person.attending!==false)){event.preventDefault();showToast('Please choose attendance for each person.');return;}
+  if(people.some(person=>person.attending!==true && person.attending!==false)){event.preventDefault();showRsvpSaveError('Please choose attendance for each person.');return;}
   const declined=GuestPlanning.allDeclined(people);
   const childNames=declined?[]:readRsvpChildNames();
-  if(childNames.some(name=>!name)){event.preventDefault();showToast('Please enter a name for each child.');return;}
+  if(childNames.some(name=>!name)){event.preventDefault();showRsvpSaveError('Please enter a name for each child.');return;}
   const names=rsvpNames();
-  if (!names.length || people.length!==names.length || new Set(people.map(person=>person.name)).size!==names.length || people.some(person=>!names.includes(person.name))) { event.preventDefault();showToast('Your invitation has changed. Please reopen RSVP.');return; }
+  if (!names.length || people.length!==names.length || new Set(people.map(person=>person.name)).size!==names.length || people.some(person=>!names.includes(person.name))) { event.preventDefault();showRsvpSaveError('Your invitation has changed. Please reopen RSVP.');return; }
   const allowed = GuestPlanning.plusOnePeople(rsvpAccount(),viewedEventId,people.map(person=>person.name));
-  if (GatheringFeatures.rsvp(viewedEventId).namedGuests && !rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
+  if (GatheringFeatures.rsvp(viewedEventId).namedGuests && !rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showRsvpSaveError('Enter each guest’s name or choose NO GUEST.'); return; }
   const menuSelections = !declined&&GatheringFeatures.rsvp(viewedEventId).meals ? readWeddingMenuSelections() : [];
   const extraGuestNames=declined?[]:readRsvpGuestNames();
-  if(extraGuestNames.some(name=>!name)){event.preventDefault();showToast('Please enter a name for each guest.');return;}
+  if(extraGuestNames.some(name=>!name)){event.preventDefault();showRsvpSaveError('Please enter a name for each guest.');return;}
   const extraGuests=extraGuestNames.length;
   let rsvp = { name: guestName, people, childNames, extraGuests, extraGuestNames, adults: declined?0:Number(document.querySelector('#adults').value)+extraGuests, children: declined?0:Number(document.querySelector('#children').value), ...(GatheringFeatures.rsvp(viewedEventId).meals ? { menuSelections } : {}) };
   const index = state.rsvps.findIndex(entry => entry.name === guestName);
@@ -2640,7 +2643,7 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   const account=rsvpAccount();
   if(account)rsvp=InvitationGroups.merge(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),state.rsvps[index],rsvp);
   if(declined&&GatheringFeatures.rsvp(viewedEventId).contributions)InvitationGroups.releaseDishes(state.items,guestName,currentInvitationNumber(),GuestPlanning.invitationCount(account,viewedEventId)<=1,accountSignInNames(guestName),rsvp.people);
-  if(!applyRsvpDishes(declined?null:rsvpDishDraft())){event.preventDefault();showToast('A dish is no longer available. Please reopen RSVP and choose again.');return;}
+  if(!applyRsvpDishes(declined?null:rsvpDishDraft())){event.preventDefault();showRsvpSaveError('A dish is no longer available. Please reopen RSVP and choose again.');return;}
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
   form.dataset.saved='true';
   saveState({refresh:true}); showToast('Your RSVP has been saved.');

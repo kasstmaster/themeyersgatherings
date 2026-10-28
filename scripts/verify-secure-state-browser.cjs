@@ -4,6 +4,7 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
  const {default:worker}=await import('../github-state-worker/worker.js');
  const {bucket,TEST_PASSWORD}=await import('../test/security-fixture.js');
  const base='http://127.0.0.1:8042';let state={accounts:[{name:'Casey Example',qrToken:'already-printed-qr',selectedEvents:{thanksgiving:true},invitedEvents:{thanksgiving:true}},{name:'Alexandertheverylongfirstname Example',selectedEvents:{thanksgiving:true},invitedEvents:{thanksgiving:true}}],events:{thanksgiving:{gatheringName:'Thanksgiving',eventDate:'2099-11-25',rsvpDate:'2099-11-20',items:[{id:'ham',name:'Ham',category:'Main Table',needed:2,unit:'item',claims:[]}],rsvps:[],hostNotes:'Private host notes',siteText:{},quantityUnits:[{id:'item',label:'Item'}]}},gatheringHome:{},invitationTemplates:[],gatheringHistory:{}};
+ state.events.thanksgiving.items.push({id:'legacy-overflow',name:'Legacy preserved dish',category:'Sides',needed:1,unit:'item',claims:['Other Household','Other Household']});
  state.events.wedding={gatheringName:'Wedding',eventDate:'2099-08-10',rsvpDate:'2099-08-01',items:[],rsvps:[],sitePages:[{id:'custom-a',nav:'matronInfoTabs',audience:'party',title:'Custom A',content:'A body'},{id:'custom-b',nav:'matronInfoTabs',audience:'party',title:'Custom B',content:'B body'}],weddingPartyMembers:[{id:'casey',name:'Casey Example',title:'Groomsman',responsibilities:'Own duties',pages:[{id:'travel',title:'Casey Travel',content:'Casey copy'}]},{id:'jordan',name:'Jordan Example',title:'Bridesmaid',responsibilities:'Other duties',pages:[{id:'travel',title:'Jordan Travel',content:'Jordan copy'}]}],textAppearance:{'#weddingPartyHeading':{parts:[{source:'Saved duties heading',original:'Your Responsibilities',markup:'**Saved duties heading**',overrideText:'Saved duties heading'}]}}};
  state.accounts[0].selectedEvents.wedding=true;
  let sha=1;const env={HOST_PASSWORD:TEST_PASSWORD,AUTH_MIGRATION_READY:'verified-backup-v1',INVITATION_BACKGROUNDS:bucket(),GITHUB_REPOSITORY:'test/private',GITHUB_TOKEN:'test-only',ALLOWED_ORIGIN:base};
@@ -39,7 +40,7 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.locator('#rsvpNext').click();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
   const customs=state.events.thanksgiving.items.filter(item=>item.id.startsWith('custom-'));
   assert.deepEqual(customs.map(item=>[item.name,item.needed,item.claimGroups['Casey Example'][1]]),[['Homemade Soup',2,2],['Cornbread',3,3]]);
-  assert.equal(state.events.thanksgiving.rsvps[0].people[0].attending,true);
+  assert.equal(state.events.thanksgiving.rsvps[0].people[0].attending,true);assert.deepEqual(state.events.thanksgiving.items.find(item=>item.id==='legacy-overflow').claims,['Other Household','Other Household']);
   await page.locator('[data-enter-event="thanksgiving"]').click();
   // Save through the real guest state protocol, preserving the host data.
   await page.evaluate(()=>{setRsvpDishQuantity(state.items[0],rsvpDishQuantity(state.items[0])+1);saveState();});await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);assert.equal(state.events.thanksgiving.items[0].claims[0],'Casey Example');assert.equal(state.events.thanksgiving.hostNotes,'Private host notes');
