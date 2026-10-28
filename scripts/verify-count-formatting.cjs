@@ -14,10 +14,10 @@ const number=await page.locator('#guestCount').evaluate(e=>({font:getComputedSty
 const title=page.locator('#guestListButton>span');await title.click();
 await page.getByLabel('Font',{exact:true}).selectOption('Verdana');await page.getByLabel('Size',{exact:true}).selectOption('14');
 await page.evaluate(()=>ElementAppearance.update(document.querySelector('#guestListButton>span'),{textColor:'#654321',fontStyle:'italic'}));
-for(const id of ['guestCount','notAttendingCount','noResponseCount','invitedCount','remainingCount']){
+for(const id of ['guestCount','notAttendingCount','noResponseCount','invitedCount']){
  const style=await page.locator('#'+id).evaluate(e=>({font:getComputedStyle(e).fontFamily,size:getComputedStyle(e).fontSize,color:getComputedStyle(e).color}));assert.deepEqual(style,number);
 }
-for(const parent of ['guestListButton','notAttendingButton','noResponseButton','invitedListButton','remainingSummary']){
+for(const parent of ['guestListButton','notAttendingButton','noResponseButton','invitedListButton']){
  const style=await page.locator('#'+parent+'>span').evaluate(e=>({font:getComputedStyle(e).fontFamily,size:getComputedStyle(e).fontSize,color:getComputedStyle(e).color,italic:getComputedStyle(e).fontStyle}));
  assert.match(style.font,/Verdana/);assert.equal(style.size,'14px');assert.equal(style.color,'rgb(101, 67, 33)');assert.equal(style.italic,'italic');
 }

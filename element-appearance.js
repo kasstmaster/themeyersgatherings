@@ -81,7 +81,7 @@
     if(target.matches('.section-kicker,.event-selection-intro'))return 'introductions';
     if(target.matches('h1,h2,h3,h4,h5,h6,legend,.dish-title'))return 'titles';
     // A subpage may also carry outer-page classes for layout; its surface stays inner.
-    if(target.id!=='rsvpForm' && target.closest('#rsvpForm,#dishListDialog') && target.matches('.host-outer-panel,.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'inner-containers';
+    if(target.id!=='rsvpForm' && target.closest('#rsvpForm,.count-list-dialog') && target.matches('.host-outer-panel,.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'inner-containers';
     if(target.matches('#rsvpForm,.event-selection-card,.host-outer-panel'))return 'containers';
     if(target.matches('.wedding-tab-content,.wedding-party-card,.gathering-subpage,.category-card,.perfect-experience-panel,.guest-attire-guidance>article,[data-attire-group]'))return 'inner-containers';
     if(target.matches('.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'containers';

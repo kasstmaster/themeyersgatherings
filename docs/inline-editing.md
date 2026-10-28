@@ -30,7 +30,7 @@ The RSVP form is the outer container. Its content panels and count strip use the
 
 Selecting a tab/page option exposes renaming and Move left/right where supported. The navigation Container offers New page title / Add page. Existing and newly created gatherings use the same page editor; new pages inherit their gathering's formatting but keep their own title, introduction and content. All Gatherings, Photos & Videos and the fixed print/host actions have prescribed positions; movable page options retain their manual order. The details page is accessed through the toolbar rather than a visible main tab.
 
-Menu opens the selected gathering's dish editor, or Wedding meal choices. The separate host Menu page is gone; Dishes needed opens the overview. That list shows still-needed entries before claimed entries and names. Copy menu is a compact action beside the totals and exports statuses without names. All count dialogs use X rather than a redundant Close button.
+Menu opens the selected gathering's dish editor, or Wedding meal choices. The separate host Menu page and dishes-needed counter/dialog are gone. Attending shows each household’s dishes, then other existing contributions without an attending RSVP, and still-needed dishes at the bottom. Wedding’s meal selections remain with their attendees. Copy menu is a compact action beside the totals and exports statuses without names. All count dialogs use X rather than a redundant Close button.
 
 Accounts manages household records and gathering-keyed permissions. The tiny person icon previews a member's account; host management returns to host context as necessary. History opens archived gatherings and the explicit next-occurrence action. Templates manages event-owned invitation templates.
 
@@ -66,3 +66,5 @@ Sign-in persists on the canonical site (new guests up to 30 days, hosts eight ho
 Accounts and count-list popups scroll as one dialog; the card background and border continue around the whole list, including long lists on mobile.
 
 Guest name entry skips Suffix after Last Name unless the server recognizes a matching person with a suffix. The suffix step remains for those names; guest permissions and invitation scope are unchanged.
+
+Popup family headings display uppercase. Accounts aligns Inv # and +1 with the family heading using layout CSS; label elements, selector paths and typography remain intact.
