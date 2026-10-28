@@ -78,3 +78,5 @@ A unanimous invitation-group decline finishes at attendance using Save my RSVP; 
 Accounts displays one heading per surname within an account, combining matching surnames across invitation numbers and splitting different surnames. Inv # and +1 keep their existing typography and each person retains their own editable controls. This display grouping does not merge accounts or change invitation membership.
 
 Custom RSVP contributions reuse the same name, quantity/unit and category questions for each item. Add another item appears after the category question; Next continues to review. All entries are reviewed and saved together under the current invitation group. Opening a fresh RSVP clears unsaved custom-item fields without removing saved dishes.
+
+Saved custom items remain on their gathering’s menu after claims are released and when starting the next occurrence. Only old claims are reset; the host can still delete items explicitly in Menu.
