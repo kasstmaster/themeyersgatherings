@@ -996,7 +996,8 @@ function menuExportItems() {
   return GuestPlanning.menuOrder(state.items).map(item => {
     const remaining = Math.max(0, item.needed - item.claims.length);
     const claimed = item.optional ? item.claims.length > 0 : remaining === 0;
-    const status = claimed ? '✓ CLAIMED' : `- need ${formatQuantity(Math.max(1, remaining), item)}${item.optional ? ' (optional)' : ''}`;
+    const single=GuestPlanning.singleDishStatus(item,claimed?item.claims.length:remaining,claimed,state.quantityUnits);
+    const status = single!==null ? `${claimed?'':'- '}${single}${!claimed&&item.optional?' (optional)':''}` : claimed ? '✓ CLAIMED' : `- need ${formatQuantity(Math.max(1, remaining), item)}${item.optional ? ' (optional)' : ''}`;
     return `${item.name} ${status}`;
   });
 }
@@ -1814,7 +1815,7 @@ function renderYourDishes(){
   if(showing){
     document.querySelector('#rsvpWeddingPages').hidden=false;
     document.querySelectorAll('#rsvpWeddingPages>section').forEach(page=>{if(page!==section)page.hidden=true;});
-    document.querySelector('#yourDishesList').innerHTML=dishes.map(({item,quantity})=>`<p><strong>${escapeHtml(item.name)}</strong> <span>${escapeHtml(formatQuantity(quantity,item))}</span></p>`).join('');
+    document.querySelector('#yourDishesList').innerHTML=dishes.map(({item,quantity})=>`<p><strong>${escapeHtml(item.name)}</strong> <span>${escapeHtml(GuestPlanning.singleDishStatus(item,quantity,true,state.quantityUnits)||formatQuantity(quantity,item))}</span></p>`).join('');
   }
 }
 function renderRsvpPageNavigation(){
@@ -1899,7 +1900,8 @@ function renderEventDock() {
 function renderDish(item,quantity=Math.max(0,item.needed-item.claims.length),claimant=null,showClaimant=true) {
   const family=claimant===null?'':claimant===HOST_DISPLAY_NAME?'Host':[...new Set(accountSignInNames(claimant).map(name=>firstAccountLastName(name)))].join(' / ');
   const rowClass=claimant===null?'guest-entry invited-entry dish dish-list-row':'attendance-dish dish-list-row';
-  return `<div class="${rowClass}" data-dish-id="${escapeAttribute(item.id)}"><strong class="dish-title">${escapeHtml(item.name)}</strong> <span class="dish-status">(${quantity} of ${item.needed})${claimant===null?' still needed':''}</span>${claimant===null||!showClaimant?'':` <span class="dish-claimants">${escapeHtml(family)}</span>`}</div>`;
+  const status=GuestPlanning.singleDishStatus(item,quantity,claimant!==null,state.quantityUnits)||`(${quantity} of ${item.needed})${claimant===null?' still needed':''}`;
+  return `<div class="${rowClass}" data-dish-id="${escapeAttribute(item.id)}"><strong class="dish-title">${escapeHtml(item.name)}</strong> <span class="dish-status">${escapeHtml(status)}</span>${claimant===null||!showClaimant?'':` <span class="dish-claimants">${escapeHtml(family)}</span>`}</div>`;
 }
 function claimItem(id) {
   ensureAccount(() => {
@@ -2424,7 +2426,7 @@ function renderRsvpDishes(){
       const claimedByOthers=!available&&!saved;
       const limit=Math.max(available,saved);
       const quantity=limit>1?`<label class="rsvp-dish-quantity" ${saved?'':'hidden'}><span>How many?</span><select data-rsvp-dish-quantity aria-label="Quantity of ${escapeAttribute(item.name)}" ${saved?'required':''}><option value="">Choose</option>${Array.from({length:limit},(_,index)=>{const quantity=index+1;return `<option value="${quantity}" ${quantity===saved?'selected':''}>${escapeHtml(formatQuantity(quantity,item))}</option>`;}).join('')}</select></label>`:'<input type="hidden" data-rsvp-dish-quantity value="1">';
-      return [`<div class="rsvp-dish-option${claimedByOthers?' rsvp-dish-covered':''}"><label class="rsvp-dish-choice"><input type="checkbox" data-rsvp-dish="${escapeAttribute(item.id)}" ${saved||claimedByOthers?'checked':''} ${claimedByOthers?'disabled data-rsvp-dish-unavailable':''}><span>${escapeHtml(item.name)}<small>${available?`${formatQuantity(available,item)} available`:'Already claimed'}</small></span></label>${quantity}</div>`];
+      return [`<div class="rsvp-dish-option${claimedByOthers?' rsvp-dish-covered':''}"><label class="rsvp-dish-choice"><input type="checkbox" data-rsvp-dish="${escapeAttribute(item.id)}" ${saved||claimedByOthers?'checked':''} ${claimedByOthers?'disabled data-rsvp-dish-unavailable':''}><span>${escapeHtml(item.name)}<small>${escapeHtml(GuestPlanning.singleDishStatus(item,Math.max(1,saved),claimedByOthers||saved>0,state.quantityUnits)||(available?`${formatQuantity(available,item)} available`:'Already claimed'))}</small></span></label>${quantity}</div>`];
     }).join('');return items?`<section class="rsvp-dish-category" data-rsvp-dish-category="${escapeAttribute(category)}"><h4>${escapeHtml(category)}</h4><div class="rsvp-dish-grid">${items}</div></section>`:'';
   }).join(''):'';
   if(enabled&&!document.querySelector('#rsvpDishChoices').textContent.trim())document.querySelector('#rsvpDishChoices').textContent='The listed dishes are covered. You can bring something else or go back and choose No.';
@@ -2527,8 +2529,8 @@ function renderRsvpReview(container) {
   if(GatheringFeatures.rsvp(viewedEventId).guestCounter){line('Guests',String(readRsvpGuestNames().length));readRsvpGuestNames().filter(Boolean).forEach(name=>line(name,'Accepts with pleasure'));}
   if(GatheringFeatures.rsvp(viewedEventId,state).contributions){
     const draft=rsvpDishDraft();
-    const dishes=draft?[...draft.quantities].flatMap(([id,quantity])=>{const item=state.items.find(item=>item.id===id);return quantity&&item?[`${item.name} (${formatQuantity(quantity,item)})`]:[];}):state.items.flatMap(item=>{const quantity=item.claims.filter(name=>name===guestName).length;return quantity?[`${item.name} (${formatQuantity(quantity,item)})`]:[];});
-    for(const item of GuestPlanning.menuOrder(draft?.customs||[]))dishes.push(`${item.name} (${item.quantity})`);
+    const dishes=draft?[...draft.quantities].flatMap(([id,quantity])=>{const item=state.items.find(item=>item.id===id);return quantity&&item?[`${item.name} ${GuestPlanning.singleDishStatus(item,quantity,true,state.quantityUnits)||`(${formatQuantity(quantity,item)})`}`]:[];}):state.items.flatMap(item=>{const quantity=item.claims.filter(name=>name===guestName).length;return quantity?[`${item.name} ${GuestPlanning.singleDishStatus(item,quantity,true,state.quantityUnits)||`(${formatQuantity(quantity,item)})`}`]:[];});
+    for(const item of GuestPlanning.menuOrder(draft?.customs||[]))dishes.push(`${item.name} ${GuestPlanning.singleDishStatus({...item,needed:item.quantity},item.quantity,true,state.quantityUnits)||`(${item.quantity})`}`);
     line('Bringing',dishes.join(', ')||'No dish');
   }
   if(GatheringFeatures.rsvp(viewedEventId).meals)readWeddingMenuSelections().forEach(selection=>{
