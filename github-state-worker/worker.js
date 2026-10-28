@@ -233,6 +233,7 @@ async function writeConditional(env,next,sha) {
 }
 async function secureState(request,env,url,actor) {
  if(url.pathname!=='/auth/login'&&!actor)return jsonResponse(request,env,{error:'Sign in to continue.'},401);
+ if(url.pathname==='/gathering-management'&&actor?.role!=='host')return jsonResponse(request,env,{error:'Host access required.'},403);
  if(url.pathname==='/auth/login'&&request.method!=='POST')return jsonResponse(request,env,{error:'Method not allowed.'},405);
  if(url.pathname.startsWith('/auth/')&&!['/auth/login','/auth/logout','/auth/session'].includes(url.pathname))return jsonResponse(request,env,{error:'Not found.'},404);
  let result,state;
@@ -249,7 +250,7 @@ async function secureState(request,env,url,actor) {
   const input=await boundedJson(request,8192),account=actor.role==='guest'?accountForActor(state,actor):null;
   if(!input||typeof input!=='object'||Array.isArray(input))return jsonResponse(request,env,{error:'Invalid request.'},400);
   if(input.qrToken&&account&&account.qrToken!==input.qrToken)return jsonResponse(request,env,{error:'Sign in for this invitation.'},401);
-  const view=projectState(state,actor);if(actor.role==='guest'&&!Object.keys(view.events).length)return jsonResponse(request,env,{error:'Session no longer valid.'},401);
+  const view=projectState(state,actor);if(actor.role==='guest'&&!Object.keys(view.events).length&&!Object.keys(view.pastGatherings || {}).length)return jsonResponse(request,env,{error:'Session no longer valid.'},401);
   return jsonResponse(request,env,{token:request.headers.get('Authorization').slice(7),expires:actor.expires,role:actor.role,person:actor.person,state:view,revision:result.sha});
  }
  if(request.method==='GET'){
@@ -259,8 +260,13 @@ async function secureState(request,env,url,actor) {
  if(request.method!=='PATCH')return jsonResponse(request,env,{error:'Upgrade this page before saving.'},405);
  if(!request.headers.has('If-Match'))return jsonResponse(request,env,{error:'Reload the current revision before saving.'},428);
  if(request.headers.get('If-Match')!==result.sha)return jsonResponse(request,env,{error:'Newer information is available. Your changes were not applied.'},409);
- const payload=await boundedJson(request);GatheringHistory.archiveDue(state);const next=updateFromChanges(state,actor,payload.changes);
- GatheringHistory.preserve(next,state);next.savedAt=new Date().toISOString();
+ const payload=await boundedJson(request);GatheringHistory.archiveDue(state);
+ let next;
+ if(url.pathname==='/gathering-management'){
+  if(actor.role!=='host')return jsonResponse(request,env,{error:'Host access required.'},403);
+  next=structuredClone(state);try{GatheringHistory.manage(next,payload);}catch(error){throw Object.assign(error,{status:400});}
+ }else{next=updateFromChanges(state,actor,payload.changes);GatheringHistory.preserve(next,state);}
+ GatheringHistory.cleanup(next);next.savedAt=new Date().toISOString();
  const saved=await writeConditional(env,next,result.sha);
  if(saved.status!==200)return jsonResponse(request,env,{error:saved.status===409?'Newer information is available. Your changes were not applied.':'Changes could not be saved.'},saved.status);
  return jsonResponse(request,env,{state:projectState(next,actor),revision:saved.revision});
@@ -280,7 +286,7 @@ export default {
       const url = new URL(request.url);
       if(url.pathname==='/health/state-auth')return request.method==='GET'?releaseReadiness(env):response(request,env,null,405);
       const actor=await authenticate(request,env);if(actor)requestActors.set(request,actor);
-      if(url.pathname==='/'||url.pathname==='/state'||url.pathname.startsWith('/auth/'))return await secureState(request,env,url,actor);
+      if(url.pathname==='/'||url.pathname==='/state'||url.pathname==='/gathering-management'||url.pathname.startsWith('/auth/'))return await secureState(request,env,url,actor);
 
       if (url.pathname.startsWith('/dropbox/')) return await handleDropboxOAuth(request, env, { response, jsonResponse, requireHost });
       if (url.pathname === '/wedding-media' || url.pathname.startsWith('/wedding-media/')) return await handleWeddingMedia(request, env, { response, jsonResponse, requireHost, readState, actor });

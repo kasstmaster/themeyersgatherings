@@ -22,7 +22,7 @@ window.location.replace(target.href);
 }
 
 export function validatePublicFallback(fallback){
-  if(!Array.isArray(fallback.accounts)||fallback.accounts.length||Object.keys(fallback.gatheringHistory||{}).length||Object.values(fallback.events||{}).some(event=>(event.rsvps||[]).length||(event.weddingPartyMembers||[]).length||(event.items||[]).some(item=>(item.claims||[]).length))||/"qrToken"/.test(JSON.stringify(fallback)))throw new Error('Refusing to publish private account/response data in the static fallback. Keep live state in its private repository.');
+  if(!Array.isArray(fallback.accounts)||fallback.accounts.length||Object.keys(fallback.gatheringHistory||{}).length||Object.keys(fallback.gatheringLifecycle||{}).length||Object.keys(fallback.pastGatherings||{}).length||Object.values(fallback.events||{}).some(event=>(event.rsvps||[]).length||(event.weddingPartyMembers||[]).length||(event.items||[]).some(item=>(item.claims||[]).length))||/"qrToken"/.test(JSON.stringify(fallback)))throw new Error('Refusing to publish private account/response data in the static fallback. Keep live state in its private repository.');
 }
 
 export async function buildDomainSite(output, releaseCommit=process.env.RELEASE_COMMIT) {

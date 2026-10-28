@@ -48,6 +48,8 @@ Guests keep the same name-entry and existing QR flow; no household code or email
 
 Templates is a visual invitation editor. A template belongs to its gathering, with original-image coordinates, text fields and QR placement. Artwork is PNG/JPEG/WebP runtime data in R2, not committed invitation images. Invitation downloads use account quantities and invitation groups, producing uniquely named PNGs/ZIPs. Account-specific QR output requires an existing `qrToken`; general-login QR output does not. Email invitation output uses the browser's file-sharing API when supported, with download as the fallback. [Invitation details](docs/invitations.md).
 
+Guests can open **View Past Gatherings** for earlier years they were invited to or attended, even without a current invitation. Completed current-year gatherings stay at the bottom of selection. Host **Manage Gatherings** supports date-specific rename, confirmed cancellation, confirmed deletion and 30-day restore; backups and Dropbox are preserved. See [yearly gathering lifecycle](docs/gathering-lifecycle.md).
+
 History snapshots completed gatherings by date using the Los Angeles calendar day. Snapshots preserve their event/account view. Starting the next occurrence deliberately resets responses, claims and access/invitation selections while retaining layout/setup; it also clears Notes. All menu items, including guest-added custom items, remain available with claims cleared. This is an explicit host action, separate from ordinary editing. The service Worker also runs hourly history capture.
 
 ## Photos & Videos and Dropbox

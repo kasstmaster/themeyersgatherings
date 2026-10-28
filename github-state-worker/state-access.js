@@ -6,7 +6,7 @@ import '../wedding-party.js';
 import '../shared-state-protocol.js';
 const clone=value=>structuredClone(value);
 const SAME=SharedStateProtocol.same;
-const PUBLIC_KEYS=`gatheringName gatheringTheme eventDate rsvpDate homeAddress addressLine1 addressLine2 headerText rsvpIntroText rsvpDetailsText rsvpDetailsTitle siteHeaderImage rsvpHeaderImage sitePalette colors gatheringColors quantityUnits registryUrl monetaryGiftUrl churchWeekDay churchYear churchTime churchStreet churchCityStateZip venueTime venueStreet venueCityStateZip attireVideos weddingMealChoices weddingMealOptions weddingChildMealOption weddingChildMealOptions mediaGalleryUrl mediaGalleryLabel siteHiddenTabs siteTabTitles siteTabOrder rsvpToolbarOrder siteElementOrder siteElementPlacements siteGaps siteSpacing`.split(' ');
+const PUBLIC_KEYS=`cancelled gatheringName gatheringTheme eventDate rsvpDate homeAddress addressLine1 addressLine2 headerText rsvpIntroText rsvpDetailsText rsvpDetailsTitle siteHeaderImage rsvpHeaderImage sitePalette colors gatheringColors quantityUnits registryUrl monetaryGiftUrl churchWeekDay churchYear churchTime churchStreet churchCityStateZip venueTime venueStreet venueCityStateZip attireVideos weddingMealChoices weddingMealOptions weddingChildMealOption weddingChildMealOptions mediaGalleryUrl mediaGalleryLabel siteHiddenTabs siteTabTitles siteTabOrder rsvpToolbarOrder siteElementOrder siteElementPlacements siteGaps siteSpacing`.split(' ');
 const pick=(value,keys)=>Object.fromEntries(keys.filter(key=>Object.hasOwn(value,key)).map(key=>[key,clone(value[key])]));
 export function accountForActor(state,actor){
  if(actor.role==='host')return null;
@@ -30,13 +30,14 @@ function textEntries(entries,party,allowedPages=[],member=null){
   return !privateSelector.test(path)||(party&&/(partyShared|perfectExperience|weddingTimeline)/.test(path));
  }));
 }
-export function projectState(state,actor){
+export function projectState(state,actor,includeHistory=true,historicalAccount=null){
  if(actor.role==='host')return clone(state);
- const account=accountForActor(state,actor);if(!account)throw new Error('Session no longer valid');
+ const account=historicalAccount||accountForActor(state,actor);if(!account)throw new Error('Session no longer valid');
  const accountView=pick(account,['name','children','selectedEvents','invitedEvents','plusOnes','plusOnePeople','invitationPeople','invitationQuantities','signInAliases']);
  accountView.selectedEvents=Object.fromEntries(Object.keys(state.events).map(id=>[id,eventAllowed(account,id)]));
  const events={};
- for(const id of permittedEvents(state,actor)){
+ for(const id of Object.keys(state.events).filter(id=>eventAllowed(account,id))){
+  if(GatheringHistory.record(state,id,state.events[id].eventDate)?.status==='deleted' || state.events[id].cancelled&&GatheringHistory.completed(state.events[id]))continue;
   const original=state.events[id],event=pick(original,PUBLIC_KEYS);
   const plan=GatheringFeatures.dinnerPlan(id,original);
   if(plan){event.dinnerPlans={[plan.year]:{type:plan.type}};if(plan.type==='potluck')event.dinnerSummary=GatheringFeatures.dinnerCounts(state.accounts,id,original);}
@@ -57,8 +58,16 @@ export function projectState(state,actor){
   event.rsvps=(original.rsvps||[]).filter(response=>response.name===account.name).map(clone);
   events[id]=event;
  }
+ const pastGatherings={};
+ if(includeHistory)for(const [id,dates] of Object.entries(state.gatheringHistory || {}))for(const [date,snapshot] of Object.entries(dates)){
+  const saved=GatheringHistory.historicalAccount(state,account,snapshot);if(!saved)continue;
+  // Reuse the ordinary privacy projection with only the historically authorized household.
+  const historical={...state,events:{[id]:snapshot.event},accounts:[{...saved,qrToken:account.qrToken,anyListCategoryId:account.anyListCategoryId,selectedEvents:{[id]:true}}],gatheringHistory:{}};
+  const view=projectState(historical,actor,false,historical.accounts[0]);
+  pastGatherings[id] ||= {};pastGatherings[id][date]={eventId:id,date,name:snapshot.name,event:view.events[id]};
+ }
  const ids=Object.keys(events);
- return {events,accounts:[accountView],activeEventId:ids.includes(state.activeEventId)?state.activeEventId:ids[0],sharedSite:pick(state.sharedSite||{},['footerName']),gatheringHome:pick(state.gatheringHome||{},['elementAppearance','siteText','textAppearance','siteGaps','siteSpacing','siteElementOrder']),savedAt:state.savedAt};
+ return {events,pastGatherings,accounts:[accountView],activeEventId:ids.includes(state.activeEventId)?state.activeEventId:ids[0],sharedSite:pick(state.sharedSite||{},['footerName']),gatheringHome:pick(state.gatheringHome||{},['elementAppearance','siteText','textAppearance','siteGaps','siteSpacing','siteElementOrder']),savedAt:state.savedAt};
 }
 function forbidden(){throw Object.assign(new Error('Change is not permitted.'),{status:403});}
 function validRsvp(response,account,event,id){
@@ -87,6 +96,7 @@ export function updateFromChanges(state,actor,operations){
  const view=projectState(state,actor),desired=SharedStateProtocol.apply(view,operations),next=clone(state);
  for(const id of new Set(operations.map(operation=>operation.path[1]))){
   const source=state.events[id],incoming=desired.events[id];
+  if(source.cancelled || GatheringHistory.record(state,id,source.eventDate))forbidden();
   if(!SAME(view.events[id].rsvps,incoming.rsvps)){
    if(!Array.isArray(incoming.rsvps)||incoming.rsvps.length>1)forbidden();
    const response=incoming.rsvps[0];if(!response)forbidden();validRsvp(response,account,source,id);

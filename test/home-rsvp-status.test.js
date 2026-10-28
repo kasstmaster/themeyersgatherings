@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 await import('../guest-planning.js');
+await import('../gathering-history.js');
 await import('../invitation-groups.js');
 const source=await readFile(new URL('../app.js',import.meta.url),'utf8');
 const code=source.slice(source.indexOf('function gatheringRsvpStatus('),source.indexOf('function showEventSelection()'));
@@ -10,7 +11,7 @@ function fixture(){
  const account={name:'Jane Smith/John Smith',invitationPeople:{wedding:{'John Smith':2}}};
  const events=Object.fromEntries(['wedding','thanksgiving','christmas','new-gathering'].map(id=>[id,{eventDate:'2026-12-01',rsvps:[]}]));
  const choices={},empty={};
- const c=vm.createContext({appState:{events},guestName:account.name,signedInPersonName:'Jane Smith',rsvpAccount:()=>account,GuestPlanning,InvitationGroups,accountSignInNames:()=>GuestPlanning.accountNames(account.name),availableEventIds:()=>Object.keys(events),EVENT_DETAILS:Object.fromEntries(Object.keys(events).map(id=>[id,{name:id}])),escapeHtml:s=>s,document:{querySelector:s=>s==='#eventSelectionChoices'?choices:empty}});
+ const c=vm.createContext({appState:{events},guestName:account.name,signedInPersonName:'Jane Smith',rsvpAccount:()=>account,isHostView:()=>false,GatheringHistory,GuestPlanning,InvitationGroups,accountSignInNames:()=>GuestPlanning.accountNames(account.name),availableEventIds:()=>Object.keys(events),EVENT_DETAILS:Object.fromEntries(Object.keys(events).map(id=>[id,{name:id}])),escapeHtml:s=>s,document:{querySelector:s=>s==='#eventSelectionChoices'?choices:empty}});
  vm.runInContext(source.slice(source.indexOf('function normalizeAccountName('),source.indexOf('function householdDisplayName('))+code,c);return {c,account,events,choices};
 }
 test('home status follows each person and gathering, including new gatherings',()=>{

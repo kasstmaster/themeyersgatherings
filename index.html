@@ -58,6 +58,7 @@
         <img class="event-selection-icon" src="assets/icons/meyers-512.png" width="144" height="144" alt="Our wedding rose" decoding="async" />
         <h1 id="eventSelectionHeading">Welcome to The Meyers Gatherings</h1>
         <p class="event-selection-intro">It is our pleasure to share these special occasions with the people we hold dear.</p>
+        <div class="gathering-archive-actions"><button id="viewPastGatherings" type="button">View Past Gatherings</button><button id="manageGatherings" type="button" hidden>Manage Gatherings</button></div>
         <div id="eventSelectionChoices" class="event-selection-choices"></div>
         <p id="eventSelectionEmpty" class="event-selection-empty" hidden>You do not have sign-in access to a gathering yet.</p>
       </div>
@@ -165,6 +166,9 @@
       <div class="modal-dialog-footer"><button class="primary-button" value="create">Create gathering</button></div>
     </form></dialog>
 
+    <dialog id="pastGatheringsDialog"><div class="modal-card history-card"><button type="button" class="dialog-close" data-close-lifecycle aria-label="Close">×</button><h2>Past Gatherings</h2><div id="pastGatheringsList" class="event-selection-choices"></div><div id="pastGatheringDetails"></div></div></dialog>
+    <dialog id="manageGatheringsDialog"><div class="modal-card history-card"><button type="button" class="dialog-close" data-close-lifecycle aria-label="Close">×</button><h2>Manage Gatherings</h2><p>Changes apply only to the selected date. Other years are kept.</p><label>Gathering<select id="managedGathering"></select></label><label>Name<input id="managedGatheringName" maxlength="120" /></label><div class="gathering-archive-actions"><button type="button" data-manage-gathering="rename">Rename</button><button type="button" data-manage-gathering="cancel">Cancel gathering</button><button type="button" data-manage-gathering="delete">Delete gathering</button><button type="button" data-manage-gathering="restore">Restore</button><button type="button" data-manage-gathering="next">Start next occurrence</button></div><label>Photos &amp; Videos gallery link<input id="managedGalleryUrl" type="url" placeholder="https://…" /></label><button type="button" data-manage-gathering="gallery">Save gallery link</button><p id="managedGatheringStatus" role="status"></p></div></dialog>
+    <dialog id="confirmGatheringAction"><form id="confirmGatheringForm" class="modal-card"><button type="button" class="dialog-close" data-close-lifecycle aria-label="Close">×</button><h2 id="gatheringActionTitle"></h2><p id="gatheringActionWarning"></p><label id="gatheringActionPhrase"></label><input id="gatheringActionConfirmation" autocomplete="off" required /><button type="submit" id="gatheringActionSubmit">Confirm</button><p id="gatheringActionError" role="alert"></p></form></dialog>
     <dialog id="gatheringHistoryDialog"><div class="modal-card history-card">
       <button id="closeGatheringHistory" class="modal-close" type="button" aria-label="Close">×</button>
       <h2>Gathering history</h2>
