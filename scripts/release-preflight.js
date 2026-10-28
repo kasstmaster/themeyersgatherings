@@ -42,6 +42,27 @@ export async function preflight(env,fetcher=boundedFetch) {
   return {ready:true};
 }
 
+// Metadata and receipt reads only; never download the private state or backup.
+export async function verifyBackupCurrency(env,fetcher=boundedFetch) {
+  if(!env.STATE_REPOSITORY_TOKEN)throw new Error('Private repository read credential is required.');
+  const base='https://api.github.com/repos/kasstmaster/themeyersevents-data',token=env.STATE_REPOSITORY_TOKEN;
+  if((await api(fetcher,base,token)).private!==true)throw new Error('Backup repository must remain private.');
+  const current=await api(fetcher,base+'/git/trees/main?recursive=1',token);
+  if(current.truncated)throw new Error('Cannot verify a truncated tree.');
+  const source=current.tree?.find(entry=>entry.path==='data/app-state.json'&&entry.type==='blob');
+  const receiptEntry=current.tree?.filter(entry=>/^security-backups\/[^/]+\/receipt.json$/.test(entry.path)&&entry.type==='blob').sort((a,b)=>a.path.localeCompare(b.path)).at(-1);
+  if(!source||!receiptEntry)throw new Error('Verified backup receipt is missing.');
+  const path=receiptEntry.path;
+  const record=await api(fetcher,base+'/git/blobs/'+receiptEntry.sha,token);
+  const receipt=JSON.parse(Buffer.from(record.content,'base64').toString('utf8'));
+  if(receipt.repository!=='kasstmaster/themeyersevents-data'||receipt.branch!=='main'||receipt.statePath!=='data/app-state.json'||receipt.verified!==true||receipt.restoreDryRun!==true||receipt.sourceBlob!==source.sha||!/^[a-f0-9]{64}$/.test(receipt.sha256)||!/^[a-f0-9]{40}$/.test(receipt.backupCommit)||receipt.path!==path.replace(/receipt.json$/,'app-state.json'))throw new Error('Verified backup is missing or no longer current.');
+  const immutable=await api(fetcher,base+'/git/trees/'+receipt.backupCommit+'?recursive=1',token);
+  if(immutable.truncated||immutable.tree?.find(entry=>entry.path===receipt.path&&entry.type==='blob')?.sha!==source.sha)throw new Error('Immutable backup does not match the source.');
+  const latest=await api(fetcher,base+'/git/trees/main?recursive=1',token);
+  if(latest.truncated||latest.tree?.find(entry=>entry.path==='data/app-state.json'&&entry.type==='blob')?.sha!==source.sha)throw new Error('State changed during preflight; refresh backup.');
+  return {ready:true};
+}
+
 export async function verifyService(url,commit,fetcher=boundedFetch) {
   if(!/^[a-f0-9]{40}$/.test(commit))throw new Error('Invalid reviewed release commit.');
   const health=await fetcher(url+'/health/state-auth',{cache:'no-store',redirect:'error'});
@@ -63,7 +84,7 @@ if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).
   try {
     if(process.argv[2]==='service')await verifyService('https://curly-sun-ef0f.kassandraraudman.workers.dev',process.env.RELEASE_COMMIT);
     else if(process.argv[2]==='frontend')await verifyFrontend(process.env.RELEASE_COMMIT);
-    else await preflight(process.env);
+    else {await verifyBackupCurrency(process.env);await preflight(process.env);}
     console.log('Read-only release checks passed.');
   } catch { console.error('Release checks failed; stop publication. Review targets, readiness and credential permissions privately. No API response bodies are logged.');process.exitCode=1; }
 }

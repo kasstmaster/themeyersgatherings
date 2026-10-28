@@ -16,12 +16,23 @@ The target must not already exist. Review those three files. **Publishing them a
 
 In repository Settings → Pages, choose Deploy from a branch → `gathering-redirect` → `/ (root)`. Wait for Pages to finish. Check a printed invitation URL privately, including its fragment/query; it must open the current canonical website. Browser-cached old tabs may still need reload. This redirect-only change can precede the security cutover without changing the current canonical frontend. Do not merge first and hope the Worker gate controls Pages.
 
+## Read-only check before merging
+
+The existing deployment workflow has a manual **preflight** mode, which is the default. In GitHub Actions select **Deploy gathering site and shared-state Worker**, click **Run workflow**, choose branch **codex/secure-state-and-concurrency**, choose **preflight** if a mode field is shown, then run. If GitHub shows the old default-branch input form without a mode field, the reviewed branch treats a missing mode as read-only; **the branch choice is essential**. Do not run against `main` before this PR merges: the currently deployed old workflow does not contain this protection and can deploy. No local tools or new secrets are needed.
+
+On the reviewed branch, a manual invocation without explicit `mode=deploy` runs only **Read-only deployment readiness (no deployment)**. The deploy job is skipped. That job validates the exact approval variable, reads private backup receipt/tree metadata using the existing `STATE_REPOSITORY_TOKEN`, and checks both Cloudflare credential pairs and Pages. It never downloads state or backup contents, sends writes, runs Wrangler, or contacts the state endpoint. It does not issue a token or modify the backup. The existing cross-repository token must be scoped to the private data repository and permit Contents read; do not broaden permissions as a shortcut.
+
+A successful run must correspond to the latest reviewed PR commit, with the read-only job green and deployment skipped. **Encrypted host-secret values and future write success cannot be proven through metadata reads**; the owner's settings verification and later secure-service readiness gate remain necessary. If a token lacks a required read permission, stop and review that specific permission privately. No merge is authorized by running this check.
+
+Before declaring merge readiness, recheck latest-commit CI, current backup source blob and read-only preflight success. Arrange the coordinated maintenance window first: merging with the approval variable set starts the deployment automatically. If guest edits change the canonical file, refresh the private backup and repeat the preflight. A green run is a point-in-time result, not a lock on future writes.
+
 ## Preflight and required access
 
-The approved workflow only runs releases from `main`. It retains the `SECURITY_ROLLOUT_APPROVED=state-auth-v1` gate and serializes active releases with `cancel-in-progress: false`. A pending run can still be replaced by a newer pending run under GitHub concurrency rules; release one reviewed commit at a time. Do not manually cancel a run after deployment starts.
+The approved workflow only runs releases from `main`; manual preflight can run on the reviewed security branch without deploying. It retains the `SECURITY_ROLLOUT_APPROVED=state-auth-v1` gate and serializes active releases with `cancel-in-progress: false`. A pending run can still be replaced by a newer pending run under GitHub concurrency rules; release one reviewed commit at a time. Do not manually cancel a run after deployment starts.
 
 Before either Worker deployment, `scripts/release-preflight.js` uses read-only APIs to check:
 
+- The latest private backup receipt and immutable backup match the current canonical source blob (GitHub metadata only), with a final source-stability reread.
 - Both existing Cloudflare account/token pairs can access their target accounts and Worker settings.
 - The service has required secret **names/types**, and the expected R2 binding.
 - The website account owns an active `ilymmd.com` zone and the existing website Worker.

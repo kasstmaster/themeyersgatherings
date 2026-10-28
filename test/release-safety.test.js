@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import worker from '../github-state-worker/worker.js';
 import {redirectFiles,buildPagesRedirect} from '../scripts/build-pages-redirect.js';
-import {preflight,verifyService,verifyFrontend} from '../scripts/release-preflight.js';
+import {preflight,verifyService,verifyFrontend,verifyBackupCurrency} from '../scripts/release-preflight.js';
 import {buildDomainSite} from '../scripts/build-domain-site.js';
 
 const commit='a'.repeat(40);
@@ -82,4 +82,28 @@ test('workflow preflights before writes, gates frontend on service, and never ca
   assert.ok(pre>0&&pre<service&&service<gate&&gate<site);
   assert.match(workflow,/command: deploy --var RELEASE_COMMIT:\$\{\{ github.sha \}\}/);
   assert.match(workflow,/RELEASE_COMMIT: \$\{\{ github.sha \}\}/);assert.match(workflow,/if: failure\(\) \|\| cancelled\(\)/);
+  assert.match(workflow,/default: preflight/);
+  assert.match(workflow,/if: github.event_name == 'workflow_dispatch' && inputs.mode != 'deploy'/);
+  assert.match(workflow,/if: github.event_name == 'push' \|\| inputs.mode == 'deploy'/);
+  const readOnly=workflow.split('  preflight:')[1].split('  deploy:')[0];
+  assert.ok(!readOnly.includes('wrangler'));assert.ok(!readOnly.includes('command: deploy'));
+  assert.match(readOnly,/STATE_REPOSITORY_TOKEN: \$\{\{ secrets.STATE_REPOSITORY_TOKEN \}\}/);
+});
+
+test('preflight backup currency uses private metadata only and rejects stale/corrupt/moving backups',async()=>{
+  const path='security-backups/2026-10-28T00-00-00-000Z-test/app-state.json';
+  for(const problem of ['', 'public','stale','immutable','moving','receipt']) {
+    let mainReads=0;const requests=[];
+    const fetcher=async(url,options)=>{
+      requests.push(url);assert.equal(options.method,undefined);assert.equal(options.headers.Authorization,'Bearer private-read');
+      assert.ok(!url.includes('/contents/data/app-state.json'));assert.ok(!url.includes('/contents/'+path));
+      if(url.endsWith('/themeyersevents-data'))return Response.json({private:problem!=='public'});
+      if(url.includes('/git/trees/main')){mainReads++;return Response.json({sha:'snapshot',tree:[{path:'data/app-state.json',type:'blob',sha:problem==='moving'&&mainReads>1?'changed':'source'},{path:path.replace('app-state.json','receipt.json'),type:'blob',sha:'receipt'}]});}
+      if(url.includes('/git/blobs/receipt'))return Response.json({content:Buffer.from(JSON.stringify({repository:'kasstmaster/themeyersevents-data',branch:'main',statePath:'data/app-state.json',verified:true,restoreDryRun:problem!=='receipt',sourceBlob:problem==='stale'?'old':'source',sha256:'b'.repeat(64),backupCommit:commit,path})).toString('base64')});
+      return Response.json({tree:[{path,type:'blob',sha:problem==='immutable'?'wrong':'source'}]});
+    };
+    if(problem)await assert.rejects(verifyBackupCurrency({STATE_REPOSITORY_TOKEN:'private-read'},fetcher));
+    else {assert.deepEqual(await verifyBackupCurrency({STATE_REPOSITORY_TOKEN:'private-read'},fetcher),{ready:true});assert.equal(mainReads,2);}
+  }
+  await assert.rejects(verifyBackupCurrency({},async()=>{throw new Error('must not call');}));
 });
