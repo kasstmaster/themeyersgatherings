@@ -56,9 +56,14 @@ test('readiness endpoint is harmless, fails closed and contains no private confi
   const ready={AUTH_MIGRATION_READY:'verified-backup-v1',HOST_PASSWORD:'synthetic-test-password-long-enough',GITHUB_TOKEN:'private-value',GITHUB_REPOSITORY:'private/repo',INVITATION_BACKGROUNDS:{},RELEASE_COMMIT:commit};
   const response=await worker.fetch(new Request('https://service/health/state-auth'),ready);
   assert.equal(response.status,200);assert.equal(response.headers.get('Cache-Control'),'no-store');
-  assert.deepEqual(await response.json(),{protocol:'state-auth-v1',ready:true,commit});
+  assert.deepEqual(await response.json(),{protocol:'state-auth-v1',ready:true,commit,checks:{activationReady:true,hostPasswordReady:true,storageReady:true,githubReady:true,releaseCommitReady:true}});
   assert.equal((await worker.fetch(new Request('https://service/health/state-auth'),{})).status,503);
   assert.equal((await worker.fetch(new Request('https://service/health/state-auth',{method:'POST'}),ready)).status,405);
+  for(const [field,value,key] of [['AUTH_MIGRATION_READY','incorrect','activationReady'],['HOST_PASSWORD','short','hostPasswordReady'],['INVITATION_BACKGROUNDS',null,'storageReady'],['GITHUB_TOKEN','','githubReady'],['RELEASE_COMMIT','private-invalid-value','releaseCommitReady']]) {
+    const failed=await worker.fetch(new Request('https://service/health/state-auth'),{...ready,[field]:value}),body=await failed.json();
+    assert.equal(failed.status,503);assert.equal(body.ready,false);assert.equal(body.checks[key],false);
+    for(const secret of ['private-value','private-invalid-value','synthetic-test-password-long-enough','incorrect'])assert.ok(!JSON.stringify(body).includes(secret));
+  }
 });
 test('service gate rejects wrong version and never probes state on an old/unready service',async()=>{
   for(const body of [{ready:false,protocol:'state-auth-v1',commit},{ready:true,protocol:'old',commit},{ready:true,protocol:'state-auth-v1',commit:'b'.repeat(40)}]) {

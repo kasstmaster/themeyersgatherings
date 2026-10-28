@@ -67,7 +67,11 @@ export async function verifyService(url,commit,fetcher=boundedFetch) {
   if(!/^[a-f0-9]{40}$/.test(commit))throw new Error('Invalid reviewed release commit.');
   const health=await fetcher(url+'/health/state-auth',{cache:'no-store',redirect:'error'});
   const data=await health.json();
-  if(!health.ok||data.ready!==true||data.protocol!=='state-auth-v1'||data.commit!==commit)throw new Error('Secure service readiness/commit verification failed. Do not publish the frontend.');
+  if(!health.ok||data.ready!==true||data.protocol!=='state-auth-v1'||data.commit!==commit){
+    const checks={};
+    for(const key of ['activationReady','hostPasswordReady','storageReady','githubReady','releaseCommitReady'])if(typeof data.checks?.[key]==='boolean')checks[key]=data.checks[key];
+    throw Object.assign(new Error('Secure service readiness/commit verification failed. Do not publish the frontend.'),{safeDiagnostic:{status:health.status,protocolMatches:data.protocol==='state-auth-v1',ready:data.ready===true,commitMatches:data.commit===commit,checks}});
+  }
   // The new implementation rejects before reading state; do not call on old code.
   const denied=await fetcher(url+'/state',{cache:'no-store',redirect:'error'});
   if(denied.status!==401)throw new Error('Anonymous state denial failed. Do not publish the frontend.');
@@ -86,5 +90,5 @@ if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).
     else if(process.argv[2]==='frontend')await verifyFrontend(process.env.RELEASE_COMMIT);
     else {await verifyBackupCurrency(process.env);await preflight(process.env);}
     console.log('Read-only release checks passed.');
-  } catch { console.error('Release checks failed; stop publication. Review targets, readiness and credential permissions privately. No API response bodies are logged.');process.exitCode=1; }
+  } catch(error) { console.error('Release checks failed; stop publication. Review targets, readiness and credential permissions privately. No API response bodies are logged.');if(error.safeDiagnostic)console.error(JSON.stringify(error.safeDiagnostic));process.exitCode=1; }
 }
