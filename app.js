@@ -2887,6 +2887,7 @@ function renderDinnerPlanEditor(area){
   button.addEventListener('click',()=>{if(!name.value.trim()){name.focus();return;}event.sitDownMenu=[...(event.sitDownMenu||[]),{id:crypto.randomUUID(),name:name.value.trim(),category:'Main Table'}];name.value='';saveState();draw();});
   add.append(name,button);panel.append(add);draw();
 }
+let menuEditorSection='potluck';
 function openMenuEditor(){
   if(!hostAuthenticated || !SiteEditing.enabled || !hasGatheringToolbarContext())return;
   const dialog=document.querySelector('#menuEditorDialog'),area=document.querySelector('#menuEditorContent');if(dialog.open)return;
@@ -2897,7 +2898,19 @@ function openMenuEditor(){
     openAdmin();
     const fields=document.querySelector('#menuAdminFields'),anchor=document.createComment('menu fields home'),hidden=fields.hidden;
     fields.before(anchor);fields.hidden=false;area.append(fields);
-    dialog.addEventListener('close',()=>{anchor.replaceWith(fields);fields.hidden=hidden;},{once:true});
+    const units=document.querySelector('#menuQuantityTypes'),unitsAnchor=document.createComment('quantity types home');
+    units.before(unitsAnchor);area.append(units);
+    const sitDown=document.querySelector('#sitDownDinnerMenu');area.append(sitDown);
+    const navigation=document.createElement('nav');navigation.className='menu-editor-navigation';navigation.setAttribute('aria-label','Menu sections');
+    const sections=[['potluck','Potluck',fields],['sit-down','Sit Down Dinner',sitDown],['quantities','Quantity Types',units]];
+    const showSection=key=>{
+      commitAllPendingEditorInputs();menuEditorSection=key;
+      for(const [id,,panel] of sections)panel.hidden=id!==key;
+      navigation.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.menuSection===key)));
+    };
+    for(const [key,title,panel] of sections){const button=document.createElement('button');button.type='button';button.textContent=title;button.dataset.menuSection=key;button.setAttribute('aria-controls',panel.id);button.addEventListener('click',()=>showSection(key));navigation.append(button);}
+    area.prepend(navigation);showSection('potluck');
+    dialog.addEventListener('close',()=>{unitsAnchor.replaceWith(units);units.hidden=false;anchor.replaceWith(fields);fields.hidden=hidden;},{once:true});
   }
   showSiteDialog(dialog);
 }
@@ -2941,7 +2954,7 @@ function openAdmin() {
     renderWeddingPartyAttireAdmin();
     renderAdminAttireVideos();
   }
-  document.querySelector('#menuAdminFields').hidden = isWedding;
+  document.querySelector('#menuAdminFields').hidden = isWedding || (document.querySelector('#menuEditorDialog').open && menuEditorSection!=='potluck');
   document.querySelector('#adminNewUnit').innerHTML = unitOptions();
   renderQuantityUnits();
   document.querySelector('#adminItems').innerHTML = GuestPlanning.menuRows(state.items).map(({item,startsCategory}) => {
