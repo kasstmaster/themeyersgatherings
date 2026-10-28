@@ -73,13 +73,14 @@ export async function handleDropboxUpload(request,env,identity,{jsonResponse}) {
     if(!input || !types.includes(input.contentType) || !Number.isSafeInteger(input.size) || input.size<=0 || typeof input.name!=='string')return reply({error:'Choose a supported photo or video.'},400);
     try {
       const started=await content(env,'upload_session/start',{close:false});const id=crypto.randomUUID();
-      await write(bucket,base+id,{sessionId:started.session_id,offset:0,size:input.size,name:safeName(input.name),contentType:input.contentType,path:`/Wedding Uploads/${safeName(identity.accountName)}/${safeName(identity.uploadedBy)}/${id}-${safeName(input.name)}`});
+      await write(bucket,base+id,{...(identity.eventId?{eventId:identity.eventId,eventDate:identity.eventDate}:{}),sessionId:started.session_id,offset:0,size:input.size,name:safeName(input.name),contentType:input.contentType,path:`/Wedding Uploads/${safeName(identity.accountName)}/${safeName(identity.uploadedBy)}/${id}-${safeName(input.name)}`});
       return reply({id,offset:0});
     }catch(error){return reply({error:error.message},503);}
   }
   const match=/^\/wedding-media\/dropbox-upload\/([a-f0-9-]{36})\/(chunk|finish)$/.exec(url.pathname);
   if(!match || request.method!=='POST')return reply({error:'Not found.'},404);
   const job=await read(bucket,base+match[1]);if(!job)return reply({error:'Upload not found for this account.'},404);
+  if(job.eventId&&(job.eventId!==identity.eventId||job.eventDate!==identity.eventDate))return reply({error:'This upload belongs to another gathering.'},403);
   if(job.completed)return reply({ok:true,offset:job.offset});
   try {
     if(match[2]==='chunk') {
@@ -93,7 +94,7 @@ export async function handleDropboxUpload(request,env,identity,{jsonResponse}) {
     }
     if(job.offset!==job.size)return reply({error:'The file has not finished uploading.'},409);
     await content(env,'upload_session/finish',{cursor:{session_id:job.sessionId,offset:job.offset},commit:{path:job.path,mode:'add',autorename:false,mute:true}});
-    await bucket.put(`wedding-media/uploads/${identity.owner}/${match[1]}`,'',{customMetadata:{kind:'dropbox',name:job.name,uploadedBy:identity.uploadedBy,accountName:identity.accountName,uploadedAt:new Date().toISOString(),contentType:job.contentType}});
+    await bucket.put(`wedding-media/uploads/${identity.owner}/${match[1]}`,'',{customMetadata:{...(job.eventId?{eventId:job.eventId,eventDate:job.eventDate}:{}),kind:'dropbox',name:job.name,uploadedBy:identity.uploadedBy,accountName:identity.accountName,uploadedAt:new Date().toISOString(),contentType:job.contentType}});
     job.completed=true;await write(bucket,base+match[1],job);return reply({ok:true});
   }catch(error){return reply({error:error.message},503);}
 }

@@ -252,11 +252,11 @@ function normalizeState(saved) {
           };
         }),
         gatheringHome: saved.gatheringHome && typeof saved.gatheringHome==='object' && !Array.isArray(saved.gatheringHome) ? saved.gatheringHome : {},
-        events: { ...fresh.events, ...saved.events },
+        events: { ...saved.events },
         invitationTemplates: Array.isArray(saved.invitationTemplates) ? saved.invitationTemplates : []
       };
       delete loaded.activeEventIds;
-      if (loaded.events.christmas.menuVersion !== CHRISTMAS_MENU_VERSION) {
+      if (loaded.events.christmas && loaded.events.christmas.menuVersion !== CHRISTMAS_MENU_VERSION) {
         const previousClaims = new Map(loaded.events.christmas.items.map(item => [item.id, item.claims]));
         loaded.events.christmas.items = christmasItems().map(item => ({ ...item, claims: previousClaims.get(item.id) || [] }));
         loaded.events.christmas.menuVersion = CHRISTMAS_MENU_VERSION;
@@ -457,7 +457,7 @@ function setGatheringDetail(key,value) {
 function saveState({ refresh = !SiteEditing.portalOpen && !SiteEditing.flushing, eventId = viewedEventId, eventState = state } = {}) {
   SiteEditing.recordUndo();
   captureGatheringHistory();
-  if(eventId!=='gathering-home')appState.events[eventId] = eventState;
+  if(eventId&&eventId!=='gathering-home'&&eventState)appState.events[eventId] = eventState;
   appState.savedAt=new Date().toISOString();
   const storedLocally = storeLocalState(appState);
   localStateRevision += 1;
@@ -1162,7 +1162,8 @@ function gatheringRsvpStatus(eventId) {
   return response.people.length && response.people.every(person=>person.attending===false)?'declined':'';
 }
 function renderEventSelection() {
-  const ids = availableEventIds();
+  const ids = GatheringHistory.selection(appState,availableEventIds());
+  document.querySelector('#manageGatherings').hidden=!isHostView();
   document.querySelector('#eventSelectionChoices').innerHTML = ids.map(id => {
     const event = EVENT_DETAILS[id];
     const eventState = appState.events[id];
@@ -1170,7 +1171,7 @@ function renderEventSelection() {
     const formatted = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(date).replaceAll(',', '');
     const status=gatheringRsvpStatus(id);
     const badge=status?`<span class="event-selection-status ${status}" role="img" aria-label="${status==='attending'?'RSVP: Attending':'RSVP: Declined'}">${status==='attending'?'✓':'✕'}</span>`:'';
-    return `<button type="button" data-enter-event="${id}"${status?' class="has-rsvp-status"':''}>${badge}<span class="event-selection-label"><span>${escapeHtml(event.name)}</span><small>${formatted}</small></span></button>`;
+    return `<button type="button" data-enter-event="${id}"${eventState.cancelled?' disabled aria-label="Cancelled gathering"':''}${status?' class="has-rsvp-status"':''}>${badge}<span class="event-selection-label"><span>${escapeHtml(eventState.gatheringName || event.name)}${eventState.cancelled?' — Cancelled':''}</span><small>${formatted}</small></span></button>`;
   }).join('');
   document.querySelector('#eventSelectionEmpty').hidden = ids.length > 0;
 }
@@ -1228,7 +1229,7 @@ function showSignedInDestination() {
 function enterEvent(eventId, { preserveWeddingView = false } = {}) {
   finishGatheringBuilderSession();
   const nextState = appState.events[eventId];
-  if (!nextState || !EVENT_DETAILS[eventId]) {
+  if (!nextState || nextState.cancelled || !availableEventIds().includes(eventId) || !EVENT_DETAILS[eventId]) {
     showToast('That gathering is no longer available. Please choose another gathering.');
     renderEventSelection();
     return;
@@ -1548,6 +1549,7 @@ function render() {
   GapLayout.beforeRender();
   SiteEditing.beforeRender();
   syncGatheringDefinitions(appState.events);
+  if(!appState.events[viewedEventId]){document.querySelector('#eventSelectionPage').hidden=false;document.querySelector('#eventPage').hidden=true;document.querySelector('#attirePage').hidden=true;renderGatheringHome();return;}
   if(!document.querySelector('#eventSelectionPage').hidden){renderGatheringHome();return;}
   const event = EVENT_DETAILS[viewedEventId];
   const features=GatheringFeatures.forGathering(viewedEventId);
@@ -4107,7 +4109,7 @@ document.querySelector('#newGatheringButton').addEventListener('click',async()=>
   if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
   if(SiteEditing.enabled)SiteEditing.toggle(render);
   document.querySelector('#newGatheringForm').reset();
-  document.querySelector('#newGatheringAddress').value=SharedDetails.homeAddress(state);
+  document.querySelector('#newGatheringAddress').value=SharedDetails.homeAddress(state || {});
   showSiteDialog(document.querySelector('#newGatheringDialog'));
 });
 document.querySelector('#newGatheringForm').addEventListener('submit',async event=>{
@@ -4169,3 +4171,80 @@ document.querySelector('#nextGatheringForm').addEventListener('submit',event=>{
   } catch(error){document.querySelector('#nextGatheringError').textContent=error.message;}
 });
 setInterval(()=>{if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}},60000);
+
+// Occurrences are keyed by gathering ID + date; current and past years never share content edits.
+function pastGatheringEntries() {
+  const history=isHostView()?appState.gatheringHistory:appState.pastGatherings;
+  return GatheringHistory.snapshots({...appState,gatheringHistory:history || {}});
+}
+function showPastGatherings() {
+  const list=document.querySelector('#pastGatheringsList');list.replaceChildren();document.querySelector('#pastGatheringDetails').replaceChildren();
+  const entries=pastGatheringEntries();
+  if(!entries.length)list.textContent='No past gatherings are available yet.';
+  for(const snapshot of entries){const button=document.createElement('button');button.type='button';button.textContent=`${snapshot.name} · ${snapshot.date}`;button.addEventListener('click',()=>showPastGathering(snapshot));list.append(button);}
+  showSiteDialog(document.querySelector('#pastGatheringsDialog'));
+}
+function showPastGathering(snapshot) {
+  const area=document.querySelector('#pastGatheringDetails'),event=snapshot.event;
+  const own=(event.rsvps || []).filter(r=>!isHostView()||r.name===guestName);
+  const responses=own.map(r=>`<p>${r.adults || 0} adults · ${r.children || 0} children</p>${(r.people || []).map(person=>`<p>${escapeHtml(person.name)} — ${person.attending?'Attending':'Declined'}</p>`).join('')}${(r.childNames || []).map(name=>`<p>${escapeHtml(name)}</p>`).join('')}` ).join('');
+  const names=new Set(own.map(r=>r.name));
+  const dishes=GuestPlanning.menuOrder(event.items || []).filter(item=>item.claims?.some(name=>names.has(name))).map(item=>`<li>${escapeHtml(item.name)}</li>`).join('');
+  const meals=own.flatMap(r=>r.menuSelections || []).map(meal=>`<li>${escapeHtml(meal.name || '')}: ${escapeHtml(meal.meal || '')}</li>`).join('');
+  area.innerHTML=`<h2>${escapeHtml(snapshot.name)}</h2><p>${escapeHtml(snapshot.date)} · Read-only history</p><h3>Your RSVP</h3>${responses || '<p>No RSVP was recorded.</p>'}${dishes?`<h3>Your Dishes</h3><ul>${dishes}</ul>`:''}${meals?`<h3>Your meals</h3><ul>${meals}</ul>`:''}<h3>Photos &amp; Videos</h3><div data-archive-gallery-link></div><p data-archive-media-status role="status"></p><div class="wedding-media-gallery" data-archive-media></div>`;
+  try{const url=new URL(event.mediaGalleryUrl);if(!['http:','https:'].includes(url.protocol))throw new Error();const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent=event.mediaGalleryLabel || 'View & Download Photos & Videos';area.querySelector('[data-archive-gallery-link]').append(link);}catch{/* An empty gallery link stays empty until the Host supplies it. */}
+  void WeddingMedia.archive({base:SHARED_STATE_URL,host:isHostView(),account:guestName,name:signedInPersonName,preview:isViewingAsGuest(),eventId:snapshot.eventId,archiveDate:snapshot.date},area.querySelector('[data-archive-media]'),area.querySelector('[data-archive-media-status]'));
+}
+document.querySelector('#viewPastGatherings').addEventListener('click',showPastGatherings);
+for(const button of document.querySelectorAll('[data-close-lifecycle]'))button.addEventListener('click',()=>button.closest('dialog').close());
+function managementEntries() {
+  const entries=new Map();
+  for(const [id,event] of Object.entries(appState.events))entries.set(JSON.stringify([id,event.eventDate]),{id,date:event.eventDate,name:event.gatheringName || EVENT_DETAILS[id]?.name || id,cancelled:event.cancelled});
+  for(const [id,dates] of Object.entries(appState.gatheringHistory || {}))for(const [date,snapshot] of Object.entries(dates))if(!entries.has(JSON.stringify([id,date])))entries.set(JSON.stringify([id,date]),{id,date,name:snapshot.name});
+  for(const [id,dates] of Object.entries(appState.gatheringLifecycle || {}))for(const [date,record] of Object.entries(dates))if(record.status==='deleted')entries.set(JSON.stringify([id,date]),{id,date,name:record.name,deletedAt:record.deletedAt});
+  return [...entries.entries()].sort(([,a],[,b])=>b.date.localeCompare(a.date));
+}
+function renderManagedGathering() {
+  const value=document.querySelector('#managedGathering').value,entry=new Map(managementEntries()).get(value);
+  document.querySelector('#managedGatheringName').value=entry?.name || '';
+  const selectedEvent=entry?(appState.events[entry.id]?.eventDate===entry.date?appState.events[entry.id]:appState.gatheringHistory?.[entry.id]?.[entry.date]?.event):null;document.querySelector('#managedGalleryUrl').value=selectedEvent?.mediaGalleryUrl || '';
+  for(const button of document.querySelectorAll('[data-manage-gathering]'))button.disabled=!entry || (button.dataset.manageGathering==='restore'?!entry.deletedAt:Boolean(entry.deletedAt)) || button.dataset.manageGathering==='cancel'&&(entry.cancelled || entry.date<GatheringHistory.today()) || button.dataset.manageGathering==='next'&&(!entry || entry.deletedAt || entry.cancelled || entry.date>=GatheringHistory.today() || appState.events[entry.id]?.eventDate!==entry.date);
+  document.querySelector('#managedGatheringStatus').textContent=entry?.deletedAt?`Deleted. Recoverable until ${new Date(Date.parse(entry.deletedAt)+30*86400000).toLocaleString()}.`:entry?.cancelled?'Cancelled. Visible but disabled through the gathering date.':'';
+}
+function refreshManagementChoices() {
+  const select=document.querySelector('#managedGathering'),previous=select.value;select.replaceChildren();
+  for(const [key,entry] of managementEntries()){const option=document.createElement('option');option.value=key;option.textContent=`${entry.name} · ${entry.date}${entry.deletedAt?' — Deleted':entry.cancelled?' — Cancelled':''}`;select.append(option);}
+  if([...select.options].some(option=>option.value===previous))select.value=previous;
+  renderManagedGathering();
+}
+document.querySelector('#manageGatherings').addEventListener('click',()=>{if(!isHostView())return;refreshManagementChoices();showSiteDialog(document.querySelector('#manageGatheringsDialog'));});
+document.querySelector('#managedGathering').addEventListener('change',renderManagedGathering);
+let pendingGatheringCommand=null;
+async function submitGatheringCommand(command) {
+  if(!isHostView())return;
+  commitAllPendingEditorInputs();
+  if(sharedSaveInProgress)throw new Error('A save is in progress. Please wait and try again.');
+  if(sharedSavePending)await saveSharedState();
+  if(sharedSavePending||sharedSaveError)throw new Error('Finish syncing your existing changes before managing gatherings.');
+  const result=await StateClient.manageGathering(SHARED_STATE_URL,command);
+  appState=prepareAuthorizedState(result.state);viewedEventId=appState.events[viewedEventId]?viewedEventId:Object.keys(appState.events)[0];state=appState.events[viewedEventId];
+  localStateRevision++;storeLocalState(appState);StateClient.remember(appState,result.revision);
+  refreshManagementChoices();renderEventSelection();showToast('Gathering updated.');
+}
+for(const button of document.querySelectorAll('[data-manage-gathering]'))button.addEventListener('click',async()=>{
+  if(!isHostView())return;const [eventId,date]=JSON.parse(document.querySelector('#managedGathering').value || '[]');if(!eventId)return;
+  if(button.dataset.manageGathering==='next'){document.querySelector('#manageGatheringsDialog').close();viewedEventId=eventId;state=appState.events[eventId];document.querySelector('#gatheringHistoryButton').click();return;}
+  const command={action:button.dataset.manageGathering,eventId,date,name:document.querySelector(button.dataset.manageGathering==='gallery'?'#managedGalleryUrl':'#managedGatheringName').value};
+  if(['cancel','delete'].includes(command.action)){
+    pendingGatheringCommand=command;const phrase=`${command.action.toUpperCase()} ${date}`;
+    document.querySelector('#gatheringActionTitle').textContent=command.action==='cancel'?'Cancel this gathering?':'Delete this gathering?';
+    document.querySelector('#gatheringActionWarning').textContent=command.action==='cancel'?'Guests will see it marked Cancelled and cannot open it. After its date it will be removed from the website. Other years stay unchanged.':'This date will disappear from guests immediately. You can restore it for 30 days; afterward the website will remove this occurrence and its history. GitHub backups and Dropbox files stay untouched.';
+    document.querySelector('#gatheringActionPhrase').textContent=`Type ${phrase} to confirm.`;document.querySelector('#gatheringActionConfirmation').value='';document.querySelector('#gatheringActionError').textContent='';showSiteDialog(document.querySelector('#confirmGatheringAction'));return;
+  }
+  button.disabled=true;try{await submitGatheringCommand(command);}catch(error){renderManagedGathering();document.querySelector('#managedGatheringStatus').textContent=error.message;}
+});
+document.querySelector('#confirmGatheringForm').addEventListener('submit',async event=>{
+  event.preventDefault();if(!pendingGatheringCommand)return;const button=document.querySelector('#gatheringActionSubmit');button.disabled=true;
+  try{if(document.querySelector('#gatheringActionConfirmation').value!==`${pendingGatheringCommand.action.toUpperCase()} ${pendingGatheringCommand.date}`)throw new Error('Enter the exact confirmation phrase.');await submitGatheringCommand({...pendingGatheringCommand,confirmation:document.querySelector('#gatheringActionConfirmation').value});pendingGatheringCommand=null;document.querySelector('#confirmGatheringAction').close();}
+  catch(error){document.querySelector('#gatheringActionError').textContent=error.message;}finally{button.disabled=false;}
+});

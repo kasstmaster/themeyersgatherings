@@ -1,3 +1,4 @@
+import '../gathering-history.js';
 import {eventAllowed} from './permissions.js';
 import {digest,boundedJson} from './auth.js';
 import { handleDropboxUpload } from './dropbox.js';
@@ -11,6 +12,12 @@ async function ownerId(value) {
 }
 export async function handleWeddingMedia(request, env, { response, jsonResponse, requireHost, readState, actor }) {
   const bucket = env.INVITATION_BACKGROUNDS;
+  const scopeAllowed=(state,eventId,date,account,host=false)=>{
+    if(GatheringHistory.record(state,eventId,date))return false;
+    const snapshot=state.gatheringHistory?.[eventId]?.[date];
+    if(snapshot)return host||Boolean(GatheringHistory.historicalAccount(state,account,snapshot));
+    const event=state.events?.[eventId];return Boolean(event&&event.eventDate===date&&!event.cancelled&&(host||eventAllowed(account,eventId)));
+  };
   const reply = (value, status = 200) => jsonResponse(request, env, value, status);
   const fail = (error, status) => reply({ error }, status);
   if (!bucket) return fail('Photo and video upload storage is not configured.', 503);
@@ -27,9 +34,9 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
       if (result.status !== 200) return fail('Unable to verify your sign-in. Please try again.', 503);
       const state = JSON.parse(result.text);
       const eventId=typeof body.eventId==='string'?body.eventId:'wedding';
-      if(!Object.hasOwn(state.events || {},eventId))return fail('That gathering is not available.',401);
+      if(!Object.hasOwn(state.events || {},eventId)&&!state.gatheringHistory?.[eventId]?.[body.archiveDate])return fail('That gathering is not available.',401);
       const matches = (state.accounts || []).flatMap(account => {
-        if (!eventAllowed(account,eventId) || actor.role!=='host' && (account.qrToken||account.anyListCategoryId||account.name)!==actor.accountId) return [];
+        if (!(body.archiveDate?scopeAllowed(state,eventId,body.archiveDate,account):eventAllowed(account,eventId)) || actor.role!=='host' && (account.qrToken||account.anyListCategoryId||account.name)!==actor.accountId) return [];
         const names = accountPeople(account.name);
         const canonical = names.find(person => normalizedPerson(person) === normalizedPerson(name));
         const alias = (account.signInAliases || []).find(entry => normalizedPerson(entry.alias) === normalizedPerson(name) && names.some(person => normalizedPerson(person) === normalizedPerson(entry.name)));
@@ -38,6 +45,14 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
       if (matches.length !== 1) return fail('Your gathering account could not be verified.', 401);
       const { account, person } = matches[0];
       identity = { host: false, owner: await ownerId(String(account.anyListCategoryId || account.qrToken || account.name)), accountName: account.name, uploadedBy: person };
+    }
+    const requestedEventId=typeof body.eventId==='string'?body.eventId:identity.host?null:'wedding';
+    if(requestedEventId){
+      const result=await readState(env);if(result.status!==200)return fail('Unable to verify the gathering.',503);
+      const state=JSON.parse(result.text),eventId=requestedEventId,date=body.archiveDate||state.events?.[eventId]?.eventDate;
+      const account=state.accounts?.find(a=>(a.qrToken||a.anyListCategoryId||a.name)===actor.accountId);
+      if(!scopeAllowed(state,eventId,date,account,identity.host))return fail('That gathering is not available.',403);
+      identity={...identity,accountId:actor.accountId,eventId,eventDate:date,readOnly:Boolean(body.archiveDate)};
     }
     const token = crypto.randomUUID() + crypto.randomUUID();
     const expires = Date.now() + 60 * 60 * 1000;
@@ -52,13 +67,19 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
   if(identity.stateSessionVersion!==await digest(env.HOST_PASSWORD||''))return fail('Sign in again to access uploads.',401);
   if (identity.expires < Date.now()) { await bucket.delete(`${PREFIX}sessions/${token}`); return fail('Your upload session has expired. Please try again.', 401); }
   if(actor && (identity.issuedToRole!==actor.role||actor.role!=='host'&&(identity.host||identity.uploadedBy!==actor.person)))return fail('Sign in before accessing uploads.',401);
+  if(identity.eventId){
+    const result=await readState(env);if(result.status!==200)return fail('Unable to verify the gathering.',503);
+    const state=JSON.parse(result.text),account=state.accounts?.find(a=>(a.qrToken||a.anyListCategoryId||a.name)===identity.accountId);
+    if(!scopeAllowed(state,identity.eventId,identity.eventDate,account,identity.host))return fail('That gathering is not available.',403);
+    if(identity.readOnly&&request.method!=='GET')return fail('Past gatherings are read-only.',403);
+  }
   if (url.pathname.startsWith('/wedding-media/dropbox-upload/')) return await handleDropboxUpload(request, env, identity, { jsonResponse });
   const prefix = `${PREFIX}uploads/`;
   if (route === '/' && request.method === 'GET') {
     const items = []; let cursor;
     do {
       const page = await bucket.list({ prefix: identity.host ? prefix : `${prefix}${identity.owner}/`, include: ['customMetadata'], cursor });
-      for (const object of page.objects) items.push({ ...object.customMetadata, path: object.key.slice(PREFIX.length), size: object.size });
+      for (const object of page.objects) {const meta=object.customMetadata||{};if(identity.eventId&&meta.eventId&&(meta.eventId!==identity.eventId||meta.eventDate!==identity.eventDate))continue;items.push({ ...meta, unassigned:!meta.eventId, path: object.key.slice(PREFIX.length), size: object.size });}
       cursor = page.truncated ? page.cursor : undefined;
     } while (cursor);
     items.sort((a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
@@ -72,7 +93,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
     const bytes = await request.arrayBuffer();
     if (!bytes.byteLength || bytes.byteLength > limit) return fail('Empty file or file exceeds the upload size limit.', 413);
     const name = (url.searchParams.get('name') || 'Upload').slice(0, 240);
-    const metadata = { name, contentType, accountName: identity.accountName, uploadedBy: identity.uploadedBy, uploadedAt: new Date().toISOString(), kind: contentType.startsWith('video/') ? 'video' : 'image' };
+    const metadata = { ...(identity.eventId?{eventId:identity.eventId,eventDate:identity.eventDate}:{}), name, contentType, accountName: identity.accountName, uploadedBy: identity.uploadedBy, uploadedAt: new Date().toISOString(), kind: contentType.startsWith('video/') ? 'video' : 'image' };
     await bucket.put(`${prefix}${identity.owner}/${crypto.randomUUID()}`, bytes, { httpMetadata: { contentType }, customMetadata: metadata });
     return reply({ ok: true }, 201);
   }
@@ -81,7 +102,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
     if (!body || typeof body.url !== 'string' || body.url.length > 4000) return fail('Enter a valid photo-sharing link.', 400);
     let link; try { link = new URL(body.url); } catch { return fail('Enter a valid photo-sharing link.', 400); }
     if (!['https:', 'http:'].includes(link.protocol) || link.username || link.password) return fail('Use an http or https sharing link.', 400);
-    const metadata = { kind: 'link', name: link.hostname, url: link.href, accountName: identity.accountName, uploadedBy: identity.uploadedBy, uploadedAt: new Date().toISOString() };
+    const metadata = { ...(identity.eventId?{eventId:identity.eventId,eventDate:identity.eventDate}:{}), kind: 'link', name: link.hostname, url: link.href, accountName: identity.accountName, uploadedBy: identity.uploadedBy, uploadedAt: new Date().toISOString() };
     await bucket.put(`${prefix}${identity.owner}/${crypto.randomUUID()}`, '', { customMetadata: metadata });
     return reply({ ok: true }, 201);
   }
@@ -89,6 +110,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
   if (file && request.method === 'GET') {
     if (!OWNER.test(file[1]) || !ID.test(file[2]) || (!identity.host && file[1] !== identity.owner)) return fail('Not found.', 404);
     const key = `${PREFIX}${route.slice(1)}`;
+    if(identity.eventId){const meta=await bucket.head(key);if(meta?.customMetadata?.eventId&&(meta.customMetadata.eventId!==identity.eventId||meta.customMetadata.eventDate!==identity.eventDate))return fail('Not found.',404);}
     let range;
     if (request.headers.has('Range')) {
       const metadata = await bucket.head(key);

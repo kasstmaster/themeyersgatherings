@@ -218,6 +218,43 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   assert.equal(await page.getByLabel('Text shadow',{exact:true}).inputValue(),'On','reopened effects show the saved shadow');assert.equal(await page.getByLabel('Text outline',{exact:true}).inputValue(),'On','reopened effects show the saved outline');assert.equal(await page.getByLabel('Outline color hex',{exact:true}).inputValue(),'#fedcba');
   await page.getByLabel('Text shadow',{exact:true}).selectOption('Off');await page.getByLabel('Text outline',{exact:true}).selectOption('Off');await page.locator('#editItemsButton').click();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
   const cleared=await savedLink.evaluate(e=>({shadow:getComputedStyle(e).textShadow,width:getComputedStyle(e).webkitTextStrokeWidth}));assert.deepEqual(cleared,{shadow:'none',width:'0px'});
-  assert.deepEqual(errors,[]);assert.equal(state.accounts[0].qrToken,'already-printed-qr');console.log('Security/QR flows, page-owned headings, button surfaces, moved photo gaps, mobile toolbar clearance/stable scrolling, text-effect Done/reload persistence and replacement, and typing without whole-page repainting pass against the real local Worker.');
+
+  // Year-specific management and archive-only access use the actual UI and Worker.
+  await page.evaluate(()=>showGatheringsHome());await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+  const oldEvent={...structuredClone(state.events.thanksgiving),eventDate:'2025-11-25',hostNotes:'ARCHIVE HOST SECRET'};
+  state.gatheringHistory={thanksgiving:{'2025-11-25':{eventId:'thanksgiving',date:'2025-11-25',name:'Old Thanksgiving',event:oldEvent,accounts:[structuredClone(state.accounts[0])]}}};sha++;
+  await page.evaluate(()=>loadSharedState());await page.locator('#manageGatherings').click();
+  await page.locator('#managedGathering').selectOption(JSON.stringify(['thanksgiving','2025-11-25']));
+  await page.locator('#managedGatheringName').fill('Thanksgiving Memories');await page.locator('[data-manage-gathering="rename"]').click();
+  await page.waitForFunction(()=>appState.gatheringHistory?.thanksgiving?.['2025-11-25']?.name==='Thanksgiving Memories');
+  assert.equal(state.events.thanksgiving.gatheringName,'Thanksgiving');
+  await page.locator('[data-manage-gathering="delete"]').click();await page.locator('#gatheringActionConfirmation').fill('DELETE');await page.locator('#gatheringActionSubmit').click();
+  await page.waitForFunction(()=>document.querySelector('#gatheringActionError').textContent.includes('exact confirmation'));assert.ok(state.gatheringHistory.thanksgiving['2025-11-25']);
+  await page.locator('#gatheringActionConfirmation').fill('DELETE 2025-11-25');await page.locator('#gatheringActionSubmit').click();await page.waitForFunction(()=>!document.querySelector('#confirmGatheringAction').open);
+  assert.ok(!state.gatheringHistory.thanksgiving['2025-11-25']);
+  await page.locator('[data-manage-gathering="restore"]').click();await page.waitForFunction(()=>Boolean(appState.gatheringHistory?.thanksgiving?.['2025-11-25']));
+  await page.locator('#manageGatheringsDialog [data-close-lifecycle]').click();
+  state.accounts[0].selectedEvents={thanksgiving:false,wedding:false};sha++;
+  const archiveGuest=await browser.newPage();archiveGuest.on('pageerror',error=>errors.push(error.message));
+  await archiveGuest.goto(base+'/#/signin/account/already-printed-qr');await archiveGuest.waitForFunction(()=>typeof startApp==='function');
+  await archiveGuest.locator('#accountFirstName').fill('Casey');await archiveGuest.locator('#signInSubmit').click();await archiveGuest.locator('#accountLastName').fill('Example');await archiveGuest.locator('#signInSubmit').click();
+  await archiveGuest.locator('#eventSelectionPage').waitFor({state:'visible'});
+  assert.equal(await archiveGuest.locator('[data-enter-event]').count(),0);assert.equal(await archiveGuest.locator('#manageGatherings').isVisible(),false);
+  await archiveGuest.locator('#viewPastGatherings').click();await archiveGuest.locator('#pastGatheringsList button').click();
+  await archiveGuest.waitForFunction(()=>!document.querySelector('[data-archive-media-status]').textContent.includes('Loading'));
+  assert.match(await archiveGuest.locator('#pastGatheringDetails').textContent(),/Thanksgiving Memories/);
+  assert.ok(!await archiveGuest.evaluate(()=>JSON.stringify(appState).includes('ARCHIVE HOST SECRET')));
+  await archiveGuest.close();
+  await page.reload();await page.waitForFunction(()=>typeof startApp==='function');await page.locator('#accountFirstName').fill(TEST_PASSWORD);await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});
+  await page.locator('#manageGatherings').click();await page.locator('#managedGathering').selectOption(JSON.stringify(['copy-source','2099-11-24']));await page.locator('[data-manage-gathering="cancel"]').click();await page.locator('#gatheringActionConfirmation').fill('CANCEL 2099-11-24');await page.locator('#gatheringActionSubmit').click();await page.waitForFunction(()=>!document.querySelector('#confirmGatheringAction').open);await page.locator('#manageGatheringsDialog [data-close-lifecycle]').click();
+  assert.equal(await page.locator('[data-enter-event="copy-source"]').isDisabled(),true);assert.match(await page.locator('[data-enter-event="copy-source"]').textContent(),/Cancelled/);
+  // Removing all current events must not recreate the built-in defaults on reload.
+  for(const [id,current] of Object.entries(state.events)){
+    const now=new Date().toISOString();state.gatheringLifecycle ||= {};state.gatheringLifecycle[id] ||= {};state.gatheringLifecycle[id][current.eventDate]={status:'deleted',deletedAt:now,name:current.gatheringName,current:structuredClone(current),accounts:structuredClone(state.accounts)};
+  }
+  state.events={};sha++;await page.reload();await page.waitForFunction(()=>typeof startApp==='function');await page.locator('#accountFirstName').fill(TEST_PASSWORD);await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});assert.equal(await page.locator('[data-enter-event]').count(),0);
+  await page.locator('#newGatheringButton').click();assert.equal(await page.locator('#newGatheringDialog').isVisible(),true);await page.locator('#newGatheringDialog').evaluate(dialog=>dialog.close());
+
+  assert.deepEqual(errors,[]);assert.equal(state.accounts[0].qrToken,'already-printed-qr');console.log('Security/QR/editor flows plus yearly rename, confirmation/deletion/restore, archive-only QR access, cancellation and empty-gathering creation pass against the real local Worker.');
  }finally{await browser.close();server.close();global.fetch=originalFetch;}
 })().catch(error=>{console.error(error);process.exitCode=1;});

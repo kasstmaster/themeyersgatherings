@@ -7,9 +7,9 @@
   }
   function completed(event,now=new Date()) { return /^\d{4}-\d{2}-\d{2}$/.test(event?.eventDate || '') && event.eventDate<today(now); }
   function archiveDue(app,now=new Date()) {
-    let changed=false;
+    let changed=cleanup(app,now);
     for(const [id,event] of Object.entries(app.events || {})) {
-      if(!completed(event,now) || app.gatheringHistory?.[id]?.[event.eventDate])continue;
+      if(!completed(event,now) || event.cancelled || record(app,id,event.eventDate) || app.gatheringHistory?.[id]?.[event.eventDate])continue;
       const references=new Set([...(event.rsvps || []).map(r=>r.name),...(event.items || []).flatMap(item=>item.claims || [])]);
       const accounts=(app.accounts || []).filter(account=>account.invitedEvents?.[id] || references.has(account.name));
       app.gatheringHistory ||= {};app.gatheringHistory[id] ||= {};
@@ -22,9 +22,11 @@
     const merged=structuredClone(app.gatheringHistory || {});
     for(const [id,dates] of Object.entries(stored.gatheringHistory || {}))merged[id]={...(merged[id] || {}),...structuredClone(dates)};
     app.gatheringHistory=merged;
+    for(const [id,dates] of Object.entries(app.gatheringLifecycle || {}))for(const date of Object.keys(dates))if(app.gatheringHistory[id])delete app.gatheringHistory[id][date];
   }
   function startNext(app,id,date,now=new Date()) {
     const previous=app.events[id];
+    if(previous?.cancelled || record(app,id,previous?.eventDate))throw new Error('Restore this gathering before starting another occurrence.');
     if(!completed(previous,now))throw new Error('The current gathering has not ended yet.');
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date) || date<=today(now))throw new Error('Choose a future date for the next gathering.');
     archiveDue(app,now);
@@ -40,5 +42,69 @@
     }
     app.events[id]=next;return next;
   }
-  globalThis.GatheringHistory={today,completed,archiveDue,preserve,startNext};
+
+  const record=(app,id,date)=>app.gatheringLifecycle?.[id]?.[date];
+  const sameAccount=(a,b)=>Boolean(a&&b&&(a.qrToken&&b.qrToken?a.qrToken===b.qrToken:a.anyListCategoryId&&b.anyListCategoryId?a.anyListCategoryId===b.anyListCategoryId:a.name===b.name));
+  function historicalAccount(app,account,snapshot) {
+    if(!snapshot || record(app,snapshot.eventId,snapshot.date) || snapshot.event?.cancelled)return null;
+    const saved=(snapshot.accounts || []).find(old=>sameAccount(old,account));
+    if(!saved)return null;
+    const invited=saved.invitedEvents?.[snapshot.eventId]===true || saved.selectedEvents?.[snapshot.eventId]===true;
+    const attended=(snapshot.event.rsvps||[]).some(r=>r.name===saved.name&&(r.adults>0||r.children>0||r.people?.some(p=>p.attending===true)));
+    return invited||attended?saved:null;
+  }
+  function snapshots(app,now=new Date()) {
+    const year=today(now).slice(0,4);
+    return Object.entries(app.gatheringHistory || {}).flatMap(([id,dates])=>Object.entries(dates).filter(([date])=>date.slice(0,4)<year&&!record(app,id,date)).map(([,snapshot])=>snapshot)).sort((a,b)=>b.date.localeCompare(a.date));
+  }
+  function selection(app,ids,now=new Date()) {
+    const day=today(now),year=day.slice(0,4);
+    return ids.filter(id=>app.events[id]?.eventDate?.slice(0,4)>=year && !(app.events[id].cancelled&&app.events[id].eventDate<day)).sort((a,b)=>Number(app.events[a].eventDate<day)-Number(app.events[b].eventDate<day));
+  }
+  function cleanup(app,now=new Date()) {
+    let changed=false;
+    for(const [id,dates] of Object.entries(app.gatheringLifecycle || {}))for(const [date,entry] of Object.entries(dates)) {
+      const expired=entry.status==='cancelled'?date<today(now):entry.status==='deleted'&&Date.parse(entry.deletedAt)+30*86400000<=now.getTime();
+      if(!expired)continue;
+      if(app.events?.[id]?.eventDate===date)delete app.events[id];
+      if(app.gatheringHistory?.[id]){delete app.gatheringHistory[id][date];if(!Object.keys(app.gatheringHistory[id]).length)delete app.gatheringHistory[id];}
+      delete dates[date];changed=true;
+      if(!Object.keys(dates).length)delete app.gatheringLifecycle[id];
+    }
+    return changed;
+  }
+  function manage(app,{action,eventId:id,date,name,confirmation},now=new Date()) {
+    if(typeof id!=='string'||!id||['__proto__','constructor','prototype'].includes(id)||!/^\d{4}-\d{2}-\d{2}$/.test(date||''))throw new Error('Choose a valid gathering occurrence.');
+    cleanup(app,now);
+    const current=app.events?.[id]?.eventDate===date?app.events[id]:null;
+    const snapshot=app.gatheringHistory?.[id]?.[date],entry=record(app,id,date);
+    const event=current||snapshot?.event;
+    if(action==='restore') {
+      if(entry?.status!=='deleted')throw new Error('This gathering is not recoverable.');
+      if(entry.current&&!app.events[id])app.events[id]=structuredClone(entry.current);
+      else if(entry.current){app.gatheringHistory ||= {};app.gatheringHistory[id] ||= {};app.gatheringHistory[id][date]=entry.snapshot || {version:1,eventId:id,date,name:entry.name,event:structuredClone(entry.current),accounts:structuredClone(entry.accounts),archivedAt:now.toISOString()};}
+      if(entry.snapshot){app.gatheringHistory ||= {};app.gatheringHistory[id] ||= {};app.gatheringHistory[id][date]=structuredClone(entry.snapshot);}
+      if(entry.current?.cancelled)app.gatheringLifecycle[id][date]={status:'cancelled'};else delete app.gatheringLifecycle[id][date];return;
+    }
+    if(!event || entry?.status==='deleted')throw new Error('This gathering is not available.');
+    if(action==='gallery') {
+      if(typeof name!=='string'||name.length>4000)throw new Error('Enter a valid gallery link.');
+      if(name){let url;try{url=new URL(name);}catch{throw new Error('Enter a full http or https gallery link.');}if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw new Error('Enter a full http or https gallery link.');}
+      if(current)current.mediaGalleryUrl=name;if(snapshot)snapshot.event.mediaGalleryUrl=name;return;
+    }
+    if(action==='rename') {
+      if(typeof name!=='string'||!name.trim()||name.trim().length>120)throw new Error('Enter a name of 1–120 characters.');
+      if(current)current.gatheringName=name.trim();
+      if(snapshot){snapshot.name=name.trim();snapshot.event.gatheringName=name.trim();}return;
+    }
+    if(!['cancel','delete'].includes(action))throw new Error('Choose a supported action.');
+    if(confirmation!==`${action.toUpperCase()} ${date}`)throw new Error('Enter the exact confirmation phrase.');
+    if(action==='cancel'&&(!current||completed(current,now)))throw new Error('Only an upcoming gathering can be cancelled.');
+    app.gatheringLifecycle ||= {};app.gatheringLifecycle[id] ||= {};
+    if(action==='cancel'){current.cancelled=true;app.gatheringLifecycle[id][date]={status:'cancelled'};if(app.gatheringHistory?.[id])delete app.gatheringHistory[id][date];return;}
+    app.gatheringLifecycle[id][date]={status:'deleted',deletedAt:now.toISOString(),name:event.gatheringName || snapshot?.name || names[id] || id,current:current?structuredClone(current):null,snapshot:snapshot?structuredClone(snapshot):null,accounts:structuredClone((app.accounts || []).filter(account=>account.selectedEvents?.[id]||account.invitedEvents?.[id]||(event.rsvps||[]).some(r=>r.name===account.name)))};
+    if(current)delete app.events[id];
+    if(app.gatheringHistory?.[id])delete app.gatheringHistory[id][date];
+  }
+  globalThis.GatheringHistory={today,completed,archiveDue,preserve,startNext,record,sameAccount,historicalAccount,snapshots,selection,cleanup,manage};
 })();

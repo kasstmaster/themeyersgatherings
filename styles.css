@@ -1064,3 +1064,9 @@ dialog:modal:not(.fullscreen-dialog){bottom:var(--toolbar-clearance,0px);max-hei
 .menu-copy-controls{margin:12px 0}.menu-copy-controls>div:not([hidden]){display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.menu-copy-controls [role=status]{flex-basis:100%;margin:0}
 
 .event-dock.rsvp-dish-reference{top:0;bottom:auto;border-top:0;border-bottom:1px solid var(--toolbar-border,var(--border));display:flex;flex-wrap:wrap;justify-content:space-evenly;gap:6px 18px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;color:var(--toolbar-text,var(--ink));font-size:.85rem;line-height:1.4;box-sizing:border-box}.rsvp-dish-reference>span{white-space:nowrap}.rsvp-dish-reference[hidden]{display:none!important}#rsvpDialog.has-dish-reference{padding-top:calc(var(--rsvp-reference-height,64px) + 16px)}
+
+.gathering-archive-actions { display:flex; flex-wrap:wrap; gap:.65rem; margin:1rem 0; }
+#pastGatheringsDialog .modal-card,#manageGatheringsDialog .modal-card { position:relative; }
+#pastGatheringDetails { margin-top:1.5rem; }
+#pastGatheringDetails .wedding-media-gallery { display:grid; gap:1rem; }
+#eventSelectionChoices button:disabled { opacity:.6; cursor:default; }

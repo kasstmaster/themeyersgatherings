@@ -104,3 +104,7 @@ Copy from is available in both menu sections. Choose a source gathering and menu
 For one requested unit, dish lists, RSVP choices/review, Your Dishes and menu exports show status without a numeric amount. The default Item type is omitted; dozen/case/custom type labels remain. Multi-unit rows and host amount/type inputs are unchanged.
 
 Potluck guests see a compact fixed reference bar during dish/contribution questions: Invited, Attending and RSVP by. Counts combine adults and children; adult/child breakdowns are available in the count titles. These are confirmed saved totals, not unsaved draft attendance. Missing deadlines show Not set. The bar hides outside these steps and never opens guest lists. Its measured height reserves top space independently of bottom toolbar clearance.
+
+### Year-specific gathering management
+
+The Host can use **Manage Gatherings** on the selection page to rename, cancel or delete a selected date and restore a deletion within 30 days. Cancel/delete require a separate warning and typed confirmation. These actions keep other years and their formatting/content independent. Guests use **View Past Gatherings** for read-only prior-year RSVP history and photos. See [the lifecycle guide](gathering-lifecycle.md).

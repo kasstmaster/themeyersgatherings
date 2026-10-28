@@ -47,10 +47,15 @@
   try{const result=await json(base,'/state',{method:'PATCH',headers:{'If-Match':revision},body:JSON.stringify({changes})});if(owner!==generation)return;revision=result.revision;baseline=submitted;return result;}
   catch(error){if(owner!==generation)throw error;if(error.status===401)expired=true;if(error.status===409||error.status===428)conflicted=true;throw error;}
  }
+ async function manageGathering(base,command){
+  if(role!=='host'||!revision||conflicted)throw new Error('Reload current Host information before managing gatherings.');
+  const owner=generation;const result=await json(base,'/gathering-management',{method:'PATCH',headers:{'If-Match':revision},body:JSON.stringify(command)});
+  if(owner!==generation)throw new Error('Sign-in changed. Reload before continuing.');remember(result.state,result.revision);return result;
+ }
  async function signOut(base){
   cancelCookieRequest();const previous=token;generation++;markSignedOut(true);token='';role='';revision='';baseline=null;conflicted=false;expired=false;
   try{if(previous||authBase(base)!==base)await json(authBase(base),'/auth/logout',{method:'POST',headers:previous?{Authorization:'Bearer '+previous}:{},body:'{}'});}catch{/* Explicit sign-out suppresses cookie restoration even when offline. */}
  }
 
- globalThis.StateClient={headers,signIn,signOut,resume,read,save,remember,get authenticated(){return Boolean(token);},get role(){return role;},get conflicted(){return conflicted;},get expired(){return expired;}};
+ globalThis.StateClient={manageGathering,headers,signIn,signOut,resume,read,save,remember,get authenticated(){return Boolean(token);},get role(){return role;},get conflicted(){return conflicted;},get expired(){return expired;}};
 })();

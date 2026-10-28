@@ -2,7 +2,7 @@
   let current, mode = '', loadNumber = 0;
   const sessions = new Map();
   const node = id => document.getElementById(id);
-  const key = ctx => JSON.stringify([ctx.base, ctx.host ? 'host' : ctx.account, ctx.name, ctx.preview, ctx.eventId]);
+  const key = ctx => JSON.stringify([ctx.base, ctx.host ? 'host' : ctx.account, ctx.name, ctx.preview, ctx.eventId, ctx.archiveDate]);
   function available(ctx) {
     if (ctx.preview) throw new Error('Uploads and private galleries are unavailable in View As. Return to Host View to use them.');
     if (!ctx.base) throw new Error('Photo and video uploads are not configured yet.');
@@ -11,7 +11,7 @@
     available(ctx);
     const cached = sessions.get(key(ctx));
     if (cached && cached.expires > Date.now() + 10000) return cached.token;
-    const response = await fetch(`${ctx.base}/wedding-media/session`, { method:'POST', headers:StateClient.headers({'Content-Type':'application/json'}), body:JSON.stringify({name:ctx.name,eventId:ctx.eventId,preview:ctx.host===false&&StateClient.role==='host'}), cache:'no-store' });
+    const response = await fetch(`${ctx.base}/wedding-media/session`, { method:'POST', headers:StateClient.headers({'Content-Type':'application/json'}), body:JSON.stringify({name:ctx.name,eventId:ctx.eventId,archiveDate:ctx.archiveDate,preview:ctx.host===false&&StateClient.role==='host'}), cache:'no-store' });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || 'Upload service unavailable. Deploy the latest Worker before using uploads.');
     sessions.set(key(ctx), result); return result.token;
@@ -49,10 +49,15 @@
       const result=await api(ctx,'/');const token=await session(ctx);
       if (attempt!==loadNumber || key(current)!==key(ctx)) return;
       status.textContent=result.items.length?'':'No photos, videos, or sharing links have been submitted yet.';
+      renderGallery(ctx,result,token,gallery);
+    } catch(error) { if(attempt===loadNumber)status.textContent=error.message; }
+    finally {if(attempt===loadNumber&&key(current)===key(ctx))globalThis.GapLayout?.refresh();}
+  }
+  function renderGallery(ctx,result,token,gallery) {
       for (const item of result.items) {
         const card=document.createElement('article');card.className='wedding-media-card';
         const heading=document.createElement('h3');heading.textContent=item.name;card.append(heading);
-        const caption=document.createElement('p');caption.textContent=`${item.uploadedBy} · ${new Date(item.uploadedAt).toLocaleString()}`;card.append(caption);
+        const caption=document.createElement('p');caption.textContent=`${item.unassigned?'Earlier upload (gathering/year not recorded) · ':''}${item.uploadedBy} · ${new Date(item.uploadedAt).toLocaleString()}`;card.append(caption);
         if (result.host) {const account=document.createElement('p');account.textContent=`Account: ${item.accountName}`;card.append(account);}
         if(item.kind==='dropbox'){const receipt=document.createElement('p');receipt.textContent='Uploaded to the hosts’ Dropbox.';card.append(receipt);gallery.append(card);continue;}
         const url=item.kind==='link'?item.url:`${ctx.base}/wedding-media/${item.path}?session=${encodeURIComponent(token)}`;
@@ -60,8 +65,11 @@
         if (item.kind==='video') {const video=document.createElement('video');video.src=url;video.controls=true;video.playsInline=true;video.preload='metadata';card.append(video);}
         const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=item.kind==='link'?'Open shared photos & videos':'Open / download original';card.append(link);gallery.append(card);
       }
-    } catch(error) { if(attempt===loadNumber)status.textContent=error.message; }
-    finally {if(attempt===loadNumber&&key(current)===key(ctx))globalThis.GapLayout?.refresh();}
+  }
+  async function archive(ctx,gallery,status) {
+    gallery.replaceChildren();status.textContent='Loading…';
+    try{const result=await api(ctx,'/');const token=await session(ctx);if(!gallery.isConnected)return;status.textContent=result.items.length?'':'No photos, videos, or sharing links have been submitted yet.';renderGallery(ctx,result,token,gallery);}
+    catch(error){status.textContent=error.message;}
   }
   function initialize() {
     node('weddingMediaShare').addEventListener('click',()=>{
@@ -78,6 +86,6 @@
       button.disabled=true;try{await api(ctx,'/links',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url.href})});node('weddingMediaLink').value='';status.textContent='Sharing link saved.';loadGallery();}catch(error){status.textContent=error.message;}finally{button.disabled=false;}
     });
   }
-  globalThis.WeddingMedia={show,uploadsFinished:ctx=>{if(current && key(current)===key(ctx))return loadGallery();}};
+  globalThis.WeddingMedia={show,archive,uploadsFinished:ctx=>{if(current && key(current)===key(ctx))return loadGallery();}};
   initialize();
 })();
