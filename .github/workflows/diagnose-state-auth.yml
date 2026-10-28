@@ -1,0 +1,22 @@
+name: Diagnose secure service (read only)
+on:
+  push:
+    branches: [codex/recover-state-auth-cutover]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Inspect harmless readiness and service metadata only
+        env:
+          EXPECTED_COMMIT: 7242cf31b0054e39a391eac4baf538d336259e57
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/diagnose-state-auth.js
