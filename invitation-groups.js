@@ -88,5 +88,34 @@
       return {invitation,names:ownNames,rsvp:projected};
     });
   }
-  globalThis.InvitationGroups = { groups, number, members, assign, response, merge };
+  // Keep legacy household claim strings for compatibility; attribution is additive.
+  function dishGroups(item,household) {
+    const total=(item.claims||[]).filter(name=>name===household).length;
+    const groups={};let remaining=total;
+    for(const [key,value] of Object.entries(item.claimGroups?.[household]||{})){
+      if(!/^[1-9]\d*$/.test(key)||!Number.isSafeInteger(value)||value<0)continue;
+      groups[key]=Math.min(remaining,value);remaining-=groups[key];
+    }
+    return {groups,unassigned:remaining,total};
+  }
+  function dishQuantity(item,household,invitation,single=false){
+    const {groups,unassigned}=dishGroups(item,household);
+    return (groups[invitation]||0)+(single?unassigned:0);
+  }
+  function setDishQuantity(item,household,invitation,quantity,single=false){
+    const {groups,unassigned}=dishGroups(item,household);
+    groups[invitation]=quantity;
+    const total=Object.values(groups).reduce((sum,value)=>sum+value,0)+(single?0:unassigned);
+    item.claims=[...(item.claims||[]).filter(name=>name!==household),...Array(total).fill(household)];
+    item.claimGroups={...item.claimGroups,[household]:groups};
+    return item;
+  }
+  function releaseDishes(items,household,invitation,single,names,people){
+    const wholeHousehold=names.length>0&&names.every(name=>people.some(person=>normalize(person.name)===normalize(name)&&person.attending===false));
+    for(const item of items){
+      setDishQuantity(item,household,invitation,0,single);
+      if(wholeHousehold){item.claims=item.claims.filter(name=>name!==household);delete item.claimGroups[household];}
+    }
+  }
+  globalThis.InvitationGroups = { groups, number, members, assign, response, merge, dishGroups, dishQuantity, setDishQuantity, releaseDishes };
 })();

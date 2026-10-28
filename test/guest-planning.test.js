@@ -125,3 +125,16 @@ test('legacy zero-headcount records do not imply declined attendance',()=>{
  const explicit={name:'Explicit Decline',adults:0,children:0,attending:false};
  assert.deepEqual(GuestPlanning.attendanceGroups([blank,empty,explicit]),{attending:[],notAttending:[{household:'Explicit Decline',name:'Explicit Decline'}]});
 });
+
+test('only a complete unanimous invitation decline finishes RSVP early',()=>{
+ assert.equal(GuestPlanning.allDeclined([]),false);
+ assert.equal(GuestPlanning.allDeclined([{attending:null},{attending:false}]),false);
+ assert.equal(GuestPlanning.allDeclined([{attending:true},{attending:false}]),false);
+ assert.equal(GuestPlanning.allDeclined([{attending:false},{attending:false}]),true);
+});
+
+test('claimed dishes follow menu categories without changing order inside each category',()=>{
+ const items=[{id:'water',category:'Drinks'},{id:'pie',category:'Desserts'},{id:'turkey',category:'Main Table'},{id:'stuffing',category:'Sides'},{id:'ham',category:'Main Table'},{id:'dip',category:'Appetizers'}];
+ assert.deepEqual(GuestPlanning.menuOrder(items).map(item=>item.id),['turkey','ham','dip','stuffing','pie','water']);
+ assert.equal(items[0].id,'water');
+});

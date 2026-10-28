@@ -69,6 +69,10 @@ Guest name entry skips Suffix after Last Name unless the server recognizes a mat
 
 Popup family headings display uppercase. Accounts aligns Inv # and +1 with the family heading using layout CSS; label elements, selector paths and typography remain intact.
 
-Claimed dishes in Attending have no per-item dividers. Separation between family entries and the still-needed dish rows remains.
+Claimed dishes in Attending have no per-item dividers or extra spacing between lines. They follow menu category order, mains first and drinks last, without category headings. Separation between family entries and the still-needed dish rows remains.
 
 Dishes still needed uses the same count-dialog title formatting as Attending.
+
+A unanimous invitation-group decline finishes at attendance using Save my RSVP; children, guests, meal and contribution questions are skipped. Saving releases that group’s attributed dishes and clears its active child/guest selections. A partial decline keeps dishes. Other invitation groups remain unchanged. Historical household-only dish claims with ambiguous group ownership are preserved until every household adult declines.
+
+Accounts displays one heading per surname within an account, combining matching surnames across invitation numbers and splitting different surnames. Inv # and +1 keep their existing typography and each person retains their own editable controls. This display grouping does not merge accounts or change invitation membership.

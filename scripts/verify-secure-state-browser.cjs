@@ -32,9 +32,24 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   assert.equal(state.events.thanksgiving.rsvps[0].people[0].attending,true);
   await page.locator('[data-enter-event="thanksgiving"]').click();
   // Save through the real guest state protocol, preserving the host data.
-  await page.evaluate(()=>{state.items[0].claims.push(guestName);saveState();});await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);assert.equal(state.events.thanksgiving.items[0].claims[0],'Casey Example');assert.equal(state.events.thanksgiving.hostNotes,'Private host notes');
+  await page.evaluate(()=>{setRsvpDishQuantity(state.items[0],rsvpDishQuantity(state.items[0])+1);saveState();});await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);assert.equal(state.events.thanksgiving.items[0].claims[0],'Casey Example');assert.equal(state.events.thanksgiving.hostNotes,'Private host notes');
+  // Declining an existing invitation must finish at attendance and release its dishes.
+  await page.evaluate(()=>openRsvp());await page.locator('#rsvpConfirmEvent').click();
+  await page.locator('[data-person-attending][value="no"]').check();
+  assert.equal(await page.locator('#rsvpNext').textContent(),'Save my RSVP');
+  await page.locator('#rsvpNext').click();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+  assert.equal(state.events.thanksgiving.rsvps[0].people[0].attending,false);
+  assert.equal(state.events.thanksgiving.rsvps[0].children,0);
+  assert.equal(state.events.thanksgiving.items[0].claims.length,0);
+  // Restore attendance through the normal questions before the conflict checks.
+  await page.locator('[data-enter-event="thanksgiving"]').click();await page.evaluate(()=>openRsvp());await page.locator('#rsvpConfirmEvent').click();
+  await page.locator('[data-person-attending][value="yes"]').check();await page.locator('#rsvpNext').click();
+  await page.locator('[data-rsvp-no-children]').check();await page.locator('#rsvpNext').click();
+  await page.locator('[data-rsvp-no-guests]').check();await page.locator('#rsvpNext').click();await page.locator('[data-rsvp-dish-answer="no"]').click();
+  await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);await page.locator('[data-enter-event="thanksgiving"]').click();
+  await page.evaluate(()=>{setRsvpDishQuantity(state.items[0],1);saveState();});await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
   state.events.thanksgiving.hostNotes='New private notes from host';sha++;
-  await page.evaluate(()=>{state.items[0].claims.push(guestName);saveState();});await page.waitForFunction(()=>StateClient.conflicted);
+  await page.evaluate(()=>{setRsvpDishQuantity(state.items[0],rsvpDishQuantity(state.items[0])+1);saveState();});await page.waitForFunction(()=>StateClient.conflicted);
   assert.equal(state.events.thanksgiving.items[0].claims.length,1);assert.equal(await page.getByRole('button',{name:'Load latest information',exact:true}).isVisible(),true);
   page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Load latest information',exact:true}).click();await page.waitForFunction(()=>!StateClient.conflicted);
   assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.includes('-private-draft-'))),true);

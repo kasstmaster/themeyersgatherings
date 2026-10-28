@@ -112,3 +112,27 @@ test('additional guest names remain scoped to their invitation through edits and
  a.invitationPeople.christmas={};
  assert.deepEqual(InvitationGroups.response(a,'christmas',names,1,rsvp).extraGuestNames,['Guest Three']);
 });
+
+test('dish selections belong to an invitation group without deleting another group or legacy claims',()=>{
+ const item={claims:['Household','Household','Other'],needed:6};
+ assert.equal(InvitationGroups.dishQuantity(item,'Household',1,false),0);
+ InvitationGroups.setDishQuantity(item,'Household',1,1);
+ InvitationGroups.setDishQuantity(item,'Household',2,2);
+ assert.deepEqual(InvitationGroups.dishGroups(item,'Household'),{groups:{1:1,2:2},unassigned:2,total:5});
+ InvitationGroups.setDishQuantity(item,'Household',1,0);
+ assert.equal(InvitationGroups.dishQuantity(item,'Household',2),2);
+ assert.equal(item.claims.filter(name=>name==='Other').length,1);
+ assert.equal(InvitationGroups.dishGroups(item,'Household').unassigned,2);
+ const single={claims:['Household','Household','Other']};
+ assert.equal(InvitationGroups.dishQuantity(single,'Household',1,true),2);
+ InvitationGroups.setDishQuantity(single,'Household',1,0,true);
+ assert.deepEqual(single.claims,['Other']);
+ assert.deepEqual(InvitationGroups.dishGroups(JSON.parse(JSON.stringify(item)),'Household'),InvitationGroups.dishGroups(item,'Household'));
+});
+
+test('a complete household decline also clears ambiguous historical claims',()=>{
+ const items=[{claims:['Household','Other'],claimGroups:{Other:{1:1}},needed:4}];
+ InvitationGroups.setDishQuantity(items[0],'Household',1,1);
+ InvitationGroups.releaseDishes(items,'Household',1,false,['Casey','Jordan'],[{name:'Casey',attending:false},{name:'Jordan',attending:false}]);
+ assert.deepEqual(items[0].claims,['Other']);assert.deepEqual(items[0].claimGroups,{Other:{1:1}});
+});

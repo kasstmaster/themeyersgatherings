@@ -1054,4 +1054,6 @@ dialog:modal:not(.fullscreen-dialog){bottom:var(--toolbar-clearance,0px);max-hei
 .invited-entry-heading>strong,.count-list-dialog .dish-claimants{text-transform:uppercase}
 
 /* A family’s dishes are lines within its entry, not separate bordered entries. */
-.attendance-dish{display:block;padding:14px 0;line-height:1.6}
+.attendance-dish{display:block;padding:0;line-height:1.6}
+
+.attendance-dishes>.attendance-dish{margin:0}
