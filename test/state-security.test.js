@@ -205,3 +205,13 @@ test('one RSVP can save multiple custom dishes with independent quantities and i
  assert.deepEqual(f.state.events.one.items.slice(1).map(item=>[item.name,item.needed,item.claimGroups['Casey Example'][1]]),[['Soup',2,2],['Bread',3,3]]);
  assert.deepEqual(f.state.events.wedding,before);assert.deepEqual(f.state.events.one.items[0].claims,['Other Person']);
 });
+
+test('legacy over-capacity dishes do not block other RSVP changes or allow new overflow',async t=>{
+ const f=await fixture(t),item=f.state.events.one.items[0];item.needed=1;item.claims=['Other Person','Other Person'];
+ const session=await f.guest(),items=structuredClone(session.state.events.one.items);
+ InvitationGroups.setDishQuantity(items[0],'Casey Example',1,0,true);
+ assert.equal((await f.patch(session,[{path:['events','one','items'],value:items}])).status,200);
+ assert.deepEqual(f.state.events.one.items[0].claims,['Other Person','Other Person']);
+ const latest=await f.guest(),increase=structuredClone(latest.state.events.one.items);InvitationGroups.setDishQuantity(increase[0],'Casey Example',1,1,true);
+ assert.equal((await f.patch(latest,[{path:['events','one','items'],value:increase}])).status,403);
+});

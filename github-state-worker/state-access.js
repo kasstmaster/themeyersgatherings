@@ -123,7 +123,7 @@ export function updateFromChanges(state,actor,operations){
     const expected=pick(safe.claimGroups,[account.name]);
     if(item.claimGroups&&!SAME(item.claimGroups,expected))forbidden();
     const ownClaims=item.claims.filter(name=>name===account.name);
-    if(safe.claims.filter(name=>name===account.name).length!==ownClaims.length||safe.claims.length>original.needed)forbidden();
+    if(safe.claims.filter(name=>name===account.name).length!==ownClaims.length||safe.claims.length>Math.max(original.needed,(original.claims||[]).length))forbidden();
     return safe;
    });
    if([...originals.keys()].some(key=>!incoming.items.some(item=>item.id===key)))forbidden();

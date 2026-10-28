@@ -165,3 +165,7 @@ Claimed dishes under each family in Attending form a compact, undivided list ord
 In the RSVP contribution questions, “I’ll bring something else” supports multiple custom items. After entering an item’s name, quantity/unit and category, choose **Add another item** to enter the next one. Review shows all items; saving claims each for the current invitation group.
 
 Saved custom dishes remain part of that gathering’s menu for future selection, including future occurrences; clearing claims does not remove the items.
+
+RSVP saves preserve existing dish claims that exceed a later menu limit, allowing unchanged or reduced quantities without permitting additional over-capacity claims. Validation errors appear within the RSVP page.
+
+Dishes already claimed by other invitation groups remain checked and unavailable through deadline/RSVP refreshes, and are never submitted as new selections for the current group.
