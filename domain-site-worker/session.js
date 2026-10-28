@@ -18,7 +18,8 @@ export async function handleSession(request,fetcher=fetch){
  if(bearer?.match(/^Bearer [a-f0-9-]{72}$/))forwarded.set('Authorization',bearer);
  else if(stored&&TOKEN.test(stored))forwarded.set('Authorization','Bearer '+stored);
  try{
-  const upstream=await fetcher(SERVICE+path,{method:'POST',headers:forwarded,body:request.body,duplex:'half',redirect:'error'});
+  const upstream=await fetcher(SERVICE+path,{method:'POST',headers:forwarded,body:request.body,duplex:'half',redirect:'manual'});
+  if(upstream.status>=300&&upstream.status<400)throw new Error('Upstream redirect rejected.');
   if(path==='/auth/logout')return new Response(null,{status:upstream.ok?204:upstream.status,headers:{...headers,'Set-Cookie':cookie('',0)}});
   const result=await upstream.json();
   if(upstream.ok&&TOKEN.test(result.token||'')&&Number.isFinite(result.expires)&&result.expires>Date.now())headers['Set-Cookie']=cookie(result.token,Math.floor((result.expires-Date.now())/1000));
