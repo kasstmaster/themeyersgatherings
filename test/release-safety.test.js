@@ -78,7 +78,19 @@ test('frontend receipt is from the same reviewed build',async()=>{
   try {await buildDomainSite(root,commit);assert.deepEqual(JSON.parse(await readFile(join(root,'themeyers/release.json'),'utf8')),{protocol:'state-auth-v1',commit});}
   finally {await rm(root,{recursive:true,force:true});}
   assert.deepEqual(await verifyFrontend(commit,async()=>Response.json({protocol:'state-auth-v1',commit})),{ready:true});
-  await assert.rejects(verifyFrontend(commit,async()=>Response.json({protocol:'state-auth-v1',commit:'b'.repeat(40)})));
+  await assert.rejects(verifyFrontend(commit,async()=>Response.json({protocol:'state-auth-v1',commit:'b'.repeat(40)}),{attempts:1}));
+});
+test('frontend gate tolerates bounded publication delay but never accepts an incorrect release',async()=>{
+  let calls=0;const waits=[];
+  const result=await verifyFrontend(commit,async()=>{
+    calls++;if(calls===1)return Response.json({protocol:'state-auth-v1',commit:'b'.repeat(40)});
+    if(calls===2)return new Response('not yet available',{status:404});
+    return Response.json({protocol:'state-auth-v1',commit});
+  },{attempts:3,delayMs:10,wait:async ms=>waits.push(ms)});
+  assert.deepEqual(result,{ready:true});assert.equal(calls,3);assert.deepEqual(waits,[10,10]);
+  calls=0;await assert.rejects(verifyFrontend(commit,async()=>{calls++;return Response.json({protocol:'state-auth-v1',commit:'b'.repeat(40),private:'PRIVATE'});},{attempts:3,wait:async()=>{}}),error=>{
+    assert.deepEqual(error.safeDiagnostic,{status:200,commitMatches:false,protocolMatches:true});assert.ok(!JSON.stringify(error.safeDiagnostic).includes('PRIVATE'));return true;
+  });assert.equal(calls,3);
 });
 test('workflow preflights before writes, gates frontend on service, and never cancels active release',async()=>{
   const workflow=await readFile(new URL('../.github/workflows/deploy-state-worker.yml',import.meta.url),'utf8');

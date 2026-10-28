@@ -77,17 +77,25 @@ export async function verifyService(url,commit,fetcher=boundedFetch) {
   if(denied.status!==401)throw new Error('Anonymous state denial failed. Do not publish the frontend.');
   return {ready:true};
 }
-export async function verifyFrontend(commit,fetcher=boundedFetch) {
+export async function verifyFrontend(commit,fetcher=boundedFetch,{attempts=12,delayMs=10000,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),onRetry=()=>{}}={}) {
   if(!/^[a-f0-9]{40}$/.test(commit))throw new Error('Invalid reviewed release commit.');
-  const response=await fetcher('https://themeyers.ilymmd.com/release.json?commit='+commit,{cache:'no-store',redirect:'error'});
-  const data=await response.json();
-  if(!response.ok||data.commit!==commit||data.protocol!=='state-auth-v1')throw new Error('Frontend release verification failed. Keep maintenance active.');
-  return {ready:true};
+  let diagnostic={};
+  for(let attempt=1;attempt<=attempts;attempt++) {
+    try {
+      const response=await fetcher('https://themeyers.ilymmd.com/release.json?commit='+commit,{cache:'no-store',redirect:'error'});
+      diagnostic={status:response.status};
+      const data=await response.json();
+      diagnostic={...diagnostic,commitMatches:data.commit===commit,protocolMatches:data.protocol==='state-auth-v1'};
+      if(response.ok&&diagnostic.commitMatches&&diagnostic.protocolMatches)return {ready:true};
+    } catch {diagnostic={...diagnostic,requestOrJsonFailed:true};}
+    if(attempt<attempts){onRetry(attempt,attempts);await wait(delayMs);}
+  }
+  throw Object.assign(new Error('Frontend release verification failed. Keep maintenance active.'),{safeDiagnostic:diagnostic});
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
   try {
     if(process.argv[2]==='service')await verifyService('https://curly-sun-ef0f.kassandraraudman.workers.dev',process.env.RELEASE_COMMIT);
-    else if(process.argv[2]==='frontend')await verifyFrontend(process.env.RELEASE_COMMIT);
+    else if(process.argv[2]==='frontend')await verifyFrontend(process.env.RELEASE_COMMIT,boundedFetch,{onRetry:(attempt,total)=>console.log(`Waiting for matching frontend receipt (${attempt}/${total}).`)});
     else {await verifyBackupCurrency(process.env);await preflight(process.env);}
     console.log('Read-only release checks passed.');
   } catch(error) { console.error('Release checks failed; stop publication. Review targets, readiness and credential permissions privately. No API response bodies are logged.');if(error.safeDiagnostic)console.error(JSON.stringify(error.safeDiagnostic));process.exitCode=1; }

@@ -38,6 +38,7 @@ export async function handleGatheringSite(request, env) {
   const asset = await env.GATHERING_SITE.fetch(new Request(assetUrl, {method:request.method, headers}));
   const response = new Response(asset.body, asset);
   if (['/index.html', '/site.webmanifest', '/service-worker.js'].includes(assetUrl.pathname)) response.headers.set('Cache-Control', 'no-cache');
+  if(assetUrl.pathname==='/release.json')response.headers.set('Cache-Control','no-store');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   return response;
 }

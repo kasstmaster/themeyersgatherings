@@ -1,8 +1,11 @@
 name: Diagnose secure service (read only)
 on:
-  push:
-    branches: [codex/recover-state-auth-cutover]
   workflow_dispatch:
+    inputs:
+      expected_commit:
+        description: Optional active release commit; defaults to selected ref
+        type: string
+        required: false
 permissions:
   contents: read
 jobs:
@@ -16,7 +19,7 @@ jobs:
           node-version: 24
       - name: Inspect harmless readiness and service metadata only
         env:
-          EXPECTED_COMMIT: 7242cf31b0054e39a391eac4baf538d336259e57
+          EXPECTED_COMMIT: ${{ inputs.expected_commit || github.sha }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: node scripts/diagnose-state-auth.js
