@@ -2464,8 +2464,9 @@ function applyRsvpDeadline() {
   const locked = rsvpOptionsLocked();
   const notice = document.querySelector('#rsvpDeadlineNotice');
   const changed=notice.hidden!==!locked;
-  notice.hidden = !locked;
-  notice.textContent = GatheringFeatures.rsvp(viewedEventId).namedGuests?'The RSVP deadline has passed. You can still change who is attending and the number of children attending. Guest names, meals, and dietary notes are locked. Contact the hosts for other changes.':'The RSVP deadline has passed. You can still change who is attending and the number of children and guests attending.';
+  if(changed)notice.hidden = !locked;
+  const noticeText = GatheringFeatures.rsvp(viewedEventId).namedGuests?'The RSVP deadline has passed. You can still change who is attending and the number of children attending. Guest names, meals, and dietary notes are locked. Contact the hosts for other changes.':'The RSVP deadline has passed. You can still change who is attending and the number of children and guests attending.';
+  if(notice.textContent!==noticeText)notice.textContent=noticeText;
   document.querySelectorAll('#rsvpForm [data-person-guest], #rsvpForm [data-person-guest-name], #rsvpForm [data-rsvp-meal], #rsvpForm [data-rsvp-dietary]').forEach(input => { input.disabled=locked; });
   document.querySelectorAll('[data-rsvp-question] input,[data-rsvp-question] select').forEach(input=>{input.disabled=locked || !GatheringFeatures.rsvp(viewedEventId).contributions || SiteEditing.enabled;});
   if(changed)RsvpFlow.refresh();

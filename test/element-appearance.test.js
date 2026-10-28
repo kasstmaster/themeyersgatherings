@@ -4,13 +4,14 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const textStyles=await readFile(new URL('../text-styles.js',import.meta.url),'utf8');
 const source=await readFile(new URL('../element-appearance.js',import.meta.url),'utf8');
-function fixture(){
+function fixture(observed=false){
+ let notify;const frames=[];
  const values=new Map([['color',{value:'#112233',priority:''}]]);
  const element={style:{getPropertyValue:key=>values.get(key)?.value || '',getPropertyPriority:key=>values.get(key)?.priority || '',setProperty:(key,value,priority)=>values.set(key,{value,priority}),removeProperty:key=>values.delete(key)}};
  const body={classList:{toggle(){}}};
  const document={body,baseURI:'https://example.test/',addEventListener(){},querySelectorAll:path=>path==='#panel'?[element]:[]};
- const context=vm.createContext({ElementEditor:{render(){}},document,URL,Element:class{},CSS:{escape:value=>value}});vm.runInContext(textStyles,context);vm.runInContext(source,context);
- return {api:context.ElementAppearance,element,values};
+ const context=vm.createContext({ElementEditor:{render(){}},...(observed?{MutationObserver:class{constructor(fn){notify=fn;}observe(){}disconnect(){}},requestAnimationFrame:fn=>{frames.push(fn);return frames.length;}}:{}),document,URL,Element:class{},CSS:{escape:value=>value}});vm.runInContext(textStyles,context);vm.runInContext(source,context);
+ return {api:context.ElementAppearance,element,values,notify:records=>notify(records),frames};
 }
 test('element colors, alpha and borders apply to guests and restore between gatherings',()=>{
  const f=fixture();f.api.render({state:{elementAppearance:{'#panel':{backgroundColor:'#123456',backgroundAlpha:40,textColor:'#abcdef',borderColor:'#aabbcc',borderWidth:2}}},host:false,enabled:false,eventId:'one'});
@@ -45,4 +46,21 @@ test('safe text effects apply and restore without changing another gathering',()
  const f=fixture();f.api.render({state:{elementAppearance:{'#panel':{textShadowEnabled:true,textShadowColor:'#123456',textShadowAlpha:50,textShadowX:-2,textShadowY:3,textShadowBlur:4,textOutlineColor:'#abcdef',textOutlineWidth:1.5}}},host:false});
  assert.equal(f.values.get('text-shadow').value,'-2px 3px 4px #12345680');assert.equal(f.values.get('-webkit-text-stroke-width').value,'1.5px');
  f.api.render({state:{},host:false});assert.equal(f.values.has('text-shadow'),false);assert.equal(f.values.has('-webkit-text-stroke-width'),false);
+});
+
+
+test('keystrokes and editor control mutations never repaint the gathering',()=>{
+ const f=fixture(true);f.api.render({state:{elementAppearance:{'#panel':{backgroundColor:'#123456'}}},host:false});
+ const ignored={closest:()=>true};
+ for(let i=0;i<100;i++)f.notify([{type:'childList',target:ignored,addedNodes:[{nodeType:3}],removedNodes:[]}]);
+ assert.equal(f.frames.length,0);
+ const addedGap={nodeType:1,matches:()=>true};f.notify([{type:'childList',target:{closest:()=>false},addedNodes:[addedGap],removedNodes:[]}]);assert.equal(f.frames.length,0);
+});
+test('real page mutations are batched and saved styles still reach new content',()=>{
+ const f=fixture(true);f.api.render({state:{elementAppearance:{'#panel':{backgroundColor:'#123456'}}},host:false});
+ const record={type:'childList',target:{closest:()=>false},addedNodes:[{nodeType:1,matches:()=>false}],removedNodes:[]};
+ f.values.delete('background-color');for(let i=0;i<100;i++)f.notify([record]);
+ assert.equal(f.frames.length,1);f.frames.shift()();assert.equal(f.values.get('background-color').value,'rgba(18,52,86,1)');
+ const target={closest:()=>false,getAttribute:()=> 'false'};f.notify([{type:'attributes',target,attributeName:'aria-pressed',oldValue:'false'}]);assert.equal(f.frames.length,0);
+ f.notify([{type:'attributes',target,attributeName:'aria-pressed',oldValue:'true'}]);assert.equal(f.frames.length,1);
 });
