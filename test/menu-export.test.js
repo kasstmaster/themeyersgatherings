@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
+await import('../guest-planning.js');
 const source = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 const quantity = source.slice(source.indexOf('function formatQuantity('), source.indexOf("document.querySelector('#adminNewAmount').innerHTML"));
 const exports = source.slice(source.indexOf('function menuExportIntro('), source.indexOf('async function copyMenu()'));
 function menu(items, gatheringName = 'Thanksgiving') {
-  const context = vm.createContext({
+  const context = vm.createContext({GuestPlanning,
     EVENT_DETAILS: {test: {name:gatheringName}}, viewedEventId: 'test',
     state: { items, quantityUnits: [{id:'dozen',label:'Dozen'}] }, PageActions: {},
     escapeHtml: value => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
@@ -47,4 +48,10 @@ test('menu page actions use the same name-free export for printing and email', a
   const surface = {id:'gatheringMenuSection',closest(){return null;},getClientRects(){return [1];}};
   assert.equal(context.PageActions.exportPage(surface),expected);
   assert.doesNotMatch(context.PageActions.exportPage(surface).html,/PRIVATE PERSON/);
+});
+
+test('menu copies and prints put sides before appetizers, preserving each category item order',()=>{
+ const page=menu([item('Dip',1,[],{category:'Appetizers'}),item('Water',1,[],{category:'Drinks'}),item('Ham',1,[],{category:'Main Table'}),item('Stuffing',1),item('Potatoes',1),item('Pie',1,[],{category:'Desserts'})]);
+ const names=[...page.html.matchAll(/<li>(.*?) - need/g)].map(match=>match[1]);
+ assert.deepEqual(names,['Ham','Stuffing','Potatoes','Dip','Pie','Water']);
 });
