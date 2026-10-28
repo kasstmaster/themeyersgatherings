@@ -58,3 +58,12 @@ test('only the opaque session is forwarded, and offline logout clears the cookie
  assert.equal(sent.url,'https://curly-sun-ef0f.kassandraraudman.workers.dev/auth/session');assert.equal(sent.options.headers.get('Authorization'),'Bearer '+token);assert.equal(sent.options.headers.has('Cookie'),false);assert.equal(sent.options.headers.has('X-Host-Password'),false);
  const failed=await handleSession(new Request(origin+'/session/auth/logout',{method:'POST',headers:{Origin:origin},body:'{}'}),()=>{throw new Error('Synthetic secret must not appear');});assert.equal(failed.status,503);assert.match(failed.headers.get('Set-Cookie'),/Max-Age=0/);assert.ok(!(await failed.text()).includes('Synthetic secret'));
 });
+
+
+test('the edge bridge uses supported manual redirects and rejects every upstream redirect',async()=>{
+ let calls=0;
+ const response=await handleSession(new Request(origin+'/session/auth/session',{method:'POST',headers:{Origin:origin,Authorization:'Bearer '+'a'.repeat(72)},body:'{}'}),async(url,options)=>{
+  calls++;assert.equal(options.redirect,'manual','Cloudflare fetch does not support redirect:error');return new Response(null,{status:302,headers:{Location:'https://attacker.test'}});
+ });
+ assert.equal(calls,1);assert.equal(response.status,503);assert.equal(response.headers.has('Location'),false);assert.ok(!(await response.text()).includes('attacker.test'));
+});
