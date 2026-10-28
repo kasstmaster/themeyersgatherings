@@ -27,14 +27,24 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.locator('[data-person-attending][value="yes"]').check();await page.locator('#rsvpNext').click();
   await page.locator('[data-rsvp-no-children]').check();await page.locator('#rsvpNext').click();
   await page.locator('[data-rsvp-no-guests]').check();await page.locator('#rsvpNext').click();
-  await page.locator('[data-rsvp-dish-answer="no"]').click();
-  await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+  await page.locator('[data-rsvp-dish-answer="yes"]').click();
+  await page.locator('#rsvpCustomDish').check();await page.locator('#rsvpNext').click();
+  await page.locator('#rsvpCustomDishName').fill('Homemade Soup');await page.locator('#rsvpNext').click();
+  await page.locator('#rsvpCustomDishQuantity').fill('2');await page.locator('#rsvpNext').click();
+  await page.locator('#rsvpCustomDishCategory').selectOption('Sides');await page.locator('[data-add-custom-dish]:visible').click();
+  await page.locator('#rsvpCustomDishName-1').fill('Cornbread');await page.locator('#rsvpNext').click();
+  await page.locator('#rsvpCustomDishQuantity-1').fill('3');await page.locator('#rsvpNext').click();
+  await page.locator('#rsvpCustomDishCategory-1').selectOption('Sides');await page.locator('#rsvpNext').click();
+  assert.match(await page.locator('#rsvpReview').textContent(),/Homemade Soup \(2\).*Cornbread \(3\)/);
+  await page.locator('#rsvpNext').click();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+  const customs=state.events.thanksgiving.items.filter(item=>item.id.startsWith('custom-'));
+  assert.deepEqual(customs.map(item=>[item.name,item.needed,item.claimGroups['Casey Example'][1]]),[['Homemade Soup',2,2],['Cornbread',3,3]]);
   assert.equal(state.events.thanksgiving.rsvps[0].people[0].attending,true);
   await page.locator('[data-enter-event="thanksgiving"]').click();
   // Save through the real guest state protocol, preserving the host data.
   await page.evaluate(()=>{setRsvpDishQuantity(state.items[0],rsvpDishQuantity(state.items[0])+1);saveState();});await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);assert.equal(state.events.thanksgiving.items[0].claims[0],'Casey Example');assert.equal(state.events.thanksgiving.hostNotes,'Private host notes');
   // Declining an existing invitation must finish at attendance and release its dishes.
-  await page.evaluate(()=>openRsvp());await page.locator('#rsvpConfirmEvent').click();
+  await page.evaluate(()=>openRsvp());assert.equal(await page.locator('[data-custom-dish-clone]').count(),0);await page.locator('#rsvpConfirmEvent').click();
   await page.locator('[data-person-attending][value="no"]').check();
   assert.equal(await page.locator('#rsvpNext').textContent(),'Save my RSVP');
   await page.locator('#rsvpNext').click();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);

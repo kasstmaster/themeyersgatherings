@@ -18,7 +18,7 @@ test('starting next year preserves layout but clears responses, claims and invit
  const app=fixture();const next=GatheringHistory.startNext(app,'christmas','2026-12-25',new Date('2026-01-01'));
  assert.equal(next.eventDate,'2026-12-25');assert.equal(next.rsvpDate,'2026-12-11');assert.deepEqual(next.rsvps,[]);assert.equal(next.hostNotes,'');
  assert.deepEqual(next.items[0].claimGroups,{});assert.deepEqual(app.gatheringHistory.christmas['2025-12-25'].event.items[0].claimGroups,{'Jane Smith':{1:1}});
- assert.equal(next.items.length,1);assert.deepEqual(next.items[0].claims,[]);assert.equal(next.gatheringColors.gold,'#aabbcc');assert.equal(app.accounts[0].invitedEvents.christmas,false);
+ assert.equal(next.items.length,2);assert.equal(next.items[1].id,'custom-1');assert.equal(next.items[1].name,'Pie');assert.deepEqual(next.items[1].claims,[]);assert.deepEqual(next.items[0].claims,[]);assert.equal(next.gatheringColors.gold,'#aabbcc');assert.equal(app.accounts[0].invitedEvents.christmas,false);
  assert.equal(app.gatheringHistory.christmas['2025-12-25'].accounts[0].invitedEvents.christmas,true);
  assert.throws(()=>GatheringHistory.startNext(app,'christmas','2027-12-25',new Date('2026-01-01')),/not ended/);
  GatheringHistory.archiveDue(app,new Date('2027-01-01'));assert.equal(Object.keys(app.gatheringHistory.christmas).length,2);

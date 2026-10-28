@@ -197,3 +197,11 @@ test('invitation attribution cannot be forged to remove a sibling group; partial
  const before=structuredClone(f.state.events.one.items);
  assert.equal((await f.patch(current,[{path:['events','one','rsvps'],value:[response]}])).status,200);assert.deepEqual(f.state.events.one.items,before);
 });
+
+test('one RSVP can save multiple custom dishes with independent quantities and invitation ownership',async t=>{
+ const f=await fixture(t),session=await f.guest(),items=structuredClone(session.state.events.one.items),before=structuredClone(f.state.events.wedding);
+ for(const [id,name,quantity] of [['custom-abcd','Soup',2],['custom-efab','Bread',3]])items.push({id,name,category:'Sides',needed:quantity,unit:'item',claims:Array(quantity).fill('Casey Example'),claimGroups:{'Casey Example':{1:quantity}}});
+ assert.equal((await f.patch(session,[{path:['events','one','items'],value:items}])).status,200);
+ assert.deepEqual(f.state.events.one.items.slice(1).map(item=>[item.name,item.needed,item.claimGroups['Casey Example'][1]]),[['Soup',2,2],['Bread',3,3]]);
+ assert.deepEqual(f.state.events.wedding,before);assert.deepEqual(f.state.events.one.items[0].claims,['Other Person']);
+});

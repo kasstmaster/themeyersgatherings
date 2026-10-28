@@ -2377,9 +2377,9 @@ function rsvpFlowSteps() {
     if(document.querySelector('#rsvpBringingDish').value==='yes'){
       add('dishes',document.querySelector('#rsvpDishOptions'),'What will you bring?');
       if(document.querySelector('#rsvpCustomDish').checked){
-        add('custom-dish-name',document.querySelector('#rsvpCustomDishNameQuestion'),'Your dish');
-        add('custom-dish-quantity',document.querySelector('#rsvpCustomDishQuantityQuestion'),'Dish quantity');
-        add('custom-dish-category',document.querySelector('#rsvpCustomDishCategoryQuestion'),'Dish category');
+        customDishEntries().forEach((entry,index)=>{
+          for(const [part,title] of [['name','Your dish'],['quantity','Dish quantity'],['category','Dish category']])add(`custom-dish-${part}${index?`-${index}`:''}`,entry[part],title);
+        });
       }
     }
   }
@@ -2408,16 +2408,42 @@ function renderRsvpDishes(){
   if(enabled&&!document.querySelector('#rsvpDishChoices').textContent.trim())document.querySelector('#rsvpDishChoices').textContent='The listed dishes are covered. You can bring something else or go back and choose No.';
   const drinks=[...choices.querySelectorAll('[data-rsvp-dish-category]')].find(section=>section.dataset.rsvpDishCategory.toLowerCase()==='drinks');
   if(drinks)drinks.after(anythingElse);else choices.append(anythingElse);
+  document.querySelectorAll('[data-custom-dish-clone]').forEach(section=>section.remove());
   document.querySelector('#rsvpCustomDish').checked=false;document.querySelector('#rsvpCustomDishName').value='';document.querySelector('#rsvpCustomDishQuantity').value=1;
   document.querySelector('#rsvpCustomDishUnit').innerHTML=unitOptions();
   document.querySelector('#rsvpCustomDishCategory').innerHTML=[...new Set([...categories,'Appetizers','Main Table','Sides','Desserts','Drinks'])].map(category=>`<option>${escapeHtml(category)}</option>`).join('');
 }
+function customDishEntries(){
+  return [...document.querySelectorAll('[data-custom-dish-part="name"]')].map((name,index)=>({name,quantity:document.querySelectorAll('[data-custom-dish-part="quantity"]')[index],category:document.querySelectorAll('[data-custom-dish-part="category"]')[index]}));
+}
+function readCustomDishes(){
+  return customDishEntries().map(entry=>({name:entry.name.querySelector('input').value.trim(),quantity:Number(entry.quantity.querySelector('input').value),unit:entry.quantity.querySelector('select').value,category:entry.category.querySelector('select').value}));
+}
+document.addEventListener('click',event=>{
+  const button=event.target.closest('[data-add-custom-dish]');if(!button||SiteEditing.enabled)return;
+  const entries=customDishEntries(),index=customDishEntries().findIndex(entry=>entry.category.contains(button));
+  if(index<0)return;
+  for(const entry of entries.slice(0,index+1))for(const control of [entry.name.querySelector('input'),entry.quantity.querySelector('input')]){
+    control.required=true;if(!control.reportValidity())return;
+  }
+  if(index===entries.length-1){
+    let previous=entries.at(-1).category;
+    for(const part of ['name','quantity','category']){
+      const section=entries[0][part].cloneNode(true);section.dataset.customDishClone='true';
+      section.id+=`-${entries.length}`;
+      section.querySelectorAll('[id]').forEach(control=>{control.id+=`-${entries.length}`;});
+      section.querySelectorAll('input').forEach(control=>{control.value=control.type==='number'?'1':'';control.setCustomValidity('');});
+      previous.after(section);previous=section;
+    }
+  }
+  RsvpFlow.go(`custom-dish-name-${index+1}`);
+});
 function rsvpDishDraft(){
   if(!rsvpDishesEnabled())return null;
   const yes=document.querySelector('#rsvpBringingDish').value==='yes';
   const quantities=new Map([...document.querySelectorAll('[data-rsvp-dish]')].map(input=>[input.dataset.rsvpDish,yes&&input.checked&&!input.disabled?Number(input.closest('.rsvp-dish-option').querySelector('[data-rsvp-dish-quantity]').value):0]));
-  const custom=yes&&document.querySelector('#rsvpCustomDish').checked?{name:document.querySelector('#rsvpCustomDishName').value.trim(),quantity:Number(document.querySelector('#rsvpCustomDishQuantity').value),unit:document.querySelector('#rsvpCustomDishUnit').value,category:document.querySelector('#rsvpCustomDishCategory').value}:null;
-  return {quantities,custom};
+  const customs=yes&&document.querySelector('#rsvpCustomDish').checked?readCustomDishes():[];
+  return {quantities,customs};
 }
 function validateRsvpQuestion(key){
   if(GuestPlanning.allDeclined(readRsvpPeople()))return true;
@@ -2428,12 +2454,14 @@ function validateRsvpQuestion(key){
     if((key===step||key==='review')&&!none&&!names.length){choice?.setCustomValidity(step==='children'?'Choose No Children or select the children attending.':'Choose whether you are bringing a guest.');return key==='review'?step:false;}
   }
   const custom=rsvpDishesEnabled()&&document.querySelector('#rsvpBringingDish').value==='yes'&&document.querySelector('#rsvpCustomDish').checked;
-  document.querySelector('#rsvpCustomDishName').required=custom;
-  document.querySelector('#rsvpCustomDishName').setCustomValidity(custom&&!document.querySelector('#rsvpCustomDishName').value.trim()?'Enter a dish name.':'');
-  document.querySelector('#rsvpCustomDishQuantity').required=custom;
+  customDishEntries().forEach(entry=>{
+    const name=entry.name.querySelector('input'),quantity=entry.quantity.querySelector('input');
+    name.required=custom;quantity.required=custom;
+    name.setCustomValidity(custom&&!name.value.trim()?'Enter a dish name.':'');
+  });
   const draft=rsvpDishDraft();
   const choice=document.querySelector('#rsvpCustomDish');choice.setCustomValidity('');
-  if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.custom&&!document.querySelector('[data-rsvp-dish]:checked:not(:disabled)')){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
+  if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.customs.length&&!document.querySelector('[data-rsvp-dish]:checked:not(:disabled)')){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
   return true;
 }
 function rsvpDishQuantity(item){
@@ -2446,7 +2474,7 @@ function applyRsvpDishes(draft){
   if(!draft)return true;
   for(const [id,quantity] of draft.quantities){const item=state.items.find(item=>item.id===id);if(quantity>0&&(!item||!Number.isInteger(quantity)||quantity>Math.max(0,item.needed-item.claims.length+rsvpDishQuantity(item))))return false;}
   for(const item of state.items)setRsvpDishQuantity(item,draft.quantities.get(item.id)||0);
-  if(draft.custom){const item=draft.custom;state.items.push(setRsvpDishQuantity({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:[]},item.quantity));}
+  for(const item of draft.customs||[]){state.items.push(setRsvpDishQuantity({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:[]},item.quantity));}
   return true;
 }
 document.querySelector('#rsvpDishChoices').addEventListener('change',event=>{
@@ -2478,7 +2506,7 @@ function renderRsvpReview(container) {
   if(GatheringFeatures.rsvp(viewedEventId).contributions){
     const draft=rsvpDishDraft();
     const dishes=draft?[...draft.quantities].flatMap(([id,quantity])=>{const item=state.items.find(item=>item.id===id);return quantity&&item?[`${item.name} (${formatQuantity(quantity,item)})`]:[];}):state.items.flatMap(item=>{const quantity=item.claims.filter(name=>name===guestName).length;return quantity?[`${item.name} (${formatQuantity(quantity,item)})`]:[];});
-    if(draft?.custom)dishes.push(`${draft.custom.name} (${draft.custom.quantity})`);
+    for(const item of draft?.customs||[])dishes.push(`${item.name} (${item.quantity})`);
     line('Bringing',dishes.join(', ')||'No dish');
   }
   if(GatheringFeatures.rsvp(viewedEventId).meals)readWeddingMenuSelections().forEach(selection=>{
