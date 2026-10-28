@@ -88,6 +88,8 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   assert.equal(await page.locator('#accountFirstName').inputValue(),'');assert.equal(await page.evaluate(value=>JSON.stringify(appState).includes(value)||Object.keys(localStorage).some(key=>(localStorage.getItem(key)||'').includes(value))||location.href.includes(value),TEST_PASSWORD),false);
   // Configure a private, year-owned sit-down preparation menu through the actual host UI.
   await page.evaluate(()=>enterEvent('thanksgiving'));await page.evaluate(()=>SiteEditing.toggle(render));await page.evaluate(()=>openMenuEditor());
+  assert.equal(await page.locator('#adminItems [data-move]').count(),0);assert.equal(await page.locator('#adminItems [data-admin-id="ham"] button').textContent(),'Remove');
+  const menuStyles=await page.evaluate(()=>['#sitDownDinnerItems','#adminItems'].map(selector=>{const style=getComputedStyle(document.querySelector(selector));return {maxHeight:style.maxHeight,overflow:style.overflow};}));assert.deepEqual(menuStyles[0],menuStyles[1]);
   assert.equal(await page.getByLabel('Dinner plan',{exact:true}).inputValue(),'potluck');assert.equal(await page.locator('#sitDownDinnerMenu').isVisible(),true);
   await page.getByLabel('New preparation dish',{exact:true}).fill('Private Roast');await page.locator('#sitDownDinnerMenu').getByRole('button',{name:'Add dish',exact:true}).click();
   await page.getByLabel('Prepare Private Roast',{exact:true}).check();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);

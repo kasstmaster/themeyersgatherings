@@ -114,15 +114,10 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 /* Highlight claimed household names using each event theme accent. */
 .dish-claimants{color:var(--orange);font-weight:700}
 
-/* Dish ordering controls in the host menu editor. */
+/* Host menu editor row layout. */
 .wide-dialog .modal-card{width:min(900px,92vw)}
 .admin-row{grid-template-columns:1fr 140px 70px 90px 112px}
-.admin-row-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
-.admin-row .admin-row-actions button{border:0;background:#e8e4dc;color:var(--ink);border-radius:4px;font-size:1.05rem;font-weight:700}
-.admin-row .admin-row-actions button:hover:not(:disabled){background:#ddd5c8}
-.admin-row .admin-row-actions button:disabled{color:#aaa;cursor:not-allowed}
-.admin-row .admin-row-actions .admin-delete{background:#f3ddd5;color:#982f17}
-.admin-row .admin-row-actions .admin-delete:hover{background:#ebc9bd}
+.admin-row-actions{display:flex;align-items:center}
 @media(max-width:520px){.admin-row,.admin-add{grid-template-columns:1fr 1fr 112px}.admin-row-actions{grid-column:3;grid-row:2/4}.admin-row .admin-row-actions button{grid-column:auto;grid-row:auto}}
 
 /* Full-page sign-in and the wedding attire checkpoint. */
