@@ -1978,19 +1978,26 @@ document.querySelector('#passwordForm').addEventListener('submit', async event =
       document.querySelector('#accountPasswordError').textContent = signInStep === 0 ? 'Enter your first name.' : 'Enter your last name.';
       current.focus(); return;
     }
-    setSignInStep(signInStep + 1); return;
+    if(signInStep===0){setSignInStep(1);return;}
+    document.querySelector('#accountSuffix').value='';
   }
   const lastName = document.querySelector('#accountLastName').value.trim();
   const suffix = document.querySelector('#accountSuffix').value.trim();
   const accountName = [firstName, lastName, suffix].filter(Boolean).join(' ');
   if (!firstName || !lastName) { document.querySelector('#accountPasswordError').textContent = 'Enter your first and last name, plus your suffix if you have one.'; return; }
-  let account;
+  let account,person=accountName;
   if(SHARED_STATE_URL){
-    try{const result=await StateClient.signIn(SHARED_STATE_URL,{role:'guest',name:accountName,qrToken:accountQrTokenFromLocation()||undefined});applyAuthorizedSession(result);if(result.persistent===false)showToast('Signed in for this visit. Persistent sign-in is temporarily unavailable.');account=appState.accounts[0];}
+    signInBusy=true;document.querySelector('#signInSubmit').disabled=true;
+    try{const result=await StateClient.signIn(SHARED_STATE_URL,{role:'guest',name:accountName,checkSuffix:signInStep===1,qrToken:accountQrTokenFromLocation()||undefined});if(result.next==='suffix'){setSignInStep(2);return;}applyAuthorizedSession(result);if(result.persistent===false)showToast('Signed in for this visit. Persistent sign-in is temporarily unavailable.');account=appState.accounts[0];person=result.person||accountName;}
     catch(error){document.querySelector('#accountPasswordError').textContent=error.message;return;}
-  }else account=accountForSignIn(accountName);
+    finally{signInBusy=false;document.querySelector('#signInSubmit').disabled=false;}
+  }else{
+    const accounts=qrScopedAccount?[qrScopedAccount]:appState.accounts;
+    if(signInStep===1&&accounts.some(account=>[...accountSignInNames(account.name),...(account.signInAliases||[]).map(alias=>alias.alias)].some(name=>/ (?:jr\.?|sr\.?|i|ii|iii|iv|v|vi|vii|viii|ix|x)$/i.test(name)&&normalizeAccountName(name.replace(/ \S+$/,''))===normalizeAccountName(accountName)))){setSignInStep(2);return;}
+    account=accountForSignIn(accountName);
+  }
   if(!account){document.querySelector('#accountPasswordError').textContent='Sign-in details were not recognized.';return;}
-  finishGuestSignIn(account,accountName);
+  finishGuestSignIn(account,person);
 });
 document.querySelector('#eventSelectionChoices').addEventListener('click', event => {
   const button = event.target.closest('[data-enter-event]');

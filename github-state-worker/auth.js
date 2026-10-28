@@ -46,9 +46,16 @@ export async function login(request,env,stateProvider){
  if(body.role==='guest'&&typeof body.name==='string'){
   const state=typeof stateProvider==='function'?await stateProvider():stateProvider;
   const name=normalizedPerson(body.name);
+  if(body.checkSuffix===true&&state.accounts.some(account=>{
+   if(body.qrToken&&account.qrToken!==body.qrToken||!Object.keys(state.events).some(id=>eventAllowed(account,id)))return false;
+   const names=accountPeople(account.name),choices=[...names.map(value=>({alias:value,name:value})),...(account.signInAliases||[]).filter(alias=>names.includes(alias.name))];
+   return choices.some(choice=>{const parsed=parsePerson(choice.alias),canonical=parsePerson(choice.name);return parsed&&(parsed.suffix||canonical?.suffix)&&normalizedPerson(parsed.givenNames+' '+parsed.surname)===name;});
+  })){
+   await write(env.INVITATION_BACKGROUNDS,rateKey,{count:attempts?.expires>Date.now()?attempts.count+1:1,expires:Date.now()+15*60*1000});return {next:'suffix'};
+  }
   const matches=state.accounts.flatMap(account=>{
    if(body.qrToken&&account.qrToken!==body.qrToken)return [];
-   const names=accountPeople(account.name),canonical=names.find(value=>normalizedPerson(value)===name)||(account.signInAliases||[]).find(alias=>normalizedPerson(alias.alias)===name)?.name;
+   const names=accountPeople(account.name),canonical=names.find(value=>normalizedPerson(value)===name)||(account.signInAliases||[]).find(alias=>normalizedPerson(alias.alias)===name||!parsePerson(alias.alias)?.suffix&&parsePerson(alias.name)?.suffix&&normalizedPerson(alias.alias+' '+parsePerson(alias.name).suffix)===name)?.name;
    return canonical&&names.includes(canonical)&&Object.keys(state.events).some(id=>eventAllowed(account,id))?[{account,canonical}]:[];
   });
   if(matches.length===1)identity={role:'guest',accountId:accountKey(matches[0].account),person:matches[0].canonical,version:await digest(env.HOST_PASSWORD)};

@@ -238,7 +238,7 @@ async function secureState(request,env,url,actor) {
  let result,state;
  const load=async()=>{if(!result){result=await readState(env);if(result.status!==200)throw Object.assign(new Error('Shared state is unavailable.'),{status:503});state=JSON.parse(result.text);}return state;};
  if(url.pathname==='/auth/login'&&request.method==='POST'){
-  const session=await login(request,env,load);if(session.next==='guest')return jsonResponse(request,env,{next:'guest'});await load();return jsonResponse(request,env,{token:session.token,expires:session.expires,role:session.identity.role,person:session.identity.person,state:projectState(state,session.identity),revision:result.sha});
+  const session=await login(request,env,load);if(session.next)return jsonResponse(request,env,{next:session.next});await load();return jsonResponse(request,env,{token:session.token,expires:session.expires,role:session.identity.role,person:session.identity.person,state:projectState(state,session.identity),revision:result.sha});
  }
  if(url.pathname==='/auth/logout'&&request.method==='POST'){await logout(request,env);return response(request,env,null,204);}
  await load();

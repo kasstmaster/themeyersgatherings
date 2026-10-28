@@ -5,6 +5,7 @@ const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=requi
  const {default:service}=await import('../github-state-worker/worker.js'),{handleGatheringSite}=await import('../domain-site-worker/gathering-site.js'),{bucket,TEST_PASSWORD}=await import('../test/security-fixture.js');
  const base='https://themeyers.ilymmd.com',serviceBase='https://curly-sun-ef0f.kassandraraudman.workers.dev';
  const state={accounts:[{name:'Casey Example',qrToken:'existing-invitation-a',selectedEvents:{thanksgiving:true},invitedEvents:{thanksgiving:true}},{name:'Jordan Example',qrToken:'existing-invitation-b',selectedEvents:{thanksgiving:true},invitedEvents:{thanksgiving:true}}],events:{thanksgiving:{gatheringName:'Thanksgiving',eventDate:'2099-11-25',rsvpDate:'2099-11-20',hostNotes:'PRIVATE HOST NOTES',items:[],rsvps:[]}},invitationTemplates:[],gatheringHistory:{},gatheringHome:{}};
+ state.accounts.push({name:'Jamie Example IV',qrToken:'suffix-four',selectedEvents:{thanksgiving:true}},{name:'Jamie Example V',qrToken:'suffix-five',selectedEvents:{thanksgiving:true}});
  const originalState=JSON.stringify(state),env={HOST_PASSWORD:TEST_PASSWORD,AUTH_MIGRATION_READY:'verified-backup-v1',INVITATION_BACKGROUNDS:bucket(),GITHUB_REPOSITORY:'test/private',GITHUB_TOKEN:'synthetic',ALLOWED_ORIGIN:base};
  const originalFetch=global.fetch;global.fetch=async(url,options={})=>{
   if(String(url).startsWith(serviceBase+'/'))return service.fetch(new Request(url,options),env);
@@ -18,7 +19,7 @@ const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=requi
   const response=url.startsWith(base+'/')?await handleGatheringSite(request,{GATHERING_SITE:assets}):await service.fetch(request,env);
   await route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:Buffer.from(await response.arrayBuffer())});
  });context.on('page',page=>{page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(15000);});}
- async function guest(page){await page.locator('#accountFirstName').fill('Casey');await page.locator('#signInSubmit').click();await page.locator('#accountLastName').fill('Example');await page.locator('#signInSubmit').click();await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});}
+ async function guest(page){await page.locator('#accountFirstName').fill('Casey');await page.locator('#signInSubmit').click();await page.locator('#accountLastName').fill('Example');await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});}
  try{
   let context=await browser.newContext({viewport:{width:1280,height:900}});await setup(context);let page=await context.newPage();await page.goto(base+'/#/signin/account/existing-invitation-a');await guest(page);
   const cookie=(await context.cookies()).find(c=>c.name==='__Host-MeyersSession');assert.ok(cookie);assert.equal(cookie.httpOnly,true);assert.equal(cookie.secure,true);assert.equal(cookie.sameSite,'Strict');assert.ok(cookie.expires*1000-Date.now()>29*24*60*60*1000);
@@ -48,6 +49,10 @@ const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=requi
   env.HOST_PASSWORD=TEST_PASSWORD+'-replaced';await page.reload();await page.locator('#signInPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>hostAuthenticated),false);
   // A network-failed logout cannot silently restore the cookie on refresh.
   await guest(page);await page.route(base+'/session/auth/logout',route=>route.abort());await page.locator('#accountLogoutButton').click();await page.locator('#signInPage').waitFor({state:'visible'});await page.reload();await page.locator('#signInPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>guestName),'');
-  assert.equal(JSON.stringify(state),originalState);assert.deepEqual(errors,[]);console.log('Persistent guest/Host login, browser reopen, HttpOnly storage, QR scoping, mobile Logout placement, revocation, offline logout and long Accounts/count-list container scrolling pass with both real Workers and synthetic state.');
+  await page.unroute(base+'/session/auth/logout');
+  await page.locator('#accountFirstName').fill('Jamie');await page.locator('#signInSubmit').click();await page.locator('#accountLastName').fill('Example');await page.locator('#signInSubmit').click();await page.locator('#accountSuffix').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>StateClient.authenticated),false);
+  await page.locator('#accountSuffix').fill('IV');await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>signedInPersonName),'Jamie Example IV');await page.locator('#accountLogoutButton').click();await page.locator('#signInPage').waitFor({state:'visible'});
+  await page.locator('#accountFirstName').fill('Jamie');await page.locator('#signInSubmit').click();await page.locator('#accountLastName').fill('Example');await page.locator('#signInSubmit').click();await page.locator('#accountSuffix').fill('V');await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>signedInPersonName),'Jamie Example V');
+  assert.equal(JSON.stringify(state),originalState);assert.deepEqual(errors,[]);console.log('Persistent guest/Host login, browser reopen, HttpOnly storage, QR scoping, mobile Logout placement, revocation, offline logout and conditional suffix entry and long Accounts/count-list container scrolling pass with both real Workers and synthetic state.');
  }finally{await browser.close();global.fetch=originalFetch;}
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -25,7 +25,7 @@
  }
  async function signIn(base,input){
   cancelCookieRequest();const attempt=++generation;let result=await json(base,'/auth/login',{method:'POST',body:JSON.stringify(input)});
-  if(attempt!==generation)throw new Error('Sign-in was superseded.');if(result.next==='guest')return result;
+  if(attempt!==generation)throw new Error('Sign-in was superseded.');if(result.next)return result;
   if(authBase(base)!==base){try{result=await persistent(base,{},result.token);}catch{result={...result,persistent:false};}}
   if(attempt!==generation)throw new Error('Sign-in was superseded.');accept(result);markSignedOut(false);return result;
  }

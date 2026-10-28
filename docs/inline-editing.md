@@ -64,3 +64,5 @@ Typing and editor-control updates do not trigger a full gathering repaint. New p
 Sign-in persists on the canonical site (new guests up to 30 days, hosts eight hours). Logout is at the far right of the gathering chooser’s name bar; pending edits are flushed or preserved before ending the session. See [session security](state-security-rollout.md) for expiry and offline behavior.
 
 Accounts and count-list popups scroll as one dialog; the card background and border continue around the whole list, including long lists on mobile.
+
+Guest name entry skips Suffix after Last Name unless the server recognizes a matching person with a suffix. The suffix step remains for those names; guest permissions and invitation scope are unchanged.
