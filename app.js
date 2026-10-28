@@ -2861,7 +2861,7 @@ function renderDinnerPlanEditor(area){
   const panel=document.createElement('section');panel.id='sitDownDinnerMenu';
   const heading=document.createElement('h3');heading.textContent='Private preparation menu';
   const intro=document.createElement('p');intro.textContent='Select the dishes you will prepare this year. Guests cannot see this menu.';
-  const rows=document.createElement('div');panel.append(heading,intro,rows);section.append(panel);area.append(section);
+  const rows=document.createElement('div');rows.id='sitDownDinnerItems';rows.className='admin-items';panel.append(heading,intro,rows);section.append(panel);area.append(section);
   const current=()=>event.dinnerPlans?.[plan.year]||{type:select.value,selectedItems:[]};
   const store=changes=>{event.dinnerPlans={...event.dinnerPlans,[plan.year]:{...current(),...changes}};saveState({refresh:true});};
   select.addEventListener('change',()=>{store({type:select.value});});
@@ -2876,7 +2876,7 @@ function renderDinnerPlanEditor(area){
       const category=document.createElement('select');category.setAttribute('aria-label',`Category for ${item.name}`);
       for(const value of GuestPlanning.foodCategories){const option=document.createElement('option');option.value=value;option.textContent=value;category.append(option);}category.value=item.category;
       category.addEventListener('change',()=>{item.category=category.value;saveState();draw();});
-      const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.setAttribute('aria-label',`Remove ${item.name}`);
+      const remove=document.createElement('button');remove.type='button';remove.className='menu-remove-button';remove.textContent='Remove';remove.setAttribute('aria-label',`Remove ${item.name}`);
       remove.addEventListener('click',()=>{event.sitDownMenu=event.sitDownMenu.filter(value=>value.id!==item.id);store({selectedItems:(current().selectedItems||[]).filter(id=>id!==item.id)});draw();});
       row.append(chosen,name,category,remove);rows.append(row);
     }
@@ -2945,15 +2945,11 @@ function openAdmin() {
   document.querySelector('#adminNewUnit').innerHTML = unitOptions();
   renderQuantityUnits();
   document.querySelector('#adminItems').innerHTML = GuestPlanning.menuOrder(state.items).map(item => {
-    const index=state.items.indexOf(item);
-    const previousInCategory = state.items.slice(0, index).some(entry => entry.category === item.category);
-    const nextInCategory = state.items.slice(index + 1).some(entry => entry.category === item.category);
-    return `<div class="admin-row" data-admin-id="${escapeAttribute(item.id)}"><input value="${escapeAttribute(item.name)}" aria-label="Dish name"><select aria-label="Category">${GuestPlanning.foodCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select><select aria-label="Amount needed">${amountOptions(item)}</select><select aria-label="Quantity type">${unitOptions(item)}</select><div class="admin-row-actions"><button type="button" data-move="up" aria-label="Move ${escapeAttribute(item.name)} up" title="Move up" ${previousInCategory ? '' : 'disabled'}>↑</button><button type="button" data-move="down" aria-label="Move ${escapeAttribute(item.name)} down" title="Move down" ${nextInCategory ? '' : 'disabled'}>↓</button><button type="button" class="admin-delete" aria-label="Delete ${escapeAttribute(item.name)}" title="Delete">×</button></div></div>`;
+    return `<div class="admin-row" data-admin-id="${escapeAttribute(item.id)}"><input value="${escapeAttribute(item.name)}" aria-label="Dish name"><select aria-label="Category">${GuestPlanning.foodCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select><select aria-label="Amount needed">${amountOptions(item)}</select><select aria-label="Quantity type">${unitOptions(item)}</select><div class="admin-row-actions"><button type="button" class="admin-delete menu-remove-button" aria-label="Remove ${escapeAttribute(item.name)}" title="Remove">Remove</button></div></div>`;
   }).join('');
   document.querySelectorAll('.admin-row').forEach(row => {
     const [name, category, amount, unit, actions] = row.children;
     [name, category, amount, unit].forEach(input => input.addEventListener('change', () => { const item = state.items.find(i => i.id === row.dataset.adminId); item.name = name.value.trim() || item.name; item.category = category.value; item.optional = amount.value === 'optional'; item.unit = unit.value; if (!item.optional) item.needed = Number(amount.value); saveState(); }));
-    actions.querySelectorAll('[data-move]').forEach(button => button.addEventListener('click', () => moveAdminItem(row.dataset.adminId, button.dataset.move)));
     const remove = actions.querySelector('.admin-delete');
     remove.addEventListener('click', () => { state.items = state.items.filter(i => i.id !== row.dataset.adminId); saveState(); openAdmin(); });
   });
@@ -3066,19 +3062,6 @@ function commitWeddingPartyEditors() {
     });
   });
   if (changed) saveState();
-}
-function moveAdminItem(itemId, direction) {
-  const itemIndex = state.items.findIndex(item => item.id === itemId);
-  if (itemIndex < 0) return;
-  const item = state.items[itemIndex];
-  const step = direction === 'up' ? -1 : 1;
-  let swapIndex = itemIndex + step;
-  while (state.items[swapIndex] && state.items[swapIndex].category !== item.category) swapIndex += step;
-  if (!state.items[swapIndex]) return;
-  [state.items[itemIndex], state.items[swapIndex]] = [state.items[swapIndex], state.items[itemIndex]];
-  saveState();
-  openAdmin();
-  document.querySelector(`[data-admin-id="${CSS.escape(itemId)}"] [data-move="${direction}"]`)?.focus();
 }
 function renderQuantityUnits() {
   document.querySelector('#adminUnitError').textContent = '';
