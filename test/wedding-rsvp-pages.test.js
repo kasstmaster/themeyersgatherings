@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 await import('../gathering-features.js');
+await import('../wedding-party.js');
 const [source,html]=await Promise.all(['app.js','index.html'].map(f=>readFile(new URL('../'+f,import.meta.url),'utf8')));
 const prefix=source.slice(source.indexOf('function renderWeddingGathering('),source.indexOf("  const hostTabs=document.querySelector('#weddingHostTabs');"));
 function visibility(host,party,tab,event='wedding',subtab='experience'){
@@ -67,16 +68,16 @@ test('moving Attire headings preserves saved edits and migration is repeatable',
 });
 
 test('Wedding Party page headings follow attire, duties, experience, and custom titles',()=>{
- const start=source.indexOf('function weddingPartyPageHeading('),end=source.indexOf('function renderWeddingGathering(',start);
- const nodes={'#weddingPartyKicker':{},'#weddingPartyHeading':{}};
- const c=vm.createContext({document:{querySelector:selector=>nodes[selector]}});vm.runInContext(source.slice(start,end),c);
+ const start=source.indexOf('function renderWeddingPartyPageHeading('),end=source.indexOf('function renderWeddingGathering(',start);
+ const nodes={'#weddingPartyKicker':{dataset:{}},'#weddingPartyHeading':{dataset:{}}};
+ const c=vm.createContext({WeddingParty,state:{},formatEditableText:value=>value,document:{querySelector:selector=>nodes[selector]}});vm.runInContext(source.slice(start,end),c);
  for(const [tab,page,kicker,title] of [
   ['attire',null,'Dress for the occasion','FORMAL ATTIRE REQUIRED'],
   ['duties',null,'The people by our side','Your Responsibilities'],
   ['experience',null,'The people by our side','The Perfect Experience'],
   ['custom',{title:'Travel Plans'},'The people by our side','Travel Plans'],
   ['member-page',{title:'Personal Schedule'},'The people by our side','Personal Schedule']
- ]){c.renderWeddingPartyPageHeading(tab,page);assert.equal(nodes['#weddingPartyKicker'].textContent,kicker);assert.equal(nodes['#weddingPartyHeading'].textContent,title);}
+ ]){c.renderWeddingPartyPageHeading(tab,page);assert.equal(nodes['#weddingPartyKicker'].innerHTML,kicker);assert.equal(nodes['#weddingPartyHeading'].innerHTML,title);}
 });
 
 test('party attire has one editable intro without a third container before the dress-code panels',()=>{
@@ -90,11 +91,11 @@ test('party attire has one editable intro without a third container before the d
 });
 
 test('Responsibilities uses the signed-in member role and name in its header',()=>{
- const start=source.indexOf('function weddingPartyPageHeading('),end=source.indexOf('function renderWeddingGathering(',start);
- const nodes={'#weddingPartyKicker':{},'#weddingPartyHeading':{}};
- const c=vm.createContext({document:{querySelector:selector=>nodes[selector]}});vm.runInContext(source.slice(start,end),c);
+ const start=source.indexOf('function renderWeddingPartyPageHeading('),end=source.indexOf('function renderWeddingGathering(',start);
+ const nodes={'#weddingPartyKicker':{dataset:{}},'#weddingPartyHeading':{dataset:{}}};
+ const c=vm.createContext({WeddingParty,state:{},formatEditableText:value=>value,document:{querySelector:selector=>nodes[selector]}});vm.runInContext(source.slice(start,end),c);
  for(const member of [{name:'Casey Example',title:'Groomsman'},{name:'Jordan Example',title:'Matron of Honor'}]){
-  c.renderWeddingPartyPageHeading('duties',null,member);assert.equal(nodes['#weddingPartyKicker'].textContent,member.title);assert.equal(nodes['#weddingPartyHeading'].textContent,member.name);
+  c.renderWeddingPartyPageHeading('duties',null,member);assert.equal(nodes['#weddingPartyKicker'].innerHTML,member.title);assert.equal(nodes['#weddingPartyHeading'].innerHTML,member.name);
  }
  const sub=html.match(/<nav id="matronInfoTabs"[\s\S]*?<\/nav>/)[0];assert.doesNotMatch(sub,/data-matron-tab="attire"/);assert.match(sub,/data-matron-tab="duties"[^>]*aria-selected="true">Responsibilities/);
  assert.match(html,/<article class="wedding-tab-content" data-attire-group="ladies">/);assert.match(html,/<article class="wedding-tab-content" data-attire-group="gentlemen">/);
@@ -103,7 +104,7 @@ test('Responsibilities uses the signed-in member role and name in its header',()
 test('shared Details reads and edits the public canonical page without exposing host-only pages',()=>{
  const state={whatToExpectContent:'Legacy',sitePages:[{id:'private',weddingDefault:'details',audience:'host',content:'Private host notes'},{id:'public',weddingDefault:'details',audience:'guests',content:'Public details'}]};
  const c=vm.createContext({state,weddingDetailsWithoutHeaderAddress:value=>value});
- vm.runInContext(source.slice(source.indexOf('function sharedWeddingDetails()'),source.indexOf('function weddingPartyPageHeading(')),c);
+ vm.runInContext(source.slice(source.indexOf('function sharedWeddingDetails()'),source.indexOf('function renderWeddingPartyPageHeading(')),c);
  assert.equal(c.sharedWeddingDetailsText(),'Public details');c.saveSharedWeddingDetails('Edited public details');
  assert.equal(state.sitePages[1].content,'Edited public details');assert.equal(state.sitePages[0].content,'Private host notes');assert.equal(state.whatToExpectContent,'Legacy');
 });

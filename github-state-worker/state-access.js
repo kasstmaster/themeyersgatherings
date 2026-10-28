@@ -13,8 +13,17 @@ export function accountForActor(state,actor){
 }
 export function permittedEvents(state,actor){const account=accountForActor(state,actor);return actor.role==='host'?Object.keys(state.events):Object.keys(state.events).filter(id=>eventAllowed(account,id));}
 const privateSelector=/(?:hostNotes|brideGroom|weddingTimeline|weddingPartyPersonalPage|weddingPartyDetails|partySharedDetails|perfectExperience|weddingPartyHeading|weddingPartyKicker|count-list|admin|guestList|invited|noResponse|notAttending)/i;
-function textEntries(entries,party,allowedPages=[]){
+function allowedHeadingPath(path,member,allowedPages){
+ const identity=WeddingParty.parseHeadingPath(path);if(!member||!identity)return false;
+ const [kind,id,pageId]=identity;
+ if(kind==='duties')return identity.length===3&&id===member.id;
+ if(kind==='member-page')return identity.length===4&&id===member.id&&member.pages.some(page=>page.id===pageId);
+ if(kind==='site-page')return identity.length===3&&allowedPages.includes(id);
+ return identity.length===2&&['experience','shared-timeline','shared-details','attire'].includes(kind);
+}
+function textEntries(entries,party,allowedPages=[],member=null){
  return Object.fromEntries(Object.entries(entries||{}).filter(([path])=>{
+  if(path.includes('party-heading:'))return allowedHeadingPath(path,member,allowedPages);
   if(path.includes('custom-page-')&&!allowedPages.some(id=>path.includes('custom-page-'+id)))return false;
   if(/weddingParty(?:Heading|Kicker|PersonalPage|Details)|weddingHostTabs|matronInfoTabs.*memberPage/.test(path))return false;
   return !privateSelector.test(path)||(party&&/(partyShared|perfectExperience|weddingTimeline)/.test(path));
@@ -37,10 +46,10 @@ export function projectState(state,actor){
   // Details' intentional canonical shared views remain available to their audience.
   event.whatToExpectContent=original.whatToExpectContent||'';
   if(member){for(const key of ['timelineAboveContent','timelineContent','timelineBelowContent','timelineTabTitle','perfectExperienceContent'])if(Object.hasOwn(original,key))event[key]=clone(original[key]);}
-  const pageIds=event.sitePages.map(page=>page.id);
-  event.siteText=textEntries(original.siteText,Boolean(member),pageIds);event.textAppearance=textEntries(original.textAppearance,Boolean(member),pageIds);
+  const pageIds=event.sitePages.map(page=>String(page.id));
+  event.siteText=textEntries({...WeddingParty.legacyHeadingText(original),...original.siteText},Boolean(member),pageIds,member);event.textAppearance=textEntries(original.textAppearance,Boolean(member),pageIds,member);
   event.siteTabTitles=textEntries(original.siteTabTitles,Boolean(member),pageIds);
-  event.elementAppearance=Object.fromEntries(Object.entries(original.elementAppearance||{}).filter(([path])=>path.startsWith('@group:')||!privateSelector.test(path)).map(([key,value])=>[key,clone(value)]));
+  event.elementAppearance=Object.fromEntries(Object.entries(original.elementAppearance||{}).filter(([path])=>(path.startsWith('@group:')||!privateSelector.test(path))&&(!path.includes('party-heading:')||allowedHeadingPath(path,member,pageIds))).map(([key,value])=>[key,clone(value)]));
   event.items=(original.items||[]).map(item=>({...clone(item),claims:(item.claims||[]).map(name=>name===account.name?name:'__other_claim__')}));
   event.rsvps=(original.rsvps||[]).filter(response=>response.name===account.name).map(clone);
   events[id]=event;

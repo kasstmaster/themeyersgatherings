@@ -1284,17 +1284,10 @@ function sharedWeddingDetails(){
 }
 function sharedWeddingDetailsText(){return sharedWeddingDetails()?.content ?? weddingDetailsWithoutHeaderAddress(state.whatToExpectContent || '');}
 function saveSharedWeddingDetails(value){const page=sharedWeddingDetails();if(page)page.content=value;else state.whatToExpectContent=value;}
-function weddingPartyPageHeading(tab,page,member) {
-  if(page)return {kicker:'The people by our side',title:page.title};
-  if(tab==='duties' && member)return {kicker:member.title || 'Wedding Party',title:member.name};
-  if(tab==='shared-timeline' || tab==='shared-details')return {kicker:'The people by our side',title:tab==='shared-timeline'?'Timeline':'Details'};
-  if(tab==='attire')return {kicker:'Dress for the occasion',title:'FORMAL ATTIRE REQUIRED'};
-  return {kicker:'The people by our side',title:tab==='duties'?'Your Responsibilities':'The Perfect Experience'};
-}
+let partyHeadingFields=[];
 function renderWeddingPartyPageHeading(tab,page,member) {
-  const heading=weddingPartyPageHeading(tab,page,member);
-  document.querySelector('#weddingPartyKicker').textContent=heading.kicker;
-  document.querySelector('#weddingPartyHeading').textContent=heading.title;
+  partyHeadingFields=WeddingParty.headingFields(state,tab,page,member);
+  for(const field of partyHeadingFields){const target=document.querySelector(field.part==='title'?'#weddingPartyHeading':'#weddingPartyKicker');target.dataset.contentKey=field.key;target.innerHTML=formatEditableText(field.value,{inline:true});}
 }
 function renderWeddingGathering(hostView) {
   const isWedding=GatheringFeatures.forGathering(viewedEventId).weddingPages;
@@ -1744,6 +1737,10 @@ function renderInlineEditing(eventState=state) {
     SiteEditing.tabs(nav,config);
   });
   document.querySelectorAll('.event-dock').forEach(toolbar=>SiteEditing.field(toolbar,'toolbar',[],()=>{}));
+  if(features.weddingPages)for(const field of partyHeadingFields){
+    const target=document.querySelector(field.part==='title'?'#weddingPartyHeading':'#weddingPartyKicker');
+    SiteEditing.field(target,'text',[{label:'Text (Markdown supported)',type:'textarea',value:field.value}],([value])=>{state.siteText??={};state.siteText[field.path]=value;},{key:field.key,placement:'text'});
+  }
   renderRsvpInlineEditing();
   SiteEditing.movableText(document.querySelector('#weddingMediaSection'),{contentRoot:document.querySelector('#weddingMediaUpload'),headerIds:['weddingMediaIntro']});
 }

@@ -22,6 +22,7 @@
     }
     return parts.join('>');
   }
+  function textSelector(target){return target.dataset?.contentKey?`[data-content-key=${JSON.stringify(target.dataset.contentKey)}]`:selector(target);}
   const contentText='#rsvpFirstPageText,#rsvpFirstPageDetails,#rsvpDishQuestionText,#eventHeaderText,#hostNotesContent,.bride-groom-content,.perfect-experience-content,.what-to-expect-content,.wedding-party-description,.wedding-timeline-copy,.guest-attire-requirements,#weddingPartyAttireIntroText,.wedding-party-attire-note';
   const surfaceKeys=['backgroundColor','backgroundAlpha','backgroundImage','imageFit','borderColor','borderAlpha','borderWidth','borderRadius'];
   const flatCopy=element=>element.matches?.(contentText) && element.parentElement?.matches('.wedding-tab-content,.wedding-party-card,.gathering-subpage');
@@ -172,14 +173,14 @@
   function plainText(part){const copy=part.cloneNode(true);copy.querySelectorAll('br').forEach(line=>line.replaceWith('\n'));return copy.textContent;}
   function isMultiline(target){const parts=textParts(target);return parts.length>1 || parts.some(part=>plainText(part).includes('\n'));}
   function textValue(target){
-    const saved=context?.state.textAppearance?.[selector(target)];
+    const saved=context?.state.textAppearance?.[textSelector(target)];
     return textParts(target).map((part,index)=>{const value=plainText(part);const entry=saved?.parts?.[index];return entry && typeof entry.markup==='string'?TextStyles.rebase(entry.markup,entry.source,entry.overrideText??value):value;}).join('\n');
   }
   function storeText(target,markup,source,override=false){
     if(!context?.host)return;
-    const parts=textParts(target),lines=parts.length===1?[String(markup)]:String(markup).split('\n'),previous=context.state.textAppearance?.[selector(target)];
+    const parts=textParts(target),lines=parts.length===1?[String(markup)]:String(markup).split('\n'),previous=context.state.textAppearance?.[textSelector(target)];
     context.state.textAppearance??={};
-    context.state.textAppearance[selector(target)]={parts:parts.map((part,index)=>{const line=lines[index] || '';if(override){const holder=document.createElement('span');holder.innerHTML=context.format(line,{inline:true});return {source:plainText(holder),markup:line,overrideText:plainText(holder),original:previous?.parts?.[index]?.original??plainText(part)};}return {source:source??plainText(part),markup:line};})};
+    context.state.textAppearance[textSelector(target)]={parts:parts.map((part,index)=>{const line=lines[index] || '';if(override){const holder=document.createElement('span');holder.innerHTML=context.format(line,{inline:true});return {source:plainText(holder),markup:line,overrideText:plainText(holder),original:previous?.parts?.[index]?.original??plainText(part)};}return {source:source??plainText(part),markup:line};})};
   }
   function normalizedMarkup(html){
     const holder=document.createElement('div');holder.innerHTML=html;
@@ -193,6 +194,7 @@
     if(!context?.format)return;
     const desired=new Map();
     for(const [path,entry] of Object.entries(context.state.textAppearance || {}))if(entry && Array.isArray(entry.parts))for(const target of find(path)){
+      if(target.dataset?.contentKey && path!==textSelector(target))continue;
       textParts(target).forEach((part,index)=>{if(part.isContentEditable || globalThis.ElementEditor?.ownsText?.(part))return;const saved=entry.parts?.[index];if(!saved || typeof saved.markup!=='string' || typeof saved.source!=='string')return;const markup=TextStyles.rebase(saved.markup,saved.source,saved.overrideText??plainText(part));desired.set(part,context.format(markup,{inline:true}));});
     }
     for(const [part,html] of desired){
@@ -244,5 +246,5 @@
       styles[path]={...styles[path],...values};apply();context.save();
     },
     upload:file=>context.upload(file),
-    render,restore,refreshControls,selector,colorParts,imageUrl,textValue,storeText,applyText,isMultiline,manages:element=>applied.has(element)};
+    render,restore,refreshControls,selector,textSelector,colorParts,imageUrl,textValue,storeText,applyText,isMultiline,manages:element=>applied.has(element)};
 })();

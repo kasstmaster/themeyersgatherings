@@ -42,7 +42,7 @@ All signed-in users start at gathering selection. Within a gathering, guests def
 
 ## Known limitations and verification
 
-The shared builder's main paths pass isolation/reload checks, but this is not a guarantee that every saved selector or specialized heading has correct scope. The [current audit](documentation-architecture-audit.md) records a Wedding Party heading override that carries into another subpage, a destructive legacy Christmas normalization, shared media scope, and backend access/concurrency issues. These were not changed by the documentation audit.
+The shared builder's main paths pass isolation/reload checks, but this is not a guarantee that every saved selector or specialized heading has correct scope. The [audit](documentation-architecture-audit.md) records the original Wedding Party heading defect and its A5 follow-up, plus other separately tracked findings. The original documentation audit itself did not fix application code.
 
 With a local server on port 8041, Playwright installed and `/usr/bin/chromium` available, the following local-only scripts block external requests and live writes:
 
@@ -54,3 +54,5 @@ With a local server on port 8041, Playwright installed and `/usr/bin/chromium` a
 - `scripts/verify-tab-scroll-stability.cjs`: main/subpage scrolling without accumulation.
 
 These were validated during the preceding builder work; the current audit's actually executed checks and limitations are listed in its report. Older optional scripts may target removed controls or old single-click editing; do not present them as current guarantees without running/updating them in a separate code task.
+
+Wedding Party heading words now belong to the selected subpage/member/custom page, including the smaller introduction above the title. Edit them through the usual shared toolbar. Formatting groups remain Wedding-wide; heading copy does not change another heading, the tab label or the member's actual name/role. Uniquely identifiable old heading edits remain visible only on their original page. Ambiguous old overrides remain in saved data but are not displayed on every subpage; re-enter intended copy on the correct page if needed.

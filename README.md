@@ -38,6 +38,8 @@ The sidebar provides **Menu / Templates** and **Accounts / History**. Menu edits
 
 Other host counts open Invited, Attending, Not attending, and No Response lists. Counts display adults/children; list totals include households. These details and claimant names are host-only. The A1/A2 implementation adds server-side role views and permitted mutation checks; guest name-only identification still does not prove identity. See [access limitations](#access-and-data-protection-limitations).
 
+Wedding Party heading and introduction words are saved per built-in subpage, member, or custom-page ID. Editing Responsibilities, Details, Timeline, or a custom heading does not rename another page or member. Titles and introductions keep their existing Wedding-wide formatting groups. Older reused-heading records are retained: an unambiguous original is shown only on its owning page; ambiguous copies are kept for recovery and never applied across pages.
+
 ## Accounts, children, and invitations
 
 Accounts are website-wide household records. **Give Access**, **Invite**, invitation quantities/group membership and guest allowances are keyed by gathering. Invite controls invitation output and invited totals; it does not grant sign-in access. A small person icon beside a name opens that household's session for host preview. The authenticated host retains host controls; **Leave account** restores their session. The Accounts footer has **Sync** and **Save** side by side.
