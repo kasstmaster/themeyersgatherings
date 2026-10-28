@@ -60,3 +60,7 @@ Wedding Party heading words now belong to the selected subpage/member/custom pag
 The page reserves the measured fixed toolbar height plus 16 px at its bottom. This system clearance is separate from editable spacing, so the last content remains above the toolbar on mobile. Heading fitting skips unchanged content and preserves scroll position during measurement.
 
 Typing and editor-control updates do not trigger a full gathering repaint. New page content and changed selection states still receive saved formatting; ordinary dynamic updates are batched into one frame. Autosave and Undo/Redo use the same existing persistence path.
+
+Sign-in persists on the canonical site (new guests up to 30 days, hosts eight hours). Logout is at the far right of the gathering chooser’s name bar; pending edits are flushed or preserved before ending the session. See [session security](state-security-rollout.md) for expiry and offline behavior.
+
+Accounts and count-list popups scroll as one dialog; the card background and border continue around the whole list, including long lists on mobile.

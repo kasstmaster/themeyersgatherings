@@ -7,7 +7,7 @@ export function equal(a,b){const x=bytes(a||''),y=bytes(b||'');let difference=x.
 async function read(bucket,key){const value=await bucket.get(PREFIX+key);return value?JSON.parse(await value.text()):null;}
 async function write(bucket,key,value){await bucket.put(PREFIX+key,JSON.stringify(value),{httpMetadata:{contentType:'application/json'}});}
 export async function issueSession(env,identity){
- const token=crypto.randomUUID()+crypto.randomUUID(),hash=await digest(token),expires=Date.now()+8*60*60*1000;
+ const token=crypto.randomUUID()+crypto.randomUUID(),hash=await digest(token),expires=Date.now()+(identity.role==='guest'?30*24:8)*60*60*1000;
  await write(env.INVITATION_BACKGROUNDS,'sessions/'+hash,{...identity,expires});return {token,expires};
 }
 export async function authenticate(request,env){

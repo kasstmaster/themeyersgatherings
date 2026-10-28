@@ -34,4 +34,6 @@ for(const origin of ['https://themeyers.ilymmd.com','https://ilymmd.com','https:
   const response=await request(service,{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Method':'PUT'}});
   assert.equal(response.status,204);assert.equal(response.headers.get('Access-Control-Allow-Origin'),origin);
 }
+const resume=await request(canonical+'session/auth/session',{method:'POST',headers:{Origin:canonical.slice(0,-1),'Content-Type':'application/json'},body:'{}'});
+assert.equal(resume.status,401);assert.equal(resume.headers.get('Cache-Control'),'no-store');
 console.log('Live separate app, manifest/icons, shared service CORS, Plex home page and legacy QR addresses passed.');

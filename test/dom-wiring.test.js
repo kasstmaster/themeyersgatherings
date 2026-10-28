@@ -165,7 +165,7 @@ test('wedding party access is tied to the individual sign-in name', async () => 
   ]);
 
   assert.match(html, /id="weddingPartyTabs"[\s\S]*>Wedding Party<[\s\S]*>Attire<[\s\S]*>Registry</);
-  assert.match(javascript, /signedInPersonName = accountPersonName\(accountName, account\)/);
+  assert.match(javascript, /signedInPersonName=accountPersonName\(person,account\)/);
   assert.match(javascript, /state\.weddingPartyMembers\?\.find\(member => weddingPartyPersonMatches\(member\.name, signedInPersonName\)\)/);
   assert.match(javascript, /const isWeddingPartyMember = isWedding && !hostView && Boolean\(signedInWeddingPartyMember\)/);
   assert.match(javascript, /weddingPartyTabs\.hidden = !isWedding/);

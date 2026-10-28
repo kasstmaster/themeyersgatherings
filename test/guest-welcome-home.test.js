@@ -26,12 +26,11 @@ test('Wedding completion opens Registry for guests and hosts; cancellation keeps
  assert.deepEqual(close({event:'wedding',host:true,saved:true}).destinations,['gathering','registry']);
 });
 test('guest sign-in stays at welcome for all gatherings instead of resuming a pending RSVP',()=>{
- const start=source.indexOf('  showEventSelection();\n  pendingAccountAction = null;');
- const code=source.slice(start,source.indexOf('\n});',start));
+ const code=source.slice(source.indexOf('function finishGuestSignIn('),source.indexOf('function maskHostCandidate('));
  for(const event of ['thanksgiving','christmas','new-gathering','wedding']){
   const calls=[];
-  const context=vm.createContext({scrollGatheringPage(){},viewedEventId:event,GatheringFeatures,availableEventIds:()=>[event],pendingAccountAction:()=>calls.push('action'),showEventSelection:()=>calls.push('welcome')});
-  vm.runInContext(code,context);
+  const context=vm.createContext({scrollGatheringPage(){},viewedEventId:event,GatheringFeatures,accountPersonName:person=>person,document:{querySelector:()=>({textContent:''})},availableEventIds:()=>[event],pendingAccountAction:()=>calls.push('action'),showEventSelection:()=>calls.push('welcome')});
+  vm.runInContext(code,context);context.finishGuestSignIn({name:'Casey Example'},'Casey Example');
   assert.deepEqual(calls,['welcome']);
   assert.equal(context.pendingAccountAction,null);
  }

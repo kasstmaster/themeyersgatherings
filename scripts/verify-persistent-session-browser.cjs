@@ -1,0 +1,53 @@
+// Real browser + both Workers with synthetic state. Every request is intercepted;
+// no production service, credentials, or gathering data is contacted.
+const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path'),assert=require('node:assert/strict');
+(async()=>{
+ const {default:service}=await import('../github-state-worker/worker.js'),{handleGatheringSite}=await import('../domain-site-worker/gathering-site.js'),{bucket,TEST_PASSWORD}=await import('../test/security-fixture.js');
+ const base='https://themeyers.ilymmd.com',serviceBase='https://curly-sun-ef0f.kassandraraudman.workers.dev';
+ const state={accounts:[{name:'Casey Example',qrToken:'existing-invitation-a',selectedEvents:{thanksgiving:true},invitedEvents:{thanksgiving:true}},{name:'Jordan Example',qrToken:'existing-invitation-b',selectedEvents:{thanksgiving:true},invitedEvents:{thanksgiving:true}}],events:{thanksgiving:{gatheringName:'Thanksgiving',eventDate:'2099-11-25',rsvpDate:'2099-11-20',hostNotes:'PRIVATE HOST NOTES',items:[],rsvps:[]}},invitationTemplates:[],gatheringHistory:{},gatheringHome:{}};
+ const originalState=JSON.stringify(state),env={HOST_PASSWORD:TEST_PASSWORD,AUTH_MIGRATION_READY:'verified-backup-v1',INVITATION_BACKGROUNDS:bucket(),GITHUB_REPOSITORY:'test/private',GITHUB_TOKEN:'synthetic',ALLOWED_ORIGIN:base};
+ const originalFetch=global.fetch;global.fetch=async(url,options={})=>{
+  if(String(url).startsWith(serviceBase+'/'))return service.fetch(new Request(url,options),env);
+  assert.match(String(url),/^https:\/\/api.github.com\/repos\/test\/private\/contents\//);assert.ok(!options.method||options.method==='GET','sign-in/logout must not modify gathering data');return Response.json({sha:'one',content:Buffer.from(JSON.stringify(state)).toString('base64')});
+ };
+ const assets={async fetch(request){const name=new URL(request.url).pathname;try{const body=await fs.readFile(path.join(process.cwd(),name));return new Response(body,{headers:{'Content-Type':name.endsWith('.html')?'text/html':name.endsWith('.js')?'text/javascript':name.endsWith('.css')?'text/css':'application/octet-stream'}});}catch{return new Response('Not found',{status:404});}}};
+ const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const errors=[];
+ async function setup(context){await context.route('**/*',async route=>{
+  const req=route.request(),url=req.url();if(!url.startsWith(base+'/')&&!url.startsWith(serviceBase+'/'))return route.abort();
+  const method=req.method(),headers=await req.allHeaders(),body=req.postDataBuffer();const request=new Request(url,{method,headers,...(!['GET','HEAD'].includes(method)&&body?{body,duplex:'half'}:{})});
+  const response=url.startsWith(base+'/')?await handleGatheringSite(request,{GATHERING_SITE:assets}):await service.fetch(request,env);
+  await route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:Buffer.from(await response.arrayBuffer())});
+ });context.on('page',page=>{page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(15000);});}
+ async function guest(page){await page.locator('#accountFirstName').fill('Casey');await page.locator('#signInSubmit').click();await page.locator('#accountLastName').fill('Example');await page.locator('#signInSubmit').click();await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});}
+ try{
+  let context=await browser.newContext({viewport:{width:1280,height:900}});await setup(context);let page=await context.newPage();await page.goto(base+'/#/signin/account/existing-invitation-a');await guest(page);
+  const cookie=(await context.cookies()).find(c=>c.name==='__Host-MeyersSession');assert.ok(cookie);assert.equal(cookie.httpOnly,true);assert.equal(cookie.secure,true);assert.equal(cookie.sameSite,'Strict');assert.ok(cookie.expires*1000-Date.now()>29*24*60*60*1000);
+  assert.equal(await page.evaluate(()=>document.cookie.includes('MeyersSession')),false);
+  assert.equal(await page.evaluate(token=>[localStorage,sessionStorage].some(storage=>Object.keys(storage).some(key=>(storage.getItem(key)||'').includes(token))),cookie.value),false);
+  await page.reload();await page.locator('#eventSelectionPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>signedInPersonName),'Casey Example');assert.equal(await page.evaluate(()=>JSON.stringify(appState).includes('PRIVATE HOST NOTES')),false);
+  await page.locator('[data-enter-event="thanksgiving"]').click();assert.equal(await page.locator('#accountLogoutButton').isVisible(),false);await page.evaluate(()=>showEventSelection());
+  // Simulate closing/reopening the browser using only its persistent cookie jar.
+  const cookies=await context.cookies();await context.close();context=await browser.newContext({storageState:{cookies,origins:[]},viewport:{width:390,height:720}});await setup(context);page=await context.newPage();await page.goto(base+'/');await page.locator('#eventSelectionPage').waitFor({state:'visible'});
+  const position=await page.evaluate(()=>{const bar=document.querySelector('#signedInAccount').getBoundingClientRect(),button=document.querySelector('#accountLogoutButton').getBoundingClientRect(),name=document.querySelector('#signedInAccountName').getBoundingClientRect();return {right:button.right,barRight:bar.right,left:button.left,nameRight:name.right};});assert.ok(position.right<=position.barRight&&position.right>=position.barRight-30);assert.ok(position.left>=position.nameRight);
+  await page.evaluate(()=>{state.rsvps=[{name:guestName,note:'UNSYNCED-TEST-DRAFT'}];storeLocalState(appState);sharedSaveInProgress=true;sharedSavePending=true;});
+  await page.locator('#accountLogoutButton').click();await page.locator('#signInPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(key=>key.includes('-private-draft-')&&(localStorage.getItem(key)||'').includes('UNSYNCED-TEST-DRAFT'))),true,'logout preserves in-flight local changes');await page.reload();await page.locator('#signInSubmit').waitFor({state:'visible'});assert.equal(await page.locator('#signedInAccount').isVisible(),false);assert.ok(!(await context.cookies()).some(c=>c.name==='__Host-MeyersSession'));
+  await guest(page);await page.goto(base+'/#/signin/account/existing-invitation-b');await page.locator('#signInPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>guestName),'');
+  await page.goto(base+'/');await page.locator('#accountFirstName').fill(TEST_PASSWORD);await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});await page.reload();await page.locator('#eventSelectionPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>hostAuthenticated),true);
+  // Every long popup owns one scroll area; its surface must enclose all rows.
+  for(const width of [1280,390]){
+   await page.setViewportSize({width,height:720});
+   for(const id of ['accountsDialog','guestListDialog','notAttendingDialog','noResponseDialog','invitedListDialog','dishListDialog']){
+    await page.evaluate(id=>{const dialog=document.getElementById(id),card=dialog.querySelector('.modal-card'),rows=document.createElement('div');rows.dataset.layoutRegression='';for(let i=0;i<60;i++){const row=document.createElement('div');row.className='guest-entry';row.textContent='Example household '+(i+1);rows.append(row);}card.append(rows);showSiteDialog(dialog);},id);
+    await page.waitForTimeout(100);
+    const bounds=await page.evaluate(id=>{const dialog=document.getElementById(id),card=dialog.querySelector('.modal-card'),tail=card.querySelector('[data-layout-regression]').lastElementChild;dialog.scrollTop=dialog.scrollHeight;return {cardHeight:card.getBoundingClientRect().height,viewport:dialog.clientHeight,cardBottom:card.getBoundingClientRect().bottom,tailBottom:tail.getBoundingClientRect().bottom,tailTop:tail.getBoundingClientRect().top,dialogTop:dialog.getBoundingClientRect().top,innerOverflow:card.scrollHeight-card.clientHeight};},id);
+    assert.ok(bounds.cardHeight>bounds.viewport,id+' must enclose its long content');assert.ok(bounds.innerOverflow<3,id+' must not create a second scrolling/clipped card');assert.ok(bounds.tailBottom<=bounds.cardBottom+1,id+' last row escaped its container');assert.ok(bounds.tailTop>=bounds.dialogTop,id+' last row must remain reachable');
+    await page.evaluate(id=>{const dialog=document.getElementById(id);dialog.close();dialog.querySelector('[data-layout-regression]').remove();},id);
+   }
+  }
+  const hostCookie=(await context.cookies()).find(c=>c.name==='__Host-MeyersSession');assert.ok(hostCookie.expires*1000-Date.now()<=8*60*60*1000);
+  env.HOST_PASSWORD=TEST_PASSWORD+'-replaced';await page.reload();await page.locator('#signInPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>hostAuthenticated),false);
+  // A network-failed logout cannot silently restore the cookie on refresh.
+  await guest(page);await page.route(base+'/session/auth/logout',route=>route.abort());await page.locator('#accountLogoutButton').click();await page.locator('#signInPage').waitFor({state:'visible'});await page.reload();await page.locator('#signInPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>guestName),'');
+  assert.equal(JSON.stringify(state),originalState);assert.deepEqual(errors,[]);console.log('Persistent guest/Host login, browser reopen, HttpOnly storage, QR scoping, mobile Logout placement, revocation, offline logout and long Accounts/count-list container scrolling pass with both real Workers and synthetic state.');
+ }finally{await browser.close();global.fetch=originalFetch;}
+})().catch(error=>{console.error(error);process.exitCode=1;});
