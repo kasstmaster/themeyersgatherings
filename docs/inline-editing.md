@@ -96,3 +96,5 @@ Food category order is shared across menus, RSVP dish choices, claimed/needed li
 Potluck and private preparation dishes use the same labeled Remove button and the same full-width list layout. Removing an item keeps the existing menu-specific removal behavior. Potluck up/down controls are removed; shared category sorting determines the list order.
 
 Both menu edit lists show a small divider only when the food category changes, without category titles or dividers between items in the same category.
+
+The Menu popup keeps Dinner plan, Clear a Claim and the section buttons in a shared header, in that order. They stay visible when switching Potluck, Sit Down Dinner or Quantity Types; only the section content changes.
