@@ -16,7 +16,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
     if(GatheringHistory.record(state,eventId,date))return false;
     const snapshot=state.gatheringHistory?.[eventId]?.[date];
     if(snapshot)return host||Boolean(GatheringHistory.historicalAccount(state,account,snapshot));
-    const event=state.events?.[eventId];return Boolean(event&&event.eventDate===date&&!event.cancelled&&(host||eventAllowed(account,eventId)));
+    const event=state.events?.[eventId];return Boolean(event&&(event.eventDate===date||event.mediaPreviousDates?.includes(date))&&!event.cancelled&&(host||eventAllowed(account,eventId)));
   };
   const reply = (value, status = 200) => jsonResponse(request, env, value, status);
   const fail = (error, status) => reply({ error }, status);
@@ -71,6 +71,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
     const result=await readState(env);if(result.status!==200)return fail('Unable to verify the gathering.',503);
     const state=JSON.parse(result.text),account=state.accounts?.find(a=>(a.qrToken||a.anyListCategoryId||a.name)===identity.accountId);
     if(!scopeAllowed(state,identity.eventId,identity.eventDate,account,identity.host))return fail('That gathering is not available.',403);
+    const occurrence=state.gatheringHistory?.[identity.eventId]?.[identity.eventDate]?.event || state.events?.[identity.eventId];identity.mediaDates=[identity.eventDate,occurrence?.eventDate,...(occurrence?.mediaPreviousDates || [])];
     if(identity.readOnly&&request.method!=='GET')return fail('Past gatherings are read-only.',403);
   }
   if (url.pathname.startsWith('/wedding-media/dropbox-upload/')) return await handleDropboxUpload(request, env, identity, { jsonResponse });
@@ -79,7 +80,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
     const items = []; let cursor;
     do {
       const page = await bucket.list({ prefix: identity.host ? prefix : `${prefix}${identity.owner}/`, include: ['customMetadata'], cursor });
-      for (const object of page.objects) {const meta=object.customMetadata||{};if(identity.eventId&&meta.eventId&&(meta.eventId!==identity.eventId||meta.eventDate!==identity.eventDate))continue;items.push({ ...meta, unassigned:!meta.eventId, path: object.key.slice(PREFIX.length), size: object.size });}
+      for (const object of page.objects) {const meta=object.customMetadata||{};if(identity.eventId&&meta.eventId&&(meta.eventId!==identity.eventId||!identity.mediaDates.includes(meta.eventDate)))continue;items.push({ ...meta, unassigned:!meta.eventId, path: object.key.slice(PREFIX.length), size: object.size });}
       cursor = page.truncated ? page.cursor : undefined;
     } while (cursor);
     items.sort((a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
@@ -110,7 +111,7 @@ export async function handleWeddingMedia(request, env, { response, jsonResponse,
   if (file && request.method === 'GET') {
     if (!OWNER.test(file[1]) || !ID.test(file[2]) || (!identity.host && file[1] !== identity.owner)) return fail('Not found.', 404);
     const key = `${PREFIX}${route.slice(1)}`;
-    if(identity.eventId){const meta=await bucket.head(key);if(meta?.customMetadata?.eventId&&(meta.customMetadata.eventId!==identity.eventId||meta.customMetadata.eventDate!==identity.eventDate))return fail('Not found.',404);}
+    if(identity.eventId){const meta=await bucket.head(key);if(meta?.customMetadata?.eventId&&(meta.customMetadata.eventId!==identity.eventId||!identity.mediaDates.includes(meta.customMetadata.eventDate)))return fail('Not found.',404);}
     let range;
     if (request.headers.has('Range')) {
       const metadata = await bucket.head(key);

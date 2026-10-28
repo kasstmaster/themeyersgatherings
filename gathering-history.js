@@ -34,7 +34,7 @@
     const next=structuredClone(previous);
     const days=Math.max(0,Math.round((Date.parse(previous.eventDate)-Date.parse(previous.rsvpDate))/86400000));
     next.eventDate=date;next.rsvpDate=previous.rsvpDate===''?'':new Date(Date.parse(date)-(Number.isFinite(days)?days:14)*86400000).toISOString().slice(0,10);
-    next.rsvps=[];next.hostNotes='';
+    next.rsvps=[];next.hostNotes='';next.mediaPreviousDates=[];
     next.items=(next.items || []).map(item=>({...item,claims:[],...(item.claimGroups?{claimGroups:{}}:{})}));
     for(const account of app.accounts || []) {
       account.selectedEvents={...account.selectedEvents,[id]:false};account.invitedEvents={...account.invitedEvents,[id]:false};
@@ -73,7 +73,7 @@
     }
     return changed;
   }
-  function manage(app,{action,eventId:id,date,name,confirmation},now=new Date()) {
+  function manage(app,{action,eventId:id,date,name,confirmation,information},now=new Date()) {
     if(typeof id!=='string'||!id||['__proto__','constructor','prototype'].includes(id)||!/^\d{4}-\d{2}-\d{2}$/.test(date||''))throw new Error('Choose a valid gathering occurrence.');
     cleanup(app,now);
     const current=app.events?.[id]?.eventDate===date?app.events[id]:null;
@@ -87,6 +87,28 @@
       if(entry.current?.cancelled)app.gatheringLifecycle[id][date]={status:'cancelled'};else delete app.gatheringLifecycle[id][date];return;
     }
     if(!event || entry?.status==='deleted')throw new Error('This gathering is not available.');
+    if(action==='information') {
+      if(!information||typeof information!=='object')throw new Error('Enter gathering information.');
+      const {eventDate,rsvpDate,eventTime,address}=information;
+      const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'')&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
+      if(!validDate(eventDate)||typeof rsvpDate!=='string'||rsvpDate&&!validDate(rsvpDate))throw new Error('Enter valid gathering and RSVP dates.');
+      if([eventTime,address,information.venueTime || '',information.venueAddress || ''].some(value=>typeof value!=='string'||value.length>4000))throw new Error('Enter valid time and address information.');
+      if(entry?.status==='cancelled'&&eventDate!==date)throw new Error('A cancelled date cannot be rescheduled.');
+      if(eventDate!==date&&(app.gatheringHistory?.[id]?.[eventDate]||record(app,id,eventDate)||!current&&app.events?.[id]?.eventDate===eventDate))throw new Error('That date already has an occurrence.');
+      for(const target of new Set([event,snapshot?.event].filter(Boolean))){
+        target.eventDate=eventDate;target.rsvpDate=rsvpDate;target.eventTime=eventTime.trim();
+        SharedDetails.setDetail({[id]:target},id,'homeAddress',address.trim());
+        if(id==='wedding'){
+          if(eventDate!==date||!target.churchWeekDay)target.churchWeekDay=globalThis.Invitation.formatEventDate(eventDate).replace(/\s+\d{4}$/,'');
+          if(eventDate!==date||!target.churchYear)target.churchYear=eventDate.slice(0,4);
+          const lines=address.trim().split(/\r?\n/);target.churchTime=target.eventTime;target.ceremonyTime=target.eventTime;target.churchStreet=lines[0] || '';target.churchCityStateZip=lines.slice(1).join('\n');
+          target.venueTime=String(information.venueTime || '').trim();const venue=String(information.venueAddress || '').trim().split(/\r?\n/);target.venueStreet=venue[0] || '';target.venueCityStateZip=venue.slice(1).join('\n');
+        }
+        if(eventDate!==date)target.mediaPreviousDates=[...new Set([...(target.mediaPreviousDates || []),date])];
+      }
+      if(snapshot&&eventDate!==date){snapshot.date=eventDate;app.gatheringHistory[id][eventDate]=snapshot;delete app.gatheringHistory[id][date];}
+      return;
+    }
     if(action==='gallery') {
       if(typeof name!=='string'||name.length>4000)throw new Error('Enter a valid gallery link.');
       if(name){let url;try{url=new URL(name);}catch{throw new Error('Enter a full http or https gallery link.');}if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw new Error('Enter a full http or https gallery link.');}

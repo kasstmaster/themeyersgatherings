@@ -1070,3 +1070,8 @@ dialog:modal:not(.fullscreen-dialog){bottom:var(--toolbar-clearance,0px);max-hei
 #pastGatheringDetails { margin-top:1.5rem; }
 #pastGatheringDetails .wedding-media-gallery { display:grid; gap:1rem; }
 #eventSelectionChoices button:disabled { opacity:.6; cursor:default; }
+#managedGatheringInformation { display:grid; gap:.6rem; margin:1rem 0; }
+#managedGatheringInformation label,#managedWeddingInformation label { display:grid; gap:.25rem; }
+#managedGatheringInformation textarea { min-height:0; }
+.template-editor-dialog .editor-field.text { white-space:pre-wrap; }
+#adminWeddingVariableHelp[hidden] { display:none; }

@@ -86,3 +86,16 @@ test('archive media is read-only, filters tagged years, preserves legacy uploads
 });
 
 test('deleting and restoring a cancelled occurrence retains scheduled cancellation cleanup',()=>{const app=stateFixture();GatheringHistory.manage(app,command('cancel'),date);GatheringHistory.manage(app,command('delete'),date);GatheringHistory.manage(app,command('restore'),date);assert.equal(app.events.one.cancelled,true);GatheringHistory.archiveDue(app,new Date('2026-11-26T08:00:00Z'));assert.ok(!app.events.one);assert.ok(!app.gatheringHistory.one['2026-11-25']);});
+
+test('rescheduling retains scoped photos, while a new occurrence does not inherit the old date aliases',async t=>{
+ const f=await fixture(t),guest=await f.login({role:'guest',name:'Casey Example'}),host=await f.login({role:'host',password:TEST_PASSWORD});
+ const open=async body=>{const response=await f.request('/wedding-media/session',{method:'POST',headers:{Authorization:`Bearer ${guest.token}`},body:JSON.stringify(body)});assert.equal(response.status,200);return {Authorization:`Bearer ${guest.token}`,'X-Media-Session':(await response.json()).token};};
+ const headers=await open({eventId:'one'});assert.equal((await f.request('/wedding-media/links',{method:'POST',headers,body:JSON.stringify({url:'https://example.test/old-photos'})})).status,201);
+ const changed=await f.manage(host,{action:'information',eventId:'one',date:'2026-11-25',information:{eventDate:'2026-11-26',rsvpDate:'2026-11-12',eventTime:'2 PM',address:'Main St'}});assert.equal(changed.status,200);
+ assert.equal((await (await f.request('/wedding-media/',{headers})).json()).items.length,1);
+ const updated=await open({eventId:'one'});assert.equal((await (await f.request('/wedding-media/',{headers:updated})).json()).items.length,1);
+ GatheringHistory.startNext(f.state,'one','2027-11-25',new Date('2027-01-01'));
+ const archived=await open({eventId:'one',archiveDate:'2026-11-26'});assert.equal((await (await f.request('/wedding-media/',{headers:archived})).json()).items.length,1);
+ f.state.accounts[0].selectedEvents.one=true;
+ const next=await open({eventId:'one'});assert.equal((await (await f.request('/wedding-media/',{headers:next})).json()).items.length,0);
+});

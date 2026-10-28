@@ -1675,24 +1675,14 @@ function renderInlineEditing(eventState=state) {
     {label:'Button text',value:state.mediaGalleryLabel || 'View & Download Photos & Videos',required:true},
     {label:'Dropbox folder link (add after the gathering)',type:'url',value:state.mediaGalleryUrl || ''}
   ],([label,url])=>{state.mediaGalleryLabel=label.trim();state.mediaGalleryUrl=gatheringGalleryUrl(url.trim());});
-  SiteEditing.field(document.querySelector('#customGatheringHeading'), 'text', [{label:'Gathering name',value:state.gatheringName,required:true}], ([value])=>{state.gatheringName=value.trim();});
+  SiteEditing.field(document.querySelector('#customGatheringHeading'), 'title', [], ()=>{},{contentReadOnly:true});
   const field = (selector, title, keys, types = {}) => SiteEditing.field(document.querySelector(selector), title,
     keys.map(([key, label]) => ({ label, value: key==='homeAddress' ? SharedDetails.homeAddress(state) : state[key] || '', type: types[key] || 'textarea', required: types[key] === 'date', min:key==='eventDate' && GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):undefined })),
     values => keys.forEach(([key], index) => { setGatheringDetail(key,values[index]); }));
-  SiteEditing.field(document.querySelector('#rsvpDeadline'), 'RSVP deadline', [{label:'RSVP deadline (through end of day, Pacific time; clear for no deadline)',type:'date',value:state.rsvpDate || ''}], ([value]) => { state.rsvpDate=value; });
+  SiteEditing.field(document.querySelector('#rsvpDeadline'),'RSVP deadline',[],()=>{},{contentReadOnly:true});
   field('#eventHeaderText', 'text', [['headerText', 'Header text']]);
-  field('#eventDate', 'date', [['eventDate', 'Gathering date']], { eventDate: 'date' });
-  if (GatheringFeatures.forGathering(viewedEventId).ceremonyAddresses) {
-    SiteEditing.field(document.querySelector('#eventAddress'), 'address', [{label:'Address (one per line if locations differ)',type:'textarea',value:gatheringHeaderAddress()}], ([value]) => {
-      const addresses=value.split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
-      state.churchStreet=addresses[0] || '';state.churchCityStateZip='';
-      state.venueStreet=addresses.slice(1).join(', ') || addresses[0] || '';state.venueCityStateZip='';
-    });
-  } else field('#eventAddress', 'address', [['homeAddress','Home address']]);
-  SiteEditing.field(document.querySelector('#eventPage footer address'), 'footer', [
-    {label:'Name',value:appState.sharedSite?.footerName || 'The Meyers'},
-    {label:'Home address (shared with the header and invitations)',value:SharedDetails.homeAddress(state),type:'textarea'}
-  ], ([name,address]) => {appState.sharedSite??={};appState.sharedSite.footerName=name;SharedDetails.setDetail(appState.events,viewedEventId,'homeAddress',address);});
+  for(const selector of ['#eventDate','#eventAddress'])SiteEditing.field(document.querySelector(selector),'gathering information',[],()=>{},{contentReadOnly:true});
+  SiteEditing.field(document.querySelector('#eventPage footer address'),'footer',[{label:'Name',value:appState.sharedSite?.footerName || 'The Meyers'}],([name])=>{appState.sharedSite??={};appState.sharedSite.footerName=name;});
   const features=GatheringFeatures.forGathering(viewedEventId);
   if(features.notes)field('#hostNotesContent', 'notes' , [['hostNotes','Notes']]);
   const prepare = () => { openAdmin(); document.querySelector('#adminDialog').close(); };
@@ -1770,7 +1760,7 @@ function renderRsvpInlineEditing(eventState=state) {
   if (!SiteEditing.enabled) {document.querySelector('#weddingRsvpGuests')?.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());return;}
   const header=document.querySelector('#rsvpEventHeader .header-art');
   if(header)SiteEditing.field(header,'header image',[{label:'RSVP first-page banner URL (empty to remove)',type:'url',value:state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header}],([value])=>{state.rsvpHeaderImage=value;},{key:'rsvp-first-page-banner'});
-  SiteEditing.field(document.querySelector('#rsvpFirstPageDate'),'date',[{label:'Gathering date',type:'date',value:state.eventDate,required:true}],([value])=>{setGatheringDetail('eventDate',value);});
+  SiteEditing.field(document.querySelector('#rsvpFirstPageDate'),'date',[],()=>{},{contentReadOnly:true});
   for(const [selector,value,key] of rsvpFirstPageTextFields()) {
     SiteEditing.field(document.querySelector(selector),'text',[{label:'Text (Markdown supported)',type:'textarea',value}],([text])=>{state[key]=text;},{key,placement:'text'});
   }
@@ -3149,12 +3139,6 @@ function renderQuantityUnits() {
 function renderInvitationSettings() {
   document.querySelector('#invitationAdminHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation values`;
   document.querySelector('#invitationQrMode').value = state.invitationQrMode === 'general' ? 'general' : 'account';
-  document.querySelector('#invitationEventDate').value = state.eventDate;
-  document.querySelector('#invitationEventDate').min=GatheringHistory.completed(state)?new Date(Date.parse(GatheringHistory.today())+86400000).toISOString().slice(0,10):'';
-  const invitationFallback = defaultInvitationSettings(state.eventDate);
-  document.querySelector('#invitationRsvpDate').value = state.rsvpDate || invitationFallback.rsvpDate;
-  document.querySelector('#invitationAddress1').value = state.addressLine1 || invitationFallback.addressLine1;
-  document.querySelector('#invitationAddress2').value = state.addressLine2 || invitationFallback.addressLine2;
   document.querySelector('#invitationTemplateAssignment').innerHTML = '<option value="">No template assigned</option>' + invitationTemplatesForEvent().map(template => `<option value="${escapeAttribute(template.id)}" ${template.id === state.invitationTemplateId ? 'selected' : ''}>${escapeHtml(template.name)}</option>`).join('');
 }
 function canDeleteWebsiteAccount(account) {
@@ -3312,12 +3296,6 @@ function openQrCode(account) {
 }
 document.querySelector('#downloadQrPng').addEventListener('click', () => { if ((qrAdminAccount?.generalLogin || qrAdminAccount?.qrToken)) downloadQrPng(qrAdminAccount); });
 document.querySelector('#downloadQrSvg').addEventListener('click', () => { if ((qrAdminAccount?.generalLogin || qrAdminAccount?.qrToken)) downloadQrSvg(qrAdminAccount); });
-[['invitationEventDate', 'eventDate'], ['invitationRsvpDate', 'rsvpDate'], ['invitationAddress1', 'addressLine1'], ['invitationAddress2', 'addressLine2']].forEach(([id, key]) => {
-  document.querySelector(`#${id}`).addEventListener('change', event => {
-    const value = event.target.value.trim(); if (!value || !event.target.reportValidity()) return;
-    setGatheringDetail(key,value); saveState(); renderInvitationSettings(); showToast('Invitation setting updated.');
-  });
-});
 document.querySelector('#viewGeneralLoginQr').addEventListener('click', () => openQrCode({ name: 'General Login', generalLogin: true }));
 document.querySelector('#invitationQrMode').addEventListener('change', event => {
   state.invitationQrMode = event.target.value === 'general' ? 'general' : 'account';
@@ -3443,13 +3421,14 @@ async function uploadWeddingPartyAttireImage(id, file) {
 function renderTemplateManager() {
   document.querySelector('#invitationTemplatesHeading').textContent = `${EVENT_DETAILS[viewedEventId].name} invitation templates`;
   renderInvitationSettings();
+  const sourceSelect=document.querySelector('#copyTemplateSource'),sourceValue=sourceSelect.value;sourceSelect.innerHTML='<option value="">Start a new layout</option>'+appState.invitationTemplates.filter(template=>template.eventId!==viewedEventId&&appState.events[template.eventId]).map(template=>`<option value="${escapeAttribute(template.id)}">${escapeHtml(appState.events[template.eventId].gatheringName || EVENT_DETAILS[template.eventId]?.name || template.eventId)} — ${escapeHtml(template.name)}</option>`).join('');if([...sourceSelect.options].some(option=>option.value===sourceValue))sourceSelect.value=sourceValue;
   const list = document.querySelector('#invitationTemplateList');
   const gatheringTemplates = invitationTemplatesForEvent();
   list.innerHTML = gatheringTemplates.length ? gatheringTemplates.map(template => `<article><div><strong>${escapeHtml(template.name)}</strong><span>${template.background.width} × ${template.background.height}px</span></div><div><button type="button" data-template-edit="${escapeAttribute(template.id)}">Edit</button><button type="button" data-template-duplicate="${escapeAttribute(template.id)}">Duplicate</button><button type="button" data-template-delete="${escapeAttribute(template.id)}">Delete</button></div></article>`).join('') : `<p>No invitation templates for ${escapeHtml(EVENT_DETAILS[viewedEventId].name)} yet.</p>`;
   list.querySelectorAll('[data-template-edit]').forEach(button => button.addEventListener('click', () => openTemplateEditor(button.dataset.templateEdit)));
   list.querySelectorAll('[data-template-duplicate]').forEach(button => button.addEventListener('click', () => {
     const source = gatheringTemplates.find(template => template.id === button.dataset.templateDuplicate);
-    appState.invitationTemplates.push({ ...window.Invitation.duplicateTemplate(source), eventId: viewedEventId }); saveState(); renderTemplateManager();
+    const draft={...window.Invitation.duplicateTemplate(source),eventId:viewedEventId};openTemplateEditor(draft.id,null,draft);
   }));
   list.querySelectorAll('[data-template-delete]').forEach(button => button.addEventListener('click', async () => {
     const id = button.dataset.templateDelete;
@@ -3472,11 +3451,10 @@ document.querySelector('#createTemplateButton').addEventListener('click', async 
     const template = window.Invitation.createTemplate(name, { width: 1, height: 1, contentType: file.type, url: '' });
     template.eventId = viewedEventId;
     template.background = await uploadTemplateBackground(template.id, file);
-    appState.invitationTemplates.push(template);
-    if (!invitationTemplatesForEvent().some(item => item.id === state.invitationTemplateId)) state.invitationTemplateId = template.id;
-    saveState(); renderTemplateManager();
+    const source=appState.invitationTemplates.find(item=>item.id===document.querySelector('#copyTemplateSource').value&&item.eventId!==viewedEventId);
+    if(source)template.fields=window.Invitation.copyForGathering(source,viewedEventId,name,template.background).fields;else template.fields=window.Invitation.mandatoryFields(template.background);
     document.querySelector('#newTemplateName').value = ''; document.querySelector('#newTemplateBackground').value = ''; newTemplateBackgroundFile = null; updateDropzone(document.querySelector('#newTemplateDropzone'), null);
-    openTemplateEditor(template.id, file);
+    openTemplateEditor(template.id, file, template);
   } catch (caught) { error.textContent = caught.message; }
 });
 function editorScale() {
@@ -3575,10 +3553,11 @@ async function loadTemplateBackgroundPreview(background, localFile = null) {
     error.textContent = `Unable to load the template background. ${caught.message}`;
   }
 }
-function openTemplateEditor(id, localFile = null) {
-  const template = invitationTemplatesForEvent().find(item => item.id === id); if (!template) return;
+function openTemplateEditor(id, localFile = null, draft = null) {
+  const template = draft || invitationTemplatesForEvent().find(item => item.id === id); if (!template) return;
   templateDraft = structuredClone(template); selectedTemplateFieldId = ''; pendingTemplateFieldKey = '';
   document.querySelector('#replaceTemplateBackground').value = ''; updateDropzone(document.querySelector('#replaceTemplateDropzone'), null);
+  document.querySelector('#templateEditorError').textContent='';
   document.querySelector('#templateEditorHeading').textContent = templateDraft.name;
   document.querySelector('#templateEditorName').value = templateDraft.name;
   document.querySelector('#templateFieldToolbox').innerHTML = Object.entries(window.Invitation.FIELD_DEFINITIONS).map(([key, definition]) => `<button type="button" data-field-key="${key}">${definition.label}</button>`).join('');
@@ -3602,9 +3581,9 @@ async function replaceTemplateBackground(file) {
   try {
     if (!file) return; const metadata = await backgroundMetadata(file);
     if ((metadata.width !== templateDraft.background.width || metadata.height !== templateDraft.background.height) && !confirm(`The new image is ${metadata.width} × ${metadata.height}, not ${templateDraft.background.width} × ${templateDraft.background.height}. Existing coordinates will be preserved, not stretched. Continue?`)) return;
-    const background = await uploadTemplateBackground(templateDraft.id, file); templateDraft = window.Invitation.replaceBackground(templateDraft, background).template;
+    const background = await uploadTemplateBackground(`${templateDraft.id}-${crypto.randomUUID()}`, file); templateDraft = window.Invitation.replaceBackground(templateDraft, background).template;
     await loadTemplateBackgroundPreview(background, file); renderEditorFields();
-    const index = appState.invitationTemplates.findIndex(template => template.id === templateDraft.id); appState.invitationTemplates[index] = structuredClone(templateDraft); saveState(); showToast('Background replaced and template saved.');
+    showToast('Background replaced in the draft. Save template to keep it.');
   } catch (caught) { error.textContent = caught.message; }
 }
 function updateDropzone(dropzone, file) {
@@ -3629,7 +3608,16 @@ configureDropzone(weddingPartyAttireDropzone, weddingPartyAttireFileInput, file 
   if (file) document.querySelector('#adminWeddingPartyAttireError').textContent = '';
 });
 document.querySelector('#saveTemplateButton').addEventListener('click', () => {
-  templateDraft.name = document.querySelector('#templateEditorName').value.trim() || templateDraft.name; templateDraft.updatedAt = new Date().toISOString(); const index = appState.invitationTemplates.findIndex(template => template.id === templateDraft.id); appState.invitationTemplates[index] = structuredClone(templateDraft); document.querySelector('#templateEditorHeading').textContent = templateDraft.name; saveState(); showToast('Invitation template saved.');
+  const error=document.querySelector('#templateEditorError');error.textContent='';
+  try{
+    if(!isHostView()||templateDraft?.eventId!==viewedEventId)throw new Error('Reopen this gathering’s template before saving.');
+    window.Invitation.validateTemplate(templateDraft,state);
+    templateDraft.name=document.querySelector('#templateEditorName').value.trim() || templateDraft.name;templateDraft.updatedAt=new Date().toISOString();
+    const index=appState.invitationTemplates.findIndex(template=>template.id===templateDraft.id);
+    if(index<0)appState.invitationTemplates.push(structuredClone(templateDraft));else appState.invitationTemplates[index]=structuredClone(templateDraft);
+    if(!invitationTemplatesForEvent().some(item=>item.id===state.invitationTemplateId))state.invitationTemplateId=templateDraft.id;
+    document.querySelector('#templateEditorHeading').textContent=templateDraft.name;saveState();showToast('Invitation template saved.');
+  }catch(caught){error.textContent=caught.message;}
 });
 document.querySelector('#templatePreviewAccount').addEventListener('change', renderEditorFields);
 document.querySelector('#previewEditedTemplateButton').addEventListener('click', async () => {
@@ -3878,23 +3866,6 @@ document.querySelector('#adminWeddingPartyAttireImages').addEventListener('chang
     state.weddingPartyAttireNotes ??= { ladies: '', gentlemen: '' };
     state.weddingPartyAttireNotes[section] = event.target.value.trim();
     saveState(); showToast(`Note for the ${section} updated.`);
-  });
-});
-document.querySelector('#adminEventDate').addEventListener('change', event => { if (!event.target.value || !event.target.reportValidity()) return; setGatheringDetail('eventDate',event.target.value); state.accountSelectionResetFor = ''; saveState(); showToast('Event date updated.'); });
-document.querySelector('#adminHomeAddress').addEventListener('change', event => {
-  SharedDetails.setDetail(appState.events, viewedEventId, 'homeAddress', event.target.value.trim());
-  saveState(); showToast('Home address updated.');
-});
-[
-  ['#adminChurchWeekDay', 'churchWeekDay', 'Church'], ['#adminChurchYear', 'churchYear', 'Church'],
-  ['#adminChurchTime', 'churchTime', 'Church'], ['#adminChurchStreet', 'churchStreet', 'Church'],
-  ['#adminChurchCityStateZip', 'churchCityStateZip', 'Church'], ['#adminVenueTime', 'venueTime', 'Venue'],
-  ['#adminVenueStreet', 'venueStreet', 'Venue'], ['#adminVenueCityStateZip', 'venueCityStateZip', 'Venue']
-].forEach(([selector, key, label]) => {
-  document.querySelector(selector).addEventListener('change', event => {
-    if (viewedEventId !== 'wedding') return;
-    state[key] = event.target.value.trim();
-    saveState(); showToast(`${label} address updated.`);
   });
 });
 document.querySelector('#adminRegistryUrl').addEventListener('change', event => {
@@ -4208,6 +4179,9 @@ function renderManagedGathering() {
   const value=document.querySelector('#managedGathering').value,entry=new Map(managementEntries()).get(value);
   document.querySelector('#managedGatheringName').value=entry?.name || '';
   const selectedEvent=entry?(appState.events[entry.id]?.eventDate===entry.date?appState.events[entry.id]:appState.gatheringHistory?.[entry.id]?.[entry.date]?.event):null;document.querySelector('#managedGalleryUrl').value=selectedEvent?.mediaGalleryUrl || '';
+  const values=SharedDetails.invitationValues(selectedEvent || {});
+  for(const [id,value] of [['managedEventDate',selectedEvent?.eventDate],['managedEventTime',values.eventTime],['managedRsvpDate',selectedEvent?.rsvpDate],['managedAddress',values.address],['managedVenueTime',selectedEvent?.venueTime],['managedVenueAddress',[selectedEvent?.venueStreet,selectedEvent?.venueCityStateZip].filter(Boolean).join('\n')]])document.getElementById(id).value=value || '';
+  document.querySelector('#managedWeddingInformation').hidden=entry?.id!=='wedding';document.querySelector('#managedGatheringInformation').disabled=!selectedEvent || Boolean(entry?.deletedAt) || Boolean(entry?.cancelled);
   for(const button of document.querySelectorAll('[data-manage-gathering]'))button.disabled=!entry || (button.dataset.manageGathering==='restore'?!entry.deletedAt:Boolean(entry.deletedAt)) || button.dataset.manageGathering==='cancel'&&(entry.cancelled || entry.date<GatheringHistory.today()) || button.dataset.manageGathering==='next'&&(!entry || entry.deletedAt || entry.cancelled || entry.date>=GatheringHistory.today() || appState.events[entry.id]?.eventDate!==entry.date);
   document.querySelector('#managedGatheringStatus').textContent=entry?.deletedAt?`Deleted. Recoverable until ${new Date(Date.parse(entry.deletedAt)+30*86400000).toLocaleString()}.`:entry?.cancelled?'Cancelled. Visible but disabled through the gathering date.':'';
 }
@@ -4229,12 +4203,15 @@ async function submitGatheringCommand(command) {
   const result=await StateClient.manageGathering(SHARED_STATE_URL,command);
   appState=prepareAuthorizedState(result.state);viewedEventId=appState.events[viewedEventId]?viewedEventId:Object.keys(appState.events)[0];state=appState.events[viewedEventId];
   localStateRevision++;storeLocalState(appState);StateClient.remember(appState,result.revision);
-  refreshManagementChoices();renderEventSelection();showToast('Gathering updated.');
+  render();refreshManagementChoices();
+  if(command.action==='information'){document.querySelector('#managedGathering').value=JSON.stringify([command.eventId,command.information.eventDate]);renderManagedGathering();}
+  showToast('Gathering updated.');
 }
 for(const button of document.querySelectorAll('[data-manage-gathering]'))button.addEventListener('click',async()=>{
   if(!isHostView())return;const [eventId,date]=JSON.parse(document.querySelector('#managedGathering').value || '[]');if(!eventId)return;
   if(button.dataset.manageGathering==='next'){document.querySelector('#manageGatheringsDialog').close();viewedEventId=eventId;state=appState.events[eventId];document.querySelector('#gatheringHistoryButton').click();return;}
   const command={action:button.dataset.manageGathering,eventId,date,name:document.querySelector(button.dataset.manageGathering==='gallery'?'#managedGalleryUrl':'#managedGatheringName').value};
+  if(command.action==='information')command.information={eventDate:document.querySelector('#managedEventDate').value,rsvpDate:document.querySelector('#managedRsvpDate').value,eventTime:document.querySelector('#managedEventTime').value,address:document.querySelector('#managedAddress').value,venueTime:document.querySelector('#managedVenueTime').value,venueAddress:document.querySelector('#managedVenueAddress').value};
   if(['cancel','delete'].includes(command.action)){
     pendingGatheringCommand=command;const phrase=`${command.action.toUpperCase()} ${date}`;
     document.querySelector('#gatheringActionTitle').textContent=command.action==='cancel'?'Cancel this gathering?':'Delete this gathering?';
@@ -4248,3 +4225,5 @@ document.querySelector('#confirmGatheringForm').addEventListener('submit',async 
   try{if(document.querySelector('#gatheringActionConfirmation').value!==`${pendingGatheringCommand.action.toUpperCase()} ${pendingGatheringCommand.date}`)throw new Error('Enter the exact confirmation phrase.');await submitGatheringCommand({...pendingGatheringCommand,confirmation:document.querySelector('#gatheringActionConfirmation').value});pendingGatheringCommand=null;document.querySelector('#confirmGatheringAction').close();}
   catch(error){document.querySelector('#gatheringActionError').textContent=error.message;}finally{button.disabled=false;}
 });
+
+document.querySelector('#editInvitationGatheringInfo').addEventListener('click',()=>{document.querySelector('#invitationTemplatesDialog').close();refreshManagementChoices();const select=document.querySelector('#managedGathering');select.value=JSON.stringify([viewedEventId,state.eventDate]);renderManagedGathering();showSiteDialog(document.querySelector('#manageGatheringsDialog'));});

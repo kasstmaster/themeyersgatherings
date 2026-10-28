@@ -14,6 +14,7 @@ Archives show the saved occurrence's gallery link and permitted household upload
 
 From the gatherings selection page, open **Manage Gatherings** and select the name/date:
 
+- **Save gathering information** edits the selected occurrence’s date, time, RSVP-by and address in this one area. Wedding includes separate reception time/address. A date change reschedules the occurrence and preserves RSVPs; **Start next occurrence** deliberately starts a fresh year. Rescheduled media dates remain aliases for the same occurrence, and historical snapshots are rekeyed without overwriting another date. Template fields read these canonical values.
 - **Rename** updates that occurrence's name. It does not rename a different year or change its design.
 - **Cancel gathering** opens a separate warning and requires the exact phrase `CANCEL YYYY-MM-DD`. Only an upcoming/current-day occurrence can be cancelled. Authorized guests see it marked Cancelled but cannot open it, RSVP or upload. It stays visible through the end of its Pacific gathering date, then is removed without creating an archive for that date. Other years remain.
 - **Delete gathering** opens a separate warning and requires `DELETE YYYY-MM-DD`. That occurrence disappears from guests immediately. The Host can use **Restore** for 30 days from the server-recorded deletion time. After the cutoff the recovery record, event and matching history are removed from live website state.
