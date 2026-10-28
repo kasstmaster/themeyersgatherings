@@ -1571,17 +1571,15 @@ function render() {
   document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${formatEditableText(SharedDetails.homeAddress(state),{inline:true})}`;
   document.body.classList.toggle('host-rsvp-view',hostView);
   document.querySelector('#hostRsvpCounters').hidden=!hostView;
-  document.querySelector('#remainingSummary').hidden=!features.menu;
-  document.querySelector('.summary-strip').style.setProperty('--summary-columns',features.menu?'5':'4');
+  document.querySelector('.summary-strip').style.setProperty('--summary-columns','4');
   document.querySelector('.summary-strip').hidden = !hostView;
   renderGatheringPages(features,hostView);
   renderWeddingGathering(hostView);
   renderGatheringMedia(hostView);
   const neededRows=state.items.flatMap(item=>{const remaining=Math.max(0,item.needed-item.claims.length);return remaining?[renderDish(item,remaining)]:[];});
-  const claimedRows=state.items.flatMap(item=>[...new Set(item.claims)].map(claimant=>renderDish(item,item.claims.filter(name=>name===claimant).length,claimant)));
-  document.querySelector('#menuGrid').innerHTML=[['Still needed','needed',neededRows],['Claimed','claimed',claimedRows]].map(([title,key,rows])=>`<section data-dish-group="${key}"><h3 class="dish-list-group-title">${title}</h3>${rows.length?rows.join(''):'<p class="guest-empty">No dishes in this group.</p>'}</section>`).join('');
+  document.querySelector('#menuGrid').innerHTML=neededRows.length?neededRows.join(''):'<p class="guest-empty">All dishes have been claimed.</p>';
   const needed = state.items.reduce((sum, item) => sum + (item.optional ? 0 : Math.max(0, item.needed - item.claims.length)), 0);
-  document.querySelector('#dishListTotals').textContent=`${needed} still needed · ${state.items.reduce((sum,item)=>sum+item.claims.length,0)} claimed`;
+  document.querySelector('#dishListTotals').textContent=`${needed} still needed`;
   const guests = GuestPlanning.guestResponses(state.rsvps).reduce((sum, rsvp) => sum + rsvp.adults + rsvp.children, 0);
   const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
   const summaryCounts=attendanceSummaryCounts();
@@ -1591,7 +1589,6 @@ function render() {
     document.getElementById(id).parentElement.setAttribute('aria-label',`${key==='noResponse'?'No Response':key}: ${count.adults} adults, ${count.children} children`);
   }
   const invitedAdults=invitedAccounts.reduce((sum,account)=>sum+invitedAdultCount(account),0);
-  document.querySelector('#remainingCount').textContent = needed;
   const guestListButton = document.querySelector('#guestListButton');
   guestListButton.disabled = !hostView;
   guestListButton.title = hostView ? 'View guest names and RSVP details' : 'Guest details are private to the host';
@@ -1876,9 +1873,9 @@ function renderEventDock() {
     return `<button type="button" data-switch-event="${id}" aria-label="${escapeHtml(accessibleLabel)}" ${id === viewedEventId ? 'aria-current="page"' : ''}><span>${escapeHtml(name)}</span></button>`;
   }).join('');
 }
-function renderDish(item,quantity=Math.max(0,item.needed-item.claims.length),claimant=null) {
+function renderDish(item,quantity=Math.max(0,item.needed-item.claims.length),claimant=null,showClaimant=true) {
   const family=claimant===null?'':claimant===HOST_DISPLAY_NAME?'Host':[...new Set(accountSignInNames(claimant).map(name=>firstAccountLastName(name)))].join(' / ');
-  return `<div class="guest-entry invited-entry dish dish-list-row" data-dish-id="${escapeAttribute(item.id)}"><strong class="dish-title">${escapeHtml(item.name)}</strong> <span class="dish-status">(${quantity} of ${item.needed})${claimant===null?' still needed':''}</span>${claimant===null?'':` <span class="dish-claimants">${escapeHtml(family)}</span>`}</div>`;
+  return `<div class="guest-entry invited-entry dish dish-list-row" data-dish-id="${escapeAttribute(item.id)}"><strong class="dish-title">${escapeHtml(item.name)}</strong> <span class="dish-status">(${quantity} of ${item.needed})${claimant===null?' still needed':''}</span>${claimant===null||!showClaimant?'':` <span class="dish-claimants">${escapeHtml(family)}</span>`}</div>`;
 }
 function claimItem(id) {
   ensureAccount(() => {
@@ -2710,11 +2707,28 @@ document.querySelector('#noResponseButton').addEventListener('click', () => {
   renderNoResponseAccounts();
   showSiteDialog(document.querySelector('#noResponseDialog'));
 });
+function dishClaimHousehold(claimant){return findAccount(claimant)?.name||claimant;}
+function householdDishClaims(household){
+  const key=normalizeAccountName(household);
+  return state.items.flatMap(item=>{const quantity=item.claims.filter(claimant=>normalizeAccountName(dishClaimHousehold(claimant))===key).length;return quantity?[{item,quantity}]:[];});
+}
+function attendingDishRows(household,shown){
+  const key=normalizeAccountName(household);if(shown.has(key)||!GatheringFeatures.forGathering(viewedEventId).menu)return '';shown.add(key);
+  const rows=householdDishClaims(household).map(({item,quantity})=>renderDish(item,quantity,household,false)).join('');
+  return rows?`<div class="guest-menu-summary attendance-dishes">${rows}</div>`:'';
+}
+function otherDishContributions(shown){
+  if(!GatheringFeatures.forGathering(viewedEventId).menu)return '';
+  const households=[...new Map(state.items.flatMap(item=>item.claims.map(dishClaimHousehold)).map(household=>[normalizeAccountName(household),household])).values()].filter(household=>!shown.has(normalizeAccountName(household)));
+  const rows=households.flatMap(household=>householdDishClaims(household).map(({item,quantity})=>renderDish(item,quantity,household))).join('');
+  return rows?`<h3 class="dish-list-group-title">Other contributions</h3>${rows}`:'';
+}
 function renderGuestAttendance() {
   if (!hostAuthenticated) return;
   const totals = GuestPlanning.rsvpTotals(state.rsvps, GatheringFeatures.rsvp(viewedEventId).meals?GuestPlanning.weddingMealOptions(state):[]);
   const meals = [...totals.meals,...(totals.noMeal ? [['No meal',totals.noMeal]] : []),...(totals.unselected ? [['No meal selected',totals.unselected]] : [])];
   document.querySelector('#guestListMealTotals').innerHTML=GatheringFeatures.rsvp(viewedEventId).meals?`<dl class="meal-totals">${meals.map(([label,count])=>`<div><dt>${escapeHtml(label)}</dt><dd>${count}</dd></div>`).join('')}</dl>`:'';
+  const shownDishes=new Set();
   const groupedRsvps=invitationAttendanceRsvps();
   const { attending: attendingRsvps } = GuestPlanning.attendanceGroups(groupedRsvps);
   renderPeopleSection('guestList','guestListTotals',attendanceSummaryCounts().attending,attendingRsvps.length ? hostFirstRsvps(attendingRsvps).map(rsvp => {
@@ -2733,8 +2747,9 @@ function renderGuestAttendance() {
       const selection=selections.find(selection=>normalizeAccountName(selectionName(selection))===normalizeAccountName(name));
       return `<div>${escapeHtml(name)}${wedding?`: ${escapeHtml(selection?.meal==='none'?'No meal':selection?.meal || 'No meal selected')}`:''}${selection?.dietaryRestrictions?`<small>Dietary restrictions / allergies: ${escapeHtml(selection.dietaryRestrictions)}</small>`:''}</div>`;
     }).join('');
-    return attendanceEntryHtml(rsvp.invitationTitle,rsvp.adults,rsvp.children,rows);
+    return attendanceEntryHtml(rsvp.invitationTitle,rsvp.adults,rsvp.children,rows+attendingDishRows(rsvp.name,shownDishes));
   }).join('') : '<p class="guest-empty">No guests are attending yet.</p>');
+  document.querySelector('#otherDishContributions').innerHTML=otherDishContributions(shownDishes);
   const declined=groupedRsvps.map(rsvp=>({rsvp,people:GuestPlanning.attendanceGroups([rsvp]).notAttending})).filter(group=>group.people.length);
   const childHouseholds=new Set();
   renderPeopleSection('notAttendingList','notAttendingTotal',attendanceSummaryCounts().notAttending,declined.length ? declined.map(({rsvp,people})=>{
@@ -2746,11 +2761,6 @@ function renderGuestAttendance() {
     return attendanceEntryHtml(rsvp.invitationTitle,people.length,children,rows);
   }).join('') : '<p class="guest-empty">No declined RSVPs yet.</p>');
 }
-document.querySelector('#remainingSummary').addEventListener('click',()=>{
-  if(!isHostView() || !GatheringFeatures.forGathering(viewedEventId).menu)return;
-  commitAllPendingEditorInputs();showSiteDialog(document.querySelector('#dishListDialog'));
-});
-document.querySelector('#closeDishListButton').addEventListener('click',()=>document.querySelector('#dishListDialog').close());
 document.querySelector('#guestListButton').addEventListener('click', () => {
   if (!isHostView()) return;
   renderGuestAttendance();

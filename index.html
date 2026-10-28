@@ -218,7 +218,6 @@
         <button class="summary-item" id="notAttendingButton" type="button"><strong id="notAttendingCount">0/0</strong><span>Not attending</span></button>
         <button class="summary-item" id="noResponseButton" type="button"><strong id="noResponseCount">0/0</strong><span>No Response</span></button>
         <button class="summary-item" id="invitedListButton" type="button"><strong id="invitedCount">0/0</strong><span>Invited</span></button>
-        <button id="remainingSummary" class="summary-item" type="button" aria-haspopup="dialog" aria-controls="dishListDialog"><strong id="remainingCount">0</strong><span>Dishes needed</span></button>
       </section>
           <div id="rsvpWeddingPages" hidden>
       <nav id="gatheringTabs" class="wedding-party-tabs" aria-label="Gathering pages" role="tablist" hidden>
@@ -429,18 +428,6 @@
       </form>
     </dialog>
 
-    <dialog id="dishListDialog" class="count-list-dialog" aria-labelledby="dishListHeading">
-      <form method="dialog" class="modal-card dish-list-card">
-        <button id="closeDishListButton" type="button" class="modal-close" aria-label="Close dishes">×</button>
-        <p class="section-kicker">Our family table</p>
-        <section id="gatheringMenuSection" class="menu-section" aria-label="All dishes">
-          <div class="menu-heading"><h2 id="dishListHeading">Dishes needed</h2></div>
-          <div class="dish-list-summary"><p id="dishListTotals" class="invited-people-total"></p><button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button></div>
-          <div id="menuGrid" class="guest-list"></div>
-        </section>
-      </form>
-    </dialog>
-
     <dialog id="guestListDialog" class="count-list-dialog">
       <form method="dialog" class="modal-card">
         <button class="modal-close" value="cancel" aria-label="Close">×</button>
@@ -448,6 +435,12 @@
         <p id="guestListTotals" class="invited-people-total"></p>
         <div id="guestListMealTotals"></div>
         <div id="guestList" class="guest-list"></div>
+        <div id="otherDishContributions"></div>
+        <section id="gatheringMenuSection" class="menu-section" aria-label="Dishes still needed">
+          <div class="menu-heading"><h3 id="dishListHeading" class="dish-list-group-title">Dishes still needed</h3></div>
+          <div class="dish-list-summary"><p id="dishListTotals" class="invited-people-total"></p><button class="copy-menu-button" id="copyMenuButton" type="button">Copy menu</button></div>
+          <div id="menuGrid" class="guest-list"></div>
+        </section>
       </form>
     </dialog>
 
