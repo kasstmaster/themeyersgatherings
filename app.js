@@ -1875,7 +1875,8 @@ function renderEventDock() {
 }
 function renderDish(item,quantity=Math.max(0,item.needed-item.claims.length),claimant=null,showClaimant=true) {
   const family=claimant===null?'':claimant===HOST_DISPLAY_NAME?'Host':[...new Set(accountSignInNames(claimant).map(name=>firstAccountLastName(name)))].join(' / ');
-  return `<div class="guest-entry invited-entry dish dish-list-row" data-dish-id="${escapeAttribute(item.id)}"><strong class="dish-title">${escapeHtml(item.name)}</strong> <span class="dish-status">(${quantity} of ${item.needed})${claimant===null?' still needed':''}</span>${claimant===null||!showClaimant?'':` <span class="dish-claimants">${escapeHtml(family)}</span>`}</div>`;
+  const rowClass=claimant===null?'guest-entry invited-entry dish dish-list-row':'attendance-dish dish-list-row';
+  return `<div class="${rowClass}" data-dish-id="${escapeAttribute(item.id)}"><strong class="dish-title">${escapeHtml(item.name)}</strong> <span class="dish-status">(${quantity} of ${item.needed})${claimant===null?' still needed':''}</span>${claimant===null||!showClaimant?'':` <span class="dish-claimants">${escapeHtml(family)}</span>`}</div>`;
 }
 function claimItem(id) {
   ensureAccount(() => {

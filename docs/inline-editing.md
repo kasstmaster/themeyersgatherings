@@ -68,3 +68,7 @@ Accounts and count-list popups scroll as one dialog; the card background and bor
 Guest name entry skips Suffix after Last Name unless the server recognizes a matching person with a suffix. The suffix step remains for those names; guest permissions and invitation scope are unchanged.
 
 Popup family headings display uppercase. Accounts aligns Inv # and +1 with the family heading using layout CSS; label elements, selector paths and typography remain intact.
+
+Claimed dishes in Attending have no per-item dividers. Separation between family entries and the still-needed dish rows remains.
+
+Dishes still needed uses the same count-dialog title formatting as Attending.
