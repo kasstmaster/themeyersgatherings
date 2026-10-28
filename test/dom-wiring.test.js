@@ -119,7 +119,7 @@ test('shared saves are serialized and unfinished saves survive a page reload', a
 
   assert.match(javascript, /SHARED_SAVE_PENDING_KEY/);
   assert.match(javascript, /localStorage\.setItem\(SHARED_SAVE_PENDING_KEY, 'true'\)/);
-  assert.match(javascript, /if \(!sharedSavePending \|\| sharedSaveInProgress\) return/);
+  assert.match(javascript, /if \(!sharedSavePending \|\| sharedSaveInProgress/);
   assert.match(javascript, /localStorage\.removeItem\(SHARED_SAVE_PENDING_KEY\)/);
   assert.match(javascript, /if \(sharedSavePending\) queueSharedStateSave\(\)/);
 });

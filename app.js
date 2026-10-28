@@ -2,9 +2,9 @@ const STORAGE_KEY = 'meyers-thanksgiving-v2';
 const BACKUP_STORAGE_KEY = `${STORAGE_KEY}-backup`;
 const SHARED_SAVE_PENDING_KEY = `${STORAGE_KEY}-shared-save-pending`;
 const LEGACY_STORAGE_KEYS = ['meyers-thanksgiving-v1'];
+let privateDraftPreservationFailed=false;
 const SHARED_STATE_URL = document.querySelector('meta[name="shared-state-url"]')?.content.trim() || '';
 const REPOSITORY_STATE_URL = document.querySelector('meta[name="repository-state-url"]')?.content.trim() || 'data/app-state.json';
-const HOST_PASSWORD = '0810'; // Change this before publishing your site.
 const HOST_DISPLAY_NAME = 'The Host';
 const DEFAULT_EVENT_DATE = '2026-11-28';
 const DEFAULT_CHRISTMAS_DATE = '2026-12-25';
@@ -211,7 +211,6 @@ let hostReturnSession = null;
 let pendingAccountAction = null;
 let pendingClaimItemId = null;
 let hostAuthenticated = false;
-let hostCredential = '';
 let qrScopedAccount = null;
 let qrAdminAccount = null;
 let invitationPreviewAccount = null;
@@ -390,7 +389,18 @@ function normalizeState(saved) {
     return upgraded;
   } catch { return initialAppState(); }
 }
+function quarantinePendingDraft(){
+ try{
+  if(SHARED_STATE_URL){
+   const first=!localStorage.getItem(STORAGE_KEY+'-auth-v1-seen');
+   if(first||localStorage.getItem(SHARED_SAVE_PENDING_KEY)==='true'){const previous=localStorage.getItem(STORAGE_KEY);if(previous)localStorage.setItem(STORAGE_KEY+'-private-draft-'+Date.now(),previous);}
+   localStorage.setItem(STORAGE_KEY+'-auth-v1-seen','true');
+  }
+  return true;
+ }catch{return false;}
+}
 function loadState() {
+  if(SHARED_STATE_URL){privateDraftPreservationFailed=!quarantinePendingDraft();return initialAppState();}
   // New saves are deliberate, including deletions and starting a fresh year.
   // A richer backup must not resurrect the old guest list or the prior occurrence.
   try {
@@ -417,6 +427,7 @@ function stateRecoveryScore(candidate) {
   return accounts * 10000 + templates * 1000 + rsvps * 100 + claims;
 }
 function storeLocalState(nextState) {
+  if(privateDraftPreservationFailed){privateDraftPreservationFailed=!quarantinePendingDraft();if(privateDraftPreservationFailed)return false;}
   try {
     const serialized = JSON.stringify(nextState);
     const current = localStorage.getItem(STORAGE_KEY);
@@ -431,7 +442,8 @@ function storeLocalState(nextState) {
 function captureGatheringHistory() {
   const before=JSON.stringify(appState.gatheringHistory || {});
   try {
-    const stored=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    // Authorized server state is canonical. Never import another browser session's cached private history.
+    const stored=!SHARED_STATE_URL?JSON.parse(localStorage.getItem(STORAGE_KEY)):null;
     if(stored?.events){GatheringHistory.archiveDue(stored);GatheringHistory.preserve(appState,stored);}
   } catch { /* The live state still supplies a snapshot if there is no local backup. */ }
   GatheringHistory.archiveDue(appState);
@@ -468,6 +480,10 @@ function fetchWithTimeout(url, { timeoutMs = NETWORK_TIMEOUT_MS, ...options } = 
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
+function retainPrivateDraft(){
+ try{localStorage.setItem(STORAGE_KEY+'-private-draft-'+Date.now(),JSON.stringify({savedAt:new Date().toISOString(),owner:hostAuthenticated?'host':guestName,state:appState}));return true;}
+ catch{showToast('This browser could not retain the draft. Keep this page open and free storage before loading newer information.');return false;}
+}
 function renderSyncStatus() {
   const status = document.querySelector('#syncStatus');
   if (!status) return;
@@ -478,18 +494,32 @@ function renderSyncStatus() {
     return;
   }
   status.hidden = !sharedSaveError;
-  status.className = `sync-status${sharedSaveError ? ' error' : ''}`;
+  if(sharedSaveError){(activeHostDialog()||document.body).append(status);status.classList.add('shared-sync-warning');}
+  status.className = `sync-status${sharedSaveError ? ' error shared-sync-warning' : ''}`;
   status.innerHTML = sharedSaveError
-    ? '<strong>Cross-device sync needs attention</strong>Your latest change is waiting to sync. Automatic retries are running.'
+    ? (StateClient.conflicted?'<strong>Newer information is available</strong>Your local draft is retained. It has not replaced newer saved information.':StateClient.expired?'<strong>Please sign in again</strong>Your local draft is retained.':'<strong>Cross-device sync needs attention</strong>Your latest change is waiting to sync. Automatic retries are running.')
     : '';
   if(sharedSaveError){
     const detail=document.createElement('p');detail.textContent=sharedSaveErrorDetail;status.append(detail);
+    const download=document.createElement('button');download.type='button';download.textContent='Download my local draft';download.addEventListener('click',()=>downloadBlob(new Blob([JSON.stringify(appState)],{type:'application/json'}),'meyers-private-unsynced-draft.json'));status.append(download);
     const retry=document.createElement('button');retry.type='button';retry.textContent='Retry now';
-    retry.disabled=sharedSaveInProgress;retry.addEventListener('click',()=>{clearTimeout(sharedSaveTimer);saveSharedState();});status.append(retry);
+    retry.textContent=StateClient.expired?'Sign in again':StateClient.conflicted?'Load latest information':'Retry now';
+    retry.disabled=sharedSaveInProgress;retry.addEventListener('click',async()=>{
+      try{
+      if(StateClient.expired){
+        if(!retainPrivateDraft())return;await StateClient.signOut(SHARED_STATE_URL);finishGatheringBuilderSession();hostAuthenticated=false;guestName='';signedInPersonName='';appState=initialAppState();viewedEventId=appState.activeEventId;state=appState.events[viewedEventId];sharedSavePending=false;showSignInPage();render();return;
+      }
+      if(StateClient.conflicted){
+        if(!confirm('Your local draft is retained in this browser. Load the newer saved information? Your unsynced edits will not be applied automatically.'))return;
+        if(!retainPrivateDraft())return;sharedSavePending=false;
+        const result=await StateClient.read(SHARED_STATE_URL);if(result){applyAuthorizedSession(result);render();}
+      }else{clearTimeout(sharedSaveTimer);saveSharedState();}
+      }catch(error){sharedSaveError=true;sharedSavePending=true;sharedSaveErrorDetail=error.message;renderSyncStatus();}
+    });status.append(retry);
   }
 }
 function queueSharedStateSave() {
-  if (!SHARED_STATE_URL) return;
+  if (!SHARED_STATE_URL || !StateClient.authenticated) return;
   sharedSavePending = true;
   try { localStorage.setItem(SHARED_SAVE_PENDING_KEY, 'true'); } catch { /* The state backup already reports storage failures. */ }
   sharedSaveError = false;
@@ -502,22 +532,12 @@ async function saveSharedState() {
   // Timers can fire while a slower request is still running. Keeping PUTs
   // strictly sequential prevents an older request from finishing last and
   // replacing a newer edit on the shared copy.
-  if (!sharedSavePending || sharedSaveInProgress) return;
+  if (!sharedSavePending || sharedSaveInProgress || !StateClient.authenticated || (StateClient.conflicted || StateClient.expired)) return;
   sharedSavePending = false;
   sharedSaveInProgress = true;
   let saveFailed = false;
   try {
-    const response = await fetchWithTimeout(SHARED_STATE_URL, {
-      method: 'PUT',
-      timeoutMs: 30000,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(appState)
-    });
-    if (!response.ok) {
-      const detail=(await response.text()).trim();
-      const safeDetail=detail.length<=200 && !/[<>]/.test(detail)?detail:'';
-      throw new Error(`Shared save failed (HTTP ${response.status}).${safeDetail?' '+safeDetail:''}`);
-    }
+    await StateClient.save(SHARED_STATE_URL,appState);
     sharedSaveError = false;
     sharedSaveRetryCount = 0;
     if (!sharedSavePending) {
@@ -535,7 +555,7 @@ async function saveSharedState() {
     renderSyncStatus();
     // A change may have been made while the request was running. Failed saves
     // retry with a bounded backoff so a temporary outage cannot strand edits.
-    if (sharedSavePending) {
+    if (sharedSavePending && !StateClient.conflicted && !StateClient.expired) {
       clearTimeout(sharedSaveTimer);
       const delay = saveFailed
         ? SHARED_SAVE_RETRY_DELAYS[Math.min(sharedSaveRetryCount++, SHARED_SAVE_RETRY_DELAYS.length - 1)]
@@ -553,6 +573,7 @@ function hasActiveEditor() {
   return SiteEditing.enabled || Boolean(document.querySelector('dialog[open]')) || Boolean(document.activeElement?.closest('#eventPage input,#eventPage textarea,#eventPage select,.inline-editor'));
 }
 async function loadSharedState({ allowActiveEditor = false } = {}) {
+  if(SHARED_STATE_URL && !StateClient.authenticated)return;
   const stateUrl = SHARED_STATE_URL || REPOSITORY_STATE_URL;
   if (!stateUrl || (!SHARED_STATE_URL && (localStateRevision > 0 || appState.savedAt))) return;
   // Never replace a local edit with a stale response while that edit is
@@ -561,13 +582,9 @@ async function loadSharedState({ allowActiveEditor = false } = {}) {
   const attempt=++sharedLoadNumber;
   const revisionBeforeLoad = localStateRevision;
   try {
-    const response = await fetchWithTimeout(stateUrl, { cache: 'no-store' });
-    if (response.status === 404 || response.status === 204) {
-      if (SHARED_STATE_URL) queueSharedStateSave();
-      return;
-    }
-    if (!response.ok) throw new Error(`Shared state load failed (${response.status})`);
-    const saved = normalizeState(await response.json());
+    let saved,packet;
+    if(SHARED_STATE_URL){const result=await StateClient.read(SHARED_STATE_URL);if(!result)return;packet=result;saved=prepareAuthorizedState(result.state);}
+    else{const response=await fetchWithTimeout(stateUrl,{cache:'no-store'});if(!response.ok)return;saved=normalizeState(await response.json());}
     if(allowActiveEditor)commitAllPendingEditorInputs();
     if (attempt!==sharedLoadNumber || localStateRevision !== revisionBeforeLoad || sharedSavePending || sharedSaveInProgress || (!allowActiveEditor && hasActiveEditor())) return;
     if (stateContentSignature(saved) === stateContentSignature(normalizeState(structuredClone(appState)))) return true;
@@ -578,6 +595,7 @@ async function loadSharedState({ allowActiveEditor = false } = {}) {
     if (!SHARED_STATE_URL && stateRecoveryScore(appState) > stateRecoveryScore(saved)) return;
     finishGatheringBuilderSession();
     appState = saved;
+    if(SHARED_STATE_URL)StateClient.remember(appState,packet?.revision);
     viewedEventId = GuestPlanning.retainedEvent(viewedEventId, appState.events, appState.activeEventId);
     state = appState.events[viewedEventId];
     storeLocalState(appState);
@@ -586,6 +604,7 @@ async function loadSharedState({ allowActiveEditor = false } = {}) {
   } catch (error) {
     console.error(error);
     showToast('Could not refresh sign-ups. Showing the last data saved on this device.');
+    if(StateClient.expired){sharedSaveError=true;sharedSaveErrorDetail='Please sign in again. Your local draft has been retained.';renderSyncStatus();}
   }
 }
 function escapeHtml(value) { const el = document.createElement('div'); el.textContent = value; return el.innerHTML; }
@@ -1459,7 +1478,7 @@ function renderGatheringMedia(hostView) {
   galleryLink.setAttribute('aria-disabled',String(!galleryUrl));
   document.querySelector('#sharedGalleryPending').hidden=Boolean(galleryUrl);
   document.querySelector('#weddingMediaIntro').textContent=wedding?'Share your wedding photos and videos directly with us':'Share your gathering photos and videos directly with us';
-  if(showing)WeddingMedia.show({base:SHARED_STATE_URL,eventId:viewedEventId,host:hostView,password:hostView?hostCredential:'',name:signedInPersonName || guestName,account:guestName,preview:false});
+  if(showing)WeddingMedia.show({base:SHARED_STATE_URL,eventId:viewedEventId,host:hostView,name:signedInPersonName || guestName,account:guestName,preview:false});
 }
 function renderGatheringPages(features,hostView) {
   if(['details','menu'].includes(selectedGatheringTab))selectedGatheringTab=null;
@@ -1885,15 +1904,33 @@ function openCustomItem(category) {
   });
 }
 
-document.querySelector('#passwordForm').addEventListener('submit', event => {
+let hostLoginMode=false;
+function prepareAuthorizedState(saved){
+ const defaults=normalizeState(structuredClone(saved));
+ return {...defaults,...saved,accounts:saved.accounts,events:Object.fromEntries(Object.entries(saved.events).map(([id,event])=>[id,{...defaults.events[id],...event,...(event.weddingPartyMembers?{weddingPartyMembers:WeddingParty.normalizeMembers(event.weddingPartyMembers)}:{})}]))};
+}
+function applyAuthorizedSession(result){
+ finishGatheringBuilderSession();appState=prepareAuthorizedState(result.state);
+ viewedEventId=appState.events[appState.activeEventId]?appState.activeEventId:Object.keys(appState.events)[0];state=appState.events[viewedEventId];
+ sharedSavePending=false;sharedSaveError=false;StateClient.remember(appState,result.revision);
+ qrScopedAccount=isAccountQrRoute()?appState.accounts[0]:null;
+}
+document.querySelector('#hostSignInToggle').addEventListener('click',()=>{
+ hostLoginMode=!hostLoginMode;document.querySelector('#hostPasswordField').hidden=!hostLoginMode;
+ document.querySelector('#guestSignInFields').hidden=hostLoginMode;
+ document.querySelector('#guestSignInFields').querySelectorAll('input').forEach(input=>input.disabled=hostLoginMode);
+ document.querySelector('#signInSubmit').textContent=hostLoginMode?'Sign in':'Get Started';document.querySelector('#hostSignInToggle').textContent=hostLoginMode?'Guest sign-in':'Host sign-in';
+});
+document.querySelector('#passwordForm').addEventListener('submit', async event => {
   event.preventDefault();
   const firstNameInput = document.querySelector('#accountFirstName');
   const firstName = firstNameInput.value.trim();
-  if (!isAccountQrRoute() && firstName === HOST_PASSWORD) {
-    const password = firstName;
+  if(hostLoginMode){
+    try{const result=await StateClient.signIn(SHARED_STATE_URL,{role:'host',password:document.querySelector('#hostPassword').value});applyAuthorizedSession(result);}
+    catch(error){document.querySelector('#accountPasswordError').textContent=error.message;return;}
     hostAuthenticated = true;hostReturnSession=null;hostWeddingPartyViewName='';
     selectedGatheringTab = null;
-    hostCredential = password;
+    document.querySelector('#hostPassword').value='';
     guestName = HOST_DISPLAY_NAME;
     signedInPersonName = '';
     if (viewedEventId === 'wedding') {
@@ -1922,9 +1959,12 @@ document.querySelector('#passwordForm').addEventListener('submit', event => {
   const suffix = document.querySelector('#accountSuffix').value.trim();
   const accountName = [firstName, lastName, suffix].filter(Boolean).join(' ');
   if (!firstName || !lastName) { document.querySelector('#accountPasswordError').textContent = 'Enter your first and last name, plus your suffix if you have one.'; return; }
-  const account = accountForSignIn(accountName);
-  if (!account) { document.querySelector('#accountPasswordError').textContent = 'That name and suffix are not recognized.'; return; }
-  if (!availableEventIds(account.name).length) { document.querySelector('#accountPasswordError').textContent = 'Sign-in access has not been enabled for your account yet.'; return; }
+  let account;
+  if(SHARED_STATE_URL){
+    try{const result=await StateClient.signIn(SHARED_STATE_URL,{role:'guest',name:accountName,qrToken:accountQrTokenFromLocation()||undefined});applyAuthorizedSession(result);account=appState.accounts[0];}
+    catch(error){document.querySelector('#accountPasswordError').textContent=error.message;return;}
+  }else account=accountForSignIn(accountName);
+  if(!account){document.querySelector('#accountPasswordError').textContent='Sign-in details were not recognized.';return;}
   selectedGatheringTab = null;
   guestName = account.name;
   signedInPersonName = accountPersonName(accountName, account) || accountName;
@@ -3194,7 +3234,7 @@ async function backgroundMetadata(file) {
 async function uploadTemplateBackground(templateId, file) {
   if (!SHARED_STATE_URL) throw new Error('Configure the shared-state Worker before uploading invitation artwork.');
   const metadata = await backgroundMetadata(file);
-  const response = await fetchWithTimeout(templateAssetUrl(templateId), { method: 'PUT', headers: { 'Content-Type': file.type, 'X-Host-Password': hostCredential }, body: file });
+  const response = await fetchWithTimeout(templateAssetUrl(templateId), { method: 'PUT', headers: StateClient.headers({'Content-Type':file.type}), body: file });
   if (!response.ok) {
     const details = await response.text();
     if (response.status === 401) throw new Error('The Worker host password does not match this website. Update the HOST_PASSWORD Worker secret.');
@@ -3209,7 +3249,7 @@ async function uploadTemplateBackground(templateId, file) {
 async function uploadWeddingPartyAttireImage(id, file) {
   if (!SHARED_STATE_URL) throw new Error('Configure the shared-state Worker before uploading attire images.');
   const metadata = await backgroundMetadata(file);
-  const response = await fetchWithTimeout(weddingPartyAttireAssetUrl(id), { method: 'PUT', headers: { 'Content-Type': file.type, 'X-Host-Password': hostCredential }, body: file });
+  const response = await fetchWithTimeout(weddingPartyAttireAssetUrl(id), { method: 'PUT', headers: StateClient.headers({'Content-Type':file.type}), body: file });
   if (!response.ok) {
     const details = await response.text();
     if (response.status === 401) throw new Error('The Worker host password does not match this website.');
@@ -3236,7 +3276,7 @@ function renderTemplateManager() {
     appState.invitationTemplates = appState.invitationTemplates.filter(template => template.id !== id);
     Object.values(appState.events).forEach(event => { if (event.invitationTemplateId === id) event.invitationTemplateId = ''; });
     const backgroundStillUsed = appState.invitationTemplates.some(template => template.background.url === deleted?.background.url);
-    if (SHARED_STATE_URL && deleted && !backgroundStillUsed) fetch(deleted.background.url, { method: 'DELETE', headers: { 'X-Host-Password': hostCredential } }).catch(console.error);
+    if (SHARED_STATE_URL && deleted && !backgroundStillUsed) fetch(deleted.background.url, { method: 'DELETE', headers: StateClient.headers() }).catch(console.error);
     saveState(); renderTemplateManager();
   }));
 }
@@ -3512,7 +3552,7 @@ document.querySelector('#syncAnyListButton').addEventListener('click', async eve
     while(sharedSaveInProgress) await wait(50);
     if(sharedSavePending) await saveSharedState();
     if(sharedSavePending) throw new Error('Pending account changes could not be saved.');
-    const headers = { 'X-Host-Password': hostCredential };
+    const headers = StateClient.headers();
     const started = await fetch(`${SHARED_STATE_URL.replace(/\/$/, '')}/anylist-sync`, { method: 'POST', headers });
     if (!started.ok) {
       const details = await started.json().catch(() => ({}));
@@ -3636,7 +3676,7 @@ document.querySelector('#adminWeddingPartyAttireImages').addEventListener('click
   if (!image) return;
   button.disabled = true;
   try {
-    const response = await fetchWithTimeout(weddingPartyAttireAssetUrl(image.id), { method: 'DELETE', headers: { 'X-Host-Password': hostCredential } });
+    const response = await fetchWithTimeout(weddingPartyAttireAssetUrl(image.id), { method: 'DELETE', headers: StateClient.headers() });
     if (!response.ok && response.status !== 404) throw new Error(`Image removal failed (${response.status}).`);
     state.weddingPartyAttireImages[section].splice(index, 1);
     saveState(); renderWeddingPartyAttireAdmin(); showToast('Private attire image removed.');
@@ -3731,7 +3771,7 @@ document.querySelector('#adminUploadAttireVideo').addEventListener('click', asyn
       const request = new XMLHttpRequest();
       request.open('PUT', AttireVideos.assetUrl(SHARED_STATE_URL, video.id));
       request.setRequestHeader('Content-Type', video.contentType);
-      request.setRequestHeader('X-Host-Password', hostCredential);
+      for(const [key,value] of Object.entries(StateClient.headers()))request.setRequestHeader(key,value);
       request.timeout = 300000;
       request.upload.onprogress = event => { if (event.lengthComputable) progress.textContent = `Uploading video… ${Math.round(event.loaded / event.total * 100)}%`; };
       request.onload = () => request.status >= 200 && request.status < 300 ? resolve() : reject(new Error([404, 405].includes(request.status) ? 'Deploy the latest Cloudflare Worker to enable video uploads.' : request.responseText || `Video upload failed (${request.status}).`));
@@ -3758,7 +3798,7 @@ document.querySelector('#adminAttireVideos').addEventListener('click', async eve
   button.disabled = true;
   try {
     if (typeof video === 'object') {
-      const result = await fetchWithTimeout(AttireVideos.assetUrl(SHARED_STATE_URL, video.id), { method: 'DELETE', headers: { 'X-Host-Password': hostCredential } });
+      const result = await fetchWithTimeout(AttireVideos.assetUrl(SHARED_STATE_URL, video.id), { method: 'DELETE', headers: StateClient.headers() });
       if (!result.ok && result.status !== 404) throw new Error('Could not remove the uploaded video. Please try again.');
     }
     const currentWedding = appState.events.wedding;
@@ -3790,7 +3830,7 @@ async function startApp() {
   // retain the richest recoverable browser copy instead of replacing it.
   await loadSharedState();
   const qrToken = accountQrTokenFromLocation();
-  if (isAccountQrRoute()) {
+  if (isAccountQrRoute() && !SHARED_STATE_URL) {
     qrScopedAccount = appState.accounts.find(account => account.qrToken === qrToken) || null;
     if (!qrScopedAccount) {
       document.querySelector('#accountLinkError').hidden = false;

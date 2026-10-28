@@ -1026,3 +1026,5 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 
 /* Empty shared text slots remain selectable for hosts without adding saved content. */
 .site-edit-mode [data-editor-empty]{min-height:1.5em;outline:1px dashed rgba(200,45,45,.55);outline-offset:2px}
+
+.sync-status.shared-sync-warning{position:fixed;z-index:240;left:12px;right:12px;bottom:90px;max-width:800px;max-height:35vh;overflow:auto;margin:0 auto;pointer-events:auto}

@@ -4,28 +4,87 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Preflight is read-only; deploy requires main and owner approval
+        type: choice
+        options: [preflight, deploy]
+        default: preflight
+        required: true
 
 permissions:
   contents: read
+  pages: read
 
 concurrency:
   group: deploy-shared-state-worker
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
+  preflight:
+    name: Read-only deployment readiness (no deployment)
+    if: github.event_name == 'workflow_dispatch' && inputs.mode != 'deploy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the reviewed branch and owner configuration
+        env:
+          RELEASE_REF: ${{ github.ref }}
+          SECURITY_ROLLOUT_APPROVED: ${{ vars.SECURITY_ROLLOUT_APPROVED }}
+        run: |
+          if { [ "$RELEASE_REF" != "refs/heads/codex/secure-state-and-concurrency" ] && [ "$RELEASE_REF" != "refs/heads/main" ]; } || [ "$SECURITY_ROLLOUT_APPROVED" != "state-auth-v1" ]; then
+            echo "::error::Read-only preflight requires the reviewed branch and the owner's configured approval variable."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify backup currency, Cloudflare credentials and Pages without writes
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_DOMAIN_API_TOKEN: ${{ secrets.CLOUDFLARE_DOMAIN_API_TOKEN }}
+          CLOUDFLARE_DOMAIN_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_DOMAIN_ACCOUNT_ID }}
+          GH_TOKEN: ${{ github.token }}
+          STATE_REPOSITORY_TOKEN: ${{ secrets.STATE_REPOSITORY_TOKEN }}
+        run: node scripts/release-preflight.js
+      - name: Record read-only result
+        run: echo "Read-only preflight passed. No deployment was performed. This checks credential read access and configuration metadata, not future write success or encrypted secret values." >> "$GITHUB_STEP_SUMMARY"
   deploy:
     name: Validate and deploy gatherings
+    if: github.event_name == 'push' || inputs.mode == 'deploy'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      RELEASE_COMMIT: ${{ github.sha }}
     steps:
+      - name: Require owner-approved state security rollout
+        env:
+          SECURITY_ROLLOUT_APPROVED: ${{ vars.SECURITY_ROLLOUT_APPROVED }}
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          if [ "$SECURITY_ROLLOUT_APPROVED" != "state-auth-v1" ] || [ "$RELEASE_REF" != "refs/heads/main" ]; then
+            echo "::error::Deployment is blocked. Verify the private backup/restore drill, configure the approved server secrets, obtain owner approval, then set repository variable SECURITY_ROLLOUT_APPROVED=state-auth-v1."
+            exit 1
+          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Verify domain routing and existing service compatibility
-        run: node --test --test-isolation=none test/domain-migration.test.js test/site-icon.test.js test/state-worker.test.js test/wedding-media.test.js test/dropbox.test.js test/qr-access.test.js test/general-login-qr.test.js
+        run: node --test --test-isolation=none test/domain-migration.test.js test/site-icon.test.js test/state-worker.test.js test/wedding-media.test.js test/dropbox.test.js test/qr-access.test.js test/general-login-qr.test.js test/state-security.test.js test/state-client.test.js test/private-state-backup.test.js test/cloud-private-backup.test.js test/shared-sync.test.js test/static-privacy.test.js test/release-safety.test.js
       - name: Build gathering site from the shared frontend source
         run: node scripts/build-domain-site.js .domain-site
+      - name: Preflight both Cloudflare targets and redirect-only Pages publication
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_DOMAIN_API_TOKEN: ${{ secrets.CLOUDFLARE_DOMAIN_API_TOKEN }}
+          CLOUDFLARE_DOMAIN_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_DOMAIN_ACCOUNT_ID }}
+          GH_TOKEN: ${{ github.token }}
+          STATE_REPOSITORY_TOKEN: ${{ secrets.STATE_REPOSITORY_TOKEN }}
+        run: node scripts/release-preflight.js
       - name: Deploy existing service in its original Cloudflare account
         timeout-minutes: 5
         uses: cloudflare/wrangler-action@v3
@@ -34,19 +93,11 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: github-state-worker
-          command: deploy
+          command: deploy --var RELEASE_COMMIT:${{ github.sha }}
 
-      - name: Check credentials for the account containing ilymmd.com
-        env:
-          CLOUDFLARE_DOMAIN_API_TOKEN: ${{ secrets.CLOUDFLARE_DOMAIN_API_TOKEN }}
-          CLOUDFLARE_DOMAIN_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_DOMAIN_ACCOUNT_ID }}
-        run: |
-          for secret_name in CLOUDFLARE_DOMAIN_API_TOKEN CLOUDFLARE_DOMAIN_ACCOUNT_ID; do
-            if [ -z "${!secret_name}" ]; then
-              echo "::error::Add repository secret ${secret_name} from the Cloudflare account containing ilymmd.com. Keep the existing service-account secrets unchanged."
-              exit 1
-            fi
-          done
+      - name: Verify secure service protocol and reviewed commit before frontend publication
+        run: node scripts/release-preflight.js service
+
       - name: Deploy website routes in the ilymmd.com Cloudflare account
         timeout-minutes: 5
         uses: cloudflare/wrangler-action@v3
@@ -59,3 +110,9 @@ jobs:
       - name: Verify both public websites and legacy invitation address
         timeout-minutes: 5
         run: node scripts/verify-live-domain.js
+      - name: Verify matching frontend release
+        run: node scripts/release-preflight.js frontend
+      - name: Record partial-release recovery instructions
+        if: failure() || cancelled()
+        run: |
+          echo "::error::Release incomplete. Keep coordinated maintenance active. Inspect actual active versions before retrying. Forward-fix the matching frontend if the secure Worker is live. Do not restore the unauthenticated Worker or overwrite live state from a backup."

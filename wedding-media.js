@@ -11,14 +11,14 @@
     available(ctx);
     const cached = sessions.get(key(ctx));
     if (cached && cached.expires > Date.now() + 10000) return cached.token;
-    const response = await fetch(`${ctx.base}/wedding-media/session`, { method:'POST', headers:{ 'Content-Type':'application/json', ...(ctx.host ? {'X-Host-Password':ctx.password} : {}) }, body:JSON.stringify({name:ctx.name,eventId:ctx.eventId}), cache:'no-store' });
+    const response = await fetch(`${ctx.base}/wedding-media/session`, { method:'POST', headers:StateClient.headers({'Content-Type':'application/json'}), body:JSON.stringify({name:ctx.name,eventId:ctx.eventId,preview:ctx.host===false&&StateClient.role==='host'}), cache:'no-store' });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || 'Upload service unavailable. Deploy the latest Worker before using uploads.');
     sessions.set(key(ctx), result); return result.token;
   }
   async function api(ctx, path, options = {}) {
     const token = await session(ctx);
-    const response = await fetch(`${ctx.base}/wedding-media${path}`, { ...options, headers:{ ...options.headers, Authorization:`Bearer ${token}` }, cache:'no-store' });
+    const response = await fetch(`${ctx.base}/wedding-media${path}`, { ...options, headers:{ ...options.headers, ...StateClient.headers(), 'X-Media-Session':token }, cache:'no-store' });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) { if (response.status === 401) sessions.delete(key(ctx)); throw new Error(result.error || `Upload service failed (${response.status}).`); }
     return result;

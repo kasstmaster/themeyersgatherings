@@ -1,6 +1,6 @@
 # Editing the website
 
-Sign in as host and choose **Edit** after Print Page in the fixed main toolbar. Host options use icons with accessible names/tooltips. Edit changes to **Done** (checkmark) while editing. The dark sidebar stays on the left and reserves page width; only its formatting area scrolls. Ordinary guests cannot open it. An authenticated host previewing another account retains host controls and a top-right Leave account action.
+In the approval-gated A1/A2 implementation, hosts use Host sign-in with a server-checked password; guest name/QR entry has no new code/email step. Sign in as host and choose **Edit** after Print Page in the fixed main toolbar. Host options use icons with accessible names/tooltips. Edit changes to **Done** (checkmark) while editing. The dark sidebar stays on the left and reserves page width; only its formatting area scrolls. Ordinary guests cannot open it. An authenticated host previewing another account retains host controls and a top-right Leave account action.
 
 ## Selection and saving
 
@@ -10,7 +10,7 @@ Sign in as host and choose **Edit** after Print Page in the fixed main toolbar. 
 - **Use Button** follows a selected button without leaving edit mode. **Container** selects its parent, including a page-navigation group where a custom page can be added.
 - Text autosaves after an 800 ms pause; many appearance controls save immediately. Changing selection, finishing editing or switching gatherings flushes pending text. Done is in the main toolbar, not the sidebar.
 - The sidebar has no general Save button. Structured fields can still show **Apply**. The Accounts dialog has its own **Sync / Save** footer; other management forms retain their own submit controls.
-- Undo/Redo retain up to 50 changes in the current editing session. A new change clears redo. They do not replace durable backup/history, and cannot resolve arbitrary cross-device conflicts.
+- Undo/Redo retain up to 50 changes in the current editing session. A new change clears redo. They do not replace durable backup/history. Cross-device revision conflicts pause writes, preserve a private local draft and offer Download my local draft / Load latest information; they do not auto-overwrite newer state. [Security rollout and recovery](state-security-rollout.md).
 
 The fixed sidebar rows are Undo / Redo, divider, Menu / Templates, Accounts / History, divider, ↑ Gap / → Gap, then Use Button / Container. Contextual movement actions appear when supported. Format opens on selection and shows only relevant controls.
 

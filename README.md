@@ -11,6 +11,8 @@ The primary website is **https://themeyers.ilymmd.com/**. GitHub Pages remains a
 - [Builder implementation and persistence](docs/gathering-builder.md)
 - [Invitations and QR codes](docs/invitations.md)
 - [Hosting and domain configuration](docs/custom-domain.md)
+- [A1/A2 security implementation and approval-gated rollout](docs/state-security-rollout.md)
+- [Private backup and no-write recovery check through GitHub Actions](docs/cloud-private-backup.md)
 - [Current documentation and architecture audit](docs/documentation-architecture-audit.md)
 - [Permanent development and documentation rules](AGENTS.md)
 
@@ -34,13 +36,13 @@ Formatting groups apply to matching elements **within the selected gathering**, 
 
 The sidebar provides **Menu / Templates** and **Accounts / History**. Menu edits potluck categories, items, quantities and units, or Wedding meal choices. The host **Dishes needed** counter opens the dish overview; there is no separate host Menu page. Still-needed rows precede claimed rows. The compact **Copy menu** action exports one list with claimed/needed status and no claimant names. In RSVP, fully claimed dishes remain in their original categories, checked and unavailable to a different household.
 
-Other host counts open Invited, Attending, Not attending, and No Response lists. Counts display adults/children; list totals include households. These details and claimant names are host-only in the interface. This UI restriction is not equivalent to server-side protection of the shared JSON; see [access limitations](#access-and-data-protection-limitations).
+Other host counts open Invited, Attending, Not attending, and No Response lists. Counts display adults/children; list totals include households. These details and claimant names are host-only. The A1/A2 implementation adds server-side role views and permitted mutation checks; guest name-only identification still does not prove identity. See [access limitations](#access-and-data-protection-limitations).
 
 ## Accounts, children, and invitations
 
 Accounts are website-wide household records. **Give Access**, **Invite**, invitation quantities/group membership and guest allowances are keyed by gathering. Invite controls invitation output and invited totals; it does not grant sign-in access. A small person icon beside a name opens that household's session for host preview. The authenticated host retains host controls; **Leave account** restores their session. The Accounts footer has **Sync** and **Save** side by side.
 
-Each adult responds separately. Child selection uses saved household children, **No Children**, and **Another child** for additional names; unchecking an added name removes it. Guest choices and named guest allowances depend on gathering capabilities. Wedding meal cards use the attendee and child data; meal audiences distinguish adults, children, or both. Deadline handling permits attendance updates while restricting later changes to named guests/meals where configured. It is no longer a children-only numeric counter.
+Guests keep the same name-entry and existing QR flow; no household code or email step is added. Host authentication uses a separate Host sign-in button and a server-checked password, not a frontend constant. Each adult responds separately. Child selection uses saved household children, **No Children**, and **Another child** for additional names; unchecking an added name removes it. Guest choices and named guest allowances depend on gathering capabilities. Wedding meal cards use the attendee and child data; meal audiences distinguish adults, children, or both. Deadline handling permits attendance updates while restricting later changes to named guests/meals where configured. It is no longer a children-only numeric counter.
 
 Templates is a visual invitation editor. A template belongs to its gathering, with original-image coordinates, text fields and QR placement. Artwork is PNG/JPEG/WebP runtime data in R2, not committed invitation images. Invitation downloads use account quantities and invitation groups, producing uniquely named PNGs/ZIPs. Account-specific QR output requires an existing `qrToken`; general-login QR output does not. Email invitation output uses the browser's file-sharing API when supported, with download as the fallback. [Invitation details](docs/invitations.md).
 
@@ -113,13 +115,15 @@ It creates synthetic gatherings, edits content/styles/custom pages, switches bef
 
 `appState.events[gatheringId]` stores gathering data and designs. `gatheringHome` stores chooser formatting; `accounts`, `invitationTemplates` and `sharedSite` contain intentionally website-wide records, with event ownership on templates and gathering-keyed account settings. Browser storage retains a primary copy, a backup and pending-save state. Normalization upgrades older records; see the audit for a destructive Christmas menu-version exception.
 
-`index.html` supplies `shared-state-url` and `repository-state-url`. Startup attempts the configured shared service before sign-in. When there is no shared URL, the repository-state URL is a fallback seed, not an unconditional authoritative replacement for a richer/recent local copy. New `savedAt` local copies take precedence over older recovery candidates. Changes queue local persistence and a complete-state upload; failures retain pending state and retry, including on focus/visibility return. Polling occurs every 30 seconds when safe; active editors, dialogs and pending saves defer replacement.
+`index.html` supplies the service URL. On the secure implementation, startup shows sign-in without downloading the application state. Server sign-in returns an authorized view and a revision. Hosts receive their administrative state; guests receive permitted gatherings and their household's data, without other account/QR records or private planning pages. Browser sessions are opaque, memory-only and expire; no production password or token value is compiled into the frontend.
 
-No service URL means edits remain browser-local. A private state repository alone does not make the public frontend's copy or service endpoint private. The service currently accepts complete-state writes; it is not a per-field merge API.
+Edits are changes against an acknowledged baseline, sent with `If-Match`. The service uses the exact GitHub blob SHA for its conditional write. Stale snapshots/write races return 409 and are not blindly retried. The shared warning retains the local draft, offers a private download and an explicit load-latest action. Old pending browser copies are quarantined for recovery instead of automatically replaying them after sign-in. Background reads do not advance the write revision until their data is adopted. See the [protocol and rollout guide](docs/state-security-rollout.md).
+
+The repository fallback is a public seed, not the live private database. The production build refuses fallback account/QR/RSVP/claim data. Without a service URL, local synthetic inspection is possible, but live authorization/sync requires the service. Private live state remains in its existing repository/schema; no bulk data rewrite or QR rotation is part of this change.
 
 | Location | Non-secret configuration | Secret names only |
 | --- | --- | --- |
-| `github-state-worker/wrangler.toml` | `GITHUB_REPOSITORY`, `GITHUB_BRANCH`, `GITHUB_STATE_PATH`, `ALLOWED_ORIGIN`, `ALLOWED_ORIGINS`, `GITHUB_WORKFLOW_REPOSITORY`, `GITHUB_WORKFLOW_BRANCH`; R2 binding and hourly cron | `GITHUB_TOKEN`, `HOST_PASSWORD`; optional `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET` |
+| `github-state-worker/wrangler.toml` | `GITHUB_REPOSITORY`, `GITHUB_BRANCH`, `GITHUB_STATE_PATH`, `ALLOWED_ORIGIN`, `ALLOWED_ORIGINS`, `GITHUB_WORKFLOW_REPOSITORY`, `GITHUB_WORKFLOW_BRANCH`; R2 binding and hourly cron | `GITHUB_TOKEN`, approved replacement `HOST_PASSWORD`, `AUTH_MIGRATION_READY`; optional `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET` |
 | Workflow execution repository | AnyList state/list variables above | `ANYLIST_EMAIL`, `ANYLIST_PASSWORD`, `STATE_REPOSITORY_TOKEN` |
 | Website repository Actions | Deploy both Cloudflare accounts | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_DOMAIN_API_TOKEN`, `CLOUDFLARE_DOMAIN_ACCOUNT_ID` |
 | `index.html` | Shared-service and fallback URLs | No secrets belong here |
@@ -134,13 +138,13 @@ npx wrangler@4.151.1 secret put GITHUB_TOKEN
 npx wrangler@4.151.1 secret put HOST_PASSWORD
 ```
 
-Enter values only at the secure prompt. The current frontend uses a source-visible host-password comparison; do not add actual credential values to documentation or treat this as secure server authentication. Redesigning that mechanism is a separate audit finding.
+Enter values only at the secure prompt. The implementation removes the source-visible host password. Activation requires owner approval, a verified private backup/restore drill, manual replacement of that exposed password, and `AUTH_MIGRATION_READY=verified-backup-v1`. No new guest secret is required. Do not merge/deploy the security branch before that approval; follow the rollout guide.
 
 ## Hosting and release
 
 The application is served by `domain-site-worker/`; `github-state-worker/` handles state, uploads, AnyList dispatch, Dropbox and history. They deploy to separate Cloudflare accounts. GitHub Pages remains enabled for legacy links, whose query/fragment is preserved when redirecting to the canonical subdomain.
 
-`.github/workflows/deploy-state-worker.yml` runs on **every main push** or manual dispatch. In one sequential job it runs compatibility tests, builds the frontend, deploys the existing service, checks domain-account credentials, deploys the website routes, and verifies public website/assets/legacy routing. Both credential pairs must remain in their original account roles. It does not install secrets or create the R2 bucket. [Complete domain instructions](docs/custom-domain.md).
+`.github/workflows/deploy-state-worker.yml` starts on **every main push** or manual dispatch. The security release blocks its first step until the owner-approved repository variable `SECURITY_ROLLOUT_APPROVED=state-auth-v1` is configured after backup/readiness verification. In one sequential job it runs compatibility tests, builds the frontend, preflights both Cloudflare targets and redirect-only Pages publication, deploys the service with the reviewed commit, verifies its protocol/readiness, then deploys and verifies the matching frontend. Active releases are not cancelled by newer runs. Manual dispatch defaults to read-only preflight; use the reviewed security branch for pre-merge checks, never the still-old main workflow. The preflight also rejects a backup whose source blob no longer matches live state. Before merging, Pages must move from application publication on main to the dedicated redirect-only branch; see the [coordinated release procedure](docs/security-release-procedure.md). Both credential pairs must remain in their original account roles. It does not install secrets or create the R2 bucket. [Complete domain instructions](docs/custom-domain.md).
 
 `.github/workflows/validate-gathering-builder.yml` runs the Node tests and production build on pull requests and main pushes. `sync-anylist.yml` is a separately dispatched job. Do not confuse those workflows with the GitHub Pages build/deploy or assume a frontend publication deploys the service by itself.
 
@@ -148,6 +152,8 @@ The installable app has its own manifest, rose icons and offline reconnect scree
 
 ## Access and data-protection limitations
 
-UI role restrictions, account QR lookup and media-session checks exist, but they do not establish a secure authentication boundary for the whole application. The shared-state GET/PUT handlers do not require host/guest credentials; CORS is not authentication. Frontend source includes the host comparison value, and shared JSON/static fallback assets must not be assumed confidential. Whole-state writes can overwrite newer data from another device. These findings, media scope and remaining editing/data-migration problems are recorded with evidence and follow-up tasks in the [audit report](docs/documentation-architecture-audit.md). No application fixes are included in this documentation update.
+The A1/A2 implementation is prepared for review; production activation is approval-gated. Server sessions and projections prevent anonymous full-state reads/writes and guest administrative actions. Revision-checked changes prevent stale devices from silently replacing newer information. Existing QR tokens/URLs and guest name entry remain unchanged.
+
+Name-only identification is intentionally not strong authentication: someone who knows a valid name may impersonate that guest. It does not grant host access. Existing public-by-URL artwork/attire assets and account-wide media scope (A3) are not redesigned here; A4–A6 also remain open. See the [audit](docs/documentation-architecture-audit.md) and [manual configuration, backup, rollout and remaining risks](docs/state-security-rollout.md). No production credentials, backup or deployment have been changed by the implementation task.
 
 Future changes must follow [AGENTS.md](AGENTS.md), update relevant documentation, and state documentation status in their final task summary.

@@ -5,7 +5,7 @@
   const type=file=>file.type||types[file.name.split('.').pop().toLowerCase()]||'';
   const key=ctx=>JSON.stringify([ctx.base,ctx.account,ctx.name,ctx.host,ctx.preview,ctx.eventId]);
   async function hostRequest(ctx,path,method='GET') {
-    const response=await fetch(`${ctx.base}/dropbox/${path}`,{method,headers:{'X-Host-Password':ctx.password},cache:'no-store'});
+    const response=await fetch(`${ctx.base}/dropbox/${path}`,{method,headers:StateClient.headers(),cache:'no-store'});
     const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'Unable to connect to Dropbox. Deploy the updated Worker and check its settings.');return result;
   }
   function updateControls() {

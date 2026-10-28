@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker from '../github-state-worker/worker.js';
+import actualWorker from '../github-state-worker/worker.js';
+import {sessionWorker} from './security-fixture.js';
+const worker=sessionWorker(actualWorker);
 
 function uploadRequest(body, headers = {}) {
   return new Request('https://state.example/invitation-backgrounds/template-123', {
@@ -117,5 +119,5 @@ test('video uploads report missing storage and reject disallowed origins', async
  assert.equal((await worker.fetch(videoRequest('PUT', new Uint8Array([1]), { Origin: 'https://wrong.example' }), { ALLOWED_ORIGIN: 'https://site.example' })).status, 403);
  const preflight = await worker.fetch(new Request('https://state.example/attire-videos/video-123', { method: 'OPTIONS' }), {});
  assert.equal(preflight.status, 204);
- assert.match(preflight.headers.get('Access-Control-Allow-Headers'), /X-Host-Password/);
+ assert.match(preflight.headers.get('Access-Control-Allow-Headers'), /Authorization/);
 });

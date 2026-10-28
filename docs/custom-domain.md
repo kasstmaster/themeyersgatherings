@@ -14,7 +14,7 @@ secrets in the original account. It does not attempt to register ilymmd.com rout
 The website Worker needs only static assets and the domain routes; it receives no
 service-account credentials, storage bindings, or Dropbox secrets.
 
-Both deployments run sequentially in one job in `.github/workflows/deploy-state-worker.yml` on every main push or manual dispatch. The service deploys before the website. The frontend is built once into `.domain-site` in that job and deployed from its asset binding, without maintaining another editable source copy. This workflow does not create the R2 bucket or install runtime secrets; provision those in the service account first.
+After the security rollout approval gate passes, both deployments run sequentially in one job in `.github/workflows/deploy-state-worker.yml` on every main push or manual dispatch. Both Cloudflare account targets and dedicated redirect-only Pages publication are preflighted before deployment. The service deploys before the website; a matching-commit protocol readiness check must pass before the frontend can publish. Active releases are serialized without cancellation by newer runs. The frontend is built once into `.domain-site` in that job and deployed from its asset binding, without maintaining another editable source copy. This workflow does not create the R2 bucket or install runtime secrets; provision those in the service account first.
 
 ## Required one-time GitHub setup
 
@@ -56,9 +56,7 @@ are bundled with the app. No external image host is needed at runtime. The gener
 offline reconnect page is the only cached page; live pages, RSVP data, account
 information and uploads are never cached by the app's service worker.
 
-The original GitHub Pages address stays active for printed invitations. Its early
-entry script redirects to the new app with the original query and account token
-fragment intact. Existing account QR tokens are never changed. Future general and
+The original GitHub Pages address stays active for printed invitations. Before merging the security release, move Pages from `main` to the dedicated `gathering-redirect` branch using the [coordinated release procedure](security-release-procedure.md). Its redirect-only artifact opens the new app with the original query and account token fragment intact. Existing account QR tokens are never changed. Future general and
 individual QR prints use the subdomain, even when printed from an old frontend.
 There is no date-based expiration. Existing browser-local preferences are not
 transferred between origins; shared accounts and RSVPs stay in the same backend.
@@ -102,6 +100,12 @@ preservation and sign-in without contacting or changing either live website.
 
 After adding the new secrets and merging, the workflow deploys both Workers and
 runs a read-only live check of the main site, gathering site/assets, original QR
-address, redirect, and CORS. The host-authorized setup can also be deployed with workflow_dispatch against the review branch.
+address, redirect, and CORS. Manual workflow_dispatch releases must target `main` and require the same approval and preflight checks. Review-branch deployment is blocked.
 Then verify an existing printed invitation and normal
 RSVP/upload interactions. Keep the old GitHub Pages address active permanently.
+
+## Security release hold
+
+The A1/A2 branch changes the state protocol and host authentication. Do not merge or manually deploy it just because ordinary CI passes: main pushes deploy automatically. First follow the [private backup, host-secret replacement, readiness setting and owner approval plan](state-security-rollout.md). The new first-step gate requires repository variable `SECURITY_ROLLOUT_APPROVED=state-auth-v1` after owner approval; leave it unset beforehand. Existing QR redirects and token values are preserved; old open frontend tabs need a reload at cutover. No guest access code/email provider or new DNS/R2 binding is required.
+
+Release sequencing, the separate Pages publication change, minimum preflight read permissions, same-commit readiness checks and partial-failure recovery are documented in [the security release procedure](security-release-procedure.md). No checklist or approval variable makes the release atomic or automatically pauses writers.

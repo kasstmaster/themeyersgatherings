@@ -30,6 +30,10 @@ Actual code determines what the documentation describes today. [AGENTS.md](../AG
 
 README and the editing, architecture, builder, invitations and hosting guides now describe these verified behaviors. Permanent documentation-maintenance instructions were retained and strengthened in AGENTS.
 
+## A1/A2 follow-up implementation status
+
+A separate implementation now prepares server-side host sessions, limited name-matched guest views, permitted mutation checks and revision-checked saves. The owner explicitly retained existing name-only guest entry/QR links; guest identity proof remains weak. [The security rollout guide](state-security-rollout.md) records tested changes, the required private backup/restore drill, manual host-secret replacement and approval gate. **Do not mark production A1/A2 remediated until the owner approves deployment and verifies cutover.** A3–A6 remain open and are not being repaired by that work. Findings below describe the audited pre-change baseline.
+
 ## Architecture assessment
 
 | Requirement | Assessment |
@@ -44,7 +48,7 @@ README and the editing, architecture, builder, invitations and hosting guides no
 
 ### A1 — High: shared-state authorization and source-visible host credential
 
-Evidence: [`github-state-worker/worker.js`](../github-state-worker/worker.js#L278) accepts state GET/PUT without `requireHost` or a guest session check. [`originAllowed`](../github-state-worker/worker.js#L11) accepts requests with no Origin. The host comparison value is in shipped `app.js` (value deliberately not reproduced). Specialized AnyList/upload/OAuth routes do have their own checks; that does not protect the state endpoint.
+Evidence: [`github-state-worker/worker.js`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/github-state-worker/worker.js#L278) accepts state GET/PUT without `requireHost` or a guest session check. [`originAllowed`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/github-state-worker/worker.js#L11) accepts requests with no Origin. The host comparison value is in shipped `app.js` (value deliberately not reproduced). Specialized AnyList/upload/OAuth routes do have their own checks; that does not protect the state endpoint.
 
 An in-memory Worker/GitHub reproduction confirmed credential-free GET and PUT succeed. UI privacy and a private backing repository therefore do not establish confidentiality/integrity of the complete application state, including gathering settings and account records. CORS is not authentication.
 
@@ -52,7 +56,7 @@ Separate task: design server-enforced identity/authorization and appropriately s
 
 ### A2 — High: stale whole-state writes can overwrite another gathering
 
-Evidence: [`saveSharedState`](../app.js#L501) sends the whole `appState`; [`writeState`](../github-state-worker/worker.js#L201) reads GitHub's latest SHA but builds current data from the submitted snapshot. It preserves history, not a merge of independently changed live event fields. Retrying a 409 still reuses that snapshot.
+Evidence: [`saveSharedState`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/app.js#L501) sends the whole `appState`; [`writeState`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/github-state-worker/worker.js#L201) reads GitHub's latest SHA but builds current data from the submitted snapshot. It preserves history, not a merge of independently changed live event fields. Retrying a 409 still reuses that snapshot.
 
 Local mock reproduction: the service contained a newer title for gathering One. An older client snapshot changed only gathering Two but retained One's old title. The accepted PUT restored One's old title. This can affect settings, responses and accounts, not only titles. Single-browser switch isolation tests do not cover this multi-device failure mode.
 
@@ -60,7 +64,7 @@ Separate task: introduce an explicit version/conflict or scoped-update protocol 
 
 ### A3 — High: media ownership is not keyed by gathering
 
-Evidence: [`github-state-worker/wedding-media.js`](../github-state-worker/wedding-media.js#L27) checks access to the requested event, then creates an identity from household/category/QR/name without retaining the event in session ownership. The [`uploads` prefix/list](../github-state-worker/wedding-media.js#L52) is account-wide; Dropbox paths in `github-state-worker/dropbox.js` also omit gathering IDs.
+Evidence: [`github-state-worker/wedding-media.js`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/github-state-worker/wedding-media.js#L27) checks access to the requested event, then creates an identity from household/category/QR/name without retaining the event in session ownership. The [`uploads` prefix/list](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/github-state-worker/wedding-media.js#L52) is account-wide; Dropbox paths in `github-state-worker/dropbox.js` also omit gathering IDs.
 
 An in-memory R2 reproduction created sessions for the same synthetic account in two gatherings, submitted a sharing link through One and retrieved it through Two. The frontend's event-keyed cache/session request does not change that server scope. The single Dropbox connection is intentionally shared; per-event published folder URLs are correctly stored on the event, but they do not isolate uploaded receipts/files/links.
 
@@ -68,7 +72,7 @@ Separate task: decide and implement event-keyed gallery/session ownership with a
 
 ### A4 — High for legacy data: Christmas menu-version normalization replaces definitions
 
-Evidence: [`normalizeState`](../app.js#L260) replaces Christmas `items` with `christmasItems()` whenever `menuVersion` differs, retaining claims only for matching IDs. User-added/renamed/adjusted definitions can be discarded. This is holiday-specific migration behavior outside the common capability model.
+Evidence: [`normalizeState`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/app.js#L260) replaces Christmas `items` with `christmasItems()` whenever `menuVersion` differs, retaining claims only for matching IDs. User-added/renamed/adjusted definitions can be discarded. This is holiday-specific migration behavior outside the common capability model.
 
 A local synthetic-state reproduction set a custom Christmas item and removed the version marker; normalization removed that item. It does not mean every current save loses data: the path is conditional on an absent/older/different marker.
 
@@ -76,7 +80,7 @@ Separate task: design a non-destructive schema upgrade that preserves authored i
 
 ### A5 — Medium: Wedding Party heading edits carry across subpages
 
-Evidence: [`renderWeddingPartyPageHeading`](../app.js#L1275) reuses `#weddingPartyHeading`/`#weddingPartyKicker` for role/member, Responsibilities, Details, Timeline, experience and custom headings. [`staticTextElements`](../inline-editing.js#L60) excludes those nodes from ordinary page-bound fields; generic selection can still register them through [`ElementEditor`](../element-editor.js#L224). [`storeText`/`applyText`](../element-appearance.js#L178) use the same element selector for a content override.
+Evidence: [`renderWeddingPartyPageHeading`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/app.js#L1275) reuses `#weddingPartyHeading`/`#weddingPartyKicker` for role/member, Responsibilities, Details, Timeline, experience and custom headings. [`staticTextElements`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/inline-editing.js#L60) excludes those nodes from ordinary page-bound fields; generic selection can still register them through [`ElementEditor`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/element-editor.js#L224). [`storeText`/`applyText`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/element-appearance.js#L178) use the same element selector for a content override.
 
 A local Chromium reproduction edited the Responsibilities heading, flushed the edit, then opened the shared Details subpage. The edited heading followed it instead of that subpage's generated heading. Common title-formatting groups are not the problem: the **words** are stored against a reused node instead of a page/member identity. This violates independent page content.
 
@@ -84,7 +88,7 @@ Separate task: bind editable heading content to its owning page/member, or delib
 
 ### A6 — Medium maintenance gap: optional browser tests still describe removed UI
 
-Examples: [`scripts/verify-rsvp-flow.cjs`](../scripts/verify-rsvp-flow.cjs#L22) clicks removed `#rsvpButton`; [`scripts/verify-page-actions.cjs`](../scripts/verify-page-actions.cjs#L47) expects page-local `[data-page-actions]` even though `PageActions.sync()` removes those and uses toolbar actions. Some other historical scripts assume single-click typing or a sidebar Save button.
+Examples: [`scripts/verify-rsvp-flow.cjs`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/scripts/verify-rsvp-flow.cjs#L22) clicks removed `#rsvpButton`; [`scripts/verify-page-actions.cjs`](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/scripts/verify-page-actions.cjs#L47) expects page-local `[data-page-actions]` even though `PageActions.sync()` removes those and uses toolbar actions. Some other historical scripts assume single-click typing or a sidebar Save button.
 
 These scripts are not part of `npm test` or current PR validation, so passing CI does not validate them. This is a verification/documentation gap, not evidence that every current UI flow is broken. Source mismatches were verified; these obsolete scripts were not repaired or used as passing release evidence in this documentation-only task.
 
@@ -92,7 +96,7 @@ Separate task: inventory/update or retire obsolete harnesses and consider automa
 
 ## Scope questions and unverified operations
 
-- The footer editor writes the name to global `sharedSite.footerName` ([render](../app.js#L1546), [editor](../app.js#L1660)). Accounts and the chooser also have intentionally website-wide scopes. The footer is documented as global identity; confirm whether that is still intended before a separate scope change. It was not silently converted to event data.
+- The footer editor writes the name to global `sharedSite.footerName` ([render](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/app.js#L1546), [editor](https://github.com/kasstmaster/themeyersgatherings/blob/e6643632b9bdc9745388567af23a18c6fcc90b92/app.js#L1660)). Accounts and the chooser also have intentionally website-wide scopes. The footer is documented as global identity; confirm whether that is still intended before a separate scope change. It was not silently converted to event data.
 - `github-state-worker/wrangler.toml` still dispatches AnyList to `kasstmaster/thanksgiving`, while this repository contains `sync-anylist.yml`. This is the checked-in target, not a verified deployment error. Confirm which repository actually runs the job and holds its secrets/variables.
 - Actual Worker runtime secrets, token permission scopes, R2 existence/content, Cloudflare accounts/DNS/TLS/routes, AnyList service behavior and Dropbox authorization/folder settings were not inspected or changed. Repository configuration alone does not prove deployed configuration.
 - No live shared-state endpoint was fetched, since GET can itself archive completed events. No account/private JSON or credentials were requested. No production data reconciliation or restore was attempted.
