@@ -94,3 +94,5 @@ Your Dishes appears in the toolbar for a potluck invitation with claims and open
 Food category order is shared across menus, RSVP dish choices, claimed/needed lists and exports: Main Table → Sides → Appetizers → Desserts → Drinks. Item order within each category is preserved.
 
 Potluck and private preparation dishes use the same labeled Remove button and the same bounded scrolling list. Removing an item keeps the existing menu-specific removal behavior. Potluck up/down controls are removed; shared category sorting determines the list order.
+
+Both menu edit lists show a small divider only when the food category changes, without category titles or dividers between items in the same category.

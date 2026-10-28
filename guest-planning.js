@@ -118,6 +118,7 @@
     const rank=item=>{const index=categories.indexOf(item.category);return index<0?categories.length-1.5:index;};
     return [...items].sort((a,b)=>rank(a)-rank(b));
   }
+  function menuRows(items){const ordered=menuOrder(items);return ordered.map((item,index)=>({item,startsCategory:index>0&&item.category!==ordered[index-1].category}));}
   const allDeclined=people=>Array.isArray(people)&&people.length>0&&people.every(person=>person.attending===false);
-  globalThis.GuestPlanning={allDeclined,foodCategories,menuOrder,childLabel,childLabels,guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
+  globalThis.GuestPlanning={allDeclined,foodCategories,menuOrder,menuRows,childLabel,childLabels,guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();

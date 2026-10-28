@@ -2867,8 +2867,8 @@ function renderDinnerPlanEditor(area){
   select.addEventListener('change',()=>{store({type:select.value});});
   const draw=()=>{
     rows.replaceChildren();
-    for(const item of GuestPlanning.menuOrder(event.sitDownMenu||[])){
-      const row=document.createElement('div');row.className='sit-down-menu-row';
+    for(const {item,startsCategory} of GuestPlanning.menuRows(event.sitDownMenu||[])){
+      const row=document.createElement('div');row.className='sit-down-menu-row'+(startsCategory?' menu-category-start':'');
       const chosen=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=current().selectedItems?.includes(item.id)||false;check.setAttribute('aria-label',`Prepare ${item.name}`);chosen.append(check,document.createTextNode('Prepare'));
       check.addEventListener('change',()=>{const ids=new Set(current().selectedItems||[]);if(check.checked)ids.add(item.id);else ids.delete(item.id);store({selectedItems:[...ids]});});
       const name=document.createElement('input');name.value=item.name;name.maxLength=150;name.setAttribute('aria-label','Preparation dish name');
@@ -2944,12 +2944,12 @@ function openAdmin() {
   document.querySelector('#menuAdminFields').hidden = isWedding;
   document.querySelector('#adminNewUnit').innerHTML = unitOptions();
   renderQuantityUnits();
-  document.querySelector('#adminItems').innerHTML = GuestPlanning.menuOrder(state.items).map(item => {
-    return `<div class="admin-row" data-admin-id="${escapeAttribute(item.id)}"><input value="${escapeAttribute(item.name)}" aria-label="Dish name"><select aria-label="Category">${GuestPlanning.foodCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select><select aria-label="Amount needed">${amountOptions(item)}</select><select aria-label="Quantity type">${unitOptions(item)}</select><div class="admin-row-actions"><button type="button" class="admin-delete menu-remove-button" aria-label="Remove ${escapeAttribute(item.name)}" title="Remove">Remove</button></div></div>`;
+  document.querySelector('#adminItems').innerHTML = GuestPlanning.menuRows(state.items).map(({item,startsCategory}) => {
+    return `<div class="admin-row${startsCategory?' menu-category-start':''}" data-admin-id="${escapeAttribute(item.id)}"><input value="${escapeAttribute(item.name)}" aria-label="Dish name"><select aria-label="Category">${GuestPlanning.foodCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select><select aria-label="Amount needed">${amountOptions(item)}</select><select aria-label="Quantity type">${unitOptions(item)}</select><div class="admin-row-actions"><button type="button" class="admin-delete menu-remove-button" aria-label="Remove ${escapeAttribute(item.name)}" title="Remove">Remove</button></div></div>`;
   }).join('');
   document.querySelectorAll('.admin-row').forEach(row => {
     const [name, category, amount, unit, actions] = row.children;
-    [name, category, amount, unit].forEach(input => input.addEventListener('change', () => { const item = state.items.find(i => i.id === row.dataset.adminId); item.name = name.value.trim() || item.name; item.category = category.value; item.optional = amount.value === 'optional'; item.unit = unit.value; if (!item.optional) item.needed = Number(amount.value); saveState(); }));
+    [name, category, amount, unit].forEach(input => input.addEventListener('change', () => { const item = state.items.find(i => i.id === row.dataset.adminId); item.name = name.value.trim() || item.name; item.category = category.value; item.optional = amount.value === 'optional'; item.unit = unit.value; if (!item.optional) item.needed = Number(amount.value); saveState(); if(input===category)openAdmin(); }));
     const remove = actions.querySelector('.admin-delete');
     remove.addEventListener('click', () => { state.items = state.items.filter(i => i.id !== row.dataset.adminId); saveState(); openAdmin(); });
   });
