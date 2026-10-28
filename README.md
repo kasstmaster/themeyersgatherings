@@ -181,3 +181,7 @@ Each non-wedding menu editor has **Copy from**: choose another gathering and its
 Single-unit dish labels omit “1 of 1” and numeric amounts: an ordinary item shows only needed/claimed, while a dozen, case or custom type keeps its type and status. Multi-unit quantities and host editing controls retain their amounts.
 
 While guests answer potluck contribution/menu questions, a fixed top reference bar shows total people Invited, confirmed Attending and the RSVP deadline. It contains no names, uses server-provided aggregate counts and reserves space above the questions on mobile and desktop. It is absent from Wedding, sit-down dinner and unrelated RSVP steps.
+
+## Host push notifications
+
+An optional Host toolbar bell enrolls that device for generic alerts after confirmed RSVP attendance or active food-selection changes across gatherings. Guest accounts cannot enroll, and alerts contain no guest details. The feature is disabled until the owner approves a one-time Cloudflare signing-secret setup through GitHub Actions and grants notification permission on each device. No existing credentials or saved data are migrated. See [Host push setup, privacy and delivery limits](docs/host-push-notifications.md).

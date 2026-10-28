@@ -6,7 +6,7 @@
  const authBase=base=>globalThis.location?.origin==='https://themeyers.ilymmd.com'?'/session':base;
  const signedOut=()=>{try{return Boolean(globalThis.localStorage?.getItem(SIGNED_OUT));}catch{return false;}};
  function markSignedOut(value){try{if(value)globalThis.localStorage?.setItem(SIGNED_OUT,String(Date.now()));else globalThis.localStorage?.removeItem(SIGNED_OUT);}catch{/* Cookie revocation still works when storage is disabled. */}}
- function accept(result){token=result.token;role=result.role;revision=result.revision;conflicted=false;expired=false;}
+ function accept(result){if(result.role==='guest')void globalThis.HostNotifications?.stopLocal();token=result.token;role=result.role;revision=result.revision;conflicted=false;expired=false;}
 
  const headers=extra=>({...(token?{Authorization:`Bearer ${token}`}:{}),...extra});
  function cancelCookieRequest(){cookieRequest?.abort();cookieRequest=null;}
@@ -48,6 +48,7 @@
   catch(error){if(owner!==generation)throw error;if(error.status===401)expired=true;if(error.status===409||error.status===428)conflicted=true;throw error;}
  }
  async function signOut(base){
+  try{if(role==='host')await globalThis.HostNotifications?.disable(base);else await globalThis.HostNotifications?.stopLocal();}catch{/* Local unsubscribe and explicit sign-out still proceed. */}
   cancelCookieRequest();const previous=token;generation++;markSignedOut(true);token='';role='';revision='';baseline=null;conflicted=false;expired=false;
   try{if(previous||authBase(base)!==base)await json(authBase(base),'/auth/logout',{method:'POST',headers:previous?{Authorization:'Bearer '+previous}:{},body:'{}'});}catch{/* Explicit sign-out suppresses cookie restoration even when offline. */}
  }

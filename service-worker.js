@@ -12,3 +12,19 @@ self.addEventListener('fetch', event => {
     event.respondWith(fetch(event.request).catch(() => caches.match('/offline.html')));
   }
 });
+
+// Empty Web Push messages intentionally carry no account or RSVP data.
+self.addEventListener('push', event => {
+  event.waitUntil(self.registration.showNotification('The Meyers', {
+    body: 'Attendance or food selections were updated. Open the website to view changes.',
+    icon: '/assets/icons/meyers-192.png', tag: 'meyers-rsvp-update', renotify: true
+  }));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async windows=>{
+    const current=windows.find(client=>new URL(client.url).origin===self.location.origin);
+    if(current)return current.focus();
+    return self.clients.openWindow('/');
+  }));
+});

@@ -1,3 +1,4 @@
+import {handleHostPush,queueHostPush,flushHostPush} from './host-push.js';
 import {authenticate,login,logout,boundedJson} from './auth.js';
 import {releaseReadiness} from './release-readiness.js';
 import {projectState,updateFromChanges,accountForActor} from './state-access.js';
@@ -231,7 +232,7 @@ async function writeConditional(env,next,sha) {
  if(!result.ok)return {status:502};
  const data=await result.json();return {status:200,revision:data.content.sha};
 }
-async function secureState(request,env,url,actor) {
+async function secureState(request,env,url,actor,context) {
  if(url.pathname!=='/auth/login'&&!actor)return jsonResponse(request,env,{error:'Sign in to continue.'},401);
  if(url.pathname==='/auth/login'&&request.method!=='POST')return jsonResponse(request,env,{error:'Method not allowed.'},405);
  if(url.pathname.startsWith('/auth/')&&!['/auth/login','/auth/logout','/auth/session'].includes(url.pathname))return jsonResponse(request,env,{error:'Not found.'},404);
@@ -263,14 +264,17 @@ async function secureState(request,env,url,actor) {
  GatheringHistory.preserve(next,state);next.savedAt=new Date().toISOString();
  const saved=await writeConditional(env,next,result.sha);
  if(saved.status!==200)return jsonResponse(request,env,{error:saved.status===409?'Newer information is available. Your changes were not applied.':'Changes could not be saved.'},saved.status);
+ const notify=async()=>{try{if(await queueHostPush(env,state,next,saved.revision))await flushHostPush(env);}catch{console.warn('Host push delivery needs attention.');}};
+ if(context?.waitUntil)context.waitUntil(notify());else await notify();
  return jsonResponse(request,env,{state:projectState(next,actor),revision:saved.revision});
 }
 export default {
   async scheduled(_event,env) {
+    try{await flushHostPush(env);}catch{console.warn('Host push retry needs attention.');}
     const result=await writeState(env,null,{historyOnly:true});
     if(result.status!==200)throw new Error(result.error || 'Could not save gathering history.');
   },
-  async fetch(request, env) {
+  async fetch(request, env, context) {
     const origin = request.headers.get('Origin');
     if (!originAllowed(origin, env)) {
       return response(request, env, 'Origin not allowed.', 403);
@@ -278,9 +282,13 @@ export default {
     if (request.method === 'OPTIONS') return response(request, env, null, 204);
     try {
       const url = new URL(request.url);
+      if(url.pathname==='/health/host-push')return request.method==='GET'?jsonResponse(request,env,{protocol:'host-push-v1'}):response(request,env,null,405);
       if(url.pathname==='/health/state-auth')return request.method==='GET'?releaseReadiness(env):response(request,env,null,405);
       const actor=await authenticate(request,env);if(actor)requestActors.set(request,actor);
-      if(url.pathname==='/'||url.pathname==='/state'||url.pathname.startsWith('/auth/'))return await secureState(request,env,url,actor);
+      if(url.pathname==='/host-push'||url.pathname==='/host-push/test'){
+        const result=await handleHostPush(request,env,actor);return response(request,env,result.body,result.status,{'Cache-Control':'no-store',...Object.fromEntries(result.headers)});
+      }
+      if(url.pathname==='/'||url.pathname==='/state'||url.pathname.startsWith('/auth/'))return await secureState(request,env,url,actor,context);
 
       if (url.pathname.startsWith('/dropbox/')) return await handleDropboxOAuth(request, env, { response, jsonResponse, requireHost });
       if (url.pathname === '/wedding-media' || url.pathname.startsWith('/wedding-media/')) return await handleWeddingMedia(request, env, { response, jsonResponse, requireHost, readState, actor });

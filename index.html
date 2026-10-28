@@ -129,6 +129,7 @@
     </div>
     <nav id="hostToolsPanel" class="host-tools-panel event-dock" aria-label="Host tools" hidden>
       <div id="syncStatus" class="sync-status" role="status" aria-live="polite" hidden></div>
+      <button id="hostNotificationsButton" type="button" aria-label="Host notifications"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a6 6 0 0 0-6 6v5l-2 3v2h16v-2l-2-3V8a6 6 0 0 0-6-6Zm-2 18a2 2 0 0 0 4 0h-4Z"/></svg><span>Notifications</span></button>
       <div class="host-tool-actions">
         <button id="hostHomeButton" type="button"><svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 11 9-2 2-2-2v11h-5v-7h-4v7H5V11l-2 2-2-2 11-9Z"/></svg><span>All Gatherings</span></button>
       </div>
@@ -634,6 +635,8 @@
 
 
 
+    <dialog id="hostNotificationsDialog" aria-labelledby="hostPushHeading"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel" aria-label="Close host notifications">×</button><h2 id="hostPushHeading">Host notifications</h2><p>Receive alerts when RSVP attendance or food selections change. Alerts contain no guest names or private details.</p><p id="hostPushStatus" role="status"></p><button id="hostPushEnable" type="button">Enable on this device</button><button id="hostPushDisable" type="button" hidden>Disable on this device</button><button id="hostPushTest" type="button" hidden>Send test notification</button></form></dialog>
+
     <dialog id="menuEditorDialog" class="wide-dialog editor-dialog" aria-labelledby="menuEditorHeading"><form method="dialog" class="modal-card">
       <button class="modal-close" value="cancel" aria-label="Close menu editor">×</button>
       <p class="section-kicker">Gathering menu</p><h2 id="menuEditorHeading">Menu</h2>
@@ -745,6 +748,7 @@
     <script src="toolbar-layout.js" defer></script>
     <script src="shared-state-protocol.js"></script>
     <script src="state-client.js"></script>
+    <script src="host-notifications.js"></script>
     <script src="app.js" defer></script>
   </body>
 </html>

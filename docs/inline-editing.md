@@ -104,3 +104,5 @@ Copy from is available in both menu sections. Choose a source gathering and menu
 For one requested unit, dish lists, RSVP choices/review, Your Dishes and menu exports show status without a numeric amount. The default Item type is omitted; dozen/case/custom type labels remain. Multi-unit rows and host amount/type inputs are unchanged.
 
 Potluck guests see a compact fixed reference bar during dish/contribution questions: Invited, Attending and RSVP by. Counts combine adults and children; adult/child breakdowns are available in the count titles. These are confirmed saved totals, not unsaved draft attendance. Missing deadlines show Not set. The bar hides outside these steps and never opens guest lists. Its measured height reserves top space independently of bottom toolbar clearance.
+
+The Host toolbar Notifications bell manages alerts on the current device. Enrollment requires separately approved server setup and an explicit browser permission click. Guests cannot see or enroll in it. See [Host push setup](host-push-notifications.md).

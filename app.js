@@ -1094,6 +1094,7 @@ async function showGatheringsHome(){
   if(!guestName && !hostAuthenticated)return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
   await closeHostDialogs();if(isViewingAsGuest())restoreHostSession();showEventSelection();updateHostToolsPanel();
 }
+document.querySelector('#hostNotificationsButton').addEventListener('click',()=>HostNotifications.open(SHARED_STATE_URL,showSiteDialog));
 for(const id of ['hostHomeButton','guestHomeButton'])document.getElementById(id).addEventListener('click',showGatheringsHome);
 function updateHostToolsPanel() {
   const viewingAsGuest = isViewingAsGuest();

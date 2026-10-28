@@ -1,0 +1,29 @@
+name: Set up Host push signing keys (one time)
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'After approving the host-push release, type CREATE_HOST_PUSH_KEYS. Never use this to rotate existing keys.'
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: host-push-key-setup
+  cancel-in-progress: false
+jobs:
+  setup:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'CREATE_HOST_PUSH_KEYS'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Create only the missing Worker signing secret
+        env:
+          HOST_PUSH_SETUP_CONFIRM: ${{ inputs.confirmation }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/setup-host-push.js
