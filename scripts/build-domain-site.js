@@ -25,7 +25,8 @@ export function validatePublicFallback(fallback){
   if(!Array.isArray(fallback.accounts)||fallback.accounts.length||Object.keys(fallback.gatheringHistory||{}).length||Object.values(fallback.events||{}).some(event=>(event.rsvps||[]).length||(event.weddingPartyMembers||[]).length||(event.items||[]).some(item=>(item.claims||[]).length))||/"qrToken"/.test(JSON.stringify(fallback)))throw new Error('Refusing to publish private account/response data in the static fallback. Keep live state in its private repository.');
 }
 
-export async function buildDomainSite(output) {
+export async function buildDomainSite(output, releaseCommit=process.env.RELEASE_COMMIT) {
+  if(releaseCommit && !/^[a-f0-9]{40}$/.test(releaseCommit))throw new Error('Invalid release commit.');
   validatePublicFallback(JSON.parse(await readFile(join(source,'data/app-state.json'),'utf8')));
   const destination = resolve(output);
   // Fail rather than overwrite existing published directories or source files.
@@ -51,6 +52,7 @@ export async function buildDomainSite(output) {
   await cp(join(source,'data/app-state.json'),join(site,'data/app-state.json'));
   for (const file of ['service-worker.js', 'offline.html']) await cp(join(source, file), join(site, file));
   await writeFile(join(site, 'index.html'), html.replace('</head>', `    <link rel="canonical" href="${canonical}" />\n  </head>`));
+  if(releaseCommit)await writeFile(join(site,'release.json'),JSON.stringify({protocol:'state-auth-v1',commit:releaseCommit}));
   await mkdir(join(destination, 'themeyersgatherings'));
   await writeFile(join(destination, 'themeyersgatherings/index.html'), legacyRedirectHtml());
   return destination;

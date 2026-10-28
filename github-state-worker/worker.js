@@ -1,4 +1,5 @@
 import {authenticate,login,logout,boundedJson} from './auth.js';
+import {releaseReadiness} from './release-readiness.js';
 import {projectState,updateFromChanges,accountForActor} from './state-access.js';
 import '../guest-planning.js';
 import '../gathering-history.js';
@@ -269,6 +270,7 @@ export default {
     if (request.method === 'OPTIONS') return response(request, env, null, 204);
     try {
       const url = new URL(request.url);
+      if(url.pathname==='/health/state-auth')return request.method==='GET'?releaseReadiness(env):response(request,env,null,405);
       const actor=await authenticate(request,env);if(actor)requestActors.set(request,actor);
       if(url.pathname==='/'||url.pathname==='/state'||url.pathname.startsWith('/auth/'))return await secureState(request,env,url,actor);
 
