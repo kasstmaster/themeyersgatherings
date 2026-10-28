@@ -29,6 +29,14 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.locator('[data-person-attending][value="yes"]').check();await page.locator('#rsvpNext').click();
   await page.locator('[data-rsvp-no-children]').check();await page.locator('#rsvpNext').click();
   await page.locator('[data-rsvp-no-guests]').check();await page.locator('#rsvpNext').click();
+  assert.equal(await page.locator('#rsvpDishReference').isVisible(),true);
+  assert.equal(await page.locator('#dishReferenceInvited').textContent(),'2');assert.equal(await page.locator('#dishReferenceAttending').textContent(),'0');assert.equal(await page.locator('#dishReferenceDeadline').textContent(),'Nov 20, 2099');
+  for(const width of [1280,390]){
+    await page.setViewportSize({width,height:720});await page.waitForTimeout(100);
+    const reference=await page.evaluate(()=>({top:document.querySelector('#rsvpDishReference').getBoundingClientRect().top,bottom:document.querySelector('#rsvpDishReference').getBoundingClientRect().bottom,form:document.querySelector('#rsvpForm').getBoundingClientRect().top,position:getComputedStyle(document.querySelector('#rsvpDishReference')).position}));
+    assert.equal(reference.position,'fixed');assert.ok(reference.top>=0&&reference.top<2);assert.ok(reference.form>=reference.bottom,'dish questions clear the reference toolbar');
+  }
+  await page.setViewportSize({width:1280,height:900});
   await page.locator('[data-rsvp-dish-answer="yes"]').click();
   await page.evaluate(()=>applyRsvpDeadline());assert.equal(await page.locator('[data-rsvp-dish="legacy-overflow"]').isDisabled(),true);
   await page.locator('#rsvpCustomDish').check();await page.locator('#rsvpNext').click();
@@ -42,6 +50,7 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.locator('#rsvpNext').click();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
   const customs=state.events.thanksgiving.items.filter(item=>item.id.startsWith('custom-'));
   assert.deepEqual(customs.map(item=>[item.name,item.needed,item.claimGroups['Casey Example'][1]]),[['Homemade Soup',2,2],['Cornbread',3,3]]);
+  assert.equal(await page.locator('#rsvpDishReference').isVisible(),false);
   assert.equal(state.events.thanksgiving.rsvps[0].people[0].attending,true);assert.deepEqual(state.events.thanksgiving.items.find(item=>item.id==='legacy-overflow').claims,['Other Household','Other Household']);
   await page.locator('[data-enter-event="thanksgiving"]').click();
   assert.equal(await page.locator('#hostRsvpCounters').isVisible(),true);
@@ -116,7 +125,7 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await sitdownGuest.locator('[data-enter-event="thanksgiving"]').click();assert.equal(await sitdownGuest.locator('#hostRsvpCounters').isVisible(),false);assert.equal(await sitdownGuest.locator('#rsvp-nav-your-dishes').count(),0);
   assert.equal(await sitdownGuest.evaluate(()=>JSON.stringify(appState).includes('Private Roast')),false);
   await sitdownGuest.locator('#rsvpConfirmEvent').click();await sitdownGuest.locator('[data-person-attending][value="yes"]').check();await sitdownGuest.locator('#rsvpNext').click();await sitdownGuest.locator('[data-rsvp-no-children]').check();await sitdownGuest.locator('#rsvpNext').click();await sitdownGuest.locator('[data-rsvp-no-guests]').check();await sitdownGuest.locator('#rsvpNext').click();
-  assert.equal(await sitdownGuest.locator('#rsvpHeading').textContent(),'Review your RSVP');await sitdownGuest.close();
+  assert.equal(await sitdownGuest.locator('#rsvpHeading').textContent(),'Review your RSVP');assert.equal(await sitdownGuest.locator('#rsvpDishReference').isVisible(),false);await sitdownGuest.close();
   // Return only this year's plan to potluck; its private options and selections stay saved.
   await page.evaluate(()=>SiteEditing.toggle(render));await page.evaluate(()=>openMenuEditor());await page.getByLabel('Dinner plan',{exact:true}).selectOption('potluck');await page.locator('#menuEditorDialog .modal-close').click();await page.evaluate(()=>SiteEditing.toggle(render));await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
   assert.equal(state.events.thanksgiving.sitDownMenu[0].name,'Private Roast');assert.equal(state.events.thanksgiving.dinnerPlans['2099'].selectedItems.length,1);

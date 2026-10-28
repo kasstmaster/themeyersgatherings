@@ -5,6 +5,7 @@
   function measure(){
     frame=0;let height=0;
     for(const bar of document.querySelectorAll('.event-dock')){
+      if(bar.dataset?.toolbarPosition==='top')continue;
       if(!observed.has(bar)){observed.add(bar);resize?.observe(bar);}
       const rect=bar.getBoundingClientRect();
       if(bar.getClientRects().length&&getComputedStyle(bar).position==='fixed')height=Math.max(height,rect.height);
