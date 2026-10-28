@@ -993,7 +993,7 @@ function menuExportIntro() {
   return `Here's the list of items for ${EVENT_DETAILS[viewedEventId].name}. Some dishes have already been claimed but we still need others!`;
 }
 function menuExportItems() {
-  return state.items.map(item => {
+  return GuestPlanning.menuOrder(state.items).map(item => {
     const remaining = Math.max(0, item.needed - item.claims.length);
     const claimed = item.optional ? item.claims.length > 0 : remaining === 0;
     const status = claimed ? '✓ CLAIMED' : `- need ${formatQuantity(Math.max(1, remaining), item)}${item.optional ? ' (optional)' : ''}`;
@@ -1584,7 +1584,7 @@ function render() {
   renderWeddingGathering(hostView);
   renderGatheringMedia(hostView);
   renderYourDishes();
-  const neededRows=state.items.flatMap(item=>{const remaining=Math.max(0,item.needed-item.claims.length);return remaining?[renderDish(item,remaining)]:[];});
+  const neededRows=GuestPlanning.menuOrder(state.items).flatMap(item=>{const remaining=Math.max(0,item.needed-item.claims.length);return remaining?[renderDish(item,remaining)]:[];});
   document.querySelector('#menuGrid').innerHTML=neededRows.length?neededRows.join(''):'<p class="guest-empty">All dishes have been claimed.</p>';
   const needed = state.items.reduce((sum, item) => sum + (item.optional ? 0 : Math.max(0, item.needed - item.claims.length)), 0);
   document.querySelector('#dishListTotals').textContent=`${needed} still needed`;
@@ -1715,7 +1715,7 @@ function renderInlineEditing(eventState=state) {
   if (features.menu) {
     document.querySelectorAll('#menuGrid [data-dish-id]').forEach(dish => {
       const item = state.items.find(item => item.id === dish.dataset.dishId);
-      SiteEditing.field(dish, item.name, [{label:'Name',value:item.name,required:true},{label:'Category',value:item.category,options:['Appetizers','Main Table','Sides','Desserts','Drinks']},{label:'Amount',value:item.needed,type:'number',min:1},{label:'Unit',value:item.unit,options:(state.quantityUnits || ['item','dozen']).map(unit=>typeof unit==='string'?unit:unit.id)}], ([name,category,needed,unit]) => { Object.assign(item,{name,category,needed:Number(needed),unit}); });
+      SiteEditing.field(dish, item.name, [{label:'Name',value:item.name,required:true},{label:'Category',value:item.category,options:GuestPlanning.foodCategories},{label:'Amount',value:item.needed,type:'number',min:1},{label:'Unit',value:item.unit,options:(state.quantityUnits || ['item','dozen']).map(unit=>typeof unit==='string'?unit:unit.id)}], ([name,category,needed,unit]) => { Object.assign(item,{name,category,needed:Number(needed),unit}); });
       if(SiteEditing.enabled)SiteEditing.button('Change my claim',()=>claimItem(item.id),dish);
       if (SiteEditing.enabled) SiteEditing.button('×', () => { if (confirm(`Delete “${item.name}”?`)) { state.items=state.items.filter(entry=>entry.id!==item.id); saveState(); } }, dish, `Delete ${item.name}`);
     });
@@ -2414,7 +2414,7 @@ function renderRsvpDishes(){
   document.querySelectorAll('[data-rsvp-dish-answer]').forEach(button=>{button.disabled=SiteEditing.enabled;});
   const choice=document.querySelector('#rsvpBringingDish');
   choice.value=state.items.some(item=>rsvpDishQuantity(item)>0)?'yes':'';
-  const categories=[...new Set(state.items.map(item=>item.category))];
+  const categories=[...new Set(GuestPlanning.menuOrder(state.items).map(item=>item.category))];
   const anythingElse=document.querySelector('#rsvpAnythingElse');
   const choices=document.querySelector('#rsvpDishChoices');
   choices.innerHTML=enabled?categories.map(category=>{
@@ -2433,7 +2433,7 @@ function renderRsvpDishes(){
   document.querySelectorAll('[data-custom-dish-clone]').forEach(section=>section.remove());
   document.querySelector('#rsvpCustomDish').checked=false;document.querySelector('#rsvpCustomDishName').value='';document.querySelector('#rsvpCustomDishQuantity').value=1;
   document.querySelector('#rsvpCustomDishUnit').innerHTML=unitOptions();
-  document.querySelector('#rsvpCustomDishCategory').innerHTML=[...new Set([...categories,'Appetizers','Main Table','Sides','Desserts','Drinks'])].map(category=>`<option>${escapeHtml(category)}</option>`).join('');
+  document.querySelector('#rsvpCustomDishCategory').innerHTML=[...new Set([...GuestPlanning.foodCategories,...categories])].map(category=>`<option>${escapeHtml(category)}</option>`).join('');
 }
 function customDishEntries(){
   return [...document.querySelectorAll('[data-custom-dish-part="name"]')].map((name,index)=>({name,quantity:document.querySelectorAll('[data-custom-dish-part="quantity"]')[index],category:document.querySelectorAll('[data-custom-dish-part="category"]')[index]}));
@@ -2528,7 +2528,7 @@ function renderRsvpReview(container) {
   if(GatheringFeatures.rsvp(viewedEventId,state).contributions){
     const draft=rsvpDishDraft();
     const dishes=draft?[...draft.quantities].flatMap(([id,quantity])=>{const item=state.items.find(item=>item.id===id);return quantity&&item?[`${item.name} (${formatQuantity(quantity,item)})`]:[];}):state.items.flatMap(item=>{const quantity=item.claims.filter(name=>name===guestName).length;return quantity?[`${item.name} (${formatQuantity(quantity,item)})`]:[];});
-    for(const item of draft?.customs||[])dishes.push(`${item.name} (${item.quantity})`);
+    for(const item of GuestPlanning.menuOrder(draft?.customs||[]))dishes.push(`${item.name} (${item.quantity})`);
     line('Bringing',dishes.join(', ')||'No dish');
   }
   if(GatheringFeatures.rsvp(viewedEventId).meals)readWeddingMenuSelections().forEach(selection=>{
@@ -2874,7 +2874,7 @@ function renderDinnerPlanEditor(area){
       const name=document.createElement('input');name.value=item.name;name.maxLength=150;name.setAttribute('aria-label','Preparation dish name');
       name.addEventListener('change',()=>{item.name=name.value.trim()||item.name;name.value=item.name;check.setAttribute('aria-label',`Prepare ${item.name}`);saveState();});
       const category=document.createElement('select');category.setAttribute('aria-label',`Category for ${item.name}`);
-      for(const value of ['Main Table','Appetizers','Sides','Desserts','Drinks']){const option=document.createElement('option');option.value=value;option.textContent=value;category.append(option);}category.value=item.category;
+      for(const value of GuestPlanning.foodCategories){const option=document.createElement('option');option.value=value;option.textContent=value;category.append(option);}category.value=item.category;
       category.addEventListener('change',()=>{item.category=category.value;saveState();draw();});
       const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.setAttribute('aria-label',`Remove ${item.name}`);
       remove.addEventListener('click',()=>{event.sitDownMenu=event.sitDownMenu.filter(value=>value.id!==item.id);store({selectedItems:(current().selectedItems||[]).filter(id=>id!==item.id)});draw();});
@@ -2944,10 +2944,11 @@ function openAdmin() {
   document.querySelector('#menuAdminFields').hidden = isWedding;
   document.querySelector('#adminNewUnit').innerHTML = unitOptions();
   renderQuantityUnits();
-  document.querySelector('#adminItems').innerHTML = state.items.map((item, index) => {
+  document.querySelector('#adminItems').innerHTML = GuestPlanning.menuOrder(state.items).map(item => {
+    const index=state.items.indexOf(item);
     const previousInCategory = state.items.slice(0, index).some(entry => entry.category === item.category);
     const nextInCategory = state.items.slice(index + 1).some(entry => entry.category === item.category);
-    return `<div class="admin-row" data-admin-id="${escapeAttribute(item.id)}"><input value="${escapeAttribute(item.name)}" aria-label="Dish name"><select aria-label="Category">${['Appetizers','Main Table','Sides','Desserts','Drinks'].map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select><select aria-label="Amount needed">${amountOptions(item)}</select><select aria-label="Quantity type">${unitOptions(item)}</select><div class="admin-row-actions"><button type="button" data-move="up" aria-label="Move ${escapeAttribute(item.name)} up" title="Move up" ${previousInCategory ? '' : 'disabled'}>↑</button><button type="button" data-move="down" aria-label="Move ${escapeAttribute(item.name)} down" title="Move down" ${nextInCategory ? '' : 'disabled'}>↓</button><button type="button" class="admin-delete" aria-label="Delete ${escapeAttribute(item.name)}" title="Delete">×</button></div></div>`;
+    return `<div class="admin-row" data-admin-id="${escapeAttribute(item.id)}"><input value="${escapeAttribute(item.name)}" aria-label="Dish name"><select aria-label="Category">${GuestPlanning.foodCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select><select aria-label="Amount needed">${amountOptions(item)}</select><select aria-label="Quantity type">${unitOptions(item)}</select><div class="admin-row-actions"><button type="button" data-move="up" aria-label="Move ${escapeAttribute(item.name)} up" title="Move up" ${previousInCategory ? '' : 'disabled'}>↑</button><button type="button" data-move="down" aria-label="Move ${escapeAttribute(item.name)} down" title="Move down" ${nextInCategory ? '' : 'disabled'}>↓</button><button type="button" class="admin-delete" aria-label="Delete ${escapeAttribute(item.name)}" title="Delete">×</button></div></div>`;
   }).join('');
   document.querySelectorAll('.admin-row').forEach(row => {
     const [name, category, amount, unit, actions] = row.children;
@@ -3613,7 +3614,7 @@ function updateClearClaimQuantities() {
   }).join('');
 }
 function populateClearClaimControls() {
-  const claimedItems = state.items.filter(item => item.claims.length);
+  const claimedItems = GuestPlanning.menuOrder(state.items).filter(item => item.claims.length);
   const itemSelect = document.querySelector('#clearClaimItem');
   itemSelect.innerHTML = claimedItems.map(item => `<option value="${escapeAttribute(item.id)}">${escapeHtml(item.name)} (${escapeHtml(formatQuantity(item.claims.length, item))} claimed)</option>`).join('');
   const hasClaims = claimedItems.length > 0;
@@ -4104,7 +4105,7 @@ function renderGatheringHistory() {
     +section('Invited',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]).map(accountHtml).join(''))
     +section('Attending',peopleHtml(true)+(GatheringFeatures.rsvp(snapshot.eventId).childNames?rsvps.flatMap(rsvp=>GuestPlanning.childLabels(rsvp)).map(name=>`<p>${escapeHtml(name)}</p>`).join(''):''))+section('Declined',peopleHtml(false))
     +section('No RSVP',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]&&missing(account).length).map(account=>`<article><strong>${escapeHtml(account.name)}</strong><p>${missing(account).map(escapeHtml).join(', ')}</p></article>`).join(''))
-    +section('Contributions and menu requests',(event.items || []).map(item=>{const counts=new Map();for(const name of item.claims || [])counts.set(name,(counts.get(name)||0)+1);return `<article><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.category || '')} · ${item.needed} ${escapeHtml(item.unit || 'item')}(s) requested</p>${[...counts].map(([name,quantity])=>`<p>${escapeHtml(label(name))}: ${quantity}</p>`).join('') || '<p>No claims recorded.</p>'}</article>`;}).join(''))
+    +section('Contributions and menu requests',GuestPlanning.menuOrder(event.items || []).map(item=>{const counts=new Map();for(const name of item.claims || [])counts.set(name,(counts.get(name)||0)+1);return `<article><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.category || '')} · ${item.needed} ${escapeHtml(item.unit || 'item')}(s) requested</p>${[...counts].map(([name,quantity])=>`<p>${escapeHtml(label(name))}: ${quantity}</p>`).join('') || '<p>No claims recorded.</p>'}</article>`;}).join(''))
     +section('Meals and dietary requests',rsvps.flatMap(rsvp=>(rsvp.menuSelections || []).map(meal=>`<p>${escapeHtml(meal.name || rsvp.name)}: ${escapeHtml(meal.meal || 'No meal selected')}${meal.dietaryRestrictions?` · ${escapeHtml(meal.dietaryRestrictions)}`:''}</p>`)).join(''))
     +section('Host notes',event.hostNotes?`<p class="history-notes">${escapeHtml(event.hostNotes)}</p>`:'');
 }

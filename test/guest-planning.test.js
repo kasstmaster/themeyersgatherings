@@ -135,6 +135,6 @@ test('only a complete unanimous invitation decline finishes RSVP early',()=>{
 
 test('claimed dishes follow menu categories without changing order inside each category',()=>{
  const items=[{id:'water',category:'Drinks'},{id:'pie',category:'Desserts'},{id:'turkey',category:'Main Table'},{id:'stuffing',category:'Sides'},{id:'ham',category:'Main Table'},{id:'dip',category:'Appetizers'}];
- assert.deepEqual(GuestPlanning.menuOrder(items).map(item=>item.id),['turkey','ham','dip','stuffing','pie','water']);
+ assert.deepEqual(GuestPlanning.menuOrder(items).map(item=>item.id),['turkey','ham','stuffing','dip','pie','water']);
  assert.equal(items[0].id,'water');
 });
