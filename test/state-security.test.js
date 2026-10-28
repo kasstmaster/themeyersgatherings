@@ -143,3 +143,25 @@ test('deadline attendance changes reuse the existing locked RSVP rules instead o
  const response=InvitationGroups.merge(account,'wedding',names,1,previous,locked);
  assert.equal((await f.patch(guest,[{path:['events','wedding','rsvps'],value:[response]}])).status,200);assert.equal(f.state.events.wedding.rsvps[0].people[0].attending,false);assert.equal(f.state.events.wedding.rsvps[0].savedMenuSelections[0].meal,'Meal');
 });
+
+
+test('Last Name signs in suffix-free people; recognized suffixes return only a rate-limited next step',async t=>{
+ const f=await fixture(t);
+ f.state.accounts.push({name:'Jamie Example IV',qrToken:'four',selectedEvents:{one:true},signInAliases:[{alias:'Jay Example',name:'Jamie Example IV'}]},{name:'Jamie Example V',qrToken:'five',selectedEvents:{one:true},signInAliases:[{alias:'Jay Example',name:'Jamie Example V'}]});
+ const before=structuredClone(f.state),plain=await f.guest({checkSuffix:true});assert.equal(plain.response.status,200);assert.equal(plain.person,'Casey Example');assert.ok(plain.token);
+ const sessionCount=()=>[...f.memory.objects.keys()].filter(key=>key.startsWith('security-v1/sessions/')).length,count=sessionCount();
+ const next=await f.login({role:'guest',name:'Jay Example',checkSuffix:true});assert.equal(next.next,'suffix');assert.deepEqual(Object.keys(next).sort(),['next','response']);assert.equal(sessionCount(),count);
+ const four=await f.login({role:'guest',name:'Jay Example IV',checkSuffix:false});assert.equal(four.person,'Jamie Example IV');assert.equal(four.state.accounts[0].name,'Jamie Example IV');assert.equal(four.state.accounts[0].qrToken,undefined);
+ const five=await f.login({role:'guest',name:'Jamie Example V',checkSuffix:false,qrToken:'five'});assert.equal(five.person,'Jamie Example V');
+ assert.equal((await f.login({role:'guest',name:'Jamie Example',checkSuffix:true,qrToken:'existing-qr-token'})).response.status,401);
+ assert.equal((await f.login({role:'guest',name:'Unknown Example',checkSuffix:true})).response.status,401);
+ assert.equal((await f.login({role:'guest',name:'Jamie Example IV',qrToken:'five'})).response.status,401);
+ assert.deepEqual(f.state,before);assert.equal(f.writes,0);
+});
+
+test('suffix discovery remains subject to the existing login attempt limit',async t=>{
+ const f=await fixture(t);f.state.accounts[0].name='Casey Example IV';
+ for(let i=0;i<20;i++)assert.equal((await f.login({role:'guest',name:'Casey Example',checkSuffix:true})).next,'suffix');
+ assert.equal((await f.login({role:'guest',name:'Casey Example',checkSuffix:true})).response.status,429);
+ assert.equal([...f.memory.objects.keys()].some(key=>key.startsWith('security-v1/sessions/')),false);assert.equal(f.writes,0);
+});

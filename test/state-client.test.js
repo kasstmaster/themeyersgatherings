@@ -63,3 +63,9 @@ test('replacing a login persists the new session, never an older runtime authori
  await api.signIn('https://service',{role:'host'});await api.signIn('https://service',{role:'guest'});
  assert.deepEqual(persisted,['Bearer session-1','Bearer session-2']);assert.equal(api.headers().Authorization,'Bearer session-2');assert.equal(api.role,'guest');
 });
+
+
+test('suffix continuation never creates client authentication or cookie persistence',async()=>{
+ const calls=[],api=fixture(async(url,options)=>{calls.push({url,options});return Response.json({next:'suffix'});});
+ const result=await api.signIn('https://service',{role:'guest',name:'Jamie Example',checkSuffix:true});assert.equal(result.next,'suffix');assert.equal(api.authenticated,false);assert.equal(api.role,'');assert.equal(calls.length,1);
+});
