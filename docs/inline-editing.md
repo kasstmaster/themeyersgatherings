@@ -1,6 +1,6 @@
 # Editing the website
 
-In the approval-gated A1/A2 implementation, hosts use Host sign-in with a server-checked password; guest name/QR entry has no new code/email step. Sign in as host and choose **Edit** after Print Page in the fixed main toolbar. Host options use icons with accessible names/tooltips. Edit changes to **Done** (checkmark) while editing. The dark sidebar stays on the left and reserves page width; only its formatting area scrolls. Ordinary guests cannot open it. An authenticated host previewing another account retains host controls and a top-right Leave account action.
+In the approval-gated A1/A2 implementation, hosts enter their password in First Name and choose Next for hidden, server-checked Host sign-in; guest name/QR entry has no new code/email step. Sign in as host and choose **Edit** after Print Page in the fixed main toolbar. Host options use icons with accessible names/tooltips. Edit changes to **Done** (checkmark) while editing. The dark sidebar stays on the left and reserves page width; only its formatting area scrolls. Ordinary guests cannot open it. An authenticated host previewing another account retains host controls and a top-right Leave account action.
 
 ## Selection and saving
 

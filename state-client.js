@@ -10,7 +10,7 @@
   return result;
  }
  function remember(state,acceptedRevision){baseline=clone(state);if(acceptedRevision)revision=acceptedRevision;conflicted=false;}
- async function signIn(base,input){const attempt=++generation;const result=await json(base,'/auth/login',{method:'POST',body:JSON.stringify(input)});if(attempt!==generation)throw new Error('Sign-in was superseded.');token=result.token;role=result.role;revision=result.revision;conflicted=false;expired=false;return result;}
+ async function signIn(base,input){const attempt=++generation;const result=await json(base,'/auth/login',{method:'POST',body:JSON.stringify(input)});if(attempt!==generation)throw new Error('Sign-in was superseded.');if(result.next==='guest')return result;token=result.token;role=result.role;revision=result.revision;conflicted=false;expired=false;return result;}
  async function read(base){if(!token)return null;const owner=generation;try{const result=await json(base,'/state');return owner===generation?result:null;}catch(error){if(owner===generation&&error.status===401)expired=true;throw error;}}
  async function save(base,state){
   if(!token)throw Object.assign(new Error('Sign in again before syncing your changes.'),{status:401});

@@ -1904,7 +1904,7 @@ function openCustomItem(category) {
   });
 }
 
-let hostLoginMode=false;
+let signInBusy=false;
 function prepareAuthorizedState(saved){
  const defaults=normalizeState(structuredClone(saved));
  return {...defaults,...saved,accounts:saved.accounts,events:Object.fromEntries(Object.entries(saved.events).map(([id,event])=>[id,{...defaults.events[id],...event,...(event.weddingPartyMembers?{weddingPartyMembers:WeddingParty.normalizeMembers(event.weddingPartyMembers)}:{})}]))};
@@ -1915,22 +1915,10 @@ function applyAuthorizedSession(result){
  sharedSavePending=false;sharedSaveError=false;StateClient.remember(appState,result.revision);
  qrScopedAccount=isAccountQrRoute()?appState.accounts[0]:null;
 }
-document.querySelector('#hostSignInToggle').addEventListener('click',()=>{
- hostLoginMode=!hostLoginMode;document.querySelector('#hostPasswordField').hidden=!hostLoginMode;
- document.querySelector('#guestSignInFields').hidden=hostLoginMode;
- document.querySelector('#guestSignInFields').querySelectorAll('input').forEach(input=>input.disabled=hostLoginMode);
- document.querySelector('#signInSubmit').textContent=hostLoginMode?'Sign in':'Get Started';document.querySelector('#hostSignInToggle').textContent=hostLoginMode?'Guest sign-in':'Host sign-in';
-});
-document.querySelector('#passwordForm').addEventListener('submit', async event => {
-  event.preventDefault();
-  const firstNameInput = document.querySelector('#accountFirstName');
-  const firstName = firstNameInput.value.trim();
-  if(hostLoginMode){
-    try{const result=await StateClient.signIn(SHARED_STATE_URL,{role:'host',password:document.querySelector('#hostPassword').value});applyAuthorizedSession(result);}
-    catch(error){document.querySelector('#accountPasswordError').textContent=error.message;return;}
+function finishHostSignIn(result){
+    applyAuthorizedSession(result);
     hostAuthenticated = true;hostReturnSession=null;hostWeddingPartyViewName='';
     selectedGatheringTab = null;
-    document.querySelector('#hostPassword').value='';
     guestName = HOST_DISPLAY_NAME;
     signedInPersonName = '';
     if (viewedEventId === 'wedding') {
@@ -1943,10 +1931,31 @@ document.querySelector('#passwordForm').addEventListener('submit', async event =
     pendingAccountAction = null;
     showEventSelection();
     document.querySelector('#accountPasswordError').textContent = '';
-    firstNameInput.value = '';
+    for(const input of document.querySelectorAll('#guestSignInFields input'))input.value='';
     if (action) action();
+}
+function maskHostCandidate(){
+ const input=document.querySelector('#accountFirstName');
+ input.type=input.value.length>=24?'password':'text';
+}
+document.querySelector('#accountFirstName').addEventListener('input',maskHostCandidate);
+document.querySelector('#accountFirstName').addEventListener('change',maskHostCandidate);
+document.querySelector('#passwordForm').addEventListener('submit', async event => {
+  event.preventDefault();if(signInBusy)return;
+  const firstNameInput = document.querySelector('#accountFirstName');
+  if(signInStep===0&&firstNameInput.value.length>=24&&SHARED_STATE_URL){
+    signInBusy=true;const button=document.querySelector('#signInSubmit');button.disabled=true;
+    const candidate=firstNameInput.value;firstNameInput.value='';firstNameInput.disabled=true;
+    try{
+      const result=await StateClient.signIn(SHARED_STATE_URL,{role:'first-name',password:candidate});
+      if(result.next==='guest'){firstNameInput.value=candidate;setSignInStep(1);}
+      else if(result.role==='host')finishHostSignIn(result);
+      else throw new Error('Sign-in details were not recognized.');
+    }catch(error){document.querySelector('#accountPasswordError').textContent=error.message;}
+    finally{firstNameInput.type='text';firstNameInput.disabled=signInStep!==0;button.disabled=false;signInBusy=false;}
     return;
   }
+  const firstName = firstNameInput.value.trim();
   if (signInStep < 2) {
     const current = document.querySelector(`[data-sign-in-step="${signInStep}"] input`);
     if (!current.value.trim()) {
