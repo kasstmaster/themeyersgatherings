@@ -67,7 +67,7 @@ function validRsvp(response,account,event,id){
  if((response.childNames||[]).some(name=>typeof name!=='string'||name.length>200)||(response.extraGuestNames||[]).some(name=>typeof name!=='string'||name.length>200))forbidden();
  if(response.adults!==GuestPlanning.attendees(response.people).length+(response.extraGuests||0))forbidden();
  const allowed=GuestPlanning.plusOnePeople(account,id,names);
- if(id==='wedding'&&response.people.some(person=>person.guestChoice==='guest'&&(!allowed.includes(person.name)||!person.attending||!person.guestName?.trim())))forbidden();
+ if(id==='wedding'&&response.people.some(person=>person.guestChoice==='guest'&&(!allowed.includes(person.name)||!person.guestName?.trim())))forbidden();
  const attendeeNames=GuestPlanning.attendees(response.people).concat(response.extraGuestNames||[]);
  if((response.menuSelections||[]).some(selection=>!['adult','child'].includes(selection.type)||selection.type==='adult'&&!attendeeNames.includes(selection.name)||selection.meal==='none'&&selection.type!=='child'))forbidden();
  if((response.menuSelections||[]).some(selection=>selection.meal&&selection.meal!=='none'&&!GuestPlanning.weddingMealOptions(event,selection.type).includes(selection.meal)))forbidden();

@@ -135,8 +135,8 @@ test('guest projection preserves public custom pages and legacy palette settings
 });
 test('deadline attendance changes reuse the existing locked RSVP rules instead of rejecting valid updates',async t=>{
  const f=await fixture(t),account=f.state.accounts[0],names=GuestPlanning.accountNames(account.name);
- f.state.events.wedding.rsvpDate='2000-01-01';
- const previous=InvitationGroups.merge(account,'wedding',names,1,null,{name:account.name,people:[{name:'Casey Example',attending:true,guestChoice:'no-guest',guestName:''}],adults:1,children:0,childNames:[],extraGuests:0,extraGuestNames:[],menuSelections:[{type:'adult',index:0,name:'Casey Example',meal:'Meal',customName:'',dietaryRestrictions:''}]});
+ f.state.events.wedding.rsvpDate='2000-01-01';account.plusOnePeople.wedding=['Casey Example'];
+ const previous=InvitationGroups.merge(account,'wedding',names,1,null,{name:account.name,people:[{name:'Casey Example',attending:true,guestChoice:'guest',guestName:'Invited Guest'}],adults:2,children:0,childNames:[],extraGuests:0,extraGuestNames:[],menuSelections:[{type:'adult',index:0,name:'Casey Example',meal:'Meal',customName:'',dietaryRestrictions:''}]});
  f.state.events.wedding.rsvps=[previous];const guest=await f.guest();
  const group=InvitationGroups.response(account,'wedding',names,1,previous);group.people[0].attending=false;
  const locked=GuestPlanning.lockedRsvp(InvitationGroups.response(account,'wedding',names,1,previous),group);
