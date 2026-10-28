@@ -3533,6 +3533,7 @@ function templateHasUnsavedChanges(){return !document.querySelector('#invitation
 function closeTemplateWorkspace(showManager=true){
   if(document.querySelector('#invitationEditorDialog').hidden)return true;
   if(templateHasUnsavedChanges()&&!confirm('Leave this template with unsaved changes?'))return false;
+  for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
   ElementEditor.beforeRender();document.querySelector('#invitationEditorDialog').hidden=true;document.body.classList.remove('template-workspace-open');templateEditorResizeObserver?.disconnect();
   showEventSelection();if(showManager)openTemplateManager();return true;
 }
@@ -3582,9 +3583,10 @@ async function loadTemplateBackgroundPreview(background, localFile = null) {
     error.textContent = `Unable to load the template background. ${caught.message}`;
   }
 }
-function openTemplateEditor(id, localFile = null, draft = null) {
+async function openTemplateEditor(id, localFile = null, draft = null) {
   if(!isHostView())return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
   const template = draft || invitationTemplatesForEvent().find(item => item.id === id); if (!template) return;
+  await closeHostDialogs();
   templateDraft = structuredClone(template);templateUndo=[];templateRedo=[];document.querySelector('#templateCenterGuide').hidden=true;document.querySelector('#templateAddValues').open=false; selectedTemplateFieldId = ''; pendingTemplateFieldKey = '';
   document.querySelector('#replaceTemplateBackground').value = ''; updateDropzone(document.querySelector('#replaceTemplateDropzone'), null);
   document.querySelector('#templateEditorError').textContent='';
