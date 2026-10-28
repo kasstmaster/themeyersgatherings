@@ -39,6 +39,16 @@ test('normal and long guest first names never receive a Host session or administ
  const long=await f.login({role:'first-name',password:first});assert.equal(long.response.status,200);assert.equal(long.next,'guest');assert.equal(long.token,undefined);assert.equal(long.state,undefined);
  const guest=await f.login({role:'guest',name:first+' Example'});assert.equal(guest.response.status,200);assert.equal(guest.role,'guest');assert.ok(!JSON.stringify(guest.state).includes('PRIVATE'));assert.equal(f.writes,0);
 });
+test('page-owned Wedding Party headings expose only the member and pages authorized for that guest',async t=>{
+ const f=await fixture(t),w=f.state.events.wedding;
+ w.weddingPartyMembers=[{id:'casey',name:'Casey Example',title:'Groomsman',pages:[{id:'same',title:'Own page',content:'Own copy'}]},{id:'other',name:'Other Person',title:'Bridesmaid',pages:[{id:'same',title:'Other page',content:'PRIVATE page'}]}];
+ const path=(owner)=>WeddingParty.headingPath(owner,'title');
+ w.siteText={[path(['duties','casey'])]:'Own title',[path(['duties','other'])]:'PRIVATE other title',[path(['duties'])]:'PRIVATE host heading',[path(['shared-details'])]:'Party details',[path(['member-page','other','same'])]:'PRIVATE other page',[path(['member-page','casey','same'])]:'Own page title'};
+ w.textAppearance={'#weddingPartyHeading':{parts:[{original:'Other Person',source:'PRIVATE',markup:'PRIVATE member override'}]}};
+ w.elementAppearance={'@group:titles':{fontSize:28}};f.state.accounts.push({name:'Third Example',selectedEvents:{wedding:true}});const before=structuredClone(f.state);
+ const own=await f.guest();assert.equal(own.response.status,200);assert.equal(own.state.events.wedding.siteText[path(['duties','casey'])],'Own title');assert.equal(own.state.events.wedding.siteText[path(['member-page','casey','same'])],'Own page title');assert.ok(!JSON.stringify(own.state).includes('PRIVATE'));assert.equal(own.state.events.wedding.elementAppearance['@group:titles'].fontSize,28);
+ const ordinary=projectState(f.state,{role:'guest',person:'Third Example',accountId:'Third Example'});assert.deepEqual(ordinary.events.wedding.siteText,{});assert.equal(ordinary.events.wedding.elementAppearance['@group:titles'].fontSize,28);assert.deepEqual(f.state,before);assert.equal(f.writes,0);
+});
 test('failed hidden password candidates are rate limited and never retained as guest data or in errors',async t=>{
  const f=await fixture(t),candidate='not-the-host-password-value',before=structuredClone(f.state);
  for(let i=0;i<20;i++){

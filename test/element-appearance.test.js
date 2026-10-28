@@ -25,6 +25,11 @@ test('hex and computed colors preserve transparency',()=>{
  const {api}=fixture();assert.equal(api.colorParts('#123').hex,'#112233');assert.equal(api.colorParts('#12345680').alpha,50);assert.equal(api.colorParts('rgba(255, 128, 0, 0.25)').hex,'#ff8000');assert.equal(api.colorParts('rgba(255, 128, 0, 0.25)').alpha,25);assert.equal(api.colorParts('transparent').alpha,0);
 });
 test('guests cannot change appearance through the shared editor API',()=>{const f=fixture();const state={};f.api.render({state,host:false,enabled:false});f.api.update(f.element,{backgroundColor:'#abcdef'});assert.deepEqual(state,{});});
+test('page content keys separate heading text without splitting gathering-wide title/intro formatting groups',()=>{
+ const {api}=fixture(),heading=key=>({id:'weddingPartyHeading',tagName:'H2',dataset:{contentKey:key},closest:()=>null,matches:selector=>selector.split(',').includes('h2')});
+ const one=heading('one'),two=heading('two');assert.notEqual(api.textSelector(one),api.textSelector(two));assert.equal(api.selector(one),api.selector(two));assert.equal(api.group(one),'titles');assert.equal(api.group(two),'titles');
+ const state={};api.render({state,host:true,enabled:true,save(){}});api.update(one,{fontSize:28});assert.equal(state.elementAppearance['@group:titles'].fontSize,28);
+});
 test('menu action styles are shared by claim status independently of other buttons',()=>{
  const {api}=fixture();
  const button=status=>({dataset:{dishStatus:status},matches:selector=>selector==='button[data-claim]' || selector==='button',closest:()=>null});
