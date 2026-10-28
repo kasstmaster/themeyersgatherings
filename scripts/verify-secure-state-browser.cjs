@@ -43,6 +43,12 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   assert.deepEqual(customs.map(item=>[item.name,item.needed,item.claimGroups['Casey Example'][1]]),[['Homemade Soup',2,2],['Cornbread',3,3]]);
   assert.equal(state.events.thanksgiving.rsvps[0].people[0].attending,true);assert.deepEqual(state.events.thanksgiving.items.find(item=>item.id==='legacy-overflow').claims,['Other Household','Other Household']);
   await page.locator('[data-enter-event="thanksgiving"]').click();
+  assert.equal(await page.locator('#hostRsvpCounters').isVisible(),true);
+  assert.equal(await page.locator('#guestListButton').isDisabled(),true);assert.equal(await page.locator('#invitedListButton').isDisabled(),true);
+  assert.equal(await page.locator('#notAttendingButton').isVisible(),false);assert.equal(await page.locator('#noResponseButton').isVisible(),false);
+  await page.locator('#rsvp-nav-your-dishes').click();await page.locator('#yourDishesSection').waitFor({state:'visible'});
+  const dishExport=await page.evaluate(()=>PageActions.exportPage(document.querySelector('#yourDishesSection')));
+  assert.equal(dishExport.title,'Your Dishes');assert.match(dishExport.text,/Homemade Soup/);assert.match(dishExport.text,/Cornbread/);assert.doesNotMatch(dishExport.text,/Other Household|Legacy preserved dish/);
   // Save through the real guest state protocol, preserving the host data.
   await page.evaluate(()=>{setRsvpDishQuantity(state.items[0],rsvpDishQuantity(state.items[0])+1);saveState();});await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);assert.equal(state.events.thanksgiving.items[0].claims[0],'Casey Example');assert.equal(state.events.thanksgiving.hostNotes,'Private host notes');
   // Declining an existing invitation must finish at attendance and release its dishes.
@@ -80,6 +86,23 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   const pendingClear=await page.evaluate(()=>{document.querySelector('#passwordForm').requestSubmit();return document.querySelector('#accountFirstName').value===''&&document.querySelector('#signInSubmit').disabled;});assert.equal(pendingClear,true);
   await page.locator('#eventSelectionPage').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>hostAuthenticated),true);
   assert.equal(await page.locator('#accountFirstName').inputValue(),'');assert.equal(await page.evaluate(value=>JSON.stringify(appState).includes(value)||Object.keys(localStorage).some(key=>(localStorage.getItem(key)||'').includes(value))||location.href.includes(value),TEST_PASSWORD),false);
+  // Configure a private, year-owned sit-down preparation menu through the actual host UI.
+  await page.evaluate(()=>enterEvent('thanksgiving'));await page.evaluate(()=>SiteEditing.toggle(render));await page.evaluate(()=>openMenuEditor());
+  await page.getByLabel('Dinner plan',{exact:true}).selectOption('sit-down');
+  await page.getByLabel('New preparation dish',{exact:true}).fill('Private Roast');await page.locator('#sitDownDinnerMenu').getByRole('button',{name:'Add dish',exact:true}).click();
+  await page.getByLabel('Prepare Private Roast',{exact:true}).check();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+  assert.equal(state.events.thanksgiving.dinnerPlans['2099'].type,'sit-down');assert.equal(state.events.thanksgiving.dinnerPlans['2099'].selectedItems.length,1);
+  await page.locator('#menuEditorDialog .modal-close').click();await page.evaluate(()=>SiteEditing.toggle(render));
+  const sitdownGuest=await browser.newPage();await sitdownGuest.route('**/*',route=>route.request().url().startsWith(base)?route.continue():route.abort());await sitdownGuest.goto(base+'/');
+  await sitdownGuest.locator('#accountFirstName').fill('Casey');await sitdownGuest.locator('#signInSubmit').click();await sitdownGuest.locator('#accountLastName').fill('Example');await sitdownGuest.locator('#signInSubmit').click();await sitdownGuest.locator('#eventSelectionPage').waitFor({state:'visible'});
+  await sitdownGuest.locator('[data-enter-event="thanksgiving"]').click();assert.equal(await sitdownGuest.locator('#hostRsvpCounters').isVisible(),false);assert.equal(await sitdownGuest.locator('#rsvp-nav-your-dishes').count(),0);
+  assert.equal(await sitdownGuest.evaluate(()=>JSON.stringify(appState).includes('Private Roast')),false);
+  await sitdownGuest.locator('#rsvpConfirmEvent').click();await sitdownGuest.locator('[data-person-attending][value="yes"]').check();await sitdownGuest.locator('#rsvpNext').click();await sitdownGuest.locator('[data-rsvp-no-children]').check();await sitdownGuest.locator('#rsvpNext').click();await sitdownGuest.locator('[data-rsvp-no-guests]').check();await sitdownGuest.locator('#rsvpNext').click();
+  assert.equal(await sitdownGuest.locator('#rsvpHeading').textContent(),'Review your RSVP');await sitdownGuest.close();
+  // Return only this year's plan to potluck; its private options and selections stay saved.
+  await page.evaluate(()=>SiteEditing.toggle(render));await page.evaluate(()=>openMenuEditor());await page.getByLabel('Dinner plan',{exact:true}).selectOption('potluck');await page.locator('#menuEditorDialog .modal-close').click();await page.evaluate(()=>SiteEditing.toggle(render));await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+  assert.equal(state.events.thanksgiving.sitDownMenu[0].name,'Private Roast');assert.equal(state.events.thanksgiving.dinnerPlans['2099'].selectedItems.length,1);
+  await page.evaluate(()=>{document.querySelector('#rsvpDialog').close();showEventSelection();});
   await page.evaluate(()=>{appState.events.thanksgiving.hostNotes='New host notes';saveState();});await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);assert.equal(state.events.thanksgiving.hostNotes,'New host notes');
   // A second device updates the canonical file while this browser retains its old revision.
   state.events.thanksgiving.hostNotes='Newer device notes';sha++;

@@ -1572,19 +1572,25 @@ function render() {
   document.querySelector('#eventAddress').innerHTML = formatEditableText(gatheringHeaderAddress(),{inline:true});
   document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${formatEditableText(SharedDetails.homeAddress(state),{inline:true})}`;
   document.body.classList.toggle('host-rsvp-view',hostView);
-  document.querySelector('#hostRsvpCounters').hidden=!hostView;
-  document.querySelector('.summary-strip').style.setProperty('--summary-columns','4');
-  document.querySelector('.summary-strip').hidden = !hostView;
+  const publicCounts=!hostView&&GatheringFeatures.dinnerPlan(viewedEventId,state)?.type==='potluck';
+  document.querySelector('#hostRsvpCounters').hidden=!(hostView||publicCounts);
+  document.querySelector('.summary-strip').style.setProperty('--summary-columns',hostView?'4':'2');
+  document.querySelector('.summary-strip').hidden=!(hostView||publicCounts);
+  document.querySelector('#notAttendingButton').hidden=!hostView;
+  document.querySelector('#noResponseButton').hidden=!hostView;
+  if(selectedGatheringTab==='your-dishes'&&!invitationDishes().length)selectedGatheringTab='media';
   renderGatheringPages(features,hostView);
+  if(GatheringFeatures.dinnerPlan(viewedEventId,state)?.type==='sit-down')document.querySelector('#gatheringMenuSection').hidden=true;
   renderWeddingGathering(hostView);
   renderGatheringMedia(hostView);
+  renderYourDishes();
   const neededRows=state.items.flatMap(item=>{const remaining=Math.max(0,item.needed-item.claims.length);return remaining?[renderDish(item,remaining)]:[];});
   document.querySelector('#menuGrid').innerHTML=neededRows.length?neededRows.join(''):'<p class="guest-empty">All dishes have been claimed.</p>';
   const needed = state.items.reduce((sum, item) => sum + (item.optional ? 0 : Math.max(0, item.needed - item.claims.length)), 0);
   document.querySelector('#dishListTotals').textContent=`${needed} still needed`;
-  const guests = GuestPlanning.guestResponses(state.rsvps).reduce((sum, rsvp) => sum + rsvp.adults + rsvp.children, 0);
   const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
   const summaryCounts=attendanceSummaryCounts();
+  if(publicCounts&&state.dinnerSummary)Object.assign(summaryCounts,state.dinnerSummary);
   for(const [id,key] of [['guestCount','attending'],['notAttendingCount','notAttending'],['noResponseCount','noResponse'],['invitedCount','invited']]) {
     const count=summaryCounts[key];
     document.getElementById(id).textContent=`${count.adults}/${count.children}`;
@@ -1594,11 +1600,11 @@ function render() {
   const guestListButton = document.querySelector('#guestListButton');
   guestListButton.disabled = !hostView;
   guestListButton.title = hostView ? 'View guest names and RSVP details' : 'Guest details are private to the host';
-  guestListButton.setAttribute('aria-label', hostView ? `${summaryCounts.attending.adults} adults and ${summaryCounts.attending.children} children attending; view private guest list` : `${guests} guests attending; details visible only to the host`);
+  guestListButton.setAttribute('aria-label', hostView ? `${summaryCounts.attending.adults} adults and ${summaryCounts.attending.children} children attending; view private guest list` : `${summaryCounts.attending.adults} adults and ${summaryCounts.attending.children} children attending; details visible only to the host`);
   const invitedListButton = document.querySelector('#invitedListButton');
   invitedListButton.disabled = !hostView;
   invitedListButton.title = hostView ? 'View invited adults by invitation' : 'Invitation details are private to the host';
-  invitedListButton.setAttribute('aria-label', hostView ? `${invitedAdults} adults and ${summaryCounts.invited.children} children invited; view private invitation list` : `${invitedAdults} adults invited; details visible only to the host`);
+  invitedListButton.setAttribute('aria-label', hostView ? `${invitedAdults} adults and ${summaryCounts.invited.children} children invited; view private invitation list` : `${summaryCounts.invited.adults} adults and ${summaryCounts.invited.children} children invited; details visible only to the host`);
   if(document.querySelector('#rsvpDialog').open)renderRsvpEventHeader();
   renderInlineEditing();
   if (document.querySelector('#guestListDialog').open || document.querySelector('#notAttendingDialog').open) renderGuestAttendance();
@@ -1797,6 +1803,20 @@ function renderWeddingPageToolbar(){
     button.innerHTML=`<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons[button.dataset.weddingTab] || icons.custom}"/></svg><span>${escapeHtml(title)}</span>`;
   });
 }
+function invitationDishes(){
+  if(!guestName||!GatheringFeatures.rsvp(viewedEventId,state).contributions)return [];
+  return GuestPlanning.menuOrder(state.items).flatMap(item=>{const quantity=rsvpDishQuantity(item);return quantity?[{item,quantity}]:[];});
+}
+function renderYourDishes(){
+  const dishes=invitationDishes(),button=document.querySelector('#yourDishesButton'),section=document.querySelector('#yourDishesSection');
+  button.hidden=true;button.onclick=()=>{selectedGatheringTab='your-dishes';render();};button.setAttribute('aria-selected',String(selectedGatheringTab==='your-dishes'&&dishes.length>0));
+  const showing=dishes.length>0&&selectedGatheringTab==='your-dishes';section.hidden=!showing;
+  if(showing){
+    document.querySelector('#rsvpWeddingPages').hidden=false;
+    document.querySelectorAll('#rsvpWeddingPages>section').forEach(page=>{if(page!==section)page.hidden=true;});
+    document.querySelector('#yourDishesList').innerHTML=dishes.map(({item,quantity})=>`<p><strong>${escapeHtml(item.name)}</strong> <span>${escapeHtml(formatQuantity(quantity,item))}</span></p>`).join('');
+  }
+}
 function renderRsvpPageNavigation(){
   const nav=document.querySelector('#rsvpPageNavigation');nav.replaceChildren();
   const owner=document.querySelector(hostAuthenticated?'#hostToolsPanel':'#rsvpPageToolbar');
@@ -1826,6 +1846,7 @@ function renderRsvpPageNavigation(){
     });
   };
   const media=document.querySelector('#uploadPhotosButton');add(media.textContent.trim(),media);
+  const dishes=document.querySelector('#yourDishesButton');if(invitationDishes().length)add('Your Dishes',dishes);
   const weddingPages=GatheringFeatures.forGathering(viewedEventId).weddingPages;
   document.querySelectorAll('#weddingPartyTabs>button').forEach(button=>{
     const page=button.dataset.weddingTab;
@@ -2345,7 +2366,7 @@ document.querySelectorAll('.stepper button').forEach(button => button.addEventLi
 function rsvpFlowSteps() {
   if(SiteEditing.enabled){
     const pages=[{key:'event-confirmation',element:document.querySelector('#rsvpEventConfirmation'),title:'Gathering page'}];
-    const features=GatheringFeatures.rsvp(viewedEventId);
+    const features=GatheringFeatures.rsvp(viewedEventId,state);
     document.querySelectorAll('[data-rsvp-person]').forEach((row,index)=>pages.push({key:`person-${index}`,element:row.querySelector('.rsvp-attendance-options'),title:row.dataset.rsvpPerson}));
     pages.push({key:'children',element:document.querySelector('#rsvpChildrenQuestion'),title:'Any children attending?'});
     if(features.guestCounter)pages.push({key:'guests',element:document.querySelector('#rsvpGuestsCounter'),title:'Any guests?'});
@@ -2386,10 +2407,10 @@ function rsvpFlowSteps() {
   }
   return steps;
 }
-function rsvpDishesEnabled(){return GatheringFeatures.rsvp(viewedEventId).contributions && !SiteEditing.enabled && !rsvpOptionsLocked();}
+function rsvpDishesEnabled(){return GatheringFeatures.rsvp(viewedEventId,state).contributions && !SiteEditing.enabled && !rsvpOptionsLocked();}
 function renderRsvpDishes(){
   const enabled=rsvpDishesEnabled();
-  document.querySelectorAll('[data-rsvp-question]').forEach(section=>{section.hidden=!(enabled || (section.id==='rsvpDishQuestion' && SiteEditing.enabled && GatheringFeatures.rsvp(viewedEventId).contributions));section.querySelectorAll('input,select').forEach(input=>{input.disabled=!enabled;input.required=false;input.setCustomValidity('');});});
+  document.querySelectorAll('[data-rsvp-question]').forEach(section=>{section.hidden=!(enabled || (section.id==='rsvpDishQuestion' && SiteEditing.enabled && GatheringFeatures.rsvp(viewedEventId,state).contributions));section.querySelectorAll('input,select').forEach(input=>{input.disabled=!enabled;input.required=false;input.setCustomValidity('');});});
   document.querySelectorAll('[data-rsvp-dish-answer]').forEach(button=>{button.disabled=SiteEditing.enabled;});
   const choice=document.querySelector('#rsvpBringingDish');
   choice.value=state.items.some(item=>rsvpDishQuantity(item)>0)?'yes':'';
@@ -2504,7 +2525,7 @@ function renderRsvpReview(container) {
   if(GatheringFeatures.rsvp(viewedEventId).childNames && !isHostView())readRsvpChildNames().filter(Boolean).forEach(name=>line(name,'Accepts with pleasure'));
   else {line('Children',String(document.querySelector('#children').value));readRsvpChildNames().filter(Boolean).forEach((name,index)=>line(`Child ${index+1}`,name));}
   if(GatheringFeatures.rsvp(viewedEventId).guestCounter){line('Guests',String(readRsvpGuestNames().length));readRsvpGuestNames().filter(Boolean).forEach(name=>line(name,'Accepts with pleasure'));}
-  if(GatheringFeatures.rsvp(viewedEventId).contributions){
+  if(GatheringFeatures.rsvp(viewedEventId,state).contributions){
     const draft=rsvpDishDraft();
     const dishes=draft?[...draft.quantities].flatMap(([id,quantity])=>{const item=state.items.find(item=>item.id===id);return quantity&&item?[`${item.name} (${formatQuantity(quantity,item)})`]:[];}):state.items.flatMap(item=>{const quantity=item.claims.filter(name=>name===guestName).length;return quantity?[`${item.name} (${formatQuantity(quantity,item)})`]:[];});
     for(const item of draft?.customs||[])dishes.push(`${item.name} (${item.quantity})`);
@@ -2525,7 +2546,7 @@ function applyRsvpDeadline() {
   const noticeText = GatheringFeatures.rsvp(viewedEventId).namedGuests?'The RSVP deadline has passed. You can still change who is attending and the number of children attending. Guest names, meals, and dietary notes are locked. Contact the hosts for other changes.':'The RSVP deadline has passed. You can still change who is attending and the number of children and guests attending.';
   if(notice.textContent!==noticeText)notice.textContent=noticeText;
   document.querySelectorAll('#rsvpForm [data-person-guest], #rsvpForm [data-person-guest-name], #rsvpForm [data-rsvp-meal], #rsvpForm [data-rsvp-dietary]').forEach(input => { input.disabled=locked; });
-  document.querySelectorAll('[data-rsvp-question] input,[data-rsvp-question] select').forEach(input=>{input.disabled=locked || !GatheringFeatures.rsvp(viewedEventId).contributions || SiteEditing.enabled || input.hasAttribute('data-rsvp-dish-unavailable');});
+  document.querySelectorAll('[data-rsvp-question] input,[data-rsvp-question] select').forEach(input=>{input.disabled=locked || !GatheringFeatures.rsvp(viewedEventId,state).contributions || SiteEditing.enabled || input.hasAttribute('data-rsvp-dish-unavailable');});
   if(changed)RsvpFlow.refresh();
 }
 setInterval(() => { if (document.querySelector('#rsvpDialog').open) applyRsvpDeadline(); }, 1000);
@@ -2642,7 +2663,7 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   if (GatheringFeatures.rsvp(viewedEventId).namedGuests && rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
   const account=rsvpAccount();
   if(account)rsvp=InvitationGroups.merge(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),state.rsvps[index],rsvp);
-  if(declined&&GatheringFeatures.rsvp(viewedEventId).contributions)InvitationGroups.releaseDishes(state.items,guestName,currentInvitationNumber(),GuestPlanning.invitationCount(account,viewedEventId)<=1,accountSignInNames(guestName),rsvp.people);
+  if(declined&&GatheringFeatures.rsvp(viewedEventId,state).contributions)InvitationGroups.releaseDishes(state.items,guestName,currentInvitationNumber(),GuestPlanning.invitationCount(account,viewedEventId)<=1,accountSignInNames(guestName),rsvp.people);
   if(!applyRsvpDishes(declined?null:rsvpDishDraft())){event.preventDefault();showRsvpSaveError('A dish is no longer available. Please reopen RSVP and choose again.');return;}
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
   form.dataset.saved='true';
@@ -2829,15 +2850,53 @@ document.querySelector('#invitedListButton').addEventListener('click', () => {
     : '<p class="guest-empty">No one is currently invited.</p>');
   showSiteDialog(document.querySelector('#invitedListDialog'));
 });
+function renderDinnerPlanEditor(area){
+  const event=state,eventId=viewedEventId,plan=GatheringFeatures.dinnerPlan(eventId,event);
+  if(!plan)return;
+  const section=document.createElement('section');section.className='admin-editor-section';
+  const label=document.createElement('label'),title=document.createElement('span');title.textContent=`Dinner plan for ${plan.year}`;
+  const select=document.createElement('select');select.setAttribute('aria-label','Dinner plan');
+  for(const [value,text] of [['potluck','Potluck'],['sit-down','Full sit-down dinner']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
+  select.value=plan.type;label.append(title,select);section.append(label);
+  const panel=document.createElement('section');panel.id='sitDownDinnerMenu';panel.hidden=plan.type!=='sit-down';
+  const heading=document.createElement('h3');heading.textContent='Private preparation menu';
+  const intro=document.createElement('p');intro.textContent='Select the dishes you will prepare this year. Guests cannot see this menu.';
+  const rows=document.createElement('div');panel.append(heading,intro,rows);section.append(panel);area.append(section);
+  const current=()=>event.dinnerPlans?.[plan.year]||{type:select.value,selectedItems:[]};
+  const store=changes=>{event.dinnerPlans={...event.dinnerPlans,[plan.year]:{...current(),...changes}};saveState({refresh:true});};
+  select.addEventListener('change',()=>{panel.hidden=select.value!=='sit-down';document.querySelector('#menuAdminFields').hidden=!panel.hidden;store({type:select.value});});
+  const draw=()=>{
+    rows.replaceChildren();
+    for(const item of GuestPlanning.menuOrder(event.sitDownMenu||[])){
+      const row=document.createElement('div');row.className='sit-down-menu-row';
+      const chosen=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=current().selectedItems?.includes(item.id)||false;check.setAttribute('aria-label',`Prepare ${item.name}`);chosen.append(check,document.createTextNode('Prepare'));
+      check.addEventListener('change',()=>{const ids=new Set(current().selectedItems||[]);if(check.checked)ids.add(item.id);else ids.delete(item.id);store({selectedItems:[...ids]});});
+      const name=document.createElement('input');name.value=item.name;name.maxLength=150;name.setAttribute('aria-label','Preparation dish name');
+      name.addEventListener('change',()=>{item.name=name.value.trim()||item.name;name.value=item.name;check.setAttribute('aria-label',`Prepare ${item.name}`);saveState();});
+      const category=document.createElement('select');category.setAttribute('aria-label',`Category for ${item.name}`);
+      for(const value of ['Main Table','Appetizers','Sides','Desserts','Drinks']){const option=document.createElement('option');option.value=value;option.textContent=value;category.append(option);}category.value=item.category;
+      category.addEventListener('change',()=>{item.category=category.value;saveState();draw();});
+      const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.setAttribute('aria-label',`Remove ${item.name}`);
+      remove.addEventListener('click',()=>{event.sitDownMenu=event.sitDownMenu.filter(value=>value.id!==item.id);store({selectedItems:(current().selectedItems||[]).filter(id=>id!==item.id)});draw();});
+      row.append(chosen,name,category,remove);rows.append(row);
+    }
+  };
+  const add=document.createElement('div');add.className='sit-down-menu-row';
+  const name=document.createElement('input');name.placeholder='New preparation dish';name.maxLength=150;name.setAttribute('aria-label','New preparation dish');
+  const button=document.createElement('button');button.type='button';button.textContent='Add dish';
+  button.addEventListener('click',()=>{if(!name.value.trim()){name.focus();return;}event.sitDownMenu=[...(event.sitDownMenu||[]),{id:crypto.randomUUID(),name:name.value.trim(),category:'Main Table'}];name.value='';saveState();draw();});
+  add.append(name,button);panel.append(add);draw();
+}
 function openMenuEditor(){
   if(!hostAuthenticated || !SiteEditing.enabled || !hasGatheringToolbarContext())return;
   const dialog=document.querySelector('#menuEditorDialog'),area=document.querySelector('#menuEditorContent');if(dialog.open)return;
   commitAllPendingEditorInputs();area.replaceChildren();
   if(GatheringFeatures.rsvp(viewedEventId).meals)buildWeddingMealSettings(area);
   else{
+    renderDinnerPlanEditor(area);
     openAdmin();
     const fields=document.querySelector('#menuAdminFields'),anchor=document.createComment('menu fields home'),hidden=fields.hidden;
-    fields.before(anchor);fields.hidden=false;area.append(fields);
+    fields.before(anchor);fields.hidden=GatheringFeatures.dinnerPlan(viewedEventId,state).type==='sit-down';area.append(fields);
     dialog.addEventListener('close',()=>{anchor.replaceWith(fields);fields.hidden=hidden;},{once:true});
   }
   showSiteDialog(dialog);

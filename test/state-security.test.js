@@ -215,3 +215,17 @@ test('legacy over-capacity dishes do not block other RSVP changes or allow new o
  const latest=await f.guest(),increase=structuredClone(latest.state.events.one.items);InvitationGroups.setDishQuantity(increase[0],'Casey Example',1,1,true);
  assert.equal((await f.patch(latest,[{path:['events','one','items'],value:increase}])).status,403);
 });
+
+test('potluck guests receive only aggregate public counts and sit-down menus remain private',async t=>{
+ const f=await fixture(t),event=f.state.events.one;
+ f.state.accounts[1].invitedEvents={one:true};f.state.accounts[1].children=['Other Child'];
+ event.sitDownMenu=[{id:'private-dinner',name:'PRIVATE PREPARATION DISH',category:'Main Table'}];event.dinnerPlans={2099:{type:'potluck',selectedItems:['private-dinner']}};
+ const potluck=await f.guest();assert.equal(potluck.response.status,200);
+ assert.deepEqual(potluck.state.events.one.dinnerSummary,{invited:{adults:2,children:2},attending:{adults:1,children:0}});
+ assert.ok(!JSON.stringify(potluck.state).includes('PRIVATE PREPARATION DISH'));assert.ok(!JSON.stringify(potluck.state).includes('private-dinner'));assert.ok(!JSON.stringify(potluck.state).includes('Other Person'));
+ event.dinnerPlans[2099].type='sit-down';const sitdown=await f.guest();
+ assert.equal(sitdown.state.events.one.dinnerSummary,undefined);assert.equal(sitdown.state.events.one.sitDownMenu,undefined);assert.deepEqual(sitdown.state.events.one.items,[]);
+ assert.equal((await f.patch(sitdown,[{path:['events','one','dinnerPlans'],value:{2099:{type:'potluck'}}}])).status,403);
+ assert.equal((await f.patch(sitdown,[{path:['events','one','items'],value:[{id:'custom-ab',name:'No',category:'Sides',needed:1,unit:'item',claims:['Casey Example']}]}])).status,403);
+ const host=await f.host();assert.equal(host.state.events.one.sitDownMenu[0].name,'PRIVATE PREPARATION DISH');assert.equal(f.writes,0);
+});

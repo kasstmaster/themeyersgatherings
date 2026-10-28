@@ -1057,3 +1057,5 @@ dialog:modal:not(.fullscreen-dialog){bottom:var(--toolbar-clearance,0px);max-hei
 .attendance-dish{display:block;padding:0;line-height:1.6}
 
 .attendance-dishes>.attendance-dish{margin:0}
+
+.sit-down-menu-row{display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap}.sit-down-menu-row>label{display:flex;flex-direction:row;align-items:center}.sit-down-menu-row input[type=checkbox]{min-width:auto}.sit-down-menu-row>input{flex:1;min-width:120px}.sit-down-menu-row>select{max-width:160px}

@@ -84,3 +84,9 @@ Saved custom items remain on their gathering’s menu after claims are released 
 Lowering a dish limit below existing claims does not block unrelated RSVP saves. Existing quantities can stay the same or decrease; new claims cannot increase the existing overflow. RSVP validation messages are displayed inside the RSVP page.
 
 RSVP refreshes preserve unavailable dish controls; showing a covered dish as checked does not claim it for the current invitation group.
+
+### Yearly dinner plans (Wedding excluded)
+
+Use Edit → Menu to choose the event year’s Potluck or Full sit-down dinner plan. Potluck’s existing menu editor remains separate. Full sit-down dinner shows a private preparation menu: add/edit dish options and check Prepare for the dishes to make that year. Unchecking preserves the option. Switching plans preserves both menus and yearly selections. A later event year starts with the default Potluck plan until changed. Guest potluck totals show Invited and Attending only and cannot open name lists. Sit-down guests see no counts or contribution questions.
+
+Your Dishes appears in the toolbar for a potluck invitation with claims and opens its printable list. The existing Print Page action exports only that page. Legacy single-invitation household claims count as that invitation’s; ambiguous unassigned claims from multi-invitation households are not attributed to a guessed group.

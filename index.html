@@ -179,6 +179,7 @@
     </div></dialog>
 
 
+    <button id="yourDishesButton" data-wedding-tab="your-dishes" type="button" aria-controls="yourDishesSection" hidden>Your Dishes</button>
     <dialog id="rsvpDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="rsvpHeading">
       <form method="dialog" id="rsvpForm" class="modal-card full-page-form flow-panel" novalidate>
         <button class="modal-close" type="button" aria-label="Close">×</button>
@@ -220,6 +221,7 @@
         <button class="summary-item" id="invitedListButton" type="button"><strong id="invitedCount">0/0</strong><span>Invited</span></button>
       </section>
           <div id="rsvpWeddingPages" hidden>
+      <section id="yourDishesSection" class="gathering-page rsvp-page-shell" hidden aria-labelledby="yourDishesHeading"><h2 id="yourDishesHeading">Your Dishes</h2><div class="gathering-inner-panel" id="yourDishesList"></div></section>
       <nav id="gatheringTabs" class="wedding-party-tabs" aria-label="Gathering pages" role="tablist" hidden>
         <button type="button" role="tab" data-gathering-tab="notes" aria-controls="hostNotesSection" aria-selected="false" hidden>Notes</button>
       </nav>
