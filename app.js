@@ -578,7 +578,7 @@ async function loadSharedState({ allowActiveEditor = false } = {}) {
   if (!stateUrl || (!SHARED_STATE_URL && (localStateRevision > 0 || appState.savedAt))) return;
   // Never replace a local edit with a stale response while that edit is
   // waiting to be uploaded.
-  if (sharedSavePending || sharedSaveInProgress || (!allowActiveEditor && hasActiveEditor())) return;
+  if (!document.querySelector('#invitationEditorDialog').hidden || sharedSavePending || sharedSaveInProgress || (!allowActiveEditor && hasActiveEditor())) return;
   const attempt=++sharedLoadNumber;
   const revisionBeforeLoad = localStateRevision;
   try {
@@ -1054,7 +1054,7 @@ function isHostView() { return hostAuthenticated && !isViewingAsGuest(); }
 const hostDialogStack=[];
 const persistentHostControls=['hostToolsPanel','cancelViewAsButton'].map(id=>document.getElementById(id));
 function activeHostDialog(){return hostDialogStack.filter(dialog=>dialog.open).at(-1) || [...document.querySelectorAll('dialog[open]')].at(-1);}
-function hasGatheringToolbarContext(){return Boolean((guestName || hostAuthenticated) && document.querySelector('#eventSelectionPage').hidden && availableEventIds().includes(viewedEventId));}
+function hasGatheringToolbarContext(){return document.querySelector('#invitationEditorDialog').hidden && Boolean((guestName || hostAuthenticated) && document.querySelector('#eventSelectionPage').hidden && availableEventIds().includes(viewedEventId));}
 function syncHostToolbar(records=[]) {
   for(const record of records)if(record.target.matches('dialog')){
     const index=hostDialogStack.indexOf(record.target);if(index>=0)hostDialogStack.splice(index,1);
@@ -1064,12 +1064,13 @@ function syncHostToolbar(records=[]) {
   document.querySelector('#hostQuickActions').hidden=true;
   const owner=activeHostDialog() || document.body;
   for(const control of persistentHostControls)if(control.parentElement!==owner)owner.append(control);
+  document.querySelector('#manageGatherings').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || !document.querySelector('#invitationEditorDialog').hidden;
   const create=document.querySelector('#newGatheringButton');create.hidden=!hostAuthenticated;
   document.querySelector('#cancelViewAsButton').hidden=!isViewingAsGuest();
   document.body.style.setProperty('--host-shortcuts-width',document.querySelector('#hostQuickActions').getBoundingClientRect().width+'px');
   const edit=document.querySelector('#editItemsButton');edit.hidden=!hostAuthenticated;edit.setAttribute('aria-pressed',String(SiteEditing.enabled));
-  const editLabel=SiteEditing.enabled?'Done':'Edit';edit.querySelector('span').textContent=editLabel;edit.setAttribute('aria-label',editLabel);
-  edit.querySelector('svg').innerHTML=SiteEditing.enabled?'<path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2Z"/>':'<path d="m16 3 5 5L8 21H3v-5L16 3Z"/><path d="m14 5 5 5"/>';
+  const editLabel=SiteEditing.enabled || !document.querySelector('#invitationEditorDialog').hidden?'Done':'Edit';edit.querySelector('span').textContent=editLabel;edit.setAttribute('aria-label',editLabel);
+  edit.querySelector('svg').innerHTML=editLabel==='Done'?'<path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2Z"/>':'<path d="m16 3 5 5L8 21H3v-5L16 3Z"/><path d="m14 5 5 5"/>';
   const hostToolbar=document.querySelector('#hostToolsPanel');if(edit.parentElement!==hostToolbar || edit.nextElementSibling!==create || hostToolbar.lastElementChild!==create)hostToolbar.append(edit,create);
   for(const button of hostToolbar.querySelectorAll('button')){const label=button.querySelector('span')?.textContent.trim() || button.getAttribute('aria-label') || '';if(label){button.title=label;if(!button.hasAttribute('aria-label'))button.setAttribute('aria-label',label);}}
   document.querySelector('#cancelViewAsButton').style.right='0px';
@@ -1091,6 +1092,7 @@ new MutationObserver(records=>syncHostToolbar(records)).observe(document.body,{s
 function showSiteDialog(dialog){if(dialog.id!=='rsvpDialog' && dialog.parentElement.closest('[hidden]'))document.body.append(dialog);dialog.showModal();}
 async function closeHostDialogs(){await Promise.all([...document.querySelectorAll('dialog[open]')].map(dialog=>new Promise(resolve=>{dialog.addEventListener('close',resolve,{once:true});dialog.close();})));}
 async function showGatheringsHome(){
+  if(!document.querySelector('#invitationEditorDialog').hidden && !closeTemplateWorkspace(false))return;
   if(!guestName && !hostAuthenticated)return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
   await closeHostDialogs();if(isViewingAsGuest())restoreHostSession();showEventSelection();updateHostToolsPanel();
 }
@@ -1163,7 +1165,7 @@ function gatheringRsvpStatus(eventId) {
 }
 function renderEventSelection() {
   const ids = GatheringHistory.selection(appState,availableEventIds());
-  document.querySelector('#manageGatherings').hidden=!isHostView();
+  document.querySelector('#manageGatherings').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || !document.querySelector('#invitationEditorDialog').hidden;
   document.querySelector('#eventSelectionChoices').innerHTML = ids.map(id => {
     const event = EVENT_DETAILS[id];
     const eventState = appState.events[id];
@@ -1174,6 +1176,7 @@ function renderEventSelection() {
     return `<button type="button" data-enter-event="${id}"${eventState.cancelled?' disabled aria-label="Cancelled gathering"':''}${status?' class="has-rsvp-status"':''}>${badge}<span class="event-selection-label"><span>${escapeHtml(eventState.gatheringName || event.name)}${eventState.cancelled?' — Cancelled':''}</span><small>${formatted}</small></span></button>`;
   }).join('');
   document.querySelector('#eventSelectionEmpty').hidden = ids.length > 0;
+  if(document.querySelector('#pastGatheringsDropdown')?.open)showPastGatherings();
 }
 function showEventSelection() {
   renderEventSelection();
@@ -3375,6 +3378,7 @@ document.querySelector('#shareBulkInvitations').addEventListener('click', async 
 });
 
 let templateDraft = null;
+let templateUndo=[],templateRedo=[],templateWorkspaceRestore=[],templateCenterSnap=true;
 let selectedTemplateFieldId = '';
 let pendingTemplateFieldKey = '';
 let newTemplateBackgroundFile = null;
@@ -3472,7 +3476,7 @@ function templateEditorQrSvg() {
 }
 function renderEditorFields() {
   const layer = document.querySelector('#templateFieldLayer');
-  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${field.id === selectedTemplateFieldId ? 'selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? templateEditorQrSvg() : escapeHtml(previewValue(field))}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
+  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${field.id === selectedTemplateFieldId ? 'selected element-editor-selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? templateEditorQrSvg() : escapeHtml(previewValue(field))}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
   layer.querySelectorAll('.editor-field').forEach(element => {
     element.addEventListener('pointerdown', event => beginFieldPointer(event, element));
     element.addEventListener('click', event => { event.stopPropagation(); selectedTemplateFieldId = element.dataset.fieldId; renderEditorFields(); renderFieldInspector(); });
@@ -3484,29 +3488,53 @@ function renderEditorFields() {
 function beginFieldPointer(event, element) {
   event.stopPropagation(); event.preventDefault(); selectedTemplateFieldId = element.dataset.fieldId;
   const field = templateDraft.fields.find(item => item.id === selectedTemplateFieldId), resizing = event.target.classList.contains('resize-handle');
+  let recorded=false;
   const start = { x: event.clientX, y: event.clientY, fieldX: field.x, fieldY: field.y, width: field.width, height: field.height }, scale = editorScale();
   element.setPointerCapture(event.pointerId);
   element.onpointermove = move => {
     const dx = (move.clientX - start.x) / scale, dy = (move.clientY - start.y) / scale;
+    if(!recorded&&(Math.abs(dx)>.5||Math.abs(dy)>.5)){recordTemplateUndo();recorded=true;}
     if (resizing) { const size = field.type === 'qr' ? Math.max(64, start.width + Math.max(dx, dy)) : null; field.width = Math.round(size || Math.max(40, start.width + dx)); field.height = Math.round(size || Math.max(24, start.height + dy)); }
-    else { field.x = Math.round(Math.max(0, Math.min(templateDraft.background.width - field.width, start.fieldX + dx))); field.y = Math.round(Math.max(0, Math.min(templateDraft.background.height - field.height, start.fieldY + dy))); }
-    element.style.left = `${field.x}px`; element.style.top = `${field.y}px`; element.style.width = `${field.width}px`; element.style.height = `${field.height}px`; renderFieldInspector();
+    else { field.x = Math.round(Math.max(0, Math.min(templateDraft.background.width - field.width, start.fieldX + dx))); field.y = Math.round(Math.max(0, Math.min(templateDraft.background.height - field.height, start.fieldY + dy)));const snapped=window.Invitation.snapHorizontal(field,templateDraft.background.width,scale,templateCenterSnap);field.x=snapped.x;document.querySelector('#templateCenterGuide').hidden=!snapped.snapped; }
+    element.style.left = `${field.x}px`; element.style.top = `${field.y}px`; element.style.width = `${field.width}px`; element.style.height = `${field.height}px`;ElementEditor.updateWorkspaceValues({x:field.x,y:field.y,width:field.width,height:field.height});
   };
-  element.onpointerup = () => { element.onpointermove = null; element.onpointerup = null; renderEditorFields(); };
+  element.onpointerup = () => { element.onpointermove = null; element.onpointerup = null;document.querySelector('#templateCenterGuide').hidden=true;renderEditorFields();renderFieldInspector(); };
   renderFieldInspector();
 }
+function recordTemplateUndo(){templateUndo.push(structuredClone(templateDraft));if(templateUndo.length>50)templateUndo.shift();templateRedo=[];}
+function refreshTemplateUndo(){for(const button of document.querySelectorAll('[data-editor-workspace] button'))if(button.textContent==='Undo'||button.textContent==='Redo')button.disabled=button.textContent==='Undo'?!templateUndo.length:!templateRedo.length;}
+function restoreTemplateHistory(from,to){if(!from.length)return;to.push(structuredClone(templateDraft));templateDraft=from.pop();if(!templateDraft.fields.some(field=>field.id===selectedTemplateFieldId))selectedTemplateFieldId=templateDraft.fields.at(-1)?.id || '';document.querySelector('#templateEditorName').value=templateDraft.name;renderEditorFields();renderFieldInspector();loadTemplateBackgroundPreview(templateDraft.background);}
+function mountTemplateControl(element,parent){templateWorkspaceRestore.push([element,element.parentElement,element.nextSibling]);parent.append(element);element.hidden=false;}
+function openTemplateWorkspaceToolbar(){
+  ElementEditor.openWorkspace({root:document.querySelector('#invitationEditorDialog'),label:'Invitation editor',actions:[['Undo',()=>restoreTemplateHistory(templateUndo,templateRedo)],['Redo',()=>restoreTemplateHistory(templateRedo,templateUndo)],['Done',()=>closeTemplateWorkspace()]],refresh:refreshTemplateUndo,
+    mountActions:parent=>{for(const id of ['saveTemplateButton','previewEditedTemplateButton'])mountTemplateControl(document.getElementById(id),parent);},
+    mount:parent=>{mountTemplateControl(document.querySelector('#templateWorkspaceTools'),parent);},
+    restore:()=>{for(const [element,parent,next] of templateWorkspaceRestore){parent.insertBefore(element,next?.parentElement===parent?next:null);if(element.id==='templateWorkspaceTools')element.hidden=true;}templateWorkspaceRestore=[];}
+  });renderFieldInspector();
+}
 function renderFieldInspector() {
-  const inspector = document.querySelector('#fieldInspector'), field = templateDraft.fields.find(item => item.id === selectedTemplateFieldId);
-  if (!field) { inspector.innerHTML = '<h3>Field settings</h3><p>Select a placed field.</p>'; return; }
-  const numeric = (key, label, step = 1) => `<label>${label}<input data-field-setting="${key}" type="number" step="${step}" value="${field[key]}"></label>`;
-  inspector.innerHTML = `<h3>${escapeHtml(field.label)}</h3><div class="inspector-grid">${numeric('x', 'X')}${numeric('y', 'Y')}${numeric('width', 'Width')}${numeric('height', 'Height')}${field.type === 'text' ? `<label>Font<select data-field-setting="fontFamily">${window.Invitation.FONT_FAMILIES.map(font => `<option ${font === field.fontFamily ? 'selected' : ''}>${font}</option>`).join('')}</select></label>${numeric('fontSize', 'Font size')}${numeric('letterSpacing', 'Letter spacing', .1)}${numeric('lineHeight', 'Line height', .1)}<label>Weight<select data-field-setting="fontWeight"><option value="400">Regular</option><option value="600" ${field.fontWeight === '600' ? 'selected' : ''}>Semibold</option><option value="700" ${field.fontWeight === '700' ? 'selected' : ''}>Bold</option></select></label><label>Alignment<select data-field-setting="textAlign"><option>left</option><option ${field.textAlign === 'center' ? 'selected' : ''}>center</option><option ${field.textAlign === 'right' ? 'selected' : ''}>right</option></select></label><label>Color<input data-field-setting="color" type="color" value="${field.color}"></label><label class="check"><input data-field-setting="italic" type="checkbox" ${field.italic ? 'checked' : ''}> Italic</label>${field.key === 'eventDate' ? `<label>Format<select data-field-setting="formatter">${window.Invitation.EVENT_DATE_FORMATTERS.map(([value, label]) => `<option value="${value}" ${value === field.formatter ? 'selected' : ''}>${label}</option>`).join('')}</select></label>` : ''}${field.key === 'rsvpBy' ? `<label>Format<select data-field-setting="formatter">${window.Invitation.RSVP_FORMATTERS.map(([value, label]) => `<option value="${value}" ${value === field.formatter ? 'selected' : ''}>${label}</option>`).join('')}</select></label>` : ''}${field.key === 'customText' ? `<label>Text<input data-field-setting="customText" value="${escapeAttribute(field.customText)}"></label>` : ''}` : '<p>QR resizing always preserves a square aspect ratio and a four-module quiet zone.</p>'}</div><button id="deleteTemplateField" type="button">Delete Field</button>`;
-  inspector.querySelectorAll('[data-field-setting]').forEach(input => input.addEventListener('input', () => {
-    const key = input.dataset.fieldSetting; field[key] = input.type === 'checkbox' ? input.checked : input.type === 'number' ? Number(input.value) : input.value;
-    if (field.type === 'qr' && (key === 'width' || key === 'height')) field.width = field.height = Number(input.value);
-    if (key === 'formatter') field.wordSpacing = input.value.endsWith('-spaced') ? 14 : 0;
-    renderEditorFields();
-  }));
-  document.querySelector('#deleteTemplateField').addEventListener('click', () => { templateDraft.fields = templateDraft.fields.filter(item => item.id !== field.id); selectedTemplateFieldId = ''; renderEditorFields(); renderFieldInspector(); });
+  if(document.querySelector('#invitationEditorDialog').hidden)return;
+  const field=templateDraft.fields.find(item=>item.id===selectedTemplateFieldId);
+  if(!field){ElementEditor.workspaceControls('Select a value on the invitation',[],()=>{});return;}
+  const numeric=(key,label,min=0,step=1)=>({key,label,type:'number',value:field[key],min,step});
+  const specs=[numeric('x','X'),numeric('y','Y'),numeric('width','Width',1),numeric('height','Height',1)];
+  if(field.type==='text')specs.push({key:'fontFamily',label:'Font',options:TextStyles.fonts,value:field.fontFamily},numeric('fontSize','Size',1),{key:'fontWeight',label:'Bold',type:'toggle',value:Number(field.fontWeight)>=600},{key:'italic',label:'Italic',type:'toggle',value:field.italic},{key:'color',label:'Text color',type:'color',value:field.color},{key:'textAlign',label:'Alignment',options:['left','center','right'],value:field.textAlign},numeric('letterSpacing','Letter spacing',-10,.1),numeric('wordSpacing','Word spacing',-10,.1),numeric('lineHeight','Line height',.1,.1));
+  if(field.key==='eventDate'||field.key==='rsvpBy')specs.push({key:'formatter',label:'Date format',value:field.formatter,options:(field.key==='eventDate'?window.Invitation.EVENT_DATE_FORMATTERS:window.Invitation.RSVP_FORMATTERS).map(([value,label])=>({value,label}))});
+  if(field.key==='customText')specs.push({key:'customText',label:'Custom text',type:'textarea',value:field.customText});
+  ElementEditor.workspaceControls(field.label,specs,(key,value)=>{
+    if(key==='color'&&!/^#[a-f0-9]{6}$/i.test(value))return;
+    recordTemplateUndo();field[key]=key==='fontWeight'?(value?'700':'400'):value;
+    if(field.type==='qr'&&['width','height'].includes(key))field.width=field.height=Number(value);
+    if(key==='formatter')field.wordSpacing=value.endsWith('-spaced')?14:0;
+    renderEditorFields();refreshTemplateUndo();
+  });
+}
+function templateHasUnsavedChanges(){return !document.querySelector('#invitationEditorDialog').hidden&&JSON.stringify(appState.invitationTemplates.find(item=>item.id===templateDraft?.id))!==JSON.stringify(templateDraft);}
+function closeTemplateWorkspace(showManager=true){
+  if(document.querySelector('#invitationEditorDialog').hidden)return true;
+  if(templateHasUnsavedChanges()&&!confirm('Leave this template with unsaved changes?'))return false;
+  ElementEditor.beforeRender();document.querySelector('#invitationEditorDialog').hidden=true;document.body.classList.remove('template-workspace-open');templateEditorResizeObserver?.disconnect();
+  showEventSelection();if(showManager)openTemplateManager();return true;
 }
 function sizeEditorStage() {
   const viewport = document.querySelector('#templateCanvasViewport'), stage = document.querySelector('#templateCanvasStage');
@@ -3515,6 +3543,7 @@ function sizeEditorStage() {
   if (!width || !height) return;
   const scale = Math.min(1, viewport.parentElement.clientWidth / width, 680 / height);
   const displayedWidth = Math.max(1, Math.round(width * scale)), displayedHeight = Math.max(1, Math.round(height * scale));
+  document.querySelector('#templateCenterGuide').style.width=`${2/scale}px`;
   viewport.style.width = `${displayedWidth}px`; viewport.style.height = `${displayedHeight}px`;
   stage.style.width = `${width}px`; stage.style.height = `${height}px`; stage.style.transform = `scale(${scale})`;
 }
@@ -3554,8 +3583,9 @@ async function loadTemplateBackgroundPreview(background, localFile = null) {
   }
 }
 function openTemplateEditor(id, localFile = null, draft = null) {
+  if(!isHostView())return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
   const template = draft || invitationTemplatesForEvent().find(item => item.id === id); if (!template) return;
-  templateDraft = structuredClone(template); selectedTemplateFieldId = ''; pendingTemplateFieldKey = '';
+  templateDraft = structuredClone(template);templateUndo=[];templateRedo=[];document.querySelector('#templateCenterGuide').hidden=true;document.querySelector('#templateAddValues').open=false; selectedTemplateFieldId = ''; pendingTemplateFieldKey = '';
   document.querySelector('#replaceTemplateBackground').value = ''; updateDropzone(document.querySelector('#replaceTemplateDropzone'), null);
   document.querySelector('#templateEditorError').textContent='';
   document.querySelector('#templateEditorHeading').textContent = templateDraft.name;
@@ -3563,7 +3593,10 @@ function openTemplateEditor(id, localFile = null, draft = null) {
   document.querySelector('#templateFieldToolbox').innerHTML = Object.entries(window.Invitation.FIELD_DEFINITIONS).map(([key, definition]) => `<button type="button" data-field-key="${key}">${definition.label}</button>`).join('');
   document.querySelectorAll('[data-field-key]').forEach(button => button.addEventListener('click', () => { pendingTemplateFieldKey = button.dataset.fieldKey; document.querySelector('#placementHelp').textContent = `Click the invitation to place ${button.textContent}.`; }));
   document.querySelector('#templatePreviewAccount').innerHTML = '<option value="">General login QR</option>' + invitationAccounts().map(account => `<option value="${escapeAttribute(account.qrToken)}">${escapeHtml(account.name)}</option>`).join('');
-  document.querySelector('#invitationTemplatesDialog').close(); showSiteDialog(document.querySelector('#invitationEditorDialog'));
+  document.querySelector('#invitationTemplatesDialog').close();
+  document.body.append(document.querySelector('#invitationEditorDialog'));
+  for(const id of ['signInPage','eventSelectionPage','attirePage','eventPage'])document.getElementById(id).hidden=true;
+  document.querySelector('#invitationEditorDialog').hidden=false;document.body.classList.add('template-workspace-open');openTemplateWorkspaceToolbar();syncHostToolbar();window.scrollTo({top:0,left:0});
   if (templateEditorResizeObserver) templateEditorResizeObserver.disconnect();
   templateEditorResizeObserver = new ResizeObserver(sizeEditorStage);
   templateEditorResizeObserver.observe(document.querySelector('.template-canvas-column'));
@@ -3573,15 +3606,18 @@ document.querySelector('#templateCanvasStage').addEventListener('click', event =
   if (!pendingTemplateFieldKey) return;
   const rect = event.currentTarget.getBoundingClientRect(), scale = editorScale();
   const field = window.Invitation.newField(pendingTemplateFieldKey, (event.clientX - rect.left) / scale, (event.clientY - rect.top) / scale);
-  field.width = Math.min(field.width, templateDraft.background.width - field.x); field.height = Math.min(field.height, templateDraft.background.height - field.y);
-  templateDraft.fields.push(field); selectedTemplateFieldId = field.id; pendingTemplateFieldKey = ''; document.querySelector('#placementHelp').textContent = 'Choose another field or edit the selected field.'; renderEditorFields(); renderFieldInspector();
+  field.width = Math.min(field.width, templateDraft.background.width);field.x=Math.max(0,Math.min(templateDraft.background.width-field.width,field.x-field.width/2)); field.height = Math.min(field.height, templateDraft.background.height - field.y);
+  recordTemplateUndo();
+  if(field.type==='text')field.textAlign='center';
+  const snapped=window.Invitation.snapHorizontal(field,templateDraft.background.width,scale,templateCenterSnap);field.x=snapped.x;document.querySelector('#templateCenterGuide').hidden=!snapped.snapped;
+  templateDraft.fields.push(field);document.querySelector('#templateAddValues').open=false; selectedTemplateFieldId = field.id; pendingTemplateFieldKey = ''; document.querySelector('#placementHelp').textContent = 'Choose another field or edit the selected field.'; renderEditorFields(); renderFieldInspector();
 });
 async function replaceTemplateBackground(file) {
   const error = document.querySelector('#templateEditorError'); error.textContent = '';
   try {
     if (!file) return; const metadata = await backgroundMetadata(file);
     if ((metadata.width !== templateDraft.background.width || metadata.height !== templateDraft.background.height) && !confirm(`The new image is ${metadata.width} × ${metadata.height}, not ${templateDraft.background.width} × ${templateDraft.background.height}. Existing coordinates will be preserved, not stretched. Continue?`)) return;
-    const background = await uploadTemplateBackground(`${templateDraft.id}-${crypto.randomUUID()}`, file); templateDraft = window.Invitation.replaceBackground(templateDraft, background).template;
+    const background = await uploadTemplateBackground(`${templateDraft.id}-${crypto.randomUUID()}`, file);recordTemplateUndo(); templateDraft = window.Invitation.replaceBackground(templateDraft, background).template;
     await loadTemplateBackgroundPreview(background, file); renderEditorFields();
     showToast('Background replaced in the draft. Save template to keep it.');
   } catch (caught) { error.textContent = caught.message; }
@@ -3616,7 +3652,7 @@ document.querySelector('#saveTemplateButton').addEventListener('click', () => {
     const index=appState.invitationTemplates.findIndex(template=>template.id===templateDraft.id);
     if(index<0)appState.invitationTemplates.push(structuredClone(templateDraft));else appState.invitationTemplates[index]=structuredClone(templateDraft);
     if(!invitationTemplatesForEvent().some(item=>item.id===state.invitationTemplateId))state.invitationTemplateId=templateDraft.id;
-    document.querySelector('#templateEditorHeading').textContent=templateDraft.name;saveState();showToast('Invitation template saved.');
+    document.querySelector('#templateEditorHeading').textContent=templateDraft.name;saveState({refresh:false});showToast('Invitation template saved.');
   }catch(caught){error.textContent=caught.message;}
 });
 document.querySelector('#templatePreviewAccount').addEventListener('change', renderEditorFields);
@@ -3670,6 +3706,7 @@ document.querySelector('#adminHostNotes').addEventListener('change', event => {
   state.hostNotes = event.target.value; saveState(); render();
 });
 document.querySelector('#editItemsButton').addEventListener('click', async () => {
+  if(!document.querySelector('#invitationEditorDialog').hidden){closeTemplateWorkspace();return;}
   if (!hostAuthenticated) return;
   if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
   if (SiteEditing.enabled) commitAllPendingEditorInputs();
@@ -4076,6 +4113,7 @@ for (let index = 0; index < 40; index += 1) {
 // Authenticated hosts can create a gathering wherever the toolbar appears.
 document.querySelector('#newGatheringButton').addEventListener('click',async()=>{
   if(!hostAuthenticated || document.querySelector('#newGatheringDialog').open)return;
+  if(!document.querySelector('#invitationEditorDialog').hidden && !closeTemplateWorkspace(false))return;
   commitAllPendingEditorInputs();
   if(isViewingAsGuest()){await closeHostDialogs();restoreHostSession();}
   if(SiteEditing.enabled)SiteEditing.toggle(render);
@@ -4152,8 +4190,7 @@ function showPastGatherings() {
   const list=document.querySelector('#pastGatheringsList');list.replaceChildren();document.querySelector('#pastGatheringDetails').replaceChildren();
   const entries=pastGatheringEntries();
   if(!entries.length)list.textContent='No past gatherings are available yet.';
-  for(const snapshot of entries){const button=document.createElement('button');button.type='button';button.textContent=`${snapshot.name} · ${snapshot.date}`;button.addEventListener('click',()=>showPastGathering(snapshot));list.append(button);}
-  showSiteDialog(document.querySelector('#pastGatheringsDialog'));
+  for(const snapshot of entries){const button=document.createElement('button');button.type='button';button.textContent=`${snapshot.name} · ${snapshot.date}`;button.addEventListener('click',()=>{showPastGathering(snapshot);showSiteDialog(document.querySelector('#pastGatheringsDialog'));});list.append(button);}
 }
 function showPastGathering(snapshot) {
   const area=document.querySelector('#pastGatheringDetails'),event=snapshot.event;
@@ -4166,7 +4203,7 @@ function showPastGathering(snapshot) {
   try{const url=new URL(event.mediaGalleryUrl);if(!['http:','https:'].includes(url.protocol))throw new Error();const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent=event.mediaGalleryLabel || 'View & Download Photos & Videos';area.querySelector('[data-archive-gallery-link]').append(link);}catch{/* An empty gallery link stays empty until the Host supplies it. */}
   void WeddingMedia.archive({base:SHARED_STATE_URL,host:isHostView(),account:guestName,name:signedInPersonName,preview:isViewingAsGuest(),eventId:snapshot.eventId,archiveDate:snapshot.date},area.querySelector('[data-archive-media]'),area.querySelector('[data-archive-media-status]'));
 }
-document.querySelector('#viewPastGatherings').addEventListener('click',showPastGatherings);
+document.querySelector('#pastGatheringsDropdown').addEventListener('toggle',()=>{if(document.querySelector('#pastGatheringsDropdown').open)showPastGatherings();});
 for(const button of document.querySelectorAll('[data-close-lifecycle]'))button.addEventListener('click',()=>button.closest('dialog').close());
 function managementEntries() {
   const entries=new Map();
@@ -4227,3 +4264,11 @@ document.querySelector('#confirmGatheringForm').addEventListener('submit',async 
 });
 
 document.querySelector('#editInvitationGatheringInfo').addEventListener('click',()=>{document.querySelector('#invitationTemplatesDialog').close();refreshManagementChoices();const select=document.querySelector('#managedGathering');select.value=JSON.stringify([viewedEventId,state.eventDate]);renderManagedGathering();showSiteDialog(document.querySelector('#manageGatheringsDialog'));});
+
+document.querySelector('#closeTemplateEditor').addEventListener('click',()=>closeTemplateWorkspace());
+document.querySelector('#templateSnapCenter').addEventListener('change',event=>{templateCenterSnap=event.target.checked;});
+document.querySelector('#centerTemplateField').addEventListener('click',()=>{const field=templateDraft?.fields.find(item=>item.id===selectedTemplateFieldId);if(!field)return;if(field.width>templateDraft.background.width){ElementEditor.workspaceStatus('Reduce this value’s width before centering it.');return;}recordTemplateUndo();field.x=(templateDraft.background.width-field.width)/2;renderEditorFields();renderFieldInspector();});
+document.querySelector('#removeTemplateField').addEventListener('click',()=>{if(!selectedTemplateFieldId)return;recordTemplateUndo();templateDraft.fields=templateDraft.fields.filter(item=>item.id!==selectedTemplateFieldId);selectedTemplateFieldId='';renderEditorFields();renderFieldInspector();});
+
+document.querySelector('#templateEditorName').addEventListener('input',event=>{if(document.querySelector('#invitationEditorDialog').hidden)return;recordTemplateUndo();templateDraft.name=event.target.value;refreshTemplateUndo();});
+window.addEventListener('beforeunload',event=>{if(templateHasUnsavedChanges()){event.preventDefault();event.returnValue='';}});

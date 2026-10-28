@@ -1075,3 +1075,31 @@ dialog:modal:not(.fullscreen-dialog){bottom:var(--toolbar-clearance,0px);max-hei
 #managedGatheringInformation textarea { min-height:0; }
 .template-editor-dialog .editor-field.text { white-space:pre-wrap; }
 #adminWeddingVariableHelp[hidden] { display:none; }
+/* Invitation workspaces reuse the website editor sidebar and common popup cards. */
+#pastGatheringsDropdown{margin-top:1.5rem;text-align:left}
+#pastGatheringsDropdown>summary{cursor:pointer;font-weight:700;padding:.75rem 0}
+#pastGatheringsList{margin-top:.75rem}
+.template-editor-page{min-height:100dvh;box-sizing:border-box;padding:24px 24px calc(110px + env(safe-area-inset-bottom));background:var(--cream);color:var(--ink)}
+.template-editor-page[hidden]{display:none}
+.template-editor-content{position:relative;max-width:1500px;margin:0 auto}
+.template-editor-page .template-editor-layout{display:block;margin-top:24px}
+body[data-editor-sidebar-root]>#invitationEditorDialog{margin-left:var(--editor-sidebar-width,220px);width:calc(100% - var(--editor-sidebar-width,220px));box-sizing:border-box}
+body.template-workspace-open #hostToolsPanel{left:var(--editor-sidebar-width,220px)}
+#templateCenterGuide{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#e63946;z-index:4;pointer-events:none}
+#templateCenterGuide[hidden]{display:none}
+.element-editor-toolbar #templateWorkspaceTools{margin:0;padding:0;border:0;min-width:0}
+.element-editor-toolbar #templateWorkspaceTools .field-toolbox{grid-template-columns:1fr 1fr;gap:4px}
+.element-editor-toolbar .template-dropzone{flex-basis:auto;min-height:50px;padding:8px!important;background:#292d35;border-color:#666;color:#fff!important}
+.element-editor-toolbar #templateWorkspaceTools>label{font:12px Arial,sans-serif}
+.element-editor-toolbar #templateSnapCenter{width:auto}
+.template-editor-page .editor-heading{padding-right:44px}
+.template-editor-page .template-canvas-column{display:flex;flex-direction:column;align-items:center}
+@media(max-width:650px){.template-editor-page{padding:14px 10px 110px}.template-editor-page .editor-heading{align-items:stretch}}
+@media print{#invitationEditorDialog{display:none!important}}
+.template-editor-page .editor-field.text{white-space:pre-wrap}
+.element-editor-toolbar #templateWorkspaceTools>label{flex-direction:row;align-items:center;gap:6px}
+.element-editor-toolbar #templateWorkspaceTools>details{margin:6px 0}
+.element-editor-toolbar #templateWorkspaceTools summary{cursor:pointer;padding:6px 0}
+.has-host-toolbar .element-editor-toolbar[data-editor-workspace]{padding-top:10px}
+[data-editor-workspace]>.element-editor-top,[data-editor-workspace]>.element-editor-row,[data-editor-workspace] [data-editor-panel]{width:100%;box-sizing:border-box}
+.element-editor-toolbar #templateWorkspaceTools{width:100%}

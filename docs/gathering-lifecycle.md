@@ -4,7 +4,7 @@ The common history module powers all gathering types, including Wedding and newl
 
 ## Guest selection and archives
 
-**View Past Gatherings** appears above the gathering choices. Previous calendar years, using America/Los_Angeles time, appear in the read-only archive. Upcoming gatherings stay in the normal selection; completed gatherings from the current year appear at the bottom in their existing relative order. An empty current selection still supports archive browsing and Host creation/management.
+**View Past Gatherings** is an expandable dropdown below the current gathering choices. Expanding it lists earlier years; selecting one opens its read-only history/photos. Previous calendar years, using America/Los_Angeles time, appear in the read-only archive. Upcoming gatherings stay in the normal selection; completed gatherings from the current year appear at the bottom in their existing relative order. An empty current selection still supports archive browsing and Host creation/management.
 
 Archive access follows historical invitation/access records or recorded attendance, matched to the current household using stable account identifiers when available. Resetting next year's invitation selections does not revoke older archive access. Existing name entry and household QR invitations still work for archive-only accounts. Guests receive a privacy-filtered projection of their household's RSVP, dishes and meals; other households, Host notes, private pages, credentials and deletion recovery records are excluded. Historical guest access is read-only and never grants access to another current gathering.
 
@@ -12,7 +12,7 @@ Archives show the saved occurrence's gallery link and permitted household upload
 
 ## Host management
 
-From the gatherings selection page, open **Manage Gatherings** and select the name/date:
+On the gatherings selection page, the Host toolbar includes **Manage Gatherings** (hidden from guests and elsewhere). Its dialog uses the same wide editor dialog/modal-card classes as other management popups. Open it and select the name/date:
 
 - **Save gathering information** edits the selected occurrence’s date, time, RSVP-by and address in this one area. Wedding includes separate reception time/address. A date change reschedules the occurrence and preserves RSVPs; **Start next occurrence** deliberately starts a fresh year. Rescheduled media dates remain aliases for the same occurrence, and historical snapshots are rekeyed without overwriting another date. Template fields read these canonical values.
 - **Rename** updates that occurrence's name. It does not rename a different year or change its design.

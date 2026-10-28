@@ -91,6 +91,10 @@
     return String(raw || '');
   }
 
+  function snapHorizontal(field,canvasWidth,scale=1,enabled=true) {
+    const x=(canvasWidth-field.width)/2;
+    return enabled&&field.width<=canvasWidth&&Math.abs((field.x-x)*scale)<=8?{x,snapped:true}:{x:field.x,snapped:false};
+  }
   function mandatoryFields(background) {
     const {width,height}=background;
     return ['eventDate','eventTime','address','rsvpBy'].map((key,index)=>({...newField(key,width*.1,height*[.5,.59,.68,.85][index]),width:Math.round(width*.8),height:Math.round(height*(key==='address'?.15:.08)),fontSize:Math.min(28,Math.max(10,Math.round(width/24)))}));
@@ -165,6 +169,6 @@
       return value.split(/\r?\n/).some(line=>ctx.measureText(line).width + Math.max(0,line.length - 1)*(field.letterSpacing || 0)+(line.split(' ').length-1)*(field.wordSpacing || 0)>field.width) || value.split(/\r?\n/).length*field.fontSize*(field.lineHeight || 1.2)>field.height;
     }).map(field => field.label);
   }
-  root.Invitation = { mandatoryFields, validateTemplate, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowWarnings };
+  root.Invitation = { snapHorizontal, mandatoryFields, validateTemplate, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowWarnings };
   if (typeof module !== 'undefined') module.exports = root.Invitation;
 })(typeof globalThis !== 'undefined' ? globalThis : window);

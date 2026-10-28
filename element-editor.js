@@ -1,6 +1,6 @@
 /* One fixed, selection-based editor for every gathering. No page content is replaced. */
 (() => {
-  let sidebarResize,sidebarRoot,autosaveTimer;
+  let sidebarResize,sidebarRoot,autosaveTimer,workspace;
   let context,toolbar,target,entry,range,fieldDraft,dirty=false,panelName='',restores=[],portalRestores=[],editables=[],allowAction=false,typing=false;
   const excluded='.gap-drop-marker,#newGatheringDialog,#gatheringHistoryDialog,#invitationEditorDialog,#invitationPreviewDialog,.page-export-options,.element-editor-toolbar,.editor-dialog,.appearance-editor,.inline-overlay-layer';
   const node=(tag,text)=>{const element=document.createElement(tag);if(text!==undefined)element.textContent=text;return element;};
@@ -138,18 +138,18 @@
     typing=false;for(const element of editables){element.removeAttribute('contenteditable');element.removeAttribute('spellcheck');}
     editables=[];target?.classList.remove('element-editor-selected');target=null;entry=null;range=null;fieldDraft=null;dirty=false;
     const panel=toolbar?.querySelector('[data-editor-panel]');if(panel){panel.replaceChildren();panel.hidden=true;}
-    if(toolbar){toolbar.querySelector('[data-editor-state]')?.closest('label').setAttribute('hidden','');toolbar.querySelector('[data-editor-selection]').textContent='';toolbar.querySelector('[data-editor-open]').disabled=true;toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=true);}
+    if(toolbar){toolbar.querySelector('[data-editor-state]')?.closest('label').setAttribute('hidden','');const selection=toolbar.querySelector('[data-editor-selection]');if(selection)selection.textContent='';const open=toolbar.querySelector('[data-editor-open]');if(open)open.disabled=true;toolbar.querySelectorAll('[data-editor-move]').forEach(button=>button.hidden=true);}
   }
   function commitToolbarInput(){const input=document.activeElement;if(toolbar?.contains(input) && input.matches('[data-editor-committed]') && input.value!==input.dataset.editorCommitted)input.dispatchEvent(new Event('change',{bubbles:true}));}
   function scheduleAutosave(){clearTimeout(autosaveTimer);const owner=context;autosaveTimer=setTimeout(()=>{if(context===owner && context?.enabled && SiteEditing.enabled)flush();},800);}
-  function refreshUndo(){scheduleAutosave();const redo=toolbar?.querySelector('[data-editor-redo]');if(redo)redo.disabled=!SiteEditing.canRedo;const control=toolbar?.querySelector('[data-editor-undo]');if(control)control.disabled=!(SiteEditing.canUndo || dirty || [...(toolbar?.querySelectorAll('[data-editor-committed]') || [])].some(input=>input.value!==input.dataset.editorCommitted) || fieldDraft?.inputs.some((input,index)=>input.value!==String(fieldDraft.entry.fields[index].value??'')));}
+  function refreshUndo(){if(workspace){workspace.refresh?.();return;}scheduleAutosave();const redo=toolbar?.querySelector('[data-editor-redo]');if(redo)redo.disabled=!SiteEditing.canRedo;const control=toolbar?.querySelector('[data-editor-undo]');if(control)control.disabled=!(SiteEditing.canUndo || dirty || [...(toolbar?.querySelectorAll('[data-editor-committed]') || [])].some(input=>input.value!==input.dataset.editorCommitted) || fieldDraft?.inputs.some((input,index)=>input.value!==String(fieldDraft.entry.fields[index].value??'')));}
   function status(text){const live=toolbar?.querySelector('[data-editor-status]');if(live)live.textContent=text;}
   function labelInput(parent,title,type,value,change){
     const label=node('label',title);const input=node(type==='textarea'?'textarea':'input');if(type==='textarea')input.rows=2;else input.type=type;input.value=value??'';input.setAttribute('aria-label',title);label.append(input);parent.append(label);input.dataset.editorCommitted=input.value;const commit=()=>{if(!input.isConnected || !target)return;change(input.value,input);input.dataset.editorCommitted=input.value;refreshUndo();};input.addEventListener('change',commit);input.addEventListener('input',()=>{if(['number','range','color'].includes(type))commit();else refreshUndo();});return input;
   }
   function selectInput(parent,title,values,value,change){
     const label=node('label',title),select=node('select');select.setAttribute('aria-label',title);
-    for(const item of values){const option=node('option',String(item));option.value=String(item);select.append(option);}if(![...select.options].some(option=>option.value===String(value))){const option=node('option',String(value));option.value=String(value);select.append(option);}select.value=value;label.append(select);parent.append(label);select.addEventListener('change',()=>{if(select.isConnected && target)change(select.value);});return select;
+    for(const item of values){const option=node('option',typeof item==='object'?item.label:String(item));option.value=String(typeof item==='object'?item.value:item);select.append(option);}if(![...select.options].some(option=>option.value===String(value))){const option=node('option',String(value));option.value=String(value);select.append(option);}select.value=value;label.append(select);parent.append(label);select.addEventListener('change',()=>{if(select.isConnected && target)change(select.value);});return select;
   }
   function colorControls(parent,title,property,alpha,css){
     let current=getComputedStyle(ElementAppearance.surfaceElement(target)).getPropertyValue(css);
@@ -320,12 +320,43 @@
     if(document.body.style.getPropertyValue('--editor-sidebar-width')!==value){document.body.style.setProperty('--editor-sidebar-width',value);globalThis.GapLayout?.refresh();}
   }
 
+  function toolbarFrame(label='Element editor') {
+    const frame=node('div');frame.className='element-editor-toolbar';frame.setAttribute('role','toolbar');frame.setAttribute('aria-label',label);return frame;
+  }
+  function openWorkspace(adapter) {
+    beforeRender();workspace=adapter;context={host:true,enabled:false};target=adapter.root;
+    toolbar=toolbarFrame(adapter.label || 'Element editor');toolbar.dataset.editorWorkspace='';
+    const top=node('div');top.className='element-editor-top';toolbar.append(top);
+    const actions=node('div');actions.className='element-editor-pair';top.append(actions);
+    for(const [title,action] of adapter.actions || [])button(title,action,actions);
+    const actionsSlot=node('div');actionsSlot.className='element-editor-pair';top.append(actionsSlot);adapter.mountActions?.(actionsSlot);
+    top.append(node('hr'));const additions=node('div');additions.className='element-editor-row';top.append(additions);adapter.mount?.(additions);
+    const row=node('div');row.className='element-editor-row';toolbar.append(row);
+    const title=node('strong','Formatting');row.append(title);const panel=node('div');panel.className='element-editor-panel';panel.dataset.editorPanel='';row.append(panel);
+    const live=node('span');live.dataset.editorStatus='';live.setAttribute('role','status');toolbar.append(live);
+    document.body.append(toolbar);sidebarRoot=document.body;sidebarRoot.setAttribute('data-editor-sidebar-root','');
+    sidebarResize=new ResizeObserver(sizeSidebar);sidebarResize.observe(toolbar);sizeSidebar();
+  }
+  function workspaceControls(title,specs,change) {
+    if(!workspace||!toolbar)return;const panel=toolbar.querySelector('[data-editor-panel]');panel.replaceChildren();
+    toolbar.querySelector('.element-editor-row>strong')?.replaceChildren(document.createTextNode(title || 'Formatting'));
+    for(const spec of specs){
+      const commit=value=>change(spec.key,spec.type==='number'?Number(value):spec.type==='checkbox'?value==='true':value);
+      if(spec.type==='toggle'){const input=button(spec.label,()=>{const value=input.getAttribute('aria-pressed')!=='true';input.setAttribute('aria-pressed',String(value));change(spec.key,value);},panel);input.setAttribute('aria-pressed',String(Boolean(spec.value)));input.dataset.workspaceField=spec.key;continue;}
+      const input=spec.options?selectInput(panel,spec.label,spec.options,spec.value,commit):spec.type==='checkbox'?selectInput(panel,spec.label,['false','true'],String(Boolean(spec.value)),commit):labelInput(panel,spec.label,spec.type || 'text',spec.value,commit);
+      input.dataset.workspaceField=spec.key;if(spec.type==='color'){const hex=labelInput(panel,spec.label+' hex','text',spec.value,commit);hex.dataset.workspaceField=spec.key;}if(spec.min!==undefined)input.min=spec.min;if(spec.step!==undefined)input.step=spec.step;
+    }
+    workspace.refresh?.();
+  }
+  function updateWorkspaceValues(values){for(const input of toolbar?.querySelectorAll('[data-workspace-field]') || [])if(Object.hasOwn(values,input.dataset.workspaceField)&&input!==document.activeElement)input.value=values[input.dataset.workspaceField];}
+  function workspaceStatus(text){status(text);}
   function render(ctx){
+    if(workspace)return;
     context=ctx;
     if(!ctx?.host || !ctx.enabled){beforeRender();return;}
     const root=(globalThis.activeHostDialog?.() || [...document.querySelectorAll('dialog[open]')].at(-1)) || document.body;
     if(!toolbar){
-      toolbar=node('div');toolbar.className='element-editor-toolbar';toolbar.setAttribute('role','toolbar');toolbar.setAttribute('aria-label','Element editor');
+      toolbar=toolbarFrame();
       const row=node('div');row.className='element-editor-row';toolbar.append(row);
       const selection=node('span');selection.dataset.editorSelection='';row.append(selection);
       const stateControl=selectInput(row,'Formatting state',['unselected','selected'],'unselected',value=>{if(!target)return;commitToolbarInput();flush();ElementAppearance.editState(target,value);toolbar.querySelector('[data-editor-selection]').textContent='Shared '+value+' '+ElementAppearance.group(target);if(panelName){const name=panelName;panelName='';showPanel(name);}});selection.before(stateControl.closest('label'));stateControl.dataset.editorState='';for(const option of stateControl.options)option.textContent=option.value==='selected'?'Selected':'Unselected';stateControl.closest('label').hidden=true;
@@ -372,7 +403,7 @@
     toolbar.querySelector('#editMenuButton').disabled=!globalThis.hasGatheringToolbarContext?.();
     refreshUndo();sizeSidebar();
   }
-  function beforeRender(){release();clearTimeout(autosaveTimer);sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)document.querySelector('#hostEditorManagement').append(control);}toolbar?.remove();toolbar=null;panelName='';}
+  function beforeRender(){workspace?.restore?.();workspace=null;release();clearTimeout(autosaveTimer);sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)document.querySelector('#hostEditorManagement').append(control);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',()=>{rememberSelection();if(!toolbar?.contains(document.activeElement))syncTextControls();});
   document.addEventListener('pointerdown',event=>{
     if(context?.enabled && toolbar && !toolbar.contains(event.target))SiteEditing.endUndoGroup();
@@ -394,5 +425,5 @@
     part.focus({preventScroll:true});const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY);if(caret && part.contains(caret.startContainer)){const selection=window.getSelection();selection.removeAllRanges();selection.addRange(caret);rememberSelection();}
   },true);
   document.addEventListener('keydown',event=>{if(event.key==='Escape' && target){event.preventDefault();event.stopImmediatePropagation();release();status('Selection cleared.');}},true);
-  globalThis.ElementEditor={ownsText:part=>Boolean(context?.enabled && editables.includes(part)),refreshUndo,activate:element=>{release();allowAction=true;try{element.click();}finally{allowAction=false;}},render,beforeRender,flush,select,refresh:()=>render(context)};
+  globalThis.ElementEditor={openWorkspace,workspaceControls,updateWorkspaceValues,workspaceStatus,ownsText:part=>Boolean(context?.enabled && editables.includes(part)),refreshUndo,activate:element=>{release();allowAction=true;try{element.click();}finally{allowAction=false;}},render,beforeRender,flush,select,refresh:()=>render(context)};
 })();
