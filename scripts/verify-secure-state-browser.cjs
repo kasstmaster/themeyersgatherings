@@ -121,6 +121,26 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.locator('#mediaGalleryDescription').press('Control+a');await page.locator('#mediaGalleryDescription').pressSequentially('A sentence typed without repainting the whole gathering.',{delay:15});
   await page.waitForTimeout(1100);const typingPaints=await page.evaluate(()=>{typingObserver.disconnect();return typingPaints;});assert.ok(typingPaints<5,`typing unexpectedly repainted an unrelated heading ${typingPaints} times`);
   await page.evaluate(()=>SiteEditing.toggle(render));await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);assert.ok(state.events.thanksgiving.siteText['#mediaGalleryDescription'].includes('A sentence typed'));
-  assert.deepEqual(errors,[]);assert.equal(state.accounts[0].qrToken,'already-printed-qr');console.log('Security/QR flows, page-owned headings, button surfaces, moved photo gaps, mobile toolbar clearance/stable scrolling, saved text effects and typing without whole-page repainting pass against the real local Worker.');
+  // Done must preserve non-black effects when replacing older nested effects.
+  const otherGatheringBefore=JSON.stringify(state.events.wedding);
+  await page.evaluate(()=>{state.siteText['#mediaGalleryDescription']='{{style:font=Verdana;shadow=#112233;shadowBlur=4;outline=#000000;outlineWidth=1}}**Existing** [effect text](https://example.com){{/style}} and plain text';render();});
+  for(const selector of ['#weddingMediaHeading','#weddingMediaIntro','#mediaGalleryDescription']){
+   await page.locator('#editItemsButton').click();await page.locator(selector).click();await page.locator('.element-editor-toolbar summary').filter({hasText:'Text effects'}).click();
+   await page.getByLabel('Text shadow',{exact:true}).selectOption('On');await page.getByLabel('Shadow color hex',{exact:true}).fill('#abcdef');await page.getByLabel('Shadow blur',{exact:true}).fill('0');
+   await page.getByLabel('Text outline',{exact:true}).selectOption('On');await page.getByLabel('Outline color hex',{exact:true}).fill('#fedcba');await page.getByLabel('Outline width',{exact:true}).fill('2');
+   await page.waitForTimeout(50);await page.locator('#editItemsButton').click();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+   const actual=await page.locator(selector).evaluate(e=>{const text=e.querySelector('a')||e;const style=getComputedStyle(text);return {shadow:style.textShadow,color:style.webkitTextStrokeColor,width:style.webkitTextStrokeWidth};});
+   assert.equal(actual.shadow,'rgb(171, 205, 239) 1px 1px 0px',selector+' shadow after Done');assert.equal(actual.color,'rgb(254, 220, 186)',selector+' outline color after Done');assert.equal(actual.width,'2px');
+  }
+  assert.equal(JSON.stringify(state.events.wedding),otherGatheringBefore,'effects must stay in their gathering');
+  assert.ok(state.events.thanksgiving.siteText['#mediaGalleryDescription'].includes('outline=#fedcba'));
+  await page.reload();await page.waitForFunction(()=>typeof startApp==='function');await page.locator('#accountFirstName').fill(TEST_PASSWORD);await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});await page.evaluate(()=>{enterEvent('thanksgiving');selectedGatheringTab='media';render();});
+  const savedLink=page.locator('#mediaGalleryDescription a');assert.equal(await savedLink.getAttribute('href'),'https://example.com/');assert.equal(await page.locator('#mediaGalleryDescription strong').textContent(),'Existing');
+  assert.equal(await savedLink.evaluate(e=>getComputedStyle(e).webkitTextStrokeColor),'rgb(254, 220, 186)');assert.match(await savedLink.evaluate(e=>getComputedStyle(e).fontFamily),/Verdana/);
+  await page.locator('#editItemsButton').click();await page.locator('#mediaGalleryDescription').click();await page.locator('.element-editor-toolbar summary').filter({hasText:'Text effects'}).click();
+  assert.equal(await page.getByLabel('Text shadow',{exact:true}).inputValue(),'On','reopened effects show the saved shadow');assert.equal(await page.getByLabel('Text outline',{exact:true}).inputValue(),'On','reopened effects show the saved outline');assert.equal(await page.getByLabel('Outline color hex',{exact:true}).inputValue(),'#fedcba');
+  await page.getByLabel('Text shadow',{exact:true}).selectOption('Off');await page.getByLabel('Text outline',{exact:true}).selectOption('Off');await page.locator('#editItemsButton').click();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+  const cleared=await savedLink.evaluate(e=>({shadow:getComputedStyle(e).textShadow,width:getComputedStyle(e).webkitTextStrokeWidth}));assert.deepEqual(cleared,{shadow:'none',width:'0px'});
+  assert.deepEqual(errors,[]);assert.equal(state.accounts[0].qrToken,'already-printed-qr');console.log('Security/QR flows, page-owned headings, button surfaces, moved photo gaps, mobile toolbar clearance/stable scrolling, text-effect Done/reload persistence and replacement, and typing without whole-page repainting pass against the real local Worker.');
  }finally{await browser.close();server.close();global.fetch=originalFetch;}
 })().catch(error=>{console.error(error);process.exitCode=1;});

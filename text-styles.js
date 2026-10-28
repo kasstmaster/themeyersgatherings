@@ -20,8 +20,15 @@
     if(values.outline)css.push(`-webkit-text-stroke-width:${values.outline==='none'?0:Number(values.outlineWidth??1)}px`,`-webkit-text-stroke-color:${values.outline==='none'?'transparent':values.outline}`,'paint-order:stroke fill');
     return css.join(';')||null;
   }
-  function effects(style,colorParts){
-    const result={},read=(property,key)=>style.getPropertyValue?.(property)||style[key]||'';
+  function effects(style,colorParts,computedStyle){
+    let resolved;
+    const result={},read=(property,key)=>{
+      const raw=style.getPropertyValue?.(property)||style[key]||'';
+      // Older inline styles may already contain palette variables. Resolve only
+      // explicit declarations, so inherited effects are never saved as overrides.
+      if(raw.includes('var(')&&computedStyle){resolved??=computedStyle();return resolved.getPropertyValue?.(property)||resolved[key]||raw;}
+      return raw;
+    };
     const encode=value=>{const part=colorParts(value);return part.hex+(part.alpha<100?Math.round(part.alpha/100*255).toString(16).padStart(2,'0'):'');};
     const shadow=read('text-shadow','textShadow');
     if(shadow==='none')result.shadow='none';
@@ -52,7 +59,7 @@
         else if(match[3]!==undefined) {
           const pairs=match[3].split(';').map(part=>part.split('='));
           const style=pairs.every(pair=>pair.length===2)?properties(Object.fromEntries(pairs)):null;
-          stack.push(Boolean(style));result+=style?token(`<span${Object.hasOwn(Object.fromEntries(pairs),'color')?' class="text-selection-color"':pairs.some(([key])=>['highlight','border'].includes(key))?' class="inline-text-appearance-style"':''} style="${style}">`):match[0];
+          stack.push(Boolean(style));result+=style?token(`<span${Object.hasOwn(Object.fromEntries(pairs),'color')?' class="text-selection-color"':pairs.some(([key])=>['highlight','border','shadow','outline'].includes(key))?' class="inline-text-appearance-style"':''} style="${style}">`):match[0];
         } else {
           const valid=stack.pop();result+=valid?token('</span>'):match[0];
         }
