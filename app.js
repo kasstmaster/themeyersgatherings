@@ -2909,8 +2909,9 @@ function openMenuEditor(){
       navigation.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.menuSection===key)));
     };
     for(const [key,title,panel] of sections){const button=document.createElement('button');button.type='button';button.textContent=title;button.dataset.menuSection=key;button.setAttribute('aria-controls',panel.id);button.addEventListener('click',()=>showSection(key));navigation.append(button);}
-    area.prepend(navigation);showSection('potluck');
-    dialog.addEventListener('close',()=>{unitsAnchor.replaceWith(units);units.hidden=false;anchor.replaceWith(fields);fields.hidden=hidden;},{once:true});
+    const clearClaim=document.querySelector('#clearClaimSection'),clearClaimAnchor=document.createComment('clear claim home');
+    clearClaim.before(clearClaimAnchor);area.firstElementChild.after(clearClaim,navigation);showSection('potluck');
+    dialog.addEventListener('close',()=>{clearClaimAnchor.replaceWith(clearClaim);unitsAnchor.replaceWith(units);units.hidden=false;anchor.replaceWith(fields);fields.hidden=hidden;},{once:true});
   }
   showSiteDialog(dialog);
 }
