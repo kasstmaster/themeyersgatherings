@@ -87,12 +87,12 @@ RSVP refreshes preserve unavailable dish controls; showing a covered dish as che
 
 ### Yearly dinner plans (Wedding excluded)
 
-Use Edit → Menu to choose the event year’s Potluck or Full sit-down dinner plan. Both the Potluck menu and Private preparation menu remain visible and editable regardless of the active plan. Only changing Dinner plan activates a mode; adding, editing or selecting items does not switch it. Full sit-down dinner shows a private preparation menu: add/edit dish options and check Prepare for the dishes to make that year. Unchecking preserves the option. Switching plans preserves both menus and yearly selections. A later event year starts with the default Potluck plan until changed. Guest potluck totals show Invited and Attending only and cannot open name lists. Sit-down guests see no counts or contribution questions.
+Use Edit → Menu to choose the event year’s Potluck or Full sit-down dinner plan. Top buttons in the Menu popup open Potluck, Sit Down Dinner or Quantity Types. Each section uses the full popup content area, without a nested scrolling list. Both menus remain editable regardless of the active plan. Only changing Dinner plan activates a mode; adding, editing or selecting items does not switch it. Full sit-down dinner shows a private preparation menu: add/edit dish options and check Prepare for the dishes to make that year. Unchecking preserves the option. Switching plans preserves both menus and yearly selections. A later event year starts with the default Potluck plan until changed. Guest potluck totals show Invited and Attending only and cannot open name lists. Sit-down guests see no counts or contribution questions.
 
 Your Dishes appears in the toolbar for a potluck invitation with claims and opens its printable list. The existing Print Page action exports only that page. Legacy single-invitation household claims count as that invitation’s; ambiguous unassigned claims from multi-invitation households are not attributed to a guessed group.
 
 Food category order is shared across menus, RSVP dish choices, claimed/needed lists and exports: Main Table → Sides → Appetizers → Desserts → Drinks. Item order within each category is preserved.
 
-Potluck and private preparation dishes use the same labeled Remove button and the same bounded scrolling list. Removing an item keeps the existing menu-specific removal behavior. Potluck up/down controls are removed; shared category sorting determines the list order.
+Potluck and private preparation dishes use the same labeled Remove button and the same full-width list layout. Removing an item keeps the existing menu-specific removal behavior. Potluck up/down controls are removed; shared category sorting determines the list order.
 
 Both menu edit lists show a small divider only when the food category changes, without category titles or dividers between items in the same category.

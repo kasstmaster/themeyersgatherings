@@ -1058,3 +1058,5 @@ dialog:modal:not(.fullscreen-dialog){bottom:var(--toolbar-clearance,0px);max-hei
 .menu-remove-button,.admin-row .admin-row-actions .menu-remove-button{border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--ink);padding:8px 12px;font:inherit;white-space:nowrap}.menu-remove-button:hover,.admin-row .admin-row-actions .menu-remove-button:hover{background:#e8e4dc}.admin-row-actions .menu-remove-button{grid-column:1/-1}
 
 .admin-items>.menu-category-start{border-top:1px solid var(--border);margin-top:8px;padding-top:12px}
+
+#menuEditorDialog .admin-items{max-height:none;overflow:visible}.menu-editor-navigation{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.menu-editor-navigation button{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--ink);font:inherit;white-space:nowrap}.menu-editor-navigation button[aria-pressed=true]{background:var(--navy);color:white}

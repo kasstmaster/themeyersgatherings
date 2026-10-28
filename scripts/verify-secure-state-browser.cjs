@@ -89,12 +89,17 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   // Configure a private, year-owned sit-down preparation menu through the actual host UI.
   await page.evaluate(()=>enterEvent('thanksgiving'));await page.evaluate(()=>SiteEditing.toggle(render));await page.evaluate(()=>openMenuEditor());
   assert.equal(await page.locator('#adminItems [data-move]').count(),0);assert.equal(await page.locator('#adminItems [data-admin-id="ham"] button').textContent(),'Remove');
-  const menuStyles=await page.evaluate(()=>['#sitDownDinnerItems','#adminItems'].map(selector=>{const style=getComputedStyle(document.querySelector(selector));return {maxHeight:style.maxHeight,overflow:style.overflow};}));assert.deepEqual(menuStyles[0],menuStyles[1]);
-  assert.equal(await page.getByLabel('Dinner plan',{exact:true}).inputValue(),'potluck');assert.equal(await page.locator('#sitDownDinnerMenu').isVisible(),true);
+  const menuStyles=await page.evaluate(()=>['#sitDownDinnerItems','#adminItems'].map(selector=>{const style=getComputedStyle(document.querySelector(selector));return {maxHeight:style.maxHeight,overflow:style.overflow};}));assert.deepEqual(menuStyles[0],menuStyles[1]);assert.deepEqual(menuStyles[0],{maxHeight:'none',overflow:'visible'});
+  assert.equal(await page.getByLabel('Dinner plan',{exact:true}).inputValue(),'potluck');assert.equal(await page.locator('#sitDownDinnerMenu').isVisible(),false);
+  await page.locator('.menu-editor-navigation').getByRole('button',{name:'Quantity Types',exact:true}).click();assert.equal(await page.locator('#menuAdminFields').isVisible(),false);assert.equal(await page.locator('#menuQuantityTypes').isVisible(),true);
+  await page.locator('#adminNewUnitName').fill('Test Tray');await page.locator('#adminAddUnitButton').click();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);assert.equal(await page.locator('#menuAdminFields').isVisible(),false);assert.equal(await page.locator('#menuQuantityTypes').isVisible(),true);
+  assert.equal(state.events.thanksgiving.quantityUnits.some(unit=>unit.label==='Test Tray'),true);
+  await page.locator('.menu-editor-navigation').getByRole('button',{name:'Sit Down Dinner',exact:true}).click();assert.equal(await page.locator('#menuQuantityTypes').isVisible(),false);assert.equal(await page.locator('#sitDownDinnerMenu').isVisible(),true);
   await page.getByLabel('New preparation dish',{exact:true}).fill('Private Roast');await page.locator('#sitDownDinnerMenu').getByRole('button',{name:'Add dish',exact:true}).click();
   await page.getByLabel('Prepare Private Roast',{exact:true}).check();await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
   assert.equal(state.events.thanksgiving.dinnerPlans['2099'].type,'potluck');assert.equal(state.events.thanksgiving.dinnerPlans['2099'].selectedItems.length,1);
-  await page.getByLabel('Dinner plan',{exact:true}).selectOption('sit-down');assert.equal(await page.locator('#menuAdminFields').isVisible(),true);
+  await page.getByLabel('Dinner plan',{exact:true}).selectOption('sit-down');assert.equal(await page.locator('#menuAdminFields').isVisible(),false);
+  await page.locator('.menu-editor-navigation').getByRole('button',{name:'Potluck',exact:true}).click();assert.equal(await page.locator('#menuAdminFields').isVisible(),true);
   await page.locator('#adminItems [data-admin-id="ham"] input').fill('Updated Potluck Ham');await page.locator('#adminItems [data-admin-id="ham"] input').dispatchEvent('change');await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
   assert.equal(state.events.thanksgiving.dinnerPlans['2099'].type,'sit-down');assert.equal(state.events.thanksgiving.items[0].name,'Updated Potluck Ham');
   await page.locator('#menuEditorDialog .modal-close').click();await page.evaluate(()=>SiteEditing.toggle(render));
