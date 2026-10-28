@@ -5,6 +5,13 @@ import {readFile} from 'node:fs/promises';
 const protocol=await readFile(new URL('../shared-state-protocol.js',import.meta.url),'utf8'),client=await readFile(new URL('../state-client.js',import.meta.url),'utf8');
 function fixture(fetch){const context=vm.createContext({fetch,structuredClone});vm.runInContext(protocol+client,context);return context.StateClient;}
 const initial={events:{one:{items:[],rsvps:[],title:'Old'}},accounts:[]};
+test('first-name guest continuation creates no authentication and hidden Host credentials go only in POST bodies',async()=>{
+ const requests=[];const api=fixture(async(url,options)=>{requests.push({url,options});const input=JSON.parse(options.body);return input.password==='synthetic-hidden-password-long'?Response.json({role:'host',token:'opaque',revision:'one'}):Response.json({next:'guest'});});
+ const guest=await api.signIn('https://test',{role:'first-name',password:'Long guest given name goes here'});assert.equal(guest.next,'guest');assert.equal(api.authenticated,false);assert.equal(api.role,'');
+ await api.signIn('https://test',{role:'first-name',password:'synthetic-hidden-password-long'});assert.equal(api.role,'host');assert.equal(api.authenticated,true);
+ assert.ok(requests.every(value=>value.url==='https://test/auth/login'&&value.options.method==='POST'));
+ assert.ok(!JSON.stringify(api.headers()).includes('synthetic-hidden-password-long'));
+});
 test('a conflict blocks automatic retries and keeps the original revision until explicit adoption',async()=>{
  const calls=[];const api=fixture(async(url,options)=>{calls.push({url,options});return url.endsWith('/auth/login')?Response.json({token:'runtime-only',role:'host',state:initial,revision:'old'}):Response.json({error:'Conflict'},{status:409});});
  await api.signIn('https://test',{role:'host',password:'not-stored'});api.remember(initial,'old');

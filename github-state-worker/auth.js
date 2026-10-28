@@ -1,5 +1,5 @@
 import {accountKey,eventAllowed} from './permissions.js';
-import {accountPeople,normalizedPerson} from '../scripts/anylist-accounts.js';
+import {accountPeople,normalizedPerson,parsePerson} from '../scripts/anylist-accounts.js';
 const PREFIX='security-v1/';
 const bytes=value=>new TextEncoder().encode(value);
 export async function digest(value){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes(value)))].map(value=>value.toString(16).padStart(2,'0')).join('');}
@@ -34,7 +34,15 @@ export async function login(request,env,stateProvider){
  const attempts=await read(env.INVITATION_BACKGROUNDS,rateKey);
  if(attempts?.expires>Date.now()&&attempts.count>=20)throw Object.assign(new Error('Too many attempts. Try again later.'),{status:429});
  let identity;
- if(body.role==='host'&&typeof body.password==='string'&&equal(body.password,env.HOST_PASSWORD))identity={role:'host',version:await digest(env.HOST_PASSWORD)};
+ if(['host','first-name'].includes(body.role)&&typeof body.password==='string'&&equal(body.password,env.HOST_PASSWORD))identity={role:'host',version:await digest(env.HOST_PASSWORD)};
+ if(body.role==='first-name'&&typeof body.password==='string'&&!identity){
+  // Short guest names need no credential probe. Preserve legitimate long given
+  // names too, without issuing a guest session or returning household data.
+  if(body.password.length<24)return {next:'guest'};
+  const state=typeof stateProvider==='function'?await stateProvider():stateProvider;
+  const givenName=normalizedPerson(body.password+' Guest');
+  if(state.accounts.some(account=>[...accountPeople(account.name),...(account.signInAliases||[]).map(alias=>alias.alias)].some(name=>normalizedPerson((parsePerson(name)?.givenNames||'')+' Guest')===givenName)))return {next:'guest'};
+ }
  if(body.role==='guest'&&typeof body.name==='string'){
   const state=typeof stateProvider==='function'?await stateProvider():stateProvider;
   const name=normalizedPerson(body.name);

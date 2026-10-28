@@ -23,6 +23,30 @@ async function fixture(t){
  const patch=(session,changes,revision=session.revision)=>request('state',{method:'PATCH',headers:{Authorization:`Bearer ${session.token}`,'If-Match':revision},body:JSON.stringify({changes})});
  return {env,memory,request,login,host,guest,patch,get state(){return state;},get writes(){return writes;},race(){conflict=true;}};
 }
+test('hidden first-name Host access uses the same server-only password/session rules without storing credentials',async t=>{
+ const f=await fixture(t),before=structuredClone(f.state);
+ const session=await f.login({role:'first-name',password:TEST_PASSWORD});
+ assert.equal(session.response.status,200);assert.equal(session.role,'host');assert.ok(session.token);
+ assert.ok(!JSON.stringify(session.state).includes(TEST_PASSWORD));assert.deepEqual(f.state,before);assert.equal(f.writes,0);
+ for(const value of f.memory.objects.values())assert.ok(!String(value.body).includes(TEST_PASSWORD));
+ assert.equal((await f.request('state',{headers:{Authorization:`Bearer ${session.token}`}})).status,200);
+ f.env.HOST_PASSWORD='short';assert.equal((await f.login({role:'first-name',password:'short'})).response.status,503);
+});
+test('normal and long guest first names never receive a Host session or administrative data',async t=>{
+ const f=await fixture(t);
+ const short=await f.login({role:'first-name',password:'Casey'});assert.equal(short.response.status,200);assert.equal(short.next,'guest');assert.equal(short.token,undefined);assert.equal(short.state,undefined);
+ const first='Alexandertheverylongfirstname';f.state.accounts.push({name:first+' Example',selectedEvents:{one:true}});
+ const long=await f.login({role:'first-name',password:first});assert.equal(long.response.status,200);assert.equal(long.next,'guest');assert.equal(long.token,undefined);assert.equal(long.state,undefined);
+ const guest=await f.login({role:'guest',name:first+' Example'});assert.equal(guest.response.status,200);assert.equal(guest.role,'guest');assert.ok(!JSON.stringify(guest.state).includes('PRIVATE'));assert.equal(f.writes,0);
+});
+test('failed hidden password candidates are rate limited and never retained as guest data or in errors',async t=>{
+ const f=await fixture(t),candidate='not-the-host-password-value',before=structuredClone(f.state);
+ for(let i=0;i<20;i++){
+  const result=await f.login({role:'first-name',password:candidate});assert.equal(result.response.status,401);assert.ok(!JSON.stringify(result).includes(candidate));
+ }
+ assert.equal((await f.login({role:'first-name',password:candidate})).response.status,429);assert.deepEqual(f.state,before);assert.equal(f.writes,0);
+ for(const value of f.memory.objects.values())assert.ok(!String(value.body).includes(candidate));
+});
 test('state is never readable or replaceable anonymously or through the former host header',async t=>{
  const f=await fixture(t);
  for(const path of ['', 'state','unknown'])for(const method of ['GET','PUT','PATCH']){const response=await f.request(path,{method,headers:{'X-Host-Password':TEST_PASSWORD},...(method==='GET'?{}:{body:JSON.stringify(initial())})});assert.ok([401,404].includes(response.status));assert.ok(!(await response.text()).includes('PRIVATE'));}
