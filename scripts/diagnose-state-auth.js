@@ -16,6 +16,15 @@ export async function diagnose(env,fetcher=fetch) {
     report.checks={};
     for(const key of ['activationReady','hostPasswordReady','storageReady','githubReady','releaseCommitReady'])if(typeof body.checks?.[key]==='boolean')report.checks[key]=body.checks[key];
   } catch {report.healthRequestOrJsonFailed=true;}
+  for(const [name,suffix] of [['frontend','?commit='+expected],['frontendWithoutQuery','']])try {
+    const response=await fetcher('https://themeyers.ilymmd.com/release.json'+suffix,{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(15000)});
+    report[name+'HttpStatus']=response.status;
+    report[name+'ContentTypeJson']=(response.headers.get('Content-Type')||'').includes('application/json');
+    const body=await response.json();
+    report[name+'Commit']=/^[a-f0-9]{40}$/.test(body.commit||'')?body.commit:null;
+    report[name+'ProtocolMatches']=body.protocol==='state-auth-v1';
+    report[name+'CommitMatches']=body.commit===expected;
+  } catch {report[name+'RequestOrJsonFailed']=true;}
   if(env.CLOUDFLARE_API_TOKEN&&env.CLOUDFLARE_ACCOUNT_ID) {
     const base='https://api.cloudflare.com/client/v4/accounts/'+env.CLOUDFLARE_ACCOUNT_ID+'/workers/scripts/curly-sun-ef0f';
     for(const kind of ['settings','deployments'])try {
