@@ -154,7 +154,14 @@
     if(['400','700'].includes(values.fontWeight))set(element,'font-weight',values.fontWeight);
     if(['normal','italic'].includes(values.fontStyle))set(element,'font-style',values.fontStyle);
     if(['none','underline'].includes(values.textDecoration))set(element,'text-decoration',values.textDecoration);
-    color('textHighlight','background-color','textHighlightAlpha');
+    if(element.matches?.('button,a')){
+      if(/^#[\da-f]{6}$/i.test(values.textHighlight||''))for(const part of textParts(element))set(part,'background-color',rgba(values.textHighlight,values.textHighlightAlpha??100));
+    }else color('textHighlight','background-color','textHighlightAlpha');
+    const effects={},effectColor=(hex,alpha)=>/^#[\da-f]{6}$/i.test(hex||'')?hex+Math.round(Math.max(0,Math.min(100,Number(alpha??100)))/100*255).toString(16).padStart(2,'0'):'#000000';
+    if(Object.hasOwn(values,'textShadowEnabled'))Object.assign(effects,{shadow:values.textShadowEnabled?effectColor(values.textShadowColor,values.textShadowAlpha):'none',shadowX:values.textShadowX??1,shadowY:values.textShadowY??1,shadowBlur:values.textShadowBlur??2});
+    if(Object.hasOwn(values,'textOutlineWidth'))Object.assign(effects,{outline:values.textOutlineWidth>0?effectColor(values.textOutlineColor,values.textOutlineAlpha):'none',outlineWidth:values.textOutlineWidth});
+    const effectCss=globalThis.TextStyles?.properties(effects);
+    if(effectCss)for(const declaration of effectCss.split(';')){const index=declaration.indexOf(':');set(element,declaration.slice(0,index),declaration.slice(index+1));}
     if(Number.isFinite(values.borderWidth) && values.borderWidth>=0 && values.borderWidth<=24){set(element,'border-width',values.borderWidth+'px');set(element,'border-style','solid');}
     if(Number.isFinite(values.borderRadius) && values.borderRadius>=0 && values.borderRadius<=100)set(element,'border-radius',values.borderRadius+'px');
   }
@@ -168,6 +175,10 @@
     if(target.matches('.event-selection-choices>button'))return [...target.querySelectorAll('.event-selection-label>span,.event-selection-label>small')];
     if(target.matches('[role="tab"],[data-wedding-tab],[data-switch-event],[data-page-export],.toolbar-upload-action') && target.querySelector(':scope>span'))return [target.querySelector(':scope>span:last-of-type')];
     if(target.matches('button,a') && target.querySelector(':scope>svg,:scope>img'))return [...target.querySelectorAll(':scope>span')];
+    if(target.matches('button,a')){
+      for(const child of [...target.childNodes])if(child.nodeType===3&&child.textContent.trim()){const span=document.createElement('span');span.className='element-text-fragment';child.replaceWith(span);span.append(child);}
+      const parts=[...target.querySelectorAll(':scope>span')];if(parts.length)return parts;
+    }
     return [target];
   }
   function plainText(part){const copy=part.cloneNode(true);copy.querySelectorAll('br').forEach(line=>line.replaceWith('\n'));return copy.textContent;}
@@ -207,10 +218,11 @@
   function apply(){
     restore(false);applyText();
     if(context?.enabled && context.host)for(const [target,css] of previewStyles)if(target.isConnected)for(const [property,value] of Object.entries(css))set(target,property,value);
-    for(const [path,values] of Object.entries(context?.state.elementAppearance || {}).sort(([a],[b])=>(a==='[data-shared-details]'?2:Number(a.startsWith('@group:')))-(b==='[data-shared-details]'?2:Number(b.startsWith('@group:'))) || a.length-b.length))for(const element of find(path)){
+    const priority=path=>/^@group:(?:buttons|tabs|toolbar-options):(?:selected|unselected)$/.test(path)?3:path==='[data-shared-details]'?2:path.startsWith('@group:')?0:1;
+    for(const [path,values] of Object.entries(context?.state.elementAppearance || {}).sort(([a],[b])=>priority(a)-priority(b)||a.length-b.length))for(const element of find(path)){
       paint(element,path==='@group:inner-containers' && contentSurface(element)?Object.fromEntries(Object.entries(values).filter(([key])=>surfaceKeys.includes(key))):values);
       if(path.startsWith('@group:') && !contentSurface(element) && !element.matches?.('.rsvp-page-shell')){
-        const typography=Object.fromEntries(Object.entries(values).filter(([key])=>['fontFamily','fontSize','fontWeight','fontStyle','textDecoration','textColor','textAlpha','textHighlight','textHighlightAlpha'].includes(key)));
+        const typography=Object.fromEntries(Object.entries(values).filter(([key])=>['fontFamily','fontSize','fontWeight','fontStyle','textDecoration','textColor','textAlpha','textHighlight','textHighlightAlpha','textShadowEnabled','textShadowColor','textShadowAlpha','textShadowX','textShadowY','textShadowBlur','textOutlineColor','textOutlineAlpha','textOutlineWidth'].includes(key)));
         for(const part of element.querySelectorAll('span,strong,b,em,i,u,output'))paint(part,typography);
       }
     }

@@ -22,6 +22,7 @@
       const font=element.style.fontFamily.replaceAll('"','').replaceAll("'",'');if(TextStyles.fonts.includes(font))styles.font=font;
       const size=parseFloat(element.style.fontSize.replace(/^calc\(/,''));if(size>=8 && size<=96)styles.size=Math.round(size);
       for(const [key,value] of [['color',element.style.color],['highlight',element.style.backgroundColor]])if(value){const parts=ElementAppearance.colorParts(value);styles[key]=parts.hex+(parts.alpha<100?Math.round(parts.alpha/100*255).toString(16).padStart(2,'0'):'');}
+      Object.assign(styles,TextStyles.effects(element.style,ElementAppearance.colorParts));
       let result=Object.keys(styles).length?TextStyles.mark(text,styles):text;
       if(element.matches('p,div,h1,h2,h3,h4,h5,h6'))result+='\n';
       return result;
@@ -65,6 +66,16 @@
     if(!restoreSelection()){editables[0].focus();const selection=window.getSelection();selection.selectAllChildren(editables[0]);}
     document.execCommand(command,false,value);if(temporary)for(const part of editables)part.removeAttribute('contenteditable');dirty=true;refreshUndo();rememberSelection();
   }
+  function textEffect(values){
+    const group=ElementAppearance.group(target);
+    if(['buttons','dish-available','dish-claimed','dish-bringing','dish-details','dish-claimants','tabs','titles','introductions','counts','count-values','count-titles','toolbar-options'].includes(group)||group?.startsWith('count-list-')){
+      const update={};
+      if(values.shadow){const parts=ElementAppearance.colorParts(values.shadow==='none'?'#000000':values.shadow);Object.assign(update,{textShadowEnabled:values.shadow!=='none',textShadowColor:parts.hex,textShadowAlpha:parts.alpha,textShadowX:Number(values.shadowX??1),textShadowY:Number(values.shadowY??1),textShadowBlur:Number(values.shadowBlur??2)});}
+      if(values.outline){const parts=ElementAppearance.colorParts(values.outline==='none'?'#000000':values.outline);Object.assign(update,{textOutlineColor:parts.hex,textOutlineAlpha:parts.alpha,textOutlineWidth:values.outline==='none'?0:Number(values.outlineWidth??1)});}
+      ElementAppearance.update(target,update);return;
+    }
+    textStyle('effects',values);
+  }
   function textStyle(key,value){
     if((['buttons','dish-available','dish-claimed','dish-bringing','dish-details','dish-claimants','tabs','titles','introductions','counts','count-values','count-titles','toolbar-options'].includes(ElementAppearance.group(target)) || ElementAppearance.group(target)?.startsWith('count-list-'))){const property={font:'fontFamily',size:'fontSize',color:'textColor',highlight:'textHighlight'}[key];if(property){const color=['color','highlight'].includes(key)?ElementAppearance.colorParts(value):null;ElementAppearance.update(target,color?{[property]:color.hex,[key==='color'?'textAlpha':'textHighlightAlpha']:color.alpha}:{[property]:key==='size'?Number(value):value});}return;}
 
@@ -76,6 +87,7 @@
     if(key==='size')span.style.fontSize=value+'px';
     if(key==='color'){span.style.color=value;span.className='text-selection-color';span.style.setProperty('--selection-text-color',value);}
     if(key==='highlight')span.style.backgroundColor=value;
+    if(key==='effects'){const css=TextStyles.properties(value);if(!css)return;span.style.cssText+=';'+css;}
     if(!existing){span.append(range.extractContents());range.insertNode(span);}range.selectNodeContents(span);restoreSelection();dirty=true;refreshUndo();
   }
   function flush(){
@@ -141,6 +153,29 @@
     const slider=labelInput(parent,title+' opacity','range',opacity,value=>{opacity=Number(value);output.textContent=value+'%';update();});slider.min=0;slider.max=100;
     const output=node('output',opacity+'%');parent.append(output);
   }
+  function textEffectsPanel(parent){
+    const details=node('details'),summary=node('summary','Text effects');details.append(summary);parent.append(details);
+    const current=TextStyles.effects(getComputedStyle(currentTextElement()),ElementAppearance.colorParts);
+    const encode=(color,alpha)=>color+(alpha<100?Math.round(alpha/100*255).toString(16).padStart(2,'0'):'');
+    function effectColor(title,value,change){
+      const initial=ElementAppearance.colorParts(value||'#000000');let color=initial.hex,alpha=initial.alpha;
+      const picker=labelInput(details,title,'color',color,value=>{color=value;hex.value=value;change(encode(color,alpha));});
+      const hex=labelInput(details,title+' hex','text',color,(value,input)=>{
+        if(!/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value)){input.setCustomValidity('Enter a six- or eight-digit hex color.');input.reportValidity();return;}
+        input.setCustomValidity('');const parts=ElementAppearance.colorParts(value);color=parts.hex;if(value.length===9)alpha=parts.alpha;picker.value=color;opacity.value=alpha;change(encode(color,alpha));
+      });hex.maxLength=9;hex.size=9;hex.addEventListener('input',()=>hex.setCustomValidity(''));
+      const opacity=labelInput(details,title+' opacity','range',alpha,value=>{alpha=Number(value);change(encode(color,alpha));});opacity.min=0;opacity.max=100;
+    }
+    function number(title,value,min,max,change){const input=labelInput(details,title,'number',value,(value,input)=>{if(input.checkValidity())change(Number(value));});input.min=min;input.max=max;input.step=.5;}
+    let shadow=current.shadow&&current.shadow!=='none'?current.shadow:'#000000',shadowOn=current.shadow&&current.shadow!=='none',x=Number(current.shadowX??1),y=Number(current.shadowY??1),blur=Number(current.shadowBlur??2);
+    const applyShadow=()=>textEffect(shadowOn?{shadow,shadowX:x,shadowY:y,shadowBlur:blur}:{shadow:'none'});
+    selectInput(details,'Text shadow',['Off','On'],shadowOn?'On':'Off',value=>{shadowOn=value==='On';applyShadow();});
+    effectColor('Shadow color',shadow,value=>{shadow=value;applyShadow();});number('Shadow horizontal',x,-20,20,value=>{x=value;applyShadow();});number('Shadow vertical',y,-20,20,value=>{y=value;applyShadow();});number('Shadow blur',blur,0,40,value=>{blur=value;applyShadow();});
+    let outline=current.outline&&current.outline!=='none'?current.outline:'#000000',outlineOn=current.outline&&current.outline!=='none',width=Number(current.outlineWidth)||1;
+    const applyOutline=()=>textEffect(outlineOn?{outline,outlineWidth:width}:{outline:'none'});
+    selectInput(details,'Text outline',['Off','On'],outlineOn?'On':'Off',value=>{outlineOn=value==='On';applyOutline();});
+    effectColor('Outline color',outline,value=>{outline=value;applyOutline();});number('Outline width',width,0,8,value=>{width=value;applyOutline();});
+  }
   function fieldsPanel(parent){
     const fields=entry?.fields || [];
     if(fields.length && (target.closest('#hostToolsPanel') || fields.length>1 || !editables.length || !['text','page','notes'].includes(entry.title))){
@@ -187,6 +222,7 @@
       const currentLink=currentTextElement().closest('a');
       const link=labelInput(panel,'Link URL','url',currentLink && target.contains(currentLink)?currentLink.getAttribute('href') || '':'',()=>{});button('Add link',()=>{try{const url=new URL(link.value);if(!['http:','https:','mailto:'].includes(url.protocol))throw new Error();textCommand('createLink',url.href);}catch{status('Enter an http, https, or mailto link.');}},panel);
       button('Remove link',()=>textCommand('unlink'),panel);
+      textEffectsPanel(panel);
       fieldsPanel(panel);
       syncTextControls();
     }

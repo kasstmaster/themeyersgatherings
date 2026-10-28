@@ -1021,6 +1021,17 @@ dialog[data-editor-sidebar-root]:not(.fullscreen-dialog)>.modal-card{max-width:1
 /* Host actions retain accessible labels and tooltips while showing only icons. */
 #hostToolsPanel button>span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 #rsvpDialog{overflow-anchor:none}
+/* Viewport clearance is system layout, separate from authored page gaps. */
+html,body,dialog.fullscreen-dialog{overscroll-behavior-y:none}
+body.has-host-toolbar,#eventPage{padding-bottom:0}
+.sign-in-page,.attire-page{padding-bottom:0}
+body::after,dialog.fullscreen-dialog::after{content:"";display:block;flex:none;height:var(--toolbar-clearance,0px);pointer-events:none;overflow-anchor:none}
+body.has-host-toolbar dialog.fullscreen-dialog,#rsvpDialog:has(>#rsvpPageToolbar:not(.host-toolbar-replaced)){padding-bottom:24px}
+#rsvpEventConfirmation:has(#rsvpPageToolbar:not([hidden])){padding-bottom:0}
+dialog:modal:not(.fullscreen-dialog){bottom:var(--toolbar-clearance,0px);max-height:calc(100dvh - var(--toolbar-clearance,0px) - 32px)}
+dialog:modal:not(.fullscreen-dialog)>.modal-card{max-height:calc(100dvh - var(--toolbar-clearance,0px) - 72px)}
+.has-host-toolbar dialog:modal:not(.fullscreen-dialog){padding-bottom:16px}
+@media print{body::after,dialog.fullscreen-dialog::after{display:none}}
 
 #accountsDialog .editor-dialog-footer{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 

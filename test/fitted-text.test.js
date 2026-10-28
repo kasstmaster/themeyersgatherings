@@ -58,3 +58,12 @@ test('redrawing and resizing preserve the gathering’s saved title size',()=>{
  f.setWidth(180);f.fit();assert.ok(f.element.scrollWidth<=180);
  f.setWidth(1000);f.fit();assert.match(f.element.style.fontSize,/24px/);
 });
+
+
+test('unrelated DOM mutations do not repeat live font measurements',()=>{
+ const f=fixture();let resets=0;const original=f.element.style.removeProperty;
+ f.element.style.removeProperty=function(name){resets++;return original.call(this,name);};
+ for(let i=0;i<10;i++)f.callbacks.change();
+ assert.equal(resets,0);
+ f.element.textContent='A different heading';f.callbacks.change();assert.ok(resets>0);
+});
