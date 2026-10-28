@@ -2876,7 +2876,7 @@ function renderDinnerPlanEditor(area){
       const category=document.createElement('select');category.setAttribute('aria-label',`Category for ${item.name}`);
       for(const value of GuestPlanning.foodCategories){const option=document.createElement('option');option.value=value;option.textContent=value;category.append(option);}category.value=item.category;
       category.addEventListener('change',()=>{item.category=category.value;saveState();draw();});
-      const remove=document.createElement('button');remove.type='button';remove.textContent='Remove';remove.setAttribute('aria-label',`Remove ${item.name}`);
+      const remove=document.createElement('button');remove.type='button';remove.className='menu-remove-button';remove.textContent='Remove';remove.setAttribute('aria-label',`Remove ${item.name}`);
       remove.addEventListener('click',()=>{event.sitDownMenu=event.sitDownMenu.filter(value=>value.id!==item.id);store({selectedItems:(current().selectedItems||[]).filter(id=>id!==item.id)});draw();});
       row.append(chosen,name,category,remove);rows.append(row);
     }
@@ -2948,7 +2948,7 @@ function openAdmin() {
     const index=state.items.indexOf(item);
     const previousInCategory = state.items.slice(0, index).some(entry => entry.category === item.category);
     const nextInCategory = state.items.slice(index + 1).some(entry => entry.category === item.category);
-    return `<div class="admin-row" data-admin-id="${escapeAttribute(item.id)}"><input value="${escapeAttribute(item.name)}" aria-label="Dish name"><select aria-label="Category">${GuestPlanning.foodCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select><select aria-label="Amount needed">${amountOptions(item)}</select><select aria-label="Quantity type">${unitOptions(item)}</select><div class="admin-row-actions"><button type="button" data-move="up" aria-label="Move ${escapeAttribute(item.name)} up" title="Move up" ${previousInCategory ? '' : 'disabled'}>↑</button><button type="button" data-move="down" aria-label="Move ${escapeAttribute(item.name)} down" title="Move down" ${nextInCategory ? '' : 'disabled'}>↓</button><button type="button" class="admin-delete" aria-label="Delete ${escapeAttribute(item.name)}" title="Delete">×</button></div></div>`;
+    return `<div class="admin-row" data-admin-id="${escapeAttribute(item.id)}"><input value="${escapeAttribute(item.name)}" aria-label="Dish name"><select aria-label="Category">${GuestPlanning.foodCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select><select aria-label="Amount needed">${amountOptions(item)}</select><select aria-label="Quantity type">${unitOptions(item)}</select><div class="admin-row-actions"><button type="button" data-move="up" aria-label="Move ${escapeAttribute(item.name)} up" title="Move up" ${previousInCategory ? '' : 'disabled'}>↑</button><button type="button" data-move="down" aria-label="Move ${escapeAttribute(item.name)} down" title="Move down" ${nextInCategory ? '' : 'disabled'}>↓</button><button type="button" class="admin-delete menu-remove-button" aria-label="Remove ${escapeAttribute(item.name)}" title="Remove">Remove</button></div></div>`;
   }).join('');
   document.querySelectorAll('.admin-row').forEach(row => {
     const [name, category, amount, unit, actions] = row.children;

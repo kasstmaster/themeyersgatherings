@@ -92,3 +92,5 @@ Use Edit → Menu to choose the event year’s Potluck or Full sit-down dinner p
 Your Dishes appears in the toolbar for a potluck invitation with claims and opens its printable list. The existing Print Page action exports only that page. Legacy single-invitation household claims count as that invitation’s; ambiguous unassigned claims from multi-invitation households are not attributed to a guessed group.
 
 Food category order is shared across menus, RSVP dish choices, claimed/needed lists and exports: Main Table → Sides → Appetizers → Desserts → Drinks. Item order within each category is preserved.
+
+Potluck and private preparation dishes use the same labeled Remove button. Removing an item keeps the existing menu-specific removal behavior.
