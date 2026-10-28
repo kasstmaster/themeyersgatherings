@@ -58,3 +58,5 @@ These were validated during the preceding builder work; the current audit's actu
 Wedding Party heading words now belong to the selected subpage/member/custom page, including the smaller introduction above the title. Edit them through the usual shared toolbar. Formatting groups remain Wedding-wide; heading copy does not change another heading, the tab label or the member's actual name/role. Uniquely identifiable old heading edits remain visible only on their original page. Ambiguous old overrides remain in saved data but are not displayed on every subpage; re-enter intended copy on the correct page if needed.
 
 The page reserves the measured fixed toolbar height plus 16 px at its bottom. This system clearance is separate from editable spacing, so the last content remains above the toolbar on mobile. Heading fitting skips unchanged content and preserves scroll position during measurement.
+
+Typing and editor-control updates do not trigger a full gathering repaint. New page content and changed selection states still receive saved formatting; ordinary dynamic updates are batched into one frame. Autosave and Undo/Redo use the same existing persistence path.

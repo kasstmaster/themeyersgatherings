@@ -11,6 +11,8 @@ All existing and newly created gatherings use the same builder for the common ed
 
 Text shadow/outline settings use the existing appearance groups for shared components and safe `TextStyles` markup for independent rich-text content. The serializer validates colors and bounded numeric effects; no arbitrary CSS is accepted. Button label highlight paints the label rather than the button surface. Explicit selected/unselected appearance groups take precedence over legacy element settings. Existing saved settings remain intact.
 
+Formatting observation ignores editor controls, active editable text and transient gap markers. Genuine page/state mutations are coalesced into one animation-frame paint, while explicit rendering and appearance updates remain synchronous. The observer is disconnected during its own paint to prevent feedback from label wrapping/saved-markup restoration. Group classification is reused only for that paint and discarded afterward, preserving gathering/scope changes. The RSVP deadline timer updates notice text/visibility only when they change.
+
 ## Data and session boundaries
 
 Gathering data stays in `appState.events[gatheringId]`. Existing keys remain intact: `siteText`, `textAppearance`, `elementAppearance`, `sitePages`, `siteTabTitles`, `siteTabOrder`, `siteElementOrder`, `siteElementPlacements`, `siteGaps`, and `siteSpacing`. RSVP header slots, dates, addresses, menus, RSVPs and wedding-specific settings also remain in that event object. The shared-context refactor did not require conversion into a new schema. Normalization still contains legacy migrations, including a Christmas menu-replacement exception documented in the audit. Existing legacy-selector migrations continue to preserve moved content.

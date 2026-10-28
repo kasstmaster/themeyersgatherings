@@ -114,6 +114,13 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.reload();await page.waitForFunction(()=>typeof startApp==='function');await page.locator('#accountFirstName').fill(TEST_PASSWORD);await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});
   await page.evaluate(()=>{enterEvent('thanksgiving');selectedGatheringTab='media';render();});await page.locator('#mediaGalleryDescription span').last().waitFor();
   const reloadedEffects=await page.locator('#mediaGalleryDescription span').last().evaluate(e=>({shadow:getComputedStyle(e).textShadow,stroke:getComputedStyle(e).webkitTextStrokeWidth}));assert.deepEqual(reloadedEffects,effects);assert.equal(await follows(),true,'moved gap survives full reload');
-  assert.deepEqual(errors,[]);assert.equal(state.accounts[0].qrToken,'already-printed-qr');console.log('Security/QR flows, page-owned headings, button surfaces, moved photo gaps, mobile toolbar clearance/stable scrolling and saved text effects pass against the real local Worker.');
+  // Typing must not repaint unrelated shared components on every character.
+  await page.evaluate(()=>{SiteEditing.toggle(render);ElementAppearance.update(document.querySelector('#weddingMediaHeading'),{textColor:'#123456'});});
+  await page.locator('#mediaGalleryDescription').dblclick();await page.waitForTimeout(100);
+  await page.evaluate(()=>{globalThis.typingPaints=0;globalThis.typingObserver=new MutationObserver(records=>typingPaints+=records.length);typingObserver.observe(document.querySelector('#weddingMediaHeading'),{attributes:true,attributeFilter:['style']});});
+  await page.locator('#mediaGalleryDescription').press('Control+a');await page.locator('#mediaGalleryDescription').pressSequentially('A sentence typed without repainting the whole gathering.',{delay:15});
+  await page.waitForTimeout(1100);const typingPaints=await page.evaluate(()=>{typingObserver.disconnect();return typingPaints;});assert.ok(typingPaints<5,`typing unexpectedly repainted an unrelated heading ${typingPaints} times`);
+  await page.evaluate(()=>SiteEditing.toggle(render));await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);assert.ok(state.events.thanksgiving.siteText['#mediaGalleryDescription'].includes('A sentence typed'));
+  assert.deepEqual(errors,[]);assert.equal(state.accounts[0].qrToken,'already-printed-qr');console.log('Security/QR flows, page-owned headings, button surfaces, moved photo gaps, mobile toolbar clearance/stable scrolling, saved text effects and typing without whole-page repainting pass against the real local Worker.');
  }finally{await browser.close();server.close();global.fetch=originalFetch;}
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -1,6 +1,21 @@
 /* Shared per-gathering appearance editing. Untouched declarations keep their defaults. */
 (() => {
-  let context;
+  let context,changes,appearanceFrame=0,refreshPending=false,painting=false,groupCandidates;
+  const observerOptions={subtree:true,childList:true,attributes:true,attributeOldValue:true,attributeFilter:['open','aria-selected','aria-pressed','aria-current']};
+  const editorOnly='.element-editor-toolbar,.existing-layout-gap,gathering-gap,.gap-drop-marker,[contenteditable="true"]';
+  function observe(){changes?.observe(document.body,observerOptions);}
+  function relevantMutation(record){
+    const target=record.target.nodeType===3?record.target.parentElement:record.target;
+    if(target?.closest?.(editorOnly)||globalThis.ElementEditor?.ownsText?.(target))return false;
+    if(record.type==='attributes')return record.oldValue!==target.getAttribute(record.attributeName);
+    return [...record.addedNodes,...record.removedNodes].some(node=>node.nodeType!==1||!node.matches(editorOnly));
+  }
+  function scheduleAppearance(records){
+    const relevant=records.filter(relevantMutation);if(!context||!relevant.length)return;
+    refreshPending ||= relevant.some(record=>record.type==='attributes'&&record.attributeName==='open');
+    if(appearanceFrame)return;
+    appearanceFrame=requestAnimationFrame(()=>{appearanceFrame=0;const refresh=refreshPending;refreshPending=false;if(!context)return;apply();if(refresh)refreshControls();});
+  }
   const applied=new Map(),imageOriginals=new Map();
   const styledText=new Map(),editingStates=new Map(),previewStyles=new Map();
   function label(element){
@@ -88,7 +103,9 @@
   function find(path){
     if(path.startsWith('@group:')){
       const [kind,state]=path.slice(7).split(':');
-      return [...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,.count-list-dialog *')].filter(element=>(group(element)===kind && (!state || selectedState(element)===state)) || path==='@group:inner-containers' && contentSurface(element));
+      const candidates=groupCandidates||[...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,.count-list-dialog *')].map(element=>({element,kind:group(element)}));
+      if(painting)groupCandidates=candidates;
+      return candidates.filter(candidate=>(candidate.kind===kind && (!state || selectedState(candidate.element)===state)) || path==='@group:inner-containers' && contentSurface(candidate.element)).map(candidate=>candidate.element);
     }
     try{return [...document.querySelectorAll(path)];}catch{return [];}
   }
@@ -216,7 +233,11 @@
     }
   }
   function apply(){
-    restore(false);applyText();
+    // Painting may wrap labels or replace saved markup. Do not observe our own
+    // synchronous writes and schedule another whole-page paint from them.
+    changes?.disconnect();
+    try {
+    restore(false);applyText();painting=true;
     if(context?.enabled && context.host)for(const [target,css] of previewStyles)if(target.isConnected)for(const [property,value] of Object.entries(css))set(target,property,value);
     const priority=path=>/^@group:(?:buttons|tabs|toolbar-options):(?:selected|unselected)$/.test(path)?3:path==='[data-shared-details]'?2:path.startsWith('@group:')?0:1;
     for(const [path,values] of Object.entries(context?.state.elementAppearance || {}).sort(([a],[b])=>priority(a)-priority(b)||a.length-b.length))for(const element of find(path)){
@@ -226,6 +247,7 @@
         for(const part of element.querySelectorAll('span,strong,b,em,i,u,output'))paint(part,typography);
       }
     }
+    }finally{painting=false;groupCandidates=null;observe();}
   }
   function render(ctx){context=ctx;apply();refreshControls();}
   function isSurface(target,root){
@@ -234,7 +256,7 @@
     return style.backgroundImage!=='none' || colorParts(style.backgroundColor).alpha>0 || ['Top','Right','Bottom','Left'].some(side=>parseFloat(style['border'+side+'Width'])>0 && style['border'+side+'Style']!=='none');
   }
   function refreshControls(){ElementEditor.render(context);}
-  if(globalThis.MutationObserver)new MutationObserver(records=>{if(context){apply();if(records.some(record=>record.type==='attributes' && record.attributeName==='open'))refreshControls();}}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open','aria-selected','aria-pressed','aria-current']});
+  if(globalThis.MutationObserver){changes=new MutationObserver(scheduleAppearance);observe();}
   globalThis.ElementAppearance={
     textParts,label,isSurface,surfaceElement,imageElement,updateImage,
     group,selectedState,editState,clearEditState,
