@@ -57,6 +57,8 @@ test('Cloudflare serves only the gathering prefix with relative assets and no co
   assert.equal([...requests[0].headers].length,0);
   const css=await handleGatheringSite(new Request('https://themeyers.ilymmd.com/styles.css'),env);
   assert.equal(css.headers.get('Content-Type'),'text/css');assert.equal(new URL(requests[1].url).pathname,'/styles.css');
+  const receipt=await handleGatheringSite(new Request('https://themeyers.ilymmd.com/release.json?commit=test'),env);
+  assert.equal(receipt.headers.get('Cache-Control'),'no-store');
   assert.equal((await handleGatheringSite(new Request('https://themeyers.ilymmd.com/',{method:'POST'}),env)).status,405);
   assert.equal((await handleGatheringSite(new Request('https://themeyers.ilymmd.com/'),{})).status,503);
 });
