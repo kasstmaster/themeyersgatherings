@@ -50,7 +50,7 @@ export function projectState(state,actor){
   event.siteText=textEntries({...WeddingParty.legacyHeadingText(original),...original.siteText},Boolean(member),pageIds,member);event.textAppearance=textEntries(original.textAppearance,Boolean(member),pageIds,member);
   event.siteTabTitles=textEntries(original.siteTabTitles,Boolean(member),pageIds);
   event.elementAppearance=Object.fromEntries(Object.entries(original.elementAppearance||{}).filter(([path])=>(path.startsWith('@group:')||!privateSelector.test(path))&&(!path.includes('party-heading:')||allowedHeadingPath(path,member,pageIds))).map(([key,value])=>[key,clone(value)]));
-  event.items=(original.items||[]).map(item=>({...clone(item),claims:(item.claims||[]).map(name=>name===account.name?name:'__other_claim__')}));
+  event.items=(original.items||[]).map(item=>({...clone(item),...(item.claimGroups?{claimGroups:pick(item.claimGroups,[account.name])}:{}),claims:(item.claims||[]).map(name=>name===account.name?name:'__other_claim__')}));
   event.rsvps=(original.rsvps||[]).filter(response=>response.name===account.name).map(clone);
   events[id]=event;
  }
@@ -67,7 +67,7 @@ function validRsvp(response,account,event,id){
  if((response.childNames||[]).some(name=>typeof name!=='string'||name.length>200)||(response.extraGuestNames||[]).some(name=>typeof name!=='string'||name.length>200))forbidden();
  if(response.adults!==GuestPlanning.attendees(response.people).length+(response.extraGuests||0))forbidden();
  const allowed=GuestPlanning.plusOnePeople(account,id,names);
- if(id==='wedding'&&response.people.some(person=>person.guestChoice==='guest'&&(!allowed.includes(person.name)||!person.attending||!person.guestName?.trim())))forbidden();
+ if(id==='wedding'&&response.people.some(person=>person.guestChoice==='guest'&&(!allowed.includes(person.name)||!person.guestName?.trim())))forbidden();
  const attendeeNames=GuestPlanning.attendees(response.people).concat(response.extraGuestNames||[]);
  if((response.menuSelections||[]).some(selection=>!['adult','child'].includes(selection.type)||selection.type==='adult'&&!attendeeNames.includes(selection.name)||selection.meal==='none'&&selection.type!=='child'))forbidden();
  if((response.menuSelections||[]).some(selection=>selection.meal&&selection.meal!=='none'&&!GuestPlanning.weddingMealOptions(event,selection.type).includes(selection.meal)))forbidden();
@@ -109,13 +109,30 @@ export function updateFromChanges(state,actor,operations){
    if(new Set(incoming.items.map(item=>item.id)).size!==incoming.items.length)forbidden();
    next.events[id].items=incoming.items.map(item=>{
     const original=originals.get(item.id);
-    if(!original){if(!/^custom-[a-f0-9-]+$/.test(item.id)||typeof item.name!=='string'||!item.name.trim()||item.name.length>200||!Number.isSafeInteger(item.needed)||item.needed<1||item.needed>1000||!['Appetizers','Main Table','Sides','Desserts','Drinks'].includes(item.category)||!Array.isArray(item.claims)||item.claims.some(name=>name!==account.name)||item.claims.length!==item.needed||typeof item.unit!=='string'||item.unit.length>100)forbidden();return pick(item,['id','name','category','needed','unit','claims']);}
+    if(!original){if(!/^custom-[a-f0-9-]+$/.test(item.id)||typeof item.name!=='string'||!item.name.trim()||item.name.length>200||!Number.isSafeInteger(item.needed)||item.needed<1||item.needed>1000||!['Appetizers','Main Table','Sides','Desserts','Drinks'].includes(item.category)||!Array.isArray(item.claims)||item.claims.some(name=>name!==account.name)||item.claims.length!==item.needed||typeof item.unit!=='string'||item.unit.length>100)forbidden();const safe=pick(item,['id','name','category','needed','unit','claims']);return InvitationGroups.setDishQuantity(safe,account.name,InvitationGroups.number(account,id,actor.person),item.needed);}
     const safe=clone(original),others=(original.claims||[]).filter(name=>name!==account.name);
-    const submittedOther=(item.claims||[]).filter(name=>name!==account.name);
-    if(!SAME({...item,claims:[]},{...view.events[id].items.find(value=>value.id===item.id),claims:[]})||submittedOther.some(name=>name!=='__other_claim__')||submittedOther.length!==others.length)forbidden();
-    const ownClaims=item.claims.filter(name=>name===account.name);if(ownClaims.length+others.length>original.needed)forbidden();safe.claims=[...others,...ownClaims];return safe;
+    if(!Array.isArray(item.claims))forbidden();
+    const submittedOther=item.claims.filter(name=>name!==account.name);
+    const projected=view.events[id].items.find(value=>value.id===item.id);
+    if(!SAME({...item,claims:[],claimGroups:null},{...projected,claims:[],claimGroups:null})||submittedOther.some(name=>name!=='__other_claim__')||submittedOther.length!==others.length)forbidden();
+    const invitation=InvitationGroups.number(account,id,actor.person),single=GuestPlanning.invitationCount(account,id)<=1;
+    const quantity=InvitationGroups.dishQuantity(item,account.name,invitation,single);
+    InvitationGroups.setDishQuantity(safe,account.name,invitation,quantity,single);
+    const names=GuestPlanning.accountNames(account.name),response=next.events[id].rsvps?.find(value=>value.name===account.name);
+    if(GuestPlanning.allDeclined(InvitationGroups.response(account,id,names,invitation,response||{}).people))InvitationGroups.releaseDishes([safe],account.name,invitation,single,names,response.people);
+    const expected=pick(safe.claimGroups,[account.name]);
+    if(item.claimGroups&&!SAME(item.claimGroups,expected))forbidden();
+    const ownClaims=item.claims.filter(name=>name===account.name);
+    if(safe.claims.filter(name=>name===account.name).length!==ownClaims.length||safe.claims.length>original.needed)forbidden();
+    return safe;
    });
    if([...originals.keys()].some(key=>!incoming.items.some(item=>item.id===key)))forbidden();
+  }
+  const invitation=InvitationGroups.number(account,id,actor.person),names=GuestPlanning.accountNames(account.name);
+  const response=InvitationGroups.response(account,id,names,invitation,next.events[id].rsvps?.find(value=>value.name===account.name)||{});
+  if(GuestPlanning.allDeclined(response.people)){
+   const single=GuestPlanning.invitationCount(account,id)<=1;
+   InvitationGroups.releaseDishes(next.events[id].items||[],account.name,invitation,single,names,next.events[id].rsvps.find(value=>value.name===account.name).people);
   }
  }
  return next;

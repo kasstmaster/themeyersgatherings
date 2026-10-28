@@ -781,8 +781,8 @@ function accountContactGroups(accountName) {
 function invitationAssignmentHtml(account, person, eventId = viewedEventId) {
   return `<input class="account-person-invitation" data-person-invitation="${escapeAttribute(person)}" type="number" min="1" step="1" value="${InvitationGroups.number(account,eventId,person)}" aria-label="Invitation for ${escapeAttribute(person)}">`;
 }
-// The account manager and invitation list use the same grouping, counts,
-// and heading component. Their only difference is the editable member controls.
+// Invitation/count lists group by invitation. Accounts reuses the heading
+// component, grouping people by surname while keeping invitation inputs per person.
 function invitedInvitationGroups(account,eventId=viewedEventId) {
   const names=accountSignInNames(account.name);
   const granted=GuestPlanning.plusOnePeople(account,eventId,names);
@@ -800,7 +800,9 @@ function invitationEntryHtml(group, {className='', headings='', showCount=true, 
   return `<div class="guest-entry invited-entry ${className}">${invitationHeadingHtml(group,showCount)}<div class="invited-entry-names">${headings}${group.names.map(name=>`<div class="invitation-member-row">${renderName(name)}</div>`).join('')}</div></div>`;
 }
 function accountContactsHtml(account) {
-  const adults=invitedInvitationGroups(account).map(group=>{
+  const granted=GuestPlanning.plusOnePeople(account,viewedEventId,accountSignInNames(account.name));
+  const adults=accountContactGroups(account.name).map(family=>{
+    const group={title:family.surname,names:family.people.map(person=>person.fullName),guestPeople:granted};
     return invitationEntryHtml(group, {
       className:'account-invitation-group',showCount:false,
       headings:'<div class="account-person-headings"><span></span><span>Inv #</span><span>+1</span></div>',
@@ -1881,8 +1883,8 @@ function renderDish(item,quantity=Math.max(0,item.needed-item.claims.length),cla
 function claimItem(id) {
   ensureAccount(() => {
     const item = state.items.find(entry => entry.id === id); if (!item) return;
-    if (item.claims.includes(guestName)) {
-      item.claims = item.claims.filter(name => name !== guestName);
+    if (rsvpDishQuantity(item)>0) {
+      setRsvpDishQuantity(item,0);
       showToast(`Removed ${item.name} from your list.`);
       saveState();
       return;
@@ -1899,7 +1901,7 @@ function claimItem(id) {
       showSiteDialog(document.querySelector('#claimQuantityDialog'));
       return;
     }
-    item.claims.push(guestName);
+    setRsvpDishQuantity(item,1);
     saveState();
     showToast(`Thanks, ${householdDisplayName(guestName)}! You're bringing ${item.unit === 'dozen' ? `a dozen of ${item.name}` : item.name}.`);
   });
@@ -2108,7 +2110,7 @@ document.querySelector('#customItemForm').addEventListener('submit', event => {
   const unit = document.querySelector('#customItemUnit').value;
   const category = document.querySelector('#customItemCategory').value;
   if (!name || !category || quantity < 1) return;
-  state.items.push({ id: `custom-${Date.now()}`, name, category, needed: quantity, unit, claims: Array(quantity).fill(guestName) });
+  state.items.push(setRsvpDishQuantity({ id: `custom-${crypto.randomUUID()}`, name, category, needed: quantity, unit, claims: [] },quantity));
   event.target.reset(); document.querySelector('#customItemQuantity').value = 1;
   document.querySelector('#customItemDialog').close(); saveState(); showToast(`${name} was added to ${category}!`);
 });
@@ -2137,10 +2139,10 @@ document.querySelector('#claimQuantityForm').addEventListener('submit', event =>
   }
   const item = state.items.find(entry => entry.id === pendingClaimItemId);
   const requestedQuantity = Number(document.querySelector('#claimQuantity').value);
-  if (!item || item.claims.includes(guestName) || requestedQuantity < 1) return;
+  if (!item || rsvpDishQuantity(item)>0 || requestedQuantity < 1) return;
   const quantity = Math.min(requestedQuantity, Math.max(0, item.needed - item.claims.length));
   if (!quantity) return;
-  item.claims.push(...Array(quantity).fill(guestName));
+  setRsvpDishQuantity(item,quantity);
   pendingClaimItemId = null;
   document.querySelector('#claimQuantityDialog').close();
   saveState();
@@ -2261,7 +2263,7 @@ function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   renderRsvpAttire();
   renderRsvpEventHeader();
   document.querySelector('#rsvpDialog').showModal();
-  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>{GapLayout.refresh();ElementAppearance.refreshControls();syncHostToolbar();}});
+  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key.startsWith('person-')&&GuestPlanning.allDeclined(readRsvpPeople())||key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>{GapLayout.refresh();ElementAppearance.refreshControls();syncHostToolbar();}});
   // Render saved layout only after the RSVP flow has hidden inactive questions.
   render();
 });}
@@ -2361,6 +2363,7 @@ function rsvpFlowSteps() {
       if(choice){add(`guest-${index}`,choice.closest('label'),'Bringing a guest?');if(choice.value==='guest')add(`guest-name-${index}`,row.querySelector('[data-person-guest-name]'),'Your guest’s name');}
     }
   });
+  if(GuestPlanning.allDeclined(readRsvpPeople()))return steps;
   add('children',document.querySelector('#rsvpChildrenQuestion'),'Any children attending?');
   if(GatheringFeatures.rsvp(viewedEventId).guestCounter)add('guests',document.querySelector('#rsvpGuestsCounter'),'Any guests?');
   if(GatheringFeatures.rsvp(viewedEventId).meals && !rsvpOptionsLocked())document.querySelectorAll('.wedding-rsvp-guest:not([data-edit-meal-preview])').forEach(card=>{
@@ -2388,14 +2391,14 @@ function renderRsvpDishes(){
   document.querySelectorAll('[data-rsvp-question]').forEach(section=>{section.hidden=!(enabled || (section.id==='rsvpDishQuestion' && SiteEditing.enabled && GatheringFeatures.rsvp(viewedEventId).contributions));section.querySelectorAll('input,select').forEach(input=>{input.disabled=!enabled;input.required=false;input.setCustomValidity('');});});
   document.querySelectorAll('[data-rsvp-dish-answer]').forEach(button=>{button.disabled=SiteEditing.enabled;});
   const choice=document.querySelector('#rsvpBringingDish');
-  choice.value=state.items.some(item=>item.claims.includes(guestName))?'yes':'';
+  choice.value=state.items.some(item=>rsvpDishQuantity(item)>0)?'yes':'';
   const categories=[...new Set(state.items.map(item=>item.category))];
   const anythingElse=document.querySelector('#rsvpAnythingElse');
   const choices=document.querySelector('#rsvpDishChoices');
   choices.innerHTML=enabled?categories.map(category=>{
     const items=state.items.filter(item=>item.category===category).flatMap(item=>{
-      const saved=item.claims.filter(name=>name===guestName).length;
-      const available=Math.max(0,item.needed-item.claims.filter(name=>name!==guestName).length);
+      const saved=rsvpDishQuantity(item);
+      const available=Math.max(0,item.needed-item.claims.length+saved);
       const claimedByOthers=!available&&!saved;
       const limit=Math.max(available,saved);
       const quantity=limit>1?`<label class="rsvp-dish-quantity" ${saved?'':'hidden'}><span>How many?</span><select data-rsvp-dish-quantity aria-label="Quantity of ${escapeAttribute(item.name)}" ${saved?'required':''}><option value="">Choose</option>${Array.from({length:limit},(_,index)=>{const quantity=index+1;return `<option value="${quantity}" ${quantity===saved?'selected':''}>${escapeHtml(formatQuantity(quantity,item))}</option>`;}).join('')}</select></label>`:'<input type="hidden" data-rsvp-dish-quantity value="1">';
@@ -2417,6 +2420,7 @@ function rsvpDishDraft(){
   return {quantities,custom};
 }
 function validateRsvpQuestion(key){
+  if(GuestPlanning.allDeclined(readRsvpPeople()))return true;
   for(const [step,selector,none,names] of [['children','[data-rsvp-no-children]',rsvpChildNone,readRsvpChildNames()],['guests','[data-rsvp-no-guests]',rsvpGuestNone,readRsvpGuestNames()]]){
     if(step==='guests'&&!GatheringFeatures.rsvp(viewedEventId).guestCounter)continue;
     const choice=document.querySelector(selector);
@@ -2432,11 +2436,17 @@ function validateRsvpQuestion(key){
   if((key==='dishes'||key==='review')&&draft&&document.querySelector('#rsvpBringingDish').value==='yes'&&!draft.custom&&!document.querySelector('[data-rsvp-dish]:checked:not(:disabled)')){choice.setCustomValidity('Choose a dish or select “I’ll bring something else”.');return key==='review'?'dishes':false;}
   return true;
 }
+function rsvpDishQuantity(item){
+  return InvitationGroups.dishQuantity(item,guestName,currentInvitationNumber(),GuestPlanning.invitationCount(rsvpAccount(),viewedEventId)<=1);
+}
+function setRsvpDishQuantity(item,quantity){
+  return InvitationGroups.setDishQuantity(item,guestName,currentInvitationNumber(),quantity,GuestPlanning.invitationCount(rsvpAccount(),viewedEventId)<=1);
+}
 function applyRsvpDishes(draft){
   if(!draft)return true;
-  for(const [id,quantity] of draft.quantities){const item=state.items.find(item=>item.id===id);if(quantity>0&&(!item||!Number.isInteger(quantity)||quantity>Math.max(0,item.needed-item.claims.filter(name=>name!==guestName).length)))return false;}
-  for(const item of state.items){const quantity=draft.quantities.get(item.id)||0;item.claims=[...item.claims.filter(name=>name!==guestName),...Array(quantity).fill(guestName)];}
-  if(draft.custom){const item=draft.custom;state.items.push({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:Array(item.quantity).fill(guestName)});}
+  for(const [id,quantity] of draft.quantities){const item=state.items.find(item=>item.id===id);if(quantity>0&&(!item||!Number.isInteger(quantity)||quantity>Math.max(0,item.needed-item.claims.length+rsvpDishQuantity(item))))return false;}
+  for(const item of state.items)setRsvpDishQuantity(item,draft.quantities.get(item.id)||0);
+  if(draft.custom){const item=draft.custom;state.items.push(setRsvpDishQuantity({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:[]},item.quantity));}
   return true;
 }
 document.querySelector('#rsvpDishChoices').addEventListener('change',event=>{
@@ -2583,24 +2593,26 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   if (form.dataset.eventId !== viewedEventId || form.dataset.accountName !== guestName || form.dataset.personName !== signedInPersonName || form.dataset.invitation !== String(currentInvitationNumber())) { event.preventDefault(); form.closest('dialog').close(); showToast('Please reopen RSVP for the current account and gathering.'); return; }
   if(!RsvpFlow.submit(event)){event.preventDefault();return;}
   updateRsvpPeople();
-  const people = readRsvpPeople();
+  const people = readRsvpPeople().map(person=>person.attending===false?{...person,guestChoice:'no-guest',guestName:''}:person);
   if(people.some(person=>person.attending!==true && person.attending!==false)){event.preventDefault();showToast('Please choose attendance for each person.');return;}
-  const childNames=readRsvpChildNames();
+  const declined=GuestPlanning.allDeclined(people);
+  const childNames=declined?[]:readRsvpChildNames();
   if(childNames.some(name=>!name)){event.preventDefault();showToast('Please enter a name for each child.');return;}
   const names=rsvpNames();
   if (!names.length || people.length!==names.length || new Set(people.map(person=>person.name)).size!==names.length || people.some(person=>!names.includes(person.name))) { event.preventDefault();showToast('Your invitation has changed. Please reopen RSVP.');return; }
   const allowed = GuestPlanning.plusOnePeople(rsvpAccount(),viewedEventId,people.map(person=>person.name));
   if (GatheringFeatures.rsvp(viewedEventId).namedGuests && !rsvpOptionsLocked() && people.some(person=>person.attending && allowed.includes(person.name) && (!person.guestChoice || (person.guestChoice === 'guest' && !person.guestName)))) { event.preventDefault(); showToast('Enter each guest’s name or choose NO GUEST.'); return; }
-  const menuSelections = GatheringFeatures.rsvp(viewedEventId).meals ? readWeddingMenuSelections() : [];
-  const extraGuestNames=readRsvpGuestNames();
+  const menuSelections = !declined&&GatheringFeatures.rsvp(viewedEventId).meals ? readWeddingMenuSelections() : [];
+  const extraGuestNames=declined?[]:readRsvpGuestNames();
   if(extraGuestNames.some(name=>!name)){event.preventDefault();showToast('Please enter a name for each guest.');return;}
   const extraGuests=extraGuestNames.length;
-  let rsvp = { name: guestName, people, childNames, extraGuests, extraGuestNames, adults: Number(document.querySelector('#adults').value)+extraGuests, children: Number(document.querySelector('#children').value), ...(GatheringFeatures.rsvp(viewedEventId).meals ? { menuSelections } : {}) };
+  let rsvp = { name: guestName, people, childNames, extraGuests, extraGuestNames, adults: declined?0:Number(document.querySelector('#adults').value)+extraGuests, children: declined?0:Number(document.querySelector('#children').value), ...(GatheringFeatures.rsvp(viewedEventId).meals ? { menuSelections } : {}) };
   const index = state.rsvps.findIndex(entry => entry.name === guestName);
   if (GatheringFeatures.rsvp(viewedEventId).namedGuests && rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
   const account=rsvpAccount();
   if(account)rsvp=InvitationGroups.merge(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),state.rsvps[index],rsvp);
-  if(!applyRsvpDishes(rsvpDishDraft())){event.preventDefault();showToast('A dish is no longer available. Please reopen RSVP and choose again.');return;}
+  if(declined&&GatheringFeatures.rsvp(viewedEventId).contributions)InvitationGroups.releaseDishes(state.items,guestName,currentInvitationNumber(),GuestPlanning.invitationCount(account,viewedEventId)<=1,accountSignInNames(guestName),rsvp.people);
+  if(!applyRsvpDishes(declined?null:rsvpDishDraft())){event.preventDefault();showToast('A dish is no longer available. Please reopen RSVP and choose again.');return;}
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
   form.dataset.saved='true';
   saveState({refresh:true}); showToast('Your RSVP has been saved.');
@@ -2711,7 +2723,7 @@ document.querySelector('#noResponseButton').addEventListener('click', () => {
 function dishClaimHousehold(claimant){return findAccount(claimant)?.name||claimant;}
 function householdDishClaims(household){
   const key=normalizeAccountName(household);
-  return state.items.flatMap(item=>{const quantity=item.claims.filter(claimant=>normalizeAccountName(dishClaimHousehold(claimant))===key).length;return quantity?[{item,quantity}]:[];});
+  return GuestPlanning.menuOrder(state.items).flatMap(item=>{const quantity=item.claims.filter(claimant=>normalizeAccountName(dishClaimHousehold(claimant))===key).length;return quantity?[{item,quantity}]:[];});
 }
 function attendingDishRows(household,shown){
   const key=normalizeAccountName(household);if(shown.has(key)||!GatheringFeatures.forGathering(viewedEventId).menu)return '';shown.add(key);

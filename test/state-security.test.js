@@ -135,8 +135,8 @@ test('guest projection preserves public custom pages and legacy palette settings
 });
 test('deadline attendance changes reuse the existing locked RSVP rules instead of rejecting valid updates',async t=>{
  const f=await fixture(t),account=f.state.accounts[0],names=GuestPlanning.accountNames(account.name);
- f.state.events.wedding.rsvpDate='2000-01-01';
- const previous=InvitationGroups.merge(account,'wedding',names,1,null,{name:account.name,people:[{name:'Casey Example',attending:true,guestChoice:'no-guest',guestName:''}],adults:1,children:0,childNames:[],extraGuests:0,extraGuestNames:[],menuSelections:[{type:'adult',index:0,name:'Casey Example',meal:'Meal',customName:'',dietaryRestrictions:''}]});
+ f.state.events.wedding.rsvpDate='2000-01-01';account.plusOnePeople.wedding=['Casey Example'];
+ const previous=InvitationGroups.merge(account,'wedding',names,1,null,{name:account.name,people:[{name:'Casey Example',attending:true,guestChoice:'guest',guestName:'Invited Guest'}],adults:2,children:0,childNames:[],extraGuests:0,extraGuestNames:[],menuSelections:[{type:'adult',index:0,name:'Casey Example',meal:'Meal',customName:'',dietaryRestrictions:''}]});
  f.state.events.wedding.rsvps=[previous];const guest=await f.guest();
  const group=InvitationGroups.response(account,'wedding',names,1,previous);group.people[0].attending=false;
  const locked=GuestPlanning.lockedRsvp(InvitationGroups.response(account,'wedding',names,1,previous),group);
@@ -164,4 +164,36 @@ test('suffix discovery remains subject to the existing login attempt limit',asyn
  for(let i=0;i<20;i++)assert.equal((await f.login({role:'guest',name:'Casey Example',checkSuffix:true})).next,'suffix');
  assert.equal((await f.login({role:'guest',name:'Casey Example',checkSuffix:true})).response.status,429);
  assert.equal([...f.memory.objects.keys()].some(key=>key.startsWith('security-v1/sessions/')),false);assert.equal(f.writes,0);
+});
+
+test('a declined invitation releases only its dishes; sibling invitation data and other gatherings survive',async t=>{
+ const f=await fixture(t),account=f.state.accounts[0];
+ account.name='Casey Example / Jordan Example';account.invitationQuantities={one:2};account.invitationPeople={one:{'Casey Example':1,'Jordan Example':2}};
+ const actor={role:'guest',accountId:account.qrToken,person:'Casey Example'};
+ const item=f.state.events.one.items[0];item.needed=8;item.claims=[account.name,'Other Person'];
+ InvitationGroups.setDishQuantity(item,account.name,1,2);InvitationGroups.setDishQuantity(item,account.name,2,1);
+ const rsvp={name:account.name,people:[{name:'Casey Example',attending:true},{name:'Jordan Example',attending:true}],adults:2,children:1,invitationResponses:{1:{children:0,extraGuests:0,extraGuestNames:[],childNames:[],menuSelections:[],savedMenuSelections:[]},2:{children:1,extraGuests:0,extraGuestNames:[],childNames:['Child'],menuSelections:[],savedMenuSelections:[]}}};
+ f.state.events.one.rsvps.push(rsvp);
+ const untouched=structuredClone(f.state.events.wedding),beforeSibling=structuredClone(rsvp.invitationResponses[2]);
+ const session=await f.login({role:'guest',name:'Casey Example'});assert.equal(session.response.status,200);
+ const incoming=InvitationGroups.merge(account,'one',GuestPlanning.accountNames(account.name),1,rsvp,{name:account.name,people:[{name:'Casey Example',attending:false,guestChoice:'no-guest',guestName:''}],adults:0,children:0,childNames:[],extraGuests:0,extraGuestNames:[],menuSelections:[]});
+ const response=await f.patch(session,[{path:['events','one','rsvps'],value:[incoming]}]);
+ assert.equal(response.status,200);
+ const saved=f.state.events.one.items[0];assert.equal(InvitationGroups.dishQuantity(saved,account.name,1),0);assert.equal(InvitationGroups.dishQuantity(saved,account.name,2),1);
+ assert.equal(InvitationGroups.dishGroups(saved,account.name).unassigned,1);
+ assert.equal(saved.claims.filter(name=>name==='Other Person').length,1);
+ assert.deepEqual(f.state.events.one.rsvps.find(value=>value.name===account.name).invitationResponses[2],beforeSibling);assert.deepEqual(f.state.events.wedding,untouched);
+ const projected=projectState(f.state,actor);assert.ok(!JSON.stringify(projected.events.one.items).includes('Other Person'));
+});
+
+test('invitation attribution cannot be forged to remove a sibling group; partial declines retain dishes',async t=>{
+ const f=await fixture(t),account=f.state.accounts[0];account.name='Casey Example / Jordan Example';account.invitationQuantities={one:2};account.invitationPeople={one:{'Casey Example':1,'Jordan Example':2}};
+ const item=f.state.events.one.items[0];item.needed=8;InvitationGroups.setDishQuantity(item,account.name,1,1);InvitationGroups.setDishQuantity(item,account.name,2,2);
+ const session=await f.login({role:'guest',name:'Casey Example'}),items=structuredClone(session.state.events.one.items);items[0].claimGroups[account.name][2]=0;items[0].claims.splice(items[0].claims.indexOf(account.name),2);
+ assert.equal((await f.patch(session,[{path:['events','one','items'],value:items}])).status,403);assert.equal(f.writes,0);
+ // A partial decline inside a single group must not trigger server-side release.
+ account.invitationPeople.one['Jordan Example']=1;
+ const current=await f.login({role:'guest',name:'Casey Example'}),response={name:account.name,people:[{name:'Casey Example',attending:false,guestChoice:'no-guest',guestName:''},{name:'Jordan Example',attending:true}],adults:1,children:0,extraGuests:0};
+ const before=structuredClone(f.state.events.one.items);
+ assert.equal((await f.patch(current,[{path:['events','one','rsvps'],value:[response]}])).status,200);assert.deepEqual(f.state.events.one.items,before);
 });

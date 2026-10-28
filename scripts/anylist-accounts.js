@@ -165,7 +165,7 @@ export function accountPeople(accountName) {
 function migrateAccountReferences(state, oldName, newName) {
   if (oldName === newName) return;
   Object.values(state.events || {}).forEach(event => {
-    (event.items || []).forEach(item => { item.claims = (item.claims || []).map(name => name === oldName ? newName : name); });
+    (event.items || []).forEach(item => { item.claims = (item.claims || []).map(name => name === oldName ? newName : name); if(item.claimGroups&&Object.hasOwn(item.claimGroups,oldName)){item.claimGroups[newName]=item.claimGroups[oldName];delete item.claimGroups[oldName];} });
     (event.rsvps || []).forEach(rsvp => { if (rsvp.name === oldName) rsvp.name = newName; });
   });
 }

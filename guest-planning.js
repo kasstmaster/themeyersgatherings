@@ -112,5 +112,11 @@
     }
     return { adults, children, meals: [...meals], noMeal, unselected };
   }
-  globalThis.GuestPlanning={childLabel,childLabels,guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
+  function menuOrder(items){
+    const categories=['Main Table','Appetizers','Sides','Desserts','Drinks'];
+    const rank=item=>{const index=categories.indexOf(item.category);return index<0?categories.length-1.5:index;};
+    return [...items].sort((a,b)=>rank(a)-rank(b));
+  }
+  const allDeclined=people=>Array.isArray(people)&&people.length>0&&people.every(person=>person.attending===false);
+  globalThis.GuestPlanning={allDeclined,menuOrder,childLabel,childLabels,guestResponses,accountNames,invitationNumbers,rsvpClosed,lockedRsvp,invitationCount,plusOnePeople,setPlusOnePeople,retainedEvent,attendees,rsvpTotals,attendanceGroups,weddingMeals,weddingMealOptions,saveWeddingMeals};
 })();

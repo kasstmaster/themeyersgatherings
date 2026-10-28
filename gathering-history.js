@@ -33,7 +33,7 @@
     const days=Math.max(0,Math.round((Date.parse(previous.eventDate)-Date.parse(previous.rsvpDate))/86400000));
     next.eventDate=date;next.rsvpDate=previous.rsvpDate===''?'':new Date(Date.parse(date)-(Number.isFinite(days)?days:14)*86400000).toISOString().slice(0,10);
     next.rsvps=[];next.hostNotes='';
-    next.items=(next.items || []).filter(item=>!item.id.startsWith('custom-')).map(item=>({...item,claims:[]}));
+    next.items=(next.items || []).filter(item=>!item.id.startsWith('custom-')).map(item=>({...item,claims:[],...(item.claimGroups?{claimGroups:{}}:{})}));
     for(const account of app.accounts || []) {
       account.selectedEvents={...account.selectedEvents,[id]:false};account.invitedEvents={...account.invitedEvents,[id]:false};
       account.plusOnePeople={...account.plusOnePeople,[id]:[]};account.plusOnes={...account.plusOnes,[id]:0};
