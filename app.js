@@ -2252,6 +2252,25 @@ function captureRsvpMeals() {
   }
   return rsvpMealDraft;
 }
+function syncRsvpDishReference(key){
+  const dialog=document.querySelector('#rsvpDialog'),bar=document.querySelector('#rsvpDishReference');
+  const showing=dialog.open&&!SiteEditing.enabled&&!isHostView()&&GatheringFeatures.rsvp(viewedEventId,state).contributions&&(key==='bringing-dish'||key==='dishes'||key?.startsWith('custom-dish-'));
+  bar.hidden=!showing;dialog.classList.toggle('has-dish-reference',!!showing);
+  if(!showing)return;
+  const counts=hostAuthenticated?GatheringFeatures.dinnerCounts(appState.accounts,viewedEventId,state):state.dinnerSummary;
+  for(const [id,name] of [['dishReferenceInvited','invited'],['dishReferenceAttending','attending']]){
+    const count=counts?.[name],node=document.getElementById(id);
+    const text=count?String(count.adults+count.children):'Unavailable';
+    if(node.textContent!==text)node.textContent=text;
+    node.parentElement.title=count?`${count.adults} adults · ${count.children} children`:text;
+  }
+  const date=state.rsvpDate?new Date(state.rsvpDate+'T00:00:00Z'):null;
+  const text=date&&Number.isFinite(date.getTime())?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(date):'Not set';
+  const deadline=document.querySelector('#dishReferenceDeadline');if(deadline.textContent!==text)deadline.textContent=text;
+  const resize=()=>{if(!bar.hidden)dialog.style.setProperty('--rsvp-reference-height',`${Math.ceil(bar.getBoundingClientRect().height)}px`);};
+  if(!syncRsvpDishReference.observer){syncRsvpDishReference.observer=new ResizeObserver(resize);syncRsvpDishReference.observer.observe(bar);}
+  resize();
+}
 function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   document.querySelector('#rsvpSaveError').hidden=true;
   if(document.querySelector('#rsvpDialog').open)return;
@@ -2287,7 +2306,7 @@ function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   renderRsvpAttire();
   renderRsvpEventHeader();
   document.querySelector('#rsvpDialog').showModal();
-  RsvpFlow.start({steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key.startsWith('person-')&&GuestPlanning.allDeclined(readRsvpPeople())||key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>{GapLayout.refresh();ElementAppearance.refreshControls();syncHostToolbar();}});
+  RsvpFlow.start({stepShown:key=>syncRsvpDishReference(key),steps:rsvpFlowSteps,review:renderRsvpReview,validate:validateRsvpQuestion,finishOn:key=>key.startsWith('person-')&&GuestPlanning.allDeclined(readRsvpPeople())||key==='bringing-dish'&&document.querySelector('#rsvpBringingDish').value==='no',get editing(){return SiteEditing.enabled;},pageChanged:()=>{GapLayout.refresh();ElementAppearance.refreshControls();syncHostToolbar();}});
   // Render saved layout only after the RSVP flow has hidden inactive questions.
   render();
 });}

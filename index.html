@@ -181,6 +181,7 @@
 
     <button id="yourDishesButton" data-wedding-tab="your-dishes" type="button" aria-controls="yourDishesSection" hidden>Your Dishes</button>
     <dialog id="rsvpDialog" class="fullscreen-flow fullscreen-dialog" aria-labelledby="rsvpHeading">
+      <aside id="rsvpDishReference" data-toolbar-position="top" class="event-dock rsvp-dish-reference" aria-label="Dish planning reference" hidden><span>Invited: <strong id="dishReferenceInvited"></strong></span><span>Attending: <strong id="dishReferenceAttending"></strong></span><span>RSVP by: <strong id="dishReferenceDeadline"></strong></span></aside>
       <form method="dialog" id="rsvpForm" class="modal-card full-page-form flow-panel" novalidate>
         <button class="modal-close" type="button" aria-label="Close">×</button>
         <p class="section-kicker">Save your seat</p>
