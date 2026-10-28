@@ -138,3 +138,8 @@ test('claimed dishes follow menu categories without changing order inside each c
  assert.deepEqual(GuestPlanning.menuOrder(items).map(item=>item.id),['turkey','ham','stuffing','dip','pie','water']);
  assert.equal(items[0].id,'water');
 });
+
+test('menu edit rows mark only category boundaries without modifying saved items',()=>{
+ const items=[{id:'dip',category:'Appetizers'},{id:'ham',category:'Main Table'},{id:'stuffing',category:'Sides'},{id:'potatoes',category:'Sides'}],before=JSON.stringify(items);
+ assert.deepEqual(GuestPlanning.menuRows(items).map(({item,startsCategory})=>[item.id,startsCategory]),[['ham',false],['stuffing',true],['potatoes',false],['dip',true]]);assert.equal(JSON.stringify(items),before);
+});
