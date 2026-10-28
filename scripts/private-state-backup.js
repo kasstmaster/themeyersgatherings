@@ -5,7 +5,7 @@ const hash=value=>createHash('sha256').update(value).digest('hex');
 export async function backupState({repository,branch='main',statePath='data/app-state.json',token,fetchImpl=fetch,now=new Date()}){
  if(!/^[\w.-]+\/[\w.-]+$/.test(repository||'')||!token)throw new Error('Configure the private state repository and token.');
  const api='https://api.github.com/repos/'+repository,headers={Accept:'application/vnd.github+json',Authorization:'Bearer '+token,'User-Agent':'meyers-private-backup','X-GitHub-Api-Version':'2022-11-28'};
- async function call(path,options={}){const response=await fetchImpl(api+path,{...options,headers:{...headers,...options.headers}});if(!response.ok)throw new Error('Backup operation failed (HTTP '+response.status+').');return response.json();}
+ async function call(path,options={}){const response=await fetchImpl(api+path,{...options,headers:{...headers,...options.headers},redirect:'error',signal:AbortSignal.timeout(20000)});if(!response.ok)throw new Error('Backup operation failed (HTTP '+response.status+').');return response.json();}
  const repo=await call('');if(repo.private!==true)throw new Error('Refusing to store a state backup in a public repository.');
  const path=statePath.split('/').map(encodeURIComponent).join('/'),source=await call('/contents/'+path+'?ref='+encodeURIComponent(branch));
  const bytes=Buffer.from(source.content.replace(/\s/g,''),'base64'),text=bytes.toString('utf8');
@@ -23,8 +23,8 @@ export async function backupState({repository,branch='main',statePath='data/app-
 export async function verifyRestore({repository,backupCommit,backupPath,expectedHash,token,fetchImpl=fetch}){
  const headers={Accept:'application/vnd.github+json',Authorization:'Bearer '+token,'User-Agent':'meyers-private-restore-check'};
  const base='https://api.github.com/repos/'+repository;
- const repo=await fetchImpl(base,{headers});if(!repo.ok||(await repo.json()).private!==true)throw new Error('Private repository verification failed.');
- const response=await fetchImpl(base+'/contents/'+backupPath+'?ref='+encodeURIComponent(backupCommit),{headers});if(!response.ok)throw new Error('Could not read the immutable backup.');
+ const repo=await fetchImpl(base,{headers,redirect:'error',signal:AbortSignal.timeout(20000)});if(!repo.ok||(await repo.json()).private!==true)throw new Error('Private repository verification failed.');
+ const response=await fetchImpl(base+'/contents/'+backupPath+'?ref='+encodeURIComponent(backupCommit),{headers,redirect:'error',signal:AbortSignal.timeout(20000)});if(!response.ok)throw new Error('Could not read the immutable backup.');
  const record=await response.json(),bytes=Buffer.from(record.content.replace(/\s/g,''),'base64');
  if(hash(bytes)!==expectedHash)throw new Error('Backup hash does not match.');
  const restored=JSON.parse(bytes.toString('utf8'));if(!restored.events||typeof restored.events!=='object'||Array.isArray(restored.events)||!Array.isArray(restored.accounts))throw new Error('Invalid restore data.');

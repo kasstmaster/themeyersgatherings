@@ -12,6 +12,7 @@ The primary website is **https://themeyers.ilymmd.com/**. GitHub Pages remains a
 - [Invitations and QR codes](docs/invitations.md)
 - [Hosting and domain configuration](docs/custom-domain.md)
 - [A1/A2 security implementation and approval-gated rollout](docs/state-security-rollout.md)
+- [Private backup and no-write recovery check through GitHub Actions](docs/cloud-private-backup.md)
 - [Current documentation and architecture audit](docs/documentation-architecture-audit.md)
 - [Permanent development and documentation rules](AGENTS.md)
 

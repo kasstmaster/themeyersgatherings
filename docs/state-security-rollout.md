@@ -46,6 +46,8 @@ Because revision checks currently cover the whole canonical file, a change to an
 
 ## Private backup and recovery plan — before activation
 
+**Web-only option (recommended for the owner):** follow [Private backup entirely through GitHub](cloud-private-backup.md). Its manual-only workflow runs in the private data repository with GitHub’s automatic repository-scoped token, uses these same backup/restore helpers, and records the receipt privately. No Mac software or personal token is needed. The operator CLI steps below remain an alternative, not a requirement to use Terminal.
+
 No live backup has been taken by the implementation task. No migration or production state write is performed by it. The state schema and existing QR/account data do not require a bulk rewrite, but deployment changes the access protocol and must still have a verified recovery point.
 
 1. Confirm the **private** live state repository, branch and path from the deployed service. The checked-in target is `kasstmaster/themeyersevents-data`, `main`, `data/app-state.json`; do not assume runtime configuration matches.
