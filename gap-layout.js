@@ -20,8 +20,16 @@
     for(let pass=0,total=remaining.length;pass<=total;pass++){
       let progress=false;
       for(let index=remaining.length-1;index>=0;index--){
-        const gap=remaining[index],parent=find(gap.parent),before=gap.before?find(gap.before):null;
-        if(!parent || gap.before && !before || before && before.parentElement!==parent || parent.closest(excluded) || !parent.matches('div,section,main,header,footer,form,fieldset,nav,article'))continue;
+        const gap=remaining[index],anchor=gap.anchor?find(gap.anchor):null;
+        const follows=anchor&&['before','after'].includes(gap.side)&&anchor.parentElement;
+        const parent=follows?anchor.parentElement:find(gap.parent);
+        let before=gap.before?find(gap.before):null;
+        if(follows){
+          const own=nodes.get(gap.id),next=anchor.nextElementSibling===own?own.nextElementSibling:anchor.nextElementSibling;
+          if(gap.side==='before')before=anchor;
+          else if(!before||before.parentElement!==parent||!before.matches('gathering-gap'))before=next;
+        }
+        if(!parent || !follows&&gap.before&&!before || before&&before.parentElement!==parent || parent.closest(excluded) || !parent.matches('div,section,main,header,footer,form,fieldset,nav,article'))continue;
         let element=nodes.get(gap.id);
         if(!element){element=document.createElement('gathering-gap');element.id='gathering-gap-'+gap.id;element.dataset.gapId=gap.id;element.style.display='block';nodes.set(gap.id,element);}
         paintGap(element,gap);
@@ -98,9 +106,15 @@
     }
   }
   function applySpacing(){
+    const owner=globalThis.activeHostDialog?.()||document.scrollingElement,top=owner?.scrollTop,left=owner?.scrollLeft;
+    try {
     restoreSpacing();applySideGaps();
     for(const info of Object.values(context?.state.siteSpacing || {})){
-      const after=find(info.after),before=info.before?find(info.before):null,parent=find(info.parent);if(!after || !parent || after.parentElement!==parent || parent.closest(excluded) || !after.getClientRects().length || before && !before.getClientRects().length)continue;
+      const after=find(info.after),before=info.before?find(info.before):null;
+      const parent=before&&after&&before.parentElement===after.parentElement?after.parentElement:find(info.parent);
+      if(!parent||parent.closest(excluded))continue;
+      if(info.padding&&['padding-top','padding-bottom','padding-left','padding-right'].includes(info.padding)){setStyle(find(info.parent)||parent,info.padding,size(info.size));continue;}
+      if(!after || after.parentElement!==parent || !after.getClientRects().length || before&&!before.getClientRects().length)continue;
       const horizontal=info.axis==='x',property=horizontal?'margin-left':'margin-top';
       if(before && before.parentElement===parent){
         // Saved spacing describes adjacent content. Expanded panels between the
@@ -111,8 +125,9 @@
         setStyle(before,horizontal?'margin-right':'margin-bottom',0);
         setStyle(after,property,0);
         for(let pass=0;pass<3;pass++){const a=before.getBoundingClientRect(),b=after.getBoundingClientRect(),actual=horizontal?b.left-a.right:b.top-a.bottom,current=parseFloat(getComputedStyle(after).getPropertyValue(property))||0;setStyle(after,property,current+size(info.size)-actual);}
-      }else if(info.padding && ['padding-top','padding-bottom','padding-left','padding-right'].includes(info.padding))setStyle(parent,info.padding,size(info.size));
+      }
     }
+    }finally{if(Number.isFinite(top)&&owner.scrollTop!==top){if(owner.scrollTo)owner.scrollTo({top,left,behavior:'instant'});else owner.scrollTop=top;}}
   }
   function scanSpaces(){
     if(!enabled()){for(const element of virtuals.values())element.remove();virtuals.clear();return;}

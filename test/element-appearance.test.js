@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
+const textStyles=await readFile(new URL('../text-styles.js',import.meta.url),'utf8');
 const source=await readFile(new URL('../element-appearance.js',import.meta.url),'utf8');
 function fixture(){
  const values=new Map([['color',{value:'#112233',priority:''}]]);
  const element={style:{getPropertyValue:key=>values.get(key)?.value || '',getPropertyPriority:key=>values.get(key)?.priority || '',setProperty:(key,value,priority)=>values.set(key,{value,priority}),removeProperty:key=>values.delete(key)}};
  const body={classList:{toggle(){}}};
  const document={body,baseURI:'https://example.test/',addEventListener(){},querySelectorAll:path=>path==='#panel'?[element]:[]};
- const context=vm.createContext({ElementEditor:{render(){}},document,URL,Element:class{},CSS:{escape:value=>value}});vm.runInContext(source,context);
+ const context=vm.createContext({ElementEditor:{render(){}},document,URL,Element:class{},CSS:{escape:value=>value}});vm.runInContext(textStyles,context);vm.runInContext(source,context);
  return {api:context.ElementAppearance,element,values};
 }
 test('element colors, alpha and borders apply to guests and restore between gatherings',()=>{
@@ -37,4 +38,11 @@ test('menu action styles are shared by claim status independently of other butto
  assert.equal(api.group(button('claimed')),'dish-claimed');
  assert.equal(api.group(button('bringing')),'dish-bringing');
  assert.equal(api.group({matches:selector=>selector.split(',').includes('button'),closest:()=>null}),'buttons');
+});
+
+
+test('safe text effects apply and restore without changing another gathering',()=>{
+ const f=fixture();f.api.render({state:{elementAppearance:{'#panel':{textShadowEnabled:true,textShadowColor:'#123456',textShadowAlpha:50,textShadowX:-2,textShadowY:3,textShadowBlur:4,textOutlineColor:'#abcdef',textOutlineWidth:1.5}}},host:false});
+ assert.equal(f.values.get('text-shadow').value,'-2px 3px 4px #12345680');assert.equal(f.values.get('-webkit-text-stroke-width').value,'1.5px');
+ f.api.render({state:{},host:false});assert.equal(f.values.has('text-shadow'),false);assert.equal(f.values.has('-webkit-text-stroke-width'),false);
 });

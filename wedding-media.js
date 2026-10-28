@@ -61,6 +61,7 @@
         const link=document.createElement('a');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent=item.kind==='link'?'Open shared photos & videos':'Open / download original';card.append(link);gallery.append(card);
       }
     } catch(error) { if(attempt===loadNumber)status.textContent=error.message; }
+    finally {if(attempt===loadNumber&&key(current)===key(ctx))globalThis.GapLayout?.refresh();}
   }
   function initialize() {
     node('weddingMediaShare').addEventListener('click',()=>{

@@ -7,6 +7,10 @@ All existing and newly created gatherings use the same builder for the common ed
 - `element-appearance.js` owns formatting groups and per-text-box styling. Title and introduction groups are separate. Groups share styling only inside the selected gathering. `fitted-text.js` fits titles from their saved font size rather than replacing it with a theme default.
 - `GatheringFeatures` enables optional pages and RSVP capabilities. Wedding meal choices, wedding-party responsibilities, attire, shared wedding details, and timelines extend the content; they use the same builder and rendering/editing components.
 
+`toolbar-layout.js` measures visible fixed toolbars (including safe-area padding) and supplies shared bottom clearance. `fitted-text.js` caches fitting inputs and preserves scroll position during temporary measurements. `GapLayout` resolves saved anchors against their current parent without rewriting saved placements; gallery completion refreshes spacing.
+
+Text shadow/outline settings use the existing appearance groups for shared components and safe `TextStyles` markup for independent rich-text content. The serializer validates colors and bounded numeric effects; no arbitrary CSS is accepted. Button label highlight paints the label rather than the button surface. Explicit selected/unselected appearance groups take precedence over legacy element settings. Existing saved settings remain intact.
+
 ## Data and session boundaries
 
 Gathering data stays in `appState.events[gatheringId]`. Existing keys remain intact: `siteText`, `textAppearance`, `elementAppearance`, `sitePages`, `siteTabTitles`, `siteTabOrder`, `siteElementOrder`, `siteElementPlacements`, `siteGaps`, and `siteSpacing`. RSVP header slots, dates, addresses, menus, RSVPs and wedding-specific settings also remain in that event object. The shared-context refactor did not require conversion into a new schema. Normalization still contains legacy migrations, including a Christmas menu-replacement exception documented in the audit. Existing legacy-selector migrations continue to preserve moved content.

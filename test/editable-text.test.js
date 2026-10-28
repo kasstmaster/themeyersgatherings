@@ -101,3 +101,16 @@ test('underlined text uses the shared safe style renderer',()=>{
  assert.match(format(context.TextStyles.mark('Underlined',{underline:'true'})),/text-decoration:underline/);
  assert.equal(context.TextStyles.mark('Safe',{underline:'true;position:fixed'}),'Safe');
 });
+
+
+test('text effects survive safe markup rendering without accepting arbitrary CSS',()=>{
+ const values={shadow:'#12345680',shadowX:'-2',shadowY:'3',shadowBlur:'4',outline:'#abcdef',outlineWidth:'1.5'};
+ const marked=context.TextStyles.mark('Decorated',values);
+ assert.match(format(marked),/text-shadow:-2px 3px 4px #12345680/);
+ assert.match(format(marked),/-webkit-text-stroke-width:1.5px/);
+ assert.match(format(marked),/paint-order:stroke fill/);
+ for(const invalid of [{shadow:'url(https://example.com)'},{outline:'#fff;display:none'},{shadow:'#123456',shadowBlur:'1000'},{outline:'#123456',outlineWidth:'-1'}])assert.equal(context.TextStyles.mark('Safe',invalid),'Safe');
+ const restored=context.TextStyles.effects({textShadow:'rgba(18, 52, 86, 0.5) -2px 3px 4px',webkitTextStrokeWidth:'1.5px',webkitTextStrokeColor:'rgb(171, 205, 239)'},value=>value.startsWith('rgba')?{hex:'#123456',alpha:50}:{hex:'#abcdef',alpha:100});
+ assert.equal(restored.shadow,'#12345680');assert.equal(restored.outlineWidth,'1.5');
+ assert.match(format(context.TextStyles.mark('Plain',{shadow:'none',outline:'none'})),/text-shadow:none/);
+});
