@@ -4165,8 +4165,22 @@ document.querySelector('#newGatheringForm').addEventListener('submit',async even
   if(!isHostView()){event.preventDefault();return;}
   const name=document.querySelector('#newGatheringName').value.trim();
   if(!name){event.preventDefault();document.querySelector('#newGatheringName').focus();return;}
+  event.preventDefault();
+  const bannerFile=document.querySelector('#newGatheringBanner').files[0];
+  const createButton=document.querySelector('#newGatheringForm button[value="create"]');
+  let bannerUrl='';
+  if(bannerFile){
+    createButton.disabled=true;
+    try{
+      showToast('Uploading gathering banner…');
+      bannerUrl=(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,bannerFile)).url;
+    }catch(error){
+      showToast(error.message || 'Banner upload failed. Please try again.');
+      return;
+    }finally{createButton.disabled=false;}
+  }
   const id=`gathering-${crypto.randomUUID()}`;
-  appState.events[id]={...makeEvent([],document.querySelector('#newGatheringDate').value),gatheringName:name,gatheringTheme:'neutral',homeAddress:document.querySelector('#newGatheringAddress').value.trim()};
+  appState.events[id]={...makeEvent([],document.querySelector('#newGatheringDate').value),gatheringName:name,gatheringTheme:'neutral',homeAddress:document.querySelector('#newGatheringAddress').value.trim(),...(bannerUrl?{siteHeaderImage:bannerUrl,rsvpHeaderImage:bannerUrl}:{})};
   for(const account of appState.accounts){
     account.selectedEvents={...account.selectedEvents,[id]:false};
     account.invitedEvents={...account.invitedEvents,[id]:false};

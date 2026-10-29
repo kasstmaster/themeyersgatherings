@@ -27,6 +27,8 @@ const assert=require('node:assert/strict');
   // Use the normal creation path; new gatherings get no special editor setup.
   await page.locator('#newGatheringButton').click();
   await page.locator('#newGatheringName').fill('Summer Celebration');await page.locator('#newGatheringDate').fill('2028-08-10');
+  // New gathering creation accepts a banner directly, without a URL input.
+  assert.equal(await page.locator('#newGatheringBanner').getAttribute('type'),'file');
   await page.locator('#newGatheringForm button[value="create"]').click();
   await page.waitForFunction(()=>viewedEventId.startsWith('gathering-') && document.querySelector('#rsvpDialog').open);
   const newId=await page.evaluate(()=>viewedEventId),ids=['thanksgiving','christmas','wedding',newId];
