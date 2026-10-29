@@ -1066,7 +1066,7 @@ function syncHostToolbar(records=[]) {
   document.querySelector('#hostQuickActions').hidden=true;
   const owner=activeHostDialog() || document.body;
   for(const control of persistentHostControls)if(control.parentElement!==owner)owner.append(control);
-  document.querySelector('#manageGatherings').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || !document.querySelector('#invitationEditorDialog').hidden;
+  document.querySelector('#manageGatherings').hidden=!isHostView() || (!SiteEditing.enabled && document.querySelector('#eventSelectionPage').hidden) || !document.querySelector('#invitationEditorDialog').hidden;
   const create=document.querySelector('#newGatheringButton');create.hidden=!hostAuthenticated;
   document.querySelector('#cancelViewAsButton').hidden=!isViewingAsGuest();
   document.body.style.setProperty('--host-shortcuts-width',document.querySelector('#hostQuickActions').getBoundingClientRect().width+'px');
@@ -1167,7 +1167,7 @@ function gatheringRsvpStatus(eventId) {
 }
 function renderEventSelection() {
   const ids = GatheringHistory.selection(appState,availableEventIds());
-  document.querySelector('#manageGatherings').hidden=!isHostView() || document.querySelector('#eventSelectionPage').hidden || !document.querySelector('#invitationEditorDialog').hidden;
+  document.querySelector('#manageGatherings').hidden=!isHostView() || (!SiteEditing.enabled && document.querySelector('#eventSelectionPage').hidden) || !document.querySelector('#invitationEditorDialog').hidden;
   document.querySelector('#eventSelectionChoices').innerHTML = ids.map(id => {
     const event = EVENT_DETAILS[id];
     const eventState = appState.events[id];
