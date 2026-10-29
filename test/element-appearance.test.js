@@ -64,3 +64,12 @@ test('real page mutations are batched and saved styles still reach new content',
  const target={closest:()=>false,getAttribute:()=> 'false'};f.notify([{type:'attributes',target,attributeName:'aria-pressed',oldValue:'false'}]);assert.equal(f.frames.length,0);
  f.notify([{type:'attributes',target,attributeName:'aria-pressed',oldValue:'true'}]);assert.equal(f.frames.length,1);
 });
+
+test('all popup cards, close buttons and headings share count-list groups; RSVP remains separate',()=>{
+ const f=fixture();for(const id of ['guestListDialog','accountsDialog','manageGatheringsDialog','confirmGatheringAction','invitationTemplatesDialog','pastGatheringsDialog','newGatheringDialog']){
+  const dialog={id,matches:selector=>id==='guestListDialog'&&selector==='.count-list-dialog'};
+  for(const [selector,group] of [['.modal-card','count-list-containers'],['.modal-close','count-list-close'],['.modal-card>h1,.modal-card>h2,.modal-card>h3','count-list-titles']]){
+   const target={matches:s=>s===selector,closest:s=>s==='dialog'?dialog:null};assert.equal(f.api.group(target),group,id+' '+selector);
+  }
+ }
+});

@@ -401,13 +401,13 @@
     if(sidebarRoot!==root){sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=root;root.setAttribute('data-editor-sidebar-root','');}
     if(toolbar.parentElement!==root)root.append(toolbar);
     if(!sidebarResize){sidebarResize=new ResizeObserver(sizeSidebar);sidebarResize.observe(toolbar);}
-    const manage=document.querySelector('#manageGatherings');if(manage)toolbar.querySelector('[data-editor-gathering-management]').append(manage);
+    const manage=document.querySelector('#manageGatherings');if(manage){manage.hidden=false;toolbar.querySelector('[data-editor-gathering-management]').append(manage);}
     const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=false;toolbar.querySelector('[data-editor-templates]').append(templates);}
     for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)toolbar.querySelector('[data-editor-management]').append(control);}
     toolbar.querySelector('#editMenuButton').disabled=!globalThis.hasGatheringToolbarContext?.();
     refreshUndo();sizeSidebar();
   }
-  function beforeRender(){workspace?.restore?.();workspace=null;release();clearTimeout(autosaveTimer);sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const manage=document.querySelector('#manageGatherings');if(manage)document.querySelector('#hostToolsPanel .host-tool-actions').append(manage);const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)document.querySelector('#hostEditorManagement').append(control);}toolbar?.remove();toolbar=null;panelName='';}
+  function beforeRender(){workspace?.restore?.();workspace=null;release();clearTimeout(autosaveTimer);sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const manage=document.querySelector('#manageGatherings');if(manage){manage.hidden=true;document.querySelector('#hostToolsPanel .host-tool-actions').append(manage);}const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)document.querySelector('#hostEditorManagement').append(control);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',()=>{rememberSelection();if(!toolbar?.contains(document.activeElement))syncTextControls();});
   document.addEventListener('pointerdown',event=>{
     if(context?.enabled && toolbar && !toolbar.contains(event.target))SiteEditing.endUndoGroup();
