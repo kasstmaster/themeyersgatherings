@@ -3549,7 +3549,7 @@ function renderFieldInspector() {
     if(key==='color'&&!/^#[a-f0-9]{6}$/i.test(value))return;
     recordTemplateUndo();if(field.type==='image'&&['width','height'].includes(key)){window.Invitation.resizeImage(field,key,value);ElementEditor.updateWorkspaceValues({width:field.width,height:field.height});}else field[key]=key==='fontWeight'?(value?'700':'400'):value;
     if(field.type==='qr'&&['width','height'].includes(key))field.width=field.height=Number(value);
-    if(key==='formatter')field.wordSpacing=value.endsWith('-spaced')?14:0;
+    if(key==='formatter'){field.wordSpacing=value.endsWith('-spaced')?14:0;ElementEditor.updateWorkspaceValues({wordSpacing:field.wordSpacing});}
     renderEditorFields();refreshTemplateUndo();
   });
 }

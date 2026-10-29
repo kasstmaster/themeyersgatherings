@@ -169,3 +169,11 @@ test('date-format choices preview the current gathering and preserve formatter k
  assert.equal(Invitation.dateFormatOptions({...field,allCaps:true},a).find(o=>o.value==='month-day-year').label,'AUGUST 10 2027');
  assert.equal(Invitation.dateFormatOptions(Invitation.newField('rsvpBy',0,0),a)[0].label,'By Jul. 1');assert.ok(Invitation.dateFormatOptions(field,{}).every(o=>!o.label.includes('2026')));assert.equal(a.eventDate,'2027-08-10');
 });
+
+test('spaced weekday date supports plain day numbers and previews the real date with gaps',()=>{
+ const field={...Invitation.newField('eventDate',0,0),formatter:'weekday-month-day-year-spaced'},event={eventDate:'2026-11-06'};
+ assert.equal(Invitation.fieldValue(field,event),'Friday November 6 2026');
+ assert.equal(Invitation.dateFormatOptions(field,event).find(o=>o.value===field.formatter).label,'Friday\u2002\u2002November\u2002\u20026\u2002\u20022026');
+ assert.equal(Invitation.fieldValue({...field,allCaps:true},event),'FRIDAY NOVEMBER 6 2026');
+ assert.equal(Invitation.dateFormatOptions(field,event).find(o=>o.value==='month-day-year').label,'November 6 2026');
+});
