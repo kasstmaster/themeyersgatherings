@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const source=await readFile(new URL('../app.js',import.meta.url),'utf8');
 const bannerCode=source.slice(source.indexOf('function updateBannerSlot('),source.indexOf('function updateHeaderImage('));
-const headerCode=source.slice(source.indexOf('function rsvpFirstPageTextFields()'),source.indexOf("document.querySelector('#rsvpConfirmEvent').addEventListener"));
+const headerCode=source.slice(source.indexOf('function compactRsvpDeadlineText('),source.indexOf("document.querySelector('#rsvpConfirmEvent').addEventListener"));
 const editorCode=source.slice(source.indexOf('function renderRsvpInlineEditing('),source.indexOf('function renderEventDock()'));
 function fixture(editing,eventId='thanksgiving'){
  const fields=[],section={hidden:true},confirm={dataset:{},setAttribute(key,value){this[key]=value;},querySelector(){return {setAttribute:(key,value)=>{this.icon=value;}};}},wrong={},image={src:'main.png',hidden:false,closest(){return clone;},removeAttribute(){this.src='';},addEventListener(){}};
@@ -68,4 +68,11 @@ test('pending RSVP text commits stay bound to their original gathering',()=>{
 
 test('empty RSVP banners keep their editable slot only in host edit mode',()=>{
  for(const editing of [false,true]){const f=fixture(editing,'new-gathering');f.context.state.rsvpHeaderImage='';f.context.renderRsvpEventHeader();assert.equal(f.image.hidden,true);const slot=f.image.closest();assert.equal(slot.dataset.emptyBanner,'true');assert.equal(slot.dataset.bannerEditing,String(editing));}
+});
+
+test('first RSVP information shortens only Kindly RSVP by dates without changing saved text',()=>{
+ const f=fixture(false);const original='**Kindly RSVP by November 7, 2026**\nEvent on November 21, 2026';f.context.state.rsvpDetailsText=original;
+ assert.equal(f.context.compactRsvpDeadlineText(original),'**Kindly RSVP by Nov. 7**\nEvent on November 21, 2026');
+ assert.equal(f.context.compactRsvpDeadlineText('Kindly RSVP by November 7'),'Kindly RSVP by Nov. 7');assert.equal(f.context.compactRsvpDeadlineText('Kindly RSVP by **December 1st 2027**'),'Kindly RSVP by **Dec. 1**');assert.equal(f.context.compactRsvpDeadlineText('Kindly RSVP by May 5, 2026'),'Kindly RSVP by May 5');assert.equal(f.context.compactRsvpDeadlineText('Kindly RSVP by Nov. 7'),'Kindly RSVP by Nov. 7');
+ assert.equal(f.context.state.rsvpDetailsText,original);
 });

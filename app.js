@@ -1579,7 +1579,7 @@ function render() {
   const dateElement = document.querySelector('#eventDate');
   dateElement.dateTime = state.eventDate;
   document.querySelector('#rsvpDeadline').hidden = !SiteEditing.enabled;
-  document.querySelector('#rsvpDeadline').textContent = state.rsvpDate ? `Kindly RSVP by ${new Intl.DateTimeFormat('en-US', {month:'long',day:'numeric',year:'numeric'}).format(new Date(`${state.rsvpDate}T12:00:00`))}` : 'RSVP deadline not set';
+  document.querySelector('#rsvpDeadline').textContent = state.rsvpDate ? compactRsvpDeadlineText(`Kindly RSVP by ${new Intl.DateTimeFormat('en-US', {month:'long',day:'numeric',year:'numeric'}).format(new Date(`${state.rsvpDate}T12:00:00`))}`) : 'RSVP deadline not set';
   dateElement.textContent = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(eventDate).replaceAll(',', '');
   document.querySelector('#eventAddress').innerHTML = formatEditableText(gatheringHeaderAddress(),{inline:true});
   document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${formatEditableText(SharedDetails.homeAddress(state),{inline:true})}`;
@@ -2311,6 +2311,9 @@ function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
   render();
 });}
 // Every gathering uses these same two editable text slots and the same HTML layout.
+function compactRsvpDeadlineText(value){
+  return String(value || '').replace(/(\bKindly\s+RSVP\s+by\s+(?:\*\*|\*|__|_)?)(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+\d{4})?\b/gi,(_match,prefix,month,day)=>`${prefix}${month.slice(0,3)}${month.length>3?'.':''} ${Number(day)}`);
+}
 function rsvpFirstPageTextFields() {
   const saved=state.siteText || {};
   return [
@@ -2341,7 +2344,7 @@ function renderRsvpEventHeader() {
   date.dateTime=state.eventDate;
   date.textContent=document.querySelector('#eventDate').textContent;
   for(const [selector,value] of rsvpFirstPageTextFields()) {
-    document.querySelector(selector).innerHTML=formatEditableText(value);
+    document.querySelector(selector).innerHTML=formatEditableText(compactRsvpDeadlineText(value));
   }
   SiteEditing.applyStaticText(document.querySelector('#rsvpDialog'),state,(value,options)=>formatEditableText(value,options));
 }
