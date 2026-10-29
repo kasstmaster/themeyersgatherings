@@ -100,22 +100,22 @@
     return ['eventDate','eventTime','address','rsvpBy'].map((key,index)=>({...newField(key,width*.1,height*[.5,.59,.68,.85][index]),width:Math.round(width*.8),height:Math.round(height*(key==='address'?.15:.08)),fontSize:Math.min(28,Math.max(10,Math.round(width/24)))}));
   }
   function validateTemplate(template,event) {
-    const values=root.SharedDetails?root.SharedDetails.invitationValues(event):event || {};
-    const missing=[];
-    if(!parseDate(values.eventDate))missing.push('gathering date');
-    if(!String(values.eventTime ?? values.ceremonyTime ?? values.churchTime ?? '').trim())missing.push('time');
-    if(!String(values.address || values.homeAddress || values.addressLine1 || values.churchStreet || '').trim())missing.push('address');
-    if(!parseDate(values.rsvpDate))missing.push('RSVP-by date');
-    if(missing.length)throw new Error(`Complete ${missing.join(', ')} in Manage Gatherings before saving this template.`);
-    const fields=(template.fields || []).filter(field=>field.type==='text'&&field.width>0&&field.height>0&&field.x>=0&&field.y>=0&&field.x<template.background?.width&&field.y<template.background?.height);
-    const has=key=>fields.some(field=>field.key===key);
-    const absent=[];
-    if(!has('eventDate'))absent.push('Event Date');
-    if(!has('eventTime')&&!has('ceremonyTime'))absent.push('Event Time');
-    if(!has('address')&&(!has('addressLine1')||(String(values.addressLine2 || '').trim()&&!has('addressLine2'))))absent.push('Full Address (or both address lines)');
-    if(!has('rsvpBy'))absent.push('RSVP By');
-    if(absent.length)throw new Error(`Place the required fields on the invitation: ${absent.join(', ')}.`);
+    if(!event||typeof event!=='object')throw new Error('That gathering is no longer available.');
+    if(!template?.background||!Array.isArray(template.fields)||template.fields.some(field=>!field||!['text','qr'].includes(field.type)||typeof field.key!=='string'))throw new Error('This template has invalid field data.');
     return true;
+  }
+  function templateRequirements(template,event) {
+    const values=root.SharedDetails?root.SharedDetails.invitationValues(event):event || {},missingValues=[],missingFields=[];
+    if(!parseDate(values.eventDate))missingValues.push('eventDate');
+    if(!String(values.eventTime ?? values.ceremonyTime ?? values.churchTime ?? '').trim())missingValues.push('eventTime');
+    if(!String(values.address || values.homeAddress || values.addressLine1 || values.churchStreet || '').trim())missingValues.push('address');
+    if(!parseDate(values.rsvpDate))missingValues.push('rsvpBy');
+    const fields=(template.fields || []).filter(field=>field?.type==='text'&&field.width>0&&field.height>0&&field.x>=0&&field.y>=0&&field.x<template.background?.width&&field.y<template.background?.height),has=key=>fields.some(field=>field.key===key);
+    if(!has('eventDate'))missingFields.push('eventDate');
+    if(!has('eventTime')&&!has('ceremonyTime'))missingFields.push('eventTime');
+    if(!has('address')&&(!has('addressLine1')||(String(values.addressLine2 || '').trim()&&!has('addressLine2'))))missingFields.push('address');
+    if(!has('rsvpBy'))missingFields.push('rsvpBy');
+    return {missingValues,missingFields};
   }
   function copyForGathering(source,eventId,name,background) {
     const template=duplicateTemplate(source,name);template.eventId=eventId;template.background={...background};return template;
@@ -139,14 +139,26 @@
   function loadImage(src, version) {
     return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = () => reject(new Error('Unable to load invitation background.')); image.crossOrigin = 'anonymous'; image.src = versionedImageUrl(src, version); });
   }
+  function textFont(field) {return `${field.italic ? 'italic ' : ''}${field.fontWeight || 400} ${field.fontSize}px ${JSON.stringify(field.fontFamily || 'Georgia')}, serif`;}
+  async function loadTextFonts(fields,values) {
+    if(!root.document?.fonts?.load)return;
+    await Promise.all(fields.filter(field=>field.type==='text').map(field=>root.document.fonts.load(textFont(field),String(values[field.id] || ' '))));
+  }
+  function configureText(ctx,field) {
+    ctx.font=textFont(field);ctx.fillStyle=field.color || '#222';ctx.textAlign=field.textAlign || 'left';ctx.textBaseline='top';
+    if('letterSpacing' in ctx)ctx.letterSpacing=`${field.letterSpacing || 0}px`;
+    if('wordSpacing' in ctx)ctx.wordSpacing=`${field.wordSpacing || 0}px`;
+  }
   function drawText(ctx, text, field) {
     ctx.save(); ctx.beginPath(); ctx.rect(field.x, field.y, field.width, field.height); ctx.clip();
-    ctx.font = `${field.italic ? 'italic ' : ''}${field.fontWeight || 400} ${field.fontSize}px ${JSON.stringify(field.fontFamily || 'Georgia')}, serif`;
-    ctx.fillStyle = field.color || '#222'; ctx.textAlign = field.textAlign || 'left'; ctx.textBaseline = 'top';
-    if ('letterSpacing' in ctx) ctx.letterSpacing = `${field.letterSpacing || 0}px`;
-    if ('wordSpacing' in ctx) ctx.wordSpacing = `${field.wordSpacing || 0}px`;
+    configureText(ctx,field);
     const x = field.textAlign === 'center' ? field.x + field.width / 2 : field.textAlign === 'right' ? field.x + field.width : field.x;
-    String(text).split(/\r?\n/).forEach((line,index)=>ctx.fillText(line,x,field.y+index*field.fontSize*(field.lineHeight || 1.2),field.width)); ctx.restore();
+    String(text).split(/\r?\n/).forEach((line,index)=>ctx.fillText(line,x,field.y+index*field.fontSize*(field.lineHeight || 1.2))); ctx.restore();
+  }
+  async function renderTextField(canvas,field,text) {
+    await loadTextFonts([field],{[field.id]:text});
+    canvas.width=Math.max(1,Math.ceil(field.width));canvas.height=Math.max(1,Math.ceil(field.height));
+    drawText(canvas.getContext('2d'),text,{...field,x:0,y:0});return canvas;
   }
   function drawQr(ctx, qr, field) {
     const size = Math.min(field.width, field.height), count = qr.getModuleCount(), quiet = Math.max(4, field.quietZone || 4), modules = count + quiet * 2;
@@ -158,17 +170,29 @@
     const { template } = model, ctx = canvas.getContext('2d');
     canvas.width = template.background.width; canvas.height = template.background.height;
     ctx.drawImage(await loadImage(template.background.url, template.background.updatedAt || template.updatedAt), 0, 0, canvas.width, canvas.height);
+    await loadTextFonts(template.fields,model.values);
     template.fields.forEach(field => field.type === 'qr' ? drawQr(ctx, qr, field) : drawText(ctx, model.values[field.id], field));
     return canvas;
   }
-  function overflowWarnings(canvas, model) {
-    const ctx = canvas.getContext('2d');
-    return model.template.fields.filter(field => field.type === 'text').filter(field => {
-      ctx.font = `${field.italic ? 'italic ' : ''}${field.fontWeight || 400} ${field.fontSize}px ${field.fontFamily || 'Georgia'}`;
-      const value = model.values[field.id] || '';
-      return value.split(/\r?\n/).some(line=>ctx.measureText(line).width + Math.max(0,line.length - 1)*(field.letterSpacing || 0)+(line.split(' ').length-1)*(field.wordSpacing || 0)>field.width) || value.split(/\r?\n/).length*field.fontSize*(field.lineHeight || 1.2)>field.height;
-    }).map(field => field.label);
+  function overflowDetails(canvas,model) {
+    const ctx=canvas.getContext('2d'),issues=[];
+    for(const field of model.template.fields.filter(field=>field.type==='text')){
+      configureText(ctx,field);let width=false,height=false;
+      const anchor=field.textAlign==='center'?field.width/2:field.textAlign==='right'?field.width:0;
+      String(model.values[field.id] || '').split(/\r?\n/).forEach((line,index)=>{
+        if(!line.trim())return;
+        const metrics=ctx.measureText(line),advance=metrics.width+('letterSpacing' in ctx?0:Math.max(0,line.length-1)*(field.letterSpacing || 0))+('wordSpacing' in ctx?0:(line.split(' ').length-1)*(field.wordSpacing || 0));
+        const left=Number.isFinite(metrics.actualBoundingBoxLeft)?metrics.actualBoundingBoxLeft:field.textAlign==='center'?advance/2:field.textAlign==='right'?advance:0;
+        const right=Number.isFinite(metrics.actualBoundingBoxRight)?metrics.actualBoundingBoxRight:advance-left;
+        const y=index*field.fontSize*(field.lineHeight || 1.2),top=y-(metrics.actualBoundingBoxAscent ?? 0),bottom=y+(metrics.actualBoundingBoxDescent ?? field.fontSize);
+        if(anchor-left<-.5||anchor+right>field.width+.5)width=true;
+        if(top<-.5||bottom>field.height+.5)height=true;
+      });
+      if(width||height)issues.push({label:field.label,width,height});
+    }
+    return issues;
   }
-  root.Invitation = { snapHorizontal, mandatoryFields, validateTemplate, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowWarnings };
+  function overflowWarnings(canvas,model){return overflowDetails(canvas,model).map(issue=>issue.label);}
+  root.Invitation = { renderTextField, textFont, snapHorizontal, mandatoryFields, validateTemplate, templateRequirements, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowDetails, overflowWarnings };
   if (typeof module !== 'undefined') module.exports = root.Invitation;
 })(typeof globalThis !== 'undefined' ? globalThis : window);
