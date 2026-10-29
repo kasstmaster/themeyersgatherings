@@ -1473,6 +1473,7 @@ function renderWeddingGathering(hostView) {
 }
 
 // Standard gatherings share one page renderer; Wedding opts out of Notes/Menu.
+function gatheringGalleryLabel(event){const label=event.mediaGalleryLabel;return !label||label==='View & Download Photos & Videos'?'View & Download':label;}
 function gatheringGalleryUrl(value) {
   try{const url=new URL(value);return ['https:','http:'].includes(url.protocol) && !url.username && !url.password?url.href:'';}catch{return '';}
 }
@@ -1492,10 +1493,9 @@ function renderGatheringMedia(hostView) {
     });
   }
   const galleryLink=document.querySelector('#sharedGalleryLink'),galleryUrl=gatheringGalleryUrl(state.mediaGalleryUrl);
-  galleryLink.textContent=state.mediaGalleryLabel || 'View & Download Photos & Videos';
+  galleryLink.textContent=gatheringGalleryLabel(state);
   if(galleryUrl)galleryLink.href=galleryUrl;else galleryLink.removeAttribute('href');
   galleryLink.setAttribute('aria-disabled',String(!galleryUrl));
-  document.querySelector('#sharedGalleryPending').hidden=Boolean(galleryUrl);
   document.querySelector('#weddingMediaIntro').textContent=wedding?'Share your wedding photos and videos directly with us':'Share your gathering photos and videos directly with us';
   if(showing)WeddingMedia.show({base:SHARED_STATE_URL,eventId:viewedEventId,host:hostView,name:signedInPersonName || guestName,account:guestName,preview:false});
 }
@@ -1681,7 +1681,7 @@ function renderInlineEditing(eventState=state) {
       renderWeddingPageToolbar();
     }, format: (value,options) => formatEditableText(value,options), escape: escapeHtml });
   SiteEditing.field(document.querySelector('#sharedGalleryLink'),'shared photo folder',[
-    {label:'Button text',value:state.mediaGalleryLabel || 'View & Download Photos & Videos',required:true},
+    {label:'Button text',value:gatheringGalleryLabel(state),required:true},
     {label:'Dropbox folder link (add after the gathering)',type:'url',value:state.mediaGalleryUrl || ''}
   ],([label,url])=>{state.mediaGalleryLabel=label.trim();state.mediaGalleryUrl=gatheringGalleryUrl(url.trim());});
   SiteEditing.field(document.querySelector('#customGatheringHeading'), 'title', [], ()=>{},{contentReadOnly:true});
@@ -4256,7 +4256,7 @@ function showPastGathering(snapshot) {
   const dishes=GuestPlanning.menuOrder(event.items || []).filter(item=>item.claims?.some(name=>names.has(name))).map(item=>`<li>${escapeHtml(item.name)}</li>`).join('');
   const meals=own.flatMap(r=>r.menuSelections || []).map(meal=>`<li>${escapeHtml(meal.name || '')}: ${escapeHtml(meal.meal || '')}</li>`).join('');
   area.innerHTML=`<h2>${escapeHtml(snapshot.name)}</h2><p>${escapeHtml(snapshot.date)} · Read-only history</p><h3>Your RSVP</h3>${responses || '<p>No RSVP was recorded.</p>'}${dishes?`<h3>Your Dishes</h3><ul>${dishes}</ul>`:''}${meals?`<h3>Your meals</h3><ul>${meals}</ul>`:''}<h3>Photos &amp; Videos</h3><div data-archive-gallery-link></div><p data-archive-media-status role="status"></p><div class="wedding-media-gallery" data-archive-media></div>`;
-  try{const url=new URL(event.mediaGalleryUrl);if(!['http:','https:'].includes(url.protocol))throw new Error();const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent=event.mediaGalleryLabel || 'View & Download Photos & Videos';area.querySelector('[data-archive-gallery-link]').append(link);}catch{/* An empty gallery link stays empty until the Host supplies it. */}
+  try{const url=new URL(event.mediaGalleryUrl);if(!['http:','https:'].includes(url.protocol))throw new Error();const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent=gatheringGalleryLabel(event);area.querySelector('[data-archive-gallery-link]').append(link);}catch{/* An empty gallery link stays empty until the Host supplies it. */}
   void WeddingMedia.archive({base:SHARED_STATE_URL,host:isHostView(),account:guestName,name:signedInPersonName,preview:isViewingAsGuest(),eventId:snapshot.eventId,archiveDate:snapshot.date},area.querySelector('[data-archive-media]'),area.querySelector('[data-archive-media-status]'));
 }
 document.querySelector('#pastGatheringsDropdown').addEventListener('toggle',()=>{if(document.querySelector('#pastGatheringsDropdown').open)showPastGatherings();});

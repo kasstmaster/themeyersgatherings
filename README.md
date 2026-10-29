@@ -56,7 +56,7 @@ History snapshots completed gatherings by date using the Los Angeles calendar da
 
 Every gathering uses the same Photos & Videos page and `/wedding-media` service. **Share Your Photos & Videos** reveals **Upload** or **Share Link**; choosing one hides the other. Upload progress/errors remain visible, and the gallery refreshes after a successful complete batch. There is no manual Refresh button.
 
-The host can set the **View & Download Photos & Videos** label and folder URL through its editor. Until a URL is supplied, the link is disabled and a pending message appears. This published link is gathering-specific. Dropbox folder sharing permissions control access/downloads.
+The host can set the **View & Download** label and folder URL through its editor. Until a URL is supplied, the link is disabled. The description recommends waiting about a month before downloading, allowing everyone time to upload, and explains that downloading is optional. This published link is gathering-specific. Dropbox folder sharing permissions control access/downloads.
 
 Uploads use the hosts' single Dropbox connection. The website gallery lists account-owned receipts, links and legacy files; it does not fetch new Dropbox file bytes. **Current limitation:** that account gallery and its storage namespace are shared across gatherings; only session admission and the manually published folder-link settings use the gathering ID. This is a confirmed isolation issue in the audit, not a documented guarantee of per-gathering gallery separation.
 
