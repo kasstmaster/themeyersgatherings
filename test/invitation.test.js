@@ -110,3 +110,17 @@ test('duplicating a template copies layout but creates independent IDs', () => {
   const copy = Invitation.duplicateTemplate(template);
   assert.notEqual(copy.id, template.id); assert.notEqual(copy.fields[0].id, template.fields[0].id); assert.deepEqual({ ...copy.fields[0], id: '' }, { ...template.fields[0], id: '' });
 });
+
+test('shared text rendering preserves natural font width rather than squeezing text to fit',async()=>{
+ const operations=[],context={save(){},beginPath(){},rect(){},clip(){},restore(){},fillText(...args){operations.push(args);},letterSpacing:'0px',wordSpacing:'0px'};
+ const canvas={getContext:()=>context},field={...Invitation.newField('customText',20,30),fontFamily:'Times New Roman',fontSize:44,fontWeight:'700',italic:true,width:120,height:100,letterSpacing:2,wordSpacing:3,customText:'Wide text\nLine two'};
+ await Invitation.renderTextField(canvas,field,field.customText);
+ assert.equal(context.font,'italic 700 44px "Times New Roman", serif');assert.equal(context.letterSpacing,'2px');assert.equal(context.wordSpacing,'3px');assert.equal(operations.length,2);assert.equal(operations[0].length,3,'fillText must not receive a maxWidth that compresses the font');assert.equal(operations[0][1],0);assert.equal(operations[1][2],52.8);
+});
+test('overflow checks actual glyph bounds, avoiding false line-height and spacing warnings',()=>{
+ const context={letterSpacing:'0px',wordSpacing:'0px',measureText:()=>({width:100,actualBoundingBoxLeft:0,actualBoundingBoxRight:100,actualBoundingBoxAscent:-5,actualBoundingBoxDescent:35})};
+ const field={...Invitation.newField('eventDate',0,0),width:110,height:36,fontSize:44,lineHeight:2,letterSpacing:3,wordSpacing:4};const model={template:{fields:[field]},values:{[field.id]:'Actual text'}};
+ assert.deepEqual(Invitation.overflowDetails({getContext:()=>context},model),[],'visible text fits despite a taller line box');
+ context.measureText=()=>({width:150,actualBoundingBoxLeft:0,actualBoundingBoxRight:150,actualBoundingBoxAscent:-5,actualBoundingBoxDescent:35});assert.deepEqual(Invitation.overflowDetails({getContext:()=>context},model),[{label:'Event Date',width:true,height:false}]);
+ field.width=160;field.height=20;assert.deepEqual(Invitation.overflowDetails({getContext:()=>context},model),[{label:'Event Date',width:false,height:true}]);
+});

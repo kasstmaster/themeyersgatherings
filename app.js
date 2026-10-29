@@ -3476,16 +3476,32 @@ function templateEditorQrSvg() {
   const account = appState.accounts.find(item => item.qrToken === selectedToken) || null;
   return qrSvg(makeQrCode(invitationQrUrl(account)));
 }
+function renderTemplateRequirements(){
+  const report=window.Invitation.templateRequirements(templateDraft,state),group=key=>key==='ceremonyTime'?'eventTime':['addressLine1','addressLine2'].includes(key)?'address':key;
+  for(const element of document.querySelectorAll('#templateFieldLayer .editor-field')){
+    const field=templateDraft.fields.find(item=>item.id===element.dataset.fieldId),missing=report.missingValues.includes(group(field.key));element.classList.toggle('template-required-missing',missing);element.title=missing?'This gathering value is missing. You can still save.':'';
+  }
+  for(const button of document.querySelectorAll('#templateFieldToolbox [data-field-key]')){
+    const key=group(button.dataset.fieldKey),missing=report.missingValues.includes(key)||report.missingFields.includes(key);button.classList.toggle('template-required-missing',missing);button.title=missing?'Required value is missing or has not been placed. You can still save.':'';
+  }
+}
 function renderEditorFields() {
   const layer = document.querySelector('#templateFieldLayer');
-  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${field.id === selectedTemplateFieldId ? 'selected element-editor-selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? templateEditorQrSvg() : escapeHtml(previewValue(field))}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
+  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${field.id === selectedTemplateFieldId ? 'selected element-editor-selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? templateEditorQrSvg() : `<canvas class="template-value-text" role="img" aria-label="${escapeAttribute(previewValue(field))}">${escapeHtml(previewValue(field))}</canvas>`}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
+  const rendered=Promise.all([...layer.querySelectorAll('.editor-field.text')].map(element=>{const field=templateDraft.fields.find(item=>item.id===element.dataset.fieldId);return window.Invitation.renderTextField(element.querySelector('canvas'),field,previewValue(field)).then(()=>{element.dataset.textReady='true';});}));
   layer.querySelectorAll('.editor-field').forEach(element => {
     element.addEventListener('pointerdown', event => beginFieldPointer(event, element));
     element.addEventListener('click', event => { event.stopPropagation(); selectedTemplateFieldId = element.dataset.fieldId; renderEditorFields(); renderFieldInspector(); });
   });
-  const overflowModel = window.Invitation.invitationModel(templateDraft, state, invitationQrUrl(null));
-  const overflowing = window.Invitation.overflowWarnings(document.createElement('canvas'), overflowModel);
-  document.querySelector('#templateOverflowWarning').textContent = overflowing.length ? `Text exceeds its field width: ${overflowing.join(', ')}.` : '';
+  renderTemplateRequirements();
+  const overflowModel=window.Invitation.invitationModel(templateDraft,state,invitationQrUrl(null)),first=layer.firstChild;
+  document.querySelector('#templateOverflowWarning').textContent='';
+  void rendered.then(()=>{
+    if(layer.firstChild!==first)return;
+    const issues=window.Invitation.overflowDetails(document.createElement('canvas'),overflowModel),messages=[];
+    for(const dimension of ['width','height']){const labels=issues.filter(issue=>issue[dimension]).map(issue=>issue.label);if(labels.length)messages.push(`Text exceeds its field ${dimension}: ${labels.join(', ')}.`);}
+    document.querySelector('#templateOverflowWarning').textContent=messages.join(' ');
+  }).catch(()=>{if(layer.firstChild===first)document.querySelector('#templateEditorError').textContent='The selected font could not be loaded. Please try another font.';});
 }
 function beginFieldPointer(event, element) {
   event.stopPropagation(); event.preventDefault();const fieldId=element.dataset.fieldId;ElementEditor.flush();

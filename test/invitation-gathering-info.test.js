@@ -8,12 +8,12 @@ const I=globalThis.Invitation;
 const background={width:800,height:1200,url:'https://service.test/invitation-backgrounds/art'};
 const event=()=>({gatheringName:'Dinner',eventDate:'2026-11-25',eventTime:'2:00 PM',rsvpDate:'2026-11-12',homeAddress:'123 Main\nBakersfield CA',items:[],rsvps:[]});
 function template(eventId='one'){const value=I.createTemplate('Dinner invitation',background);value.eventId=eventId;value.fields=I.mandatoryFields(background);return value;}
-test('required invitation values and placed dynamic fields are validated independently',()=>{
- const t=template();assert.equal(I.validateTemplate(t,event()),true);
- for(const key of ['eventDate','eventTime','rsvpDate','homeAddress'])assert.throws(()=>I.validateTemplate(t,{...event(),[key]:''}),/Manage Gatherings/);
- for(const key of ['eventDate','eventTime','address','rsvpBy'])assert.throws(()=>I.validateTemplate({...t,fields:t.fields.filter(f=>f.key!==key)},event()),/required fields/);
- const offCanvas=structuredClone(t);offCanvas.fields[0].x=900;assert.throws(()=>I.validateTemplate(offCanvas,event()),/Event Date/);
- const split=structuredClone(t);split.fields=split.fields.filter(f=>f.key!=='address');split.fields.push(I.newField('addressLine1',20,20));assert.throws(()=>I.validateTemplate(split,event()),/address lines/);split.fields.push(I.newField('addressLine2',20,80));assert.equal(I.validateTemplate(split,event()),true);
+test('incomplete invitation values and fields are reminders rather than save blockers',()=>{
+ const t=template();assert.equal(I.validateTemplate(t,event()),true);assert.deepEqual(I.templateRequirements(t,event()),{missingValues:[],missingFields:[]});
+ for(const key of ['eventDate','eventTime','rsvpDate','homeAddress']){const incomplete={...event(),[key]:''};assert.equal(I.validateTemplate(t,incomplete),true);assert.equal(I.templateRequirements(t,incomplete).missingValues.length,1);}
+ for(const key of ['eventDate','eventTime','address','rsvpBy']){const incomplete={...t,fields:t.fields.filter(f=>f.key!==key)};assert.equal(I.validateTemplate(incomplete,event()),true);assert.ok(I.templateRequirements(incomplete,event()).missingFields.includes(key));}
+ const offCanvas=structuredClone(t);offCanvas.fields[0].x=900;assert.ok(I.templateRequirements(offCanvas,event()).missingFields.includes('eventDate'));
+ const split=structuredClone(t);split.fields=split.fields.filter(f=>f.key!=='address');split.fields.push(I.newField('addressLine1',20,20));assert.ok(I.templateRequirements(split,event()).missingFields.includes('address'));split.fields.push(I.newField('addressLine2',20,80));assert.deepEqual(I.templateRequirements(split,event()).missingFields,[]);
 });
 test('copy preserves independent layout and formatting, replaces artwork and resolves destination information',()=>{
  const source=template(),original=structuredClone(source);source.fields[0].fontFamily='Times New Roman';source.fields[0].color='#123456';
@@ -27,10 +27,11 @@ test('Wedding legacy time and ceremony address remain valid without migration',(
  const legacy={eventDate:'2027-08-10',rsvpDate:'2027-07-01',churchTime:'Two o’clock',churchStreet:'Ceremony St',churchCityStateZip:'Town',homeAddress:'Different home'};
  const t=template('wedding');assert.equal(I.validateTemplate(t,legacy),true);assert.equal(I.fieldValue(I.newField('ceremonyTime',0,0),legacy),'Two o’clock');assert.equal(I.fieldValue(I.newField('address',0,0),legacy),'Ceremony St\nTown');
 });
-test('server refuses incomplete new/changed templates but preserves untouched legacy templates',()=>{
+test('server permits incomplete template drafts while checking record structure',()=>{
  const legacy={id:'legacy',eventId:'one',background,fields:[]},state={events:{one:event()},accounts:[],invitationTemplates:[legacy]};
  const changed=[{path:['invitationTemplates'],value:[{...legacy,name:'Changed'}]}];
- assert.throws(()=>updateFromChanges(state,{role:'host'},changed),error=>error.status===400&&/required fields/.test(error.message));
+ assert.equal(updateFromChanges(state,{role:'host'},changed).invitationTemplates[0].name,'Changed');
+ assert.throws(()=>updateFromChanges(state,{role:'host'},[{path:['invitationTemplates'],value:[{...legacy,fields:null}]}]),error=>error.status===400);
  assert.equal(updateFromChanges(state,{role:'host'},[{path:['events','one','hostNotes'],value:'Note'}]).invitationTemplates[0].id,'legacy');
  const valid=template();assert.equal(updateFromChanges(state,{role:'host'},[{path:['invitationTemplates'],value:[legacy,valid]}]).invitationTemplates.length,2);
 });
