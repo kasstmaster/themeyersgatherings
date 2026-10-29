@@ -5,8 +5,8 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#132841",
-  "theme_color": "#132841",
+  "background_color": "#191f37",
+  "theme_color": "#191f37",
   "icons": [
     {
       "src": "assets/icons/meyers-192.png?v=4",

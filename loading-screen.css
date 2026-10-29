@@ -1,5 +1,6 @@
+:root { --entry-navy: #191f37; }
 #meyersLoadingScreen { display: none; }
-html.meyers-loading { background: #132841; overflow: hidden; }
+html.meyers-loading { background: var(--entry-navy); overflow: hidden; }
 html.meyers-loading body > :not(#meyersLoadingScreen) { visibility: hidden; }
 html.meyers-loading #meyersLoadingScreen {
   position: fixed;
@@ -12,7 +13,7 @@ html.meyers-loading #meyersLoadingScreen {
   gap: 16px;
   padding: 24px;
   box-sizing: border-box;
-  background: #132841;
+  background: var(--entry-navy);
   color: #fff;
   text-align: center;
 }

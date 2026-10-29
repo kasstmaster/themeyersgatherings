@@ -1151,3 +1151,15 @@ body.template-workspace-open #hostToolsPanel{left:var(--editor-sidebar-width,220
 /* Fit authored RSVP information lines; retain explicit paragraph and BR breaks. */
 #rsvpFirstPageText,#rsvpFirstPageDetails{box-sizing:border-box;display:block;width:100%;max-width:100%;min-width:0}
 #rsvpFirstPageText,#rsvpFirstPageText :is(p,span,strong,em,a),#rsvpFirstPageDetails,#rsvpFirstPageDetails :is(p,span,strong,em,a){white-space:nowrap;overflow-wrap:normal;word-break:normal}
+
+/* Entry screens share a navy palette without inheriting any gathering design. */
+body:has(:is(#signInPage,#eventSelectionPage):not([hidden])){--navy:var(--entry-navy,#191f37);--navy-2:var(--entry-navy,#191f37);background:var(--entry-navy,#191f37)}
+#signInPage,#eventSelectionPage{--flow-background:var(--entry-navy,#191f37);background:var(--entry-navy,#191f37);color:#fff}
+#signInPage :is(.sign-in-card,.name-fields){background:transparent}
+#signInPage :is(.primary-button,.sign-in-back),#eventSelectionPage .event-selection-choices button{background:var(--entry-navy,#191f37);color:#fff;border-color:rgba(255,255,255,.3);box-shadow:none}
+#eventSelectionPage .event-selection-choices button:hover{background:var(--entry-navy,#191f37);box-shadow:0 0 0 2px rgba(255,255,255,.3)}
+#eventSelectionPage :is(small,.event-selection-intro),#signInPage .name-fields small{color:rgba(255,255,255,.8)}
+#signInPage input{color:var(--entry-navy,#191f37);border-color:var(--entry-navy,#191f37)}
+
+body:has(#eventSelectionPage:not([hidden])) #signedInAccount{color:rgba(255,255,255,.8)}
+:is(#signInPage,#eventSelectionPage) :is(button,a,input,summary):focus-visible{outline:2px solid rgba(255,255,255,.8);outline-offset:3px}
