@@ -338,7 +338,7 @@
     sidebarResize=new ResizeObserver(sizeSidebar);sidebarResize.observe(toolbar);sizeSidebar();
   }
   function workspaceControls(title,specs,change) {
-    if(!workspace||!toolbar)return;const panel=toolbar.querySelector('[data-editor-panel]');panel.replaceChildren();
+    if(!workspace||!toolbar)return;const panel=toolbar.querySelector('[data-editor-panel]');panel.replaceChildren();panel.hidden=false;panel.parentElement.scrollTop=0;
     toolbar.querySelector('.element-editor-row>strong')?.replaceChildren(document.createTextNode(title || 'Formatting'));
     for(const spec of specs){
       const commit=value=>change(spec.key,spec.type==='number'?Number(value):spec.type==='checkbox'?value==='true':value);
@@ -424,6 +424,6 @@
     event.preventDefault();event.stopImmediatePropagation();typing=true;for(const editable of editables)editable.setAttribute('contenteditable','true');if(SiteEditing.movableTextRoot(target))target.draggable=false;
     part.focus({preventScroll:true});const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY);if(caret && part.contains(caret.startContainer)){const selection=window.getSelection();selection.removeAllRanges();selection.addRange(caret);rememberSelection();}
   },true);
-  document.addEventListener('keydown',event=>{if(event.key==='Escape' && target){event.preventDefault();event.stopImmediatePropagation();release();status('Selection cleared.');}},true);
+  document.addEventListener('keydown',event=>{if(event.key==='Escape' && workspace){commitToolbarInput();if(toolbar?.contains(event.target)&&event.target.matches('input,select,textarea'))return;event.preventDefault();event.stopImmediatePropagation();workspace.clearSelection?.();return;}if(event.key==='Escape' && target){event.preventDefault();event.stopImmediatePropagation();release();status('Selection cleared.');}},true);
   globalThis.ElementEditor={openWorkspace,workspaceControls,updateWorkspaceValues,workspaceStatus,ownsText:part=>Boolean(context?.enabled && editables.includes(part)),refreshUndo,activate:element=>{release();allowAction=true;try{element.click();}finally{allowAction=false;}},render,beforeRender,flush,select,refresh:()=>render(context)};
 })();

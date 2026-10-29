@@ -246,6 +246,13 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.getByRole('textbox',{name:'Custom text',exact:true}).fill('Centered value');await page.getByRole('textbox',{name:'Custom text',exact:true}).blur();
   await page.getByLabel('Font',{exact:true}).selectOption('Times New Roman');assert.equal(await page.evaluate(()=>templateDraft.fields.find(f=>f.id===selectedTemplateFieldId).fontFamily),'Times New Roman');
   await page.getByRole('button',{name:'Undo',exact:true}).click();assert.equal(await page.evaluate(()=>templateDraft.fields.find(f=>f.id===selectedTemplateFieldId).fontFamily),'Georgia');await page.getByRole('button',{name:'Redo',exact:true}).click();
+  const customFieldId=await page.evaluate(()=>selectedTemplateFieldId);
+  await page.keyboard.press('Escape');
+  const dateFieldId=await page.evaluate(()=>templateDraft.fields.find(f=>f.key==='eventDate').id),timeFieldId=await page.evaluate(()=>templateDraft.fields.find(f=>f.key==='eventTime').id);
+  await page.locator(`[data-field-id="${dateFieldId}"]`).click();assert.equal(await page.getByLabel('Font',{exact:true}).isVisible(),true);assert.equal(await page.getByLabel('Font',{exact:true}).inputValue(),'Georgia');
+  await page.getByLabel('Text color hex',{exact:true}).fill('#335577');
+  await page.locator(`[data-field-id="${timeFieldId}"]`).click();assert.equal(await page.getByLabel('Font',{exact:true}).isVisible(),true);assert.equal(await page.evaluate(id=>templateDraft.fields.find(f=>f.id===id).color,dateFieldId),'#335577');
+  for(let n=0;n<3;n++){await page.keyboard.press('Escape');await page.locator(`[data-field-id="${customFieldId}"]`).click();assert.equal(await page.getByLabel('Font',{exact:true}).isVisible(),true);assert.equal(await page.getByLabel('Font',{exact:true}).inputValue(),'Times New Roman');}
   await page.screenshot({path:'/tmp/invitation-workspace.png'});await page.locator('#removeTemplateField').click();
   const savedField=await page.evaluate(()=>{const field=templateDraft.fields.find(f=>f.key==='rsvpBy');templateDraft.fields=templateDraft.fields.filter(f=>f!==field);return field;});
   await page.locator('#saveTemplateButton').click();assert.match(await page.locator('#templateEditorError').textContent(),/required fields/);assert.equal(state.invitationTemplates.length,1);

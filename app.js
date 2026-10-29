@@ -3488,7 +3488,9 @@ function renderEditorFields() {
   document.querySelector('#templateOverflowWarning').textContent = overflowing.length ? `Text exceeds its field width: ${overflowing.join(', ')}.` : '';
 }
 function beginFieldPointer(event, element) {
-  event.stopPropagation(); event.preventDefault(); selectedTemplateFieldId = element.dataset.fieldId;
+  event.stopPropagation(); event.preventDefault();const fieldId=element.dataset.fieldId;ElementEditor.flush();
+  element=[...document.querySelectorAll('#templateFieldLayer .editor-field')].find(node=>node.dataset.fieldId===fieldId);if(!element)return;
+  selectedTemplateFieldId = fieldId;
   const field = templateDraft.fields.find(item => item.id === selectedTemplateFieldId), resizing = event.target.classList.contains('resize-handle');
   let recorded=false;
   const start = { x: event.clientX, y: event.clientY, fieldX: field.x, fieldY: field.y, width: field.width, height: field.height }, scale = editorScale();
@@ -3500,7 +3502,8 @@ function beginFieldPointer(event, element) {
     else { field.x = Math.round(Math.max(0, Math.min(templateDraft.background.width - field.width, start.fieldX + dx))); field.y = Math.round(Math.max(0, Math.min(templateDraft.background.height - field.height, start.fieldY + dy)));const snapped=window.Invitation.snapHorizontal(field,templateDraft.background.width,scale,templateCenterSnap);field.x=snapped.x;document.querySelector('#templateCenterGuide').hidden=!snapped.snapped; }
     element.style.left = `${field.x}px`; element.style.top = `${field.y}px`; element.style.width = `${field.width}px`; element.style.height = `${field.height}px`;ElementEditor.updateWorkspaceValues({x:field.x,y:field.y,width:field.width,height:field.height});
   };
-  element.onpointerup = () => { element.onpointermove = null; element.onpointerup = null;document.querySelector('#templateCenterGuide').hidden=true;renderEditorFields();renderFieldInspector(); };
+  let ended=false;const finish=()=>{if(ended)return;ended=true;element.onpointermove=null;element.onpointerup=null;element.onpointercancel=null;element.onlostpointercapture=null;document.querySelector('#templateCenterGuide').hidden=true;renderEditorFields();renderFieldInspector();};
+  element.onpointerup=finish;element.onpointercancel=finish;element.onlostpointercapture=finish;
   renderFieldInspector();
 }
 function recordTemplateUndo(){templateUndo.push(structuredClone(templateDraft));if(templateUndo.length>50)templateUndo.shift();templateRedo=[];}
@@ -3508,7 +3511,7 @@ function refreshTemplateUndo(){for(const button of document.querySelectorAll('[d
 function restoreTemplateHistory(from,to){if(!from.length)return;to.push(structuredClone(templateDraft));templateDraft=from.pop();if(!templateDraft.fields.some(field=>field.id===selectedTemplateFieldId))selectedTemplateFieldId=templateDraft.fields.at(-1)?.id || '';document.querySelector('#templateEditorName').value=templateDraft.name;renderEditorFields();renderFieldInspector();loadTemplateBackgroundPreview(templateDraft.background);}
 function mountTemplateControl(element,parent){templateWorkspaceRestore.push([element,element.parentElement,element.nextSibling]);parent.append(element);element.hidden=false;}
 function openTemplateWorkspaceToolbar(){
-  ElementEditor.openWorkspace({root:document.querySelector('#invitationEditorDialog'),label:'Invitation editor',actions:[['Undo',()=>restoreTemplateHistory(templateUndo,templateRedo)],['Redo',()=>restoreTemplateHistory(templateRedo,templateUndo)],['Done',()=>closeTemplateWorkspace()]],refresh:refreshTemplateUndo,
+  ElementEditor.openWorkspace({root:document.querySelector('#invitationEditorDialog'),label:'Invitation editor',clearSelection:()=>{selectedTemplateFieldId='';renderEditorFields();renderFieldInspector();},actions:[['Undo',()=>restoreTemplateHistory(templateUndo,templateRedo)],['Redo',()=>restoreTemplateHistory(templateRedo,templateUndo)],['Done',()=>closeTemplateWorkspace()]],refresh:refreshTemplateUndo,
     mountActions:parent=>{for(const id of ['saveTemplateButton','previewEditedTemplateButton'])mountTemplateControl(document.getElementById(id),parent);},
     mount:parent=>{mountTemplateControl(document.querySelector('#templateWorkspaceTools'),parent);},
     restore:()=>{for(const [element,parent,next] of templateWorkspaceRestore){parent.insertBefore(element,next?.parentElement===parent?next:null);if(element.id==='templateWorkspaceTools')element.hidden=true;}templateWorkspaceRestore=[];}
