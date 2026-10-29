@@ -155,3 +155,9 @@ test('text centers actual glyph bounds vertically and follows box height for sin
  field.height=140;await Invitation.renderTextField(canvas,field,'One');assert.equal(ops.pop(),55);
  await Invitation.renderTextField(canvas,field,'One\nTwo');assert.deepEqual(ops,[40,70]);
 });
+
+test('plain month day year invitation format omits ordinal suffixes and comma',()=>{
+ assert.ok(Invitation.EVENT_DATE_FORMATTERS.some(([key])=>key==='month-day-year'));
+ for(const day of [1,2,3,6,11,21,22,23,30])assert.equal(Invitation.formatEventDate(`2026-11-${String(day).padStart(2,'0')}`,'month-day-year'),`November ${day} 2026`);
+ const field={...Invitation.newField('eventDate',0,0),formatter:'month-day-year',allCaps:true};assert.equal(Invitation.fieldValue(field,{eventDate:'2026-11-06'}),'NOVEMBER 6 2026');assert.equal(Invitation.formatEventDate('','month-day-year'),'');
+});

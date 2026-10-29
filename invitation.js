@@ -21,6 +21,7 @@
     ['weekday-month-ordinal-year-spaced', 'Saturday   November   21st   2026'],
     ['weekday-month-ordinal-year', 'Saturday November 21st 2026'],
     ['month-ordinal-year', 'November 21st 2026'],
+    ['month-day-year', 'November 6 2026'],
     ['month-day-comma-year', 'November 21, 2026']
   ]);
   const RSVP_FORMATTERS = Object.freeze([['by-short-month-day', 'By Nov. 7'], ['short-month-day', 'Nov. 7'], ['month-day', 'November 7']]);
@@ -48,6 +49,7 @@
     const date = parseDate(value); if (!date) return '';
     const weekday = weekdays[date.getUTCDay()], month = months[date.getUTCMonth()], day = date.getUTCDate(), year = date.getUTCFullYear();
     if (formatter === 'month-ordinal-year') return `${month} ${ordinal(day)} ${year}`;
+    if (formatter === 'month-day-year') return `${month} ${day} ${year}`;
     if (formatter === 'month-day-comma-year') return `${month} ${day}, ${year}`;
     return `${weekday} ${month} ${ordinal(day)} ${year}`;
   }

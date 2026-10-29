@@ -55,3 +55,5 @@ Use **Add image** in the Values area to upload PNG, JPEG or WebP artwork as a se
 Image metadata lives in the owning template field (`type: image` with URL/original dimensions); pixels remain in the existing R2 invitation-artwork storage. Copied templates keep independent image metadata/geometry while referencing the existing asset. Removing an image element removes its template reference, preserving assets used by other templates. Existing templates require no migration, new secret or binding.
 
 Invitation text values support **All caps** in the selected value’s formatting controls. This is saved per value and applies after date formatting without changing gathering data or custom text. Text is vertically centered within its field using the same glyph measurements in the editor, preview, and exports; changing Height adjusts the centering.
+
+For a date without an ordinal suffix or comma, select **November 6 2026** under the Event Date value’s Date format. Existing date formats are preserved.
