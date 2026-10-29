@@ -1815,7 +1815,7 @@ function renderYourDishes(){
   if(showing){
     document.querySelector('#rsvpWeddingPages').hidden=false;
     document.querySelectorAll('#rsvpWeddingPages>section').forEach(page=>{if(page!==section)page.hidden=true;});
-    document.querySelector('#yourDishesList').innerHTML=dishes.map(({item,quantity})=>`<p><strong>${escapeHtml(item.name)}</strong> <span>${escapeHtml(GuestPlanning.singleDishStatus(item,quantity,true,state.quantityUnits)||formatQuantity(quantity,item))}</span></p>`).join('');
+    document.querySelector('#yourDishesList').innerHTML=dishes.map(({item,quantity})=>`<p><strong>${escapeHtml(item.name)}</strong> <span>${escapeHtml(String(quantity))}</span></p>`).join('');
   }
 }
 function renderRsvpPageNavigation(){
