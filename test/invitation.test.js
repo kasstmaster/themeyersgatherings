@@ -34,7 +34,7 @@ test('date-only event formatters do not shift calendar dates', () => {
 });
 
 test('RSVP formatter produces title-case abbreviated output', () => {
-  assert.equal(Invitation.formatRsvpDate('2026-11-07'), 'By Nov. 7');
+  assert.equal(Invitation.formatRsvpDate('2026-11-07'), 'Kindly RSVP By Nov. 7');
   assert.equal(Invitation.formatRsvpDate('2026-05-07'), 'By May 7');
   assert.equal(Invitation.formatRsvpDate('2026-11-07', 'month-day'), 'November 7');
 });
@@ -167,7 +167,7 @@ test('date-format choices preview the current gathering and preserve formatter k
  const options=Invitation.dateFormatOptions(field,a);assert.equal(options.find(o=>o.value==='month-day-year').label,'August 10 2027');assert.equal(options.find(o=>o.value==='month-ordinal-year').label,'August 10th 2027');
  assert.equal(Invitation.dateFormatOptions(field,b).find(o=>o.value==='month-day-year').label,'November 21 2026');assert.deepEqual(options.map(o=>o.value),Invitation.EVENT_DATE_FORMATTERS.map(([key])=>key));
  assert.equal(Invitation.dateFormatOptions({...field,allCaps:true},a).find(o=>o.value==='month-day-year').label,'AUGUST 10 2027');
- assert.equal(Invitation.dateFormatOptions(Invitation.newField('rsvpBy',0,0),a)[0].label,'By Jul. 1');assert.ok(Invitation.dateFormatOptions(field,{}).every(o=>!o.label.includes('2026')));assert.equal(a.eventDate,'2027-08-10');
+ assert.equal(Invitation.dateFormatOptions(Invitation.newField('rsvpBy',0,0),a)[0].label,'Kindly RSVP By Jul. 1');assert.ok(Invitation.dateFormatOptions(field,{}).every(o=>!o.label.includes('2026')));assert.equal(a.eventDate,'2027-08-10');
 });
 
 test('spaced weekday date supports plain day numbers and previews the real date with gaps',()=>{
@@ -176,4 +176,12 @@ test('spaced weekday date supports plain day numbers and previews the real date 
  assert.equal(Invitation.dateFormatOptions(field,event).find(o=>o.value===field.formatter).label,'Friday\u2002\u2002November\u2002\u20026\u2002\u20022026');
  assert.equal(Invitation.fieldValue({...field,allCaps:true},event),'FRIDAY NOVEMBER 6 2026');
  assert.equal(Invitation.dateFormatOptions(field,event).find(o=>o.value==='month-day-year').label,'November 6 2026');
+});
+
+test('RSVP invitation prefix is Kindly RSVP By with reversible capitalization',()=>{
+ const field=Invitation.newField('rsvpBy',0,0),event={rsvpDate:'2026-11-07'};
+ assert.equal(Invitation.fieldValue(field,event),'Kindly RSVP By Nov. 7');
+ assert.equal(Invitation.fieldValue({...field,allCaps:true},event),'KINDLY RSVP BY NOV. 7');
+ assert.equal(Invitation.formatRsvpDate(event.rsvpDate,'short-month-day'),'Nov. 7');assert.equal(Invitation.formatRsvpDate(event.rsvpDate,'month-day'),'November 7');
+ assert.equal(event.rsvpDate,'2026-11-07');assert.equal(Invitation.formatRsvpDate(''),'');
 });

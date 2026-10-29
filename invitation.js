@@ -25,7 +25,7 @@
     ['month-day-year', 'November 6 2026'],
     ['month-day-comma-year', 'November 21, 2026']
   ]);
-  const RSVP_FORMATTERS = Object.freeze([['by-short-month-day', 'By Nov. 7'], ['short-month-day', 'Nov. 7'], ['month-day', 'November 7']]);
+  const RSVP_FORMATTERS = Object.freeze([['by-short-month-day', 'Kindly RSVP By Nov. 7'], ['short-month-day', 'Nov. 7'], ['month-day', 'November 7']]);
 
   function id(prefix = 'template') {
     const random = root.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -59,7 +59,7 @@
     const date = parseDate(value); if (!date) return '';
     if (formatter === 'month-day') return `${months[date.getUTCMonth()]} ${date.getUTCDate()}`;
     const short = `${shortMonths[date.getUTCMonth()]} ${date.getUTCDate()}`;
-    return formatter === 'short-month-day' ? short : `By ${short}`;
+    return formatter === 'short-month-day' ? short : `Kindly RSVP By ${short}`;
   }
   function newField(key, x, y) {
     const definition = FIELD_DEFINITIONS[key] || FIELD_DEFINITIONS.customText;
