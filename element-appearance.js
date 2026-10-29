@@ -147,7 +147,7 @@
     }
     if(!context.setImage?.(image,url))styles[appearancePath(image)]={...styles[appearancePath(image)],imageSource:url};
     apply();replaceImage(image,url);
-    if(image.id==='eventHeaderImage'){
+    if(image.matches('#eventHeaderImage,#rsvpFirstPageImage')){
       const slot=image.closest('.header-art');
       if(slot)slot.dataset.emptyBanner=String(!url);
     }
