@@ -161,3 +161,11 @@ test('plain month day year invitation format omits ordinal suffixes and comma',(
  for(const day of [1,2,3,6,11,21,22,23,30])assert.equal(Invitation.formatEventDate(`2026-11-${String(day).padStart(2,'0')}`,'month-day-year'),`November ${day} 2026`);
  const field={...Invitation.newField('eventDate',0,0),formatter:'month-day-year',allCaps:true};assert.equal(Invitation.fieldValue(field,{eventDate:'2026-11-06'}),'NOVEMBER 6 2026');assert.equal(Invitation.formatEventDate('','month-day-year'),'');
 });
+
+test('date-format choices preview the current gathering and preserve formatter keys',()=>{
+ const field=Invitation.newField('eventDate',0,0),a={eventDate:'2027-08-10',rsvpDate:'2027-07-01'},b={eventDate:'2026-11-21',rsvpDate:'2026-11-07'};
+ const options=Invitation.dateFormatOptions(field,a);assert.equal(options.find(o=>o.value==='month-day-year').label,'August 10 2027');assert.equal(options.find(o=>o.value==='month-ordinal-year').label,'August 10th 2027');
+ assert.equal(Invitation.dateFormatOptions(field,b).find(o=>o.value==='month-day-year').label,'November 21 2026');assert.deepEqual(options.map(o=>o.value),Invitation.EVENT_DATE_FORMATTERS.map(([key])=>key));
+ assert.equal(Invitation.dateFormatOptions({...field,allCaps:true},a).find(o=>o.value==='month-day-year').label,'AUGUST 10 2027');
+ assert.equal(Invitation.dateFormatOptions(Invitation.newField('rsvpBy',0,0),a)[0].label,'By Jul. 1');assert.ok(Invitation.dateFormatOptions(field,{}).every(o=>!o.label.includes('2026')));assert.equal(a.eventDate,'2027-08-10');
+});

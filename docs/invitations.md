@@ -56,4 +56,6 @@ Image metadata lives in the owning template field (`type: image` with URL/origin
 
 Invitation text values support **All caps** in the selected value’s formatting controls. This is saved per value and applies after date formatting without changing gathering data or custom text. Text is vertically centered within its field using the same glyph measurements in the editor, preview, and exports; changing Height adjusts the centering.
 
-For a date without an ordinal suffix or comma, select **November 6 2026** under the Event Date value’s Date format. Existing date formats are preserved.
+For a date without an ordinal suffix or comma, select the plain month/day/year option under the Event Date value’s Date format (for example, **November 6 2026**). Existing date formats are preserved.
+
+Date-format option labels preview the selected gathering’s actual event or RSVP date and respect All caps. Switching gatherings updates the previews without changing the saved format or gathering information.
