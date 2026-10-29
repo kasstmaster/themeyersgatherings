@@ -18,6 +18,7 @@
   });
   const FONT_FAMILIES = Object.freeze(['Georgia', 'Times New Roman', 'serif', 'Arial', 'sans-serif']);
   const EVENT_DATE_FORMATTERS = Object.freeze([
+    ['weekday-month-day-year-spaced', 'Saturday   November   21   2026'],
     ['weekday-month-ordinal-year-spaced', 'Saturday   November   21st   2026'],
     ['weekday-month-ordinal-year', 'Saturday November 21st 2026'],
     ['month-ordinal-year', 'November 21st 2026'],
@@ -48,6 +49,7 @@
   function formatEventDate(value, formatter = 'weekday-month-ordinal-year') {
     const date = parseDate(value); if (!date) return '';
     const weekday = weekdays[date.getUTCDay()], month = months[date.getUTCMonth()], day = date.getUTCDate(), year = date.getUTCFullYear();
+    if (formatter === 'weekday-month-day-year-spaced') return `${weekday} ${month} ${day} ${year}`;
     if (formatter === 'month-ordinal-year') return `${month} ${ordinal(day)} ${year}`;
     if (formatter === 'month-day-year') return `${month} ${day} ${year}`;
     if (formatter === 'month-day-comma-year') return `${month} ${day}, ${year}`;
@@ -103,7 +105,7 @@
 
   function dateFormatOptions(field,eventState) {
     const formats=field.key==='eventDate'?EVENT_DATE_FORMATTERS:RSVP_FORMATTERS;
-    return formats.map(([value])=>({value,label:fieldValue({...field,formatter:value},eventState) || value.split('-').join(' ')}));
+    return formats.map(([value])=>({value,label:(fieldValue({...field,formatter:value},eventState) || value.split('-').join(' ')).replace(/ /g,value.endsWith('-spaced')?'\u2002\u2002':' ')}));
   }
 
   function snapHorizontal(field,canvasWidth,scale=1,enabled=true) {
