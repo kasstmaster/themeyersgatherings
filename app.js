@@ -3383,6 +3383,8 @@ let templateDraft = null;
 let templateImageUploads=0;
 let templateUndo=[],templateRedo=[],templateWorkspaceRestore=[],templateCenterSnap=true;
 let selectedTemplateFieldId = '';
+let selectedTemplateFieldIds=new Set(),templateMultiSelect=false;
+function selectTemplateField(id){selectedTemplateFieldId=id;selectedTemplateFieldIds=new Set(id?[id]:[]);}
 let pendingTemplateFieldKey = '';
 let newTemplateBackgroundFile = null;
 let templatePreviewObjectUrl = '';
@@ -3488,11 +3490,11 @@ function renderTemplateRequirements(){
 }
 function renderEditorFields() {
   const layer = document.querySelector('#templateFieldLayer');
-  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${field.id === selectedTemplateFieldId ? 'selected element-editor-selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? templateEditorQrSvg() : field.type==='image'?`<img src="${escapeAttribute(window.Invitation.versionedImageUrl(field.image.url,field.image.updatedAt))}" alt="Invitation image" draggable="false">` : `<canvas class="template-value-text" role="img" aria-label="${escapeAttribute(previewValue(field))}">${escapeHtml(previewValue(field))}</canvas>`}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
+  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${selectedTemplateFieldIds.has(field.id) ? 'selected element-editor-selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? templateEditorQrSvg() : field.type==='image'?`<img src="${escapeAttribute(window.Invitation.versionedImageUrl(field.image.url,field.image.updatedAt))}" alt="Invitation image" draggable="false">` : `<canvas class="template-value-text" role="img" aria-label="${escapeAttribute(previewValue(field))}">${escapeHtml(previewValue(field))}</canvas>`}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
   const rendered=Promise.all([...layer.querySelectorAll('.editor-field.text')].map(element=>{const field=templateDraft.fields.find(item=>item.id===element.dataset.fieldId);return window.Invitation.renderTextField(element.querySelector('canvas'),field,previewValue(field)).then(()=>{element.dataset.textReady='true';});}));
   layer.querySelectorAll('.editor-field').forEach(element => {
     element.addEventListener('pointerdown', event => beginFieldPointer(event, element));
-    element.addEventListener('click', event => { event.stopPropagation(); selectedTemplateFieldId = element.dataset.fieldId; renderEditorFields(); renderFieldInspector(); });
+    element.addEventListener('click', event => { event.stopPropagation(); });
   });
   renderTemplateRequirements();
   const overflowModel=window.Invitation.invitationModel(templateDraft,state,invitationQrUrl(null)),first=layer.firstChild;
@@ -3507,7 +3509,11 @@ function renderEditorFields() {
 function beginFieldPointer(event, element) {
   event.stopPropagation(); event.preventDefault();const fieldId=element.dataset.fieldId;ElementEditor.flush();
   element=[...document.querySelectorAll('#templateFieldLayer .editor-field')].find(node=>node.dataset.fieldId===fieldId);if(!element)return;
-  selectedTemplateFieldId = fieldId;
+  const additive=event.shiftKey||event.metaKey||event.ctrlKey||templateMultiSelect;
+  if(additive&&(!templateMultiSelect||!selectedTemplateFieldIds.has(fieldId)||event.shiftKey||event.metaKey||event.ctrlKey)&&!event.target.classList.contains('resize-handle')){if(selectedTemplateFieldIds.has(fieldId))selectedTemplateFieldIds.delete(fieldId);else selectedTemplateFieldIds.add(fieldId);selectedTemplateFieldId=selectedTemplateFieldIds.has(fieldId)?fieldId:[...selectedTemplateFieldIds].at(-1)||'';renderEditorFields();renderFieldInspector();return;}
+  if(!selectedTemplateFieldIds.has(fieldId))selectTemplateField(fieldId);else selectedTemplateFieldId=fieldId;
+  for(const node of document.querySelectorAll('#templateFieldLayer .editor-field')){node.classList.toggle('selected',selectedTemplateFieldIds.has(node.dataset.fieldId));node.classList.toggle('element-editor-selected',selectedTemplateFieldIds.has(node.dataset.fieldId));}
+  const group=templateDraft.fields.filter(f=>selectedTemplateFieldIds.has(f.id)).map(f=>({...f}));
   const field = templateDraft.fields.find(item => item.id === selectedTemplateFieldId), resizing = event.target.classList.contains('resize-handle');
   let recorded=false;
   const start = { x: event.clientX, y: event.clientY, fieldX: field.x, fieldY: field.y, width: field.width, height: field.height }, scale = editorScale();
@@ -3517,7 +3523,7 @@ function beginFieldPointer(event, element) {
     if(!recorded&&(Math.abs(dx)>.5||Math.abs(dy)>.5)){recordTemplateUndo();recorded=true;}
     if(resizing&&field.type==='image'){if(field.lockAspect!==false)window.Invitation.resizeImage(field,'width',Math.max(8,start.width+dx));else{field.width=Math.max(8,start.width+dx);field.height=Math.max(8,start.height+dy);}}
     else if (resizing) { const size = field.type === 'qr' ? Math.max(64, start.width + Math.max(dx, dy)) : null; field.width = Math.round(size || Math.max(40, start.width + dx)); field.height = Math.round(size || Math.max(24, start.height + dy)); }
-    else { field.x = Math.round(Math.max(0, Math.min(templateDraft.background.width - field.width, start.fieldX + dx))); field.y = Math.round(Math.max(0, Math.min(templateDraft.background.height - field.height, start.fieldY + dy)));const snapped=window.Invitation.snapHorizontal(field,templateDraft.background.width,scale,templateCenterSnap);field.x=snapped.x;document.querySelector('#templateCenterGuide').hidden=!snapped.snapped; }
+    else {const moved=window.Invitation.moveFields(group,templateDraft.background,dx,dy,scale,templateCenterSnap);for(const position of moved.fields){const target=templateDraft.fields.find(f=>f.id===position.id);Object.assign(target,position);const node=[...document.querySelectorAll('#templateFieldLayer .editor-field')].find(n=>n.dataset.fieldId===position.id);node.style.left=`${position.x}px`;node.style.top=`${position.y}px`;}document.querySelector('#templateCenterGuide').hidden=!moved.snapped;}
     element.style.left = `${field.x}px`; element.style.top = `${field.y}px`; element.style.width = `${field.width}px`; element.style.height = `${field.height}px`;ElementEditor.updateWorkspaceValues({x:field.x,y:field.y,width:field.width,height:field.height});
   };
   let ended=false;const finish=()=>{if(ended)return;ended=true;element.onpointermove=null;element.onpointerup=null;element.onpointercancel=null;element.onlostpointercapture=null;document.querySelector('#templateCenterGuide').hidden=true;renderEditorFields();renderFieldInspector();};
@@ -3526,10 +3532,10 @@ function beginFieldPointer(event, element) {
 }
 function recordTemplateUndo(){templateUndo.push(structuredClone(templateDraft));if(templateUndo.length>50)templateUndo.shift();templateRedo=[];}
 function refreshTemplateUndo(){for(const button of document.querySelectorAll('[data-editor-workspace] button'))if(button.textContent==='Undo'||button.textContent==='Redo')button.disabled=button.textContent==='Undo'?!templateUndo.length:!templateRedo.length;}
-function restoreTemplateHistory(from,to){if(!from.length)return;to.push(structuredClone(templateDraft));templateDraft=from.pop();if(!templateDraft.fields.some(field=>field.id===selectedTemplateFieldId))selectedTemplateFieldId=templateDraft.fields.at(-1)?.id || '';document.querySelector('#templateEditorName').value=templateDraft.name;renderEditorFields();renderFieldInspector();loadTemplateBackgroundPreview(templateDraft.background);}
+function restoreTemplateHistory(from,to){if(!from.length)return;to.push(structuredClone(templateDraft));templateDraft=from.pop();selectedTemplateFieldIds=new Set([...selectedTemplateFieldIds].filter(id=>templateDraft.fields.some(f=>f.id===id)));if(!selectedTemplateFieldIds.has(selectedTemplateFieldId))selectedTemplateFieldId=[...selectedTemplateFieldIds].at(-1)||'';document.querySelector('#templateEditorName').value=templateDraft.name;renderEditorFields();renderFieldInspector();loadTemplateBackgroundPreview(templateDraft.background);}
 function mountTemplateControl(element,parent){templateWorkspaceRestore.push([element,element.parentElement,element.nextSibling]);parent.append(element);element.hidden=false;}
 function openTemplateWorkspaceToolbar(){
-  ElementEditor.openWorkspace({root:document.querySelector('#invitationEditorDialog'),label:'Invitation editor',clearSelection:()=>{selectedTemplateFieldId='';renderEditorFields();renderFieldInspector();},actions:[['Undo',()=>restoreTemplateHistory(templateUndo,templateRedo)],['Redo',()=>restoreTemplateHistory(templateRedo,templateUndo)]],refresh:refreshTemplateUndo,
+  ElementEditor.openWorkspace({root:document.querySelector('#invitationEditorDialog'),label:'Invitation editor',clearSelection:()=>{selectTemplateField('');renderEditorFields();renderFieldInspector();},actions:[['Undo',()=>restoreTemplateHistory(templateUndo,templateRedo)],['Redo',()=>restoreTemplateHistory(templateRedo,templateUndo)]],refresh:refreshTemplateUndo,
     mountActions:parent=>{for(const id of ['saveTemplateButton','previewEditedTemplateButton'])mountTemplateControl(document.getElementById(id),parent);},
     mount:parent=>{mountTemplateControl(document.querySelector('#templateWorkspaceTools'),parent);},
     restore:()=>{for(const [element,parent,next] of templateWorkspaceRestore){parent.insertBefore(element,next?.parentElement===parent?next:null);if(element.id==='templateWorkspaceTools')element.hidden=true;}templateWorkspaceRestore=[];}
@@ -3537,6 +3543,9 @@ function openTemplateWorkspaceToolbar(){
 }
 function renderFieldInspector() {
   if(document.querySelector('#invitationEditorDialog').hidden)return;
+  document.querySelector('#replaceInvitationImage').hidden=selectedTemplateFieldIds.size!==1||templateDraft.fields.find(f=>f.id===selectedTemplateFieldId)?.type!=='image';
+  document.querySelector('#removeTemplateField').textContent=selectedTemplateFieldIds.size>1?'Remove selected':'Remove value';
+  if(selectedTemplateFieldIds.size>1){ElementEditor.workspaceControls(`${selectedTemplateFieldIds.size} elements selected — drag to move together`,[],()=>{});return;}
   const field=templateDraft.fields.find(item=>item.id===selectedTemplateFieldId);
   if(!field){ElementEditor.workspaceControls('Select a value on the invitation',[],()=>{});return;}
   const numeric=(key,label,min=0,step=1)=>({key,label,type:'number',value:field[key],min,step});
@@ -3611,7 +3620,7 @@ async function openTemplateEditor(id, localFile = null, draft = null) {
   if(!isHostView())return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
   const template = draft || invitationTemplatesForEvent().find(item => item.id === id); if (!template) return;
   await closeHostDialogs();
-  templateDraft = structuredClone(template);templateUndo=[];templateRedo=[];document.querySelector('#templateCenterGuide').hidden=true; selectedTemplateFieldId = ''; pendingTemplateFieldKey = '';
+  templateDraft = structuredClone(template);templateUndo=[];templateRedo=[];document.querySelector('#templateCenterGuide').hidden=true; selectTemplateField('');templateMultiSelect=false;document.querySelector('#templateMultiSelect').checked=false; pendingTemplateFieldKey = '';
   document.querySelector('#replaceTemplateBackground').value = ''; updateDropzone(document.querySelector('#replaceTemplateDropzone'), null);
   document.querySelector('#templateEditorError').textContent='';
   document.querySelector('#templateEditorHeading').textContent = templateDraft.name;
@@ -3636,7 +3645,7 @@ document.querySelector('#templateCanvasStage').addEventListener('click', event =
   recordTemplateUndo();
   if(field.type==='text')field.textAlign='center';
   const snapped=window.Invitation.snapHorizontal(field,templateDraft.background.width,scale,templateCenterSnap);field.x=snapped.x;document.querySelector('#templateCenterGuide').hidden=!snapped.snapped;
-  templateDraft.fields.push(field); selectedTemplateFieldId = field.id; pendingTemplateFieldKey = ''; document.querySelector('#placementHelp').textContent = 'Choose another field or edit the selected field.'; renderEditorFields(); renderFieldInspector();
+  templateDraft.fields.push(field); selectTemplateField(field.id); pendingTemplateFieldKey = ''; document.querySelector('#placementHelp').textContent = 'Choose another field or edit the selected field.'; renderEditorFields(); renderFieldInspector();
 });
 async function replaceTemplateBackground(file) {
   const error = document.querySelector('#templateEditorError'); error.textContent = '';
@@ -4293,7 +4302,7 @@ document.querySelector('#editInvitationGatheringInfo').addEventListener('click',
 
 document.querySelector('#closeTemplateEditor').addEventListener('click',()=>closeTemplateWorkspace());
 document.querySelector('#templateSnapCenter').addEventListener('change',event=>{templateCenterSnap=event.target.checked;});
-document.querySelector('#removeTemplateField').addEventListener('click',()=>{if(!selectedTemplateFieldId)return;recordTemplateUndo();templateDraft.fields=templateDraft.fields.filter(item=>item.id!==selectedTemplateFieldId);selectedTemplateFieldId='';renderEditorFields();renderFieldInspector();});
+document.querySelector('#removeTemplateField').addEventListener('click',()=>{if(!selectedTemplateFieldIds.size)return;recordTemplateUndo();templateDraft.fields=templateDraft.fields.filter(item=>!selectedTemplateFieldIds.has(item.id));selectTemplateField('');renderEditorFields();renderFieldInspector();});
 
 document.querySelector('#templateEditorName').addEventListener('input',event=>{if(document.querySelector('#invitationEditorDialog').hidden)return;recordTemplateUndo();templateDraft.name=event.target.value;refreshTemplateUndo();});
 window.addEventListener('beforeunload',event=>{if(templateHasUnsavedChanges()){event.preventDefault();event.returnValue='';}});
@@ -4301,9 +4310,15 @@ window.addEventListener('beforeunload',event=>{if(templateHasUnsavedChanges()){e
 document.querySelector('#uploadTemplateBackgroundButton').addEventListener('click',()=>document.querySelector('#replaceTemplateBackground').click());
 
 document.querySelector('#addInvitationImage').addEventListener('click',()=>document.querySelector('#invitationImageFile').click());
-document.querySelector('#invitationImageFile').addEventListener('change',async event=>{
+async function changeInvitationImage(event){
+  const replacement=event.target.id==='replacementInvitationImageFile'?selectedTemplateFieldId:null;
   const file=event.target.files[0],owner=templateDraft?.id,button=document.querySelector('#addInvitationImage');if(!file||!isHostView()||document.querySelector('#invitationEditorDialog').hidden)return;
-  templateImageUploads++;button.disabled=true;for(const id of ['saveTemplateButton','previewEditedTemplateButton'])document.getElementById(id).disabled=true;document.querySelector('#templateEditorError').textContent='';ElementEditor.workspaceStatus('Uploading image…');
-  try{const image=await uploadTemplateBackground(`template-image-${crypto.randomUUID()}`,file);if(!isHostView()||templateDraft?.id!==owner||document.querySelector('#invitationEditorDialog').hidden)return;recordTemplateUndo();const field=window.Invitation.newImage(image,templateDraft.background);templateDraft.fields.push(field);selectedTemplateFieldId=field.id;renderEditorFields();renderFieldInspector();ElementEditor.workspaceStatus('Image added. Drag it to move, or use its corner to resize.');}
-  catch(error){if(templateDraft?.id===owner)document.querySelector('#templateEditorError').textContent=error.message;}finally{templateImageUploads--;button.disabled=templateImageUploads>0;for(const id of ['saveTemplateButton','previewEditedTemplateButton'])document.getElementById(id).disabled=templateImageUploads>0;event.target.value='';}
-});
+  templateImageUploads++;button.disabled=true;for(const id of ['saveTemplateButton','previewEditedTemplateButton','replaceInvitationImage'])document.getElementById(id).disabled=true;document.querySelector('#templateEditorError').textContent='';ElementEditor.workspaceStatus('Uploading image…');
+  try{const image=await uploadTemplateBackground(`template-image-${crypto.randomUUID()}`,file);if(!isHostView()||templateDraft?.id!==owner||document.querySelector('#invitationEditorDialog').hidden)return;const existing=replacement?templateDraft.fields.find(f=>f.id===replacement&&f.type==='image'):null;if(replacement&&!existing)return;recordTemplateUndo();const field=existing?window.Invitation.replaceImage(existing,image):window.Invitation.newImage(image,templateDraft.background);if(existing)templateDraft.fields[templateDraft.fields.indexOf(existing)]=field;else templateDraft.fields.push(field);selectTemplateField(field.id);renderEditorFields();renderFieldInspector();ElementEditor.workspaceStatus(replacement?'Image replaced.':'Image added. Drag it to move, or use its corner to resize.');}
+  catch(error){if(templateDraft?.id===owner)document.querySelector('#templateEditorError').textContent=error.message;}finally{templateImageUploads--;button.disabled=templateImageUploads>0;for(const id of ['saveTemplateButton','previewEditedTemplateButton','replaceInvitationImage'])document.getElementById(id).disabled=templateImageUploads>0;event.target.value='';}
+}
+document.querySelector('#invitationImageFile').addEventListener('change',changeInvitationImage);
+document.querySelector('#replacementInvitationImageFile').addEventListener('change',changeInvitationImage);
+document.querySelector('#replaceInvitationImage').addEventListener('click',()=>document.querySelector('#replacementInvitationImageFile').click());
+
+document.querySelector('#templateMultiSelect').addEventListener('change',event=>{templateMultiSelect=event.target.checked;});

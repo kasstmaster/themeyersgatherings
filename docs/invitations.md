@@ -63,3 +63,7 @@ Date-format option labels preview the selected gathering’s actual event or RSV
 The spaced weekday/month/day/year option includes the weekday, omits ordinal suffixes, and adds 14px of word spacing between date components in editing, previews, and exports. Spaced date options show visible gaps in their live gathering-date labels; Word spacing remains adjustable. Existing saved formats are unchanged.
 
 The prefixed RSVP By date format renders **Kindly RSVP By** followed by the gathering’s RSVP date (for example, Kindly RSVP By Nov. 7). Existing prefixed fields use this wording automatically; date-only formats remain available and All caps applies to the whole value.
+
+Invitation templates support multiple selection: Shift/Cmd/Ctrl-click to add or remove elements, or enable **Select multiple** and tap additional elements. Drag a selected element to move the selection together; relative spacing is preserved, movement stays within the artwork, and center snapping uses the group bounds. Undo/Redo reverses/reapplies a whole move. Click an unselected element with multiple selection off to return to individual formatting; Remove selected removes the selection in one undoable action. Selection itself is temporary and is not saved.
+
+Select one added invitation image to reveal **Replace image**. Replacement uploads new artwork and preserves the selected image’s position, box size, and stacking order; Undo restores the previous image. Existing shared artwork is retained for other templates.
