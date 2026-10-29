@@ -1535,6 +1535,16 @@ function finishGatheringBuilderSession() {
   ElementAppearance.restore();
   GapLayout.beforeRender();
 }
+// Copy the requested entry palette once; subsequent home edits stay independent.
+function applyEntryNavy(home){
+  if(home.entryNavyVersion===1)return;
+  const navy='#191f37',styles=home.elementAppearance??={};
+  for(const key of ['#eventSelectionPage','@group:buttons','.event-dock'])styles[key]={...styles[key],backgroundColor:navy,backgroundAlpha:100};
+  for(const values of Object.values(styles))for(const key of ['borderColor','textColor','toolbarTextColor','toolbarSelectedColor']){
+    if(typeof values[key]==='string'&&/^#(?:081930|0a1d38|0b1f3a|07162a|132841|193b66|384d75)$/i.test(values[key]))values[key]=key==='borderColor'?navy:'#ffffff';
+  }
+  home.entryNavyVersion=1;
+}
 // The shared gathering chooser has site-wide editing state, independent of every event.
 function renderGatheringHome() {
   document.body.className='theme-wedding';
@@ -1544,6 +1554,7 @@ function renderGatheringHome() {
   updateSignedInAccountBanner();
   updateHostToolsPanel();
   const builder=gatheringBuilderContext('gathering-home');
+  applyEntryNavy(builder.state);
   SiteEditing.render(builder);
   SiteEditing.staticText(document.querySelector('#eventSelectionPage'));
   GapLayout.render({...builder,save:()=>builder.save({refresh:false})});

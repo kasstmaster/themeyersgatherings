@@ -134,3 +134,5 @@ The shared **View & Download** folder button uses the same concise label for cur
 **Manage Gatherings** is available in the Host edit toolbar only; it is hidden in the regular bottom toolbar, including on gathering selection.
 
 Popup cards, their main headings, and X buttons share the count-list container/title/close formatting groups within the current design context. All popup X buttons use the common top-right close-button class. RSVP retains its separate page shell, and dialog widths and specialized form layouts remain content-specific.
+
+Entry screens use **#191F37**, copied from the Wedding toolbar at the time of this change, for loading/startup, sign-in and gathering-selection backgrounds/actions. A one-time chooser-palette update replaces its old backgrounds while preserving content, typography, and unrelated settings. Later chooser edits remain independent and are not linked to the Wedding gathering. Installed-app startup/theme colors use the same navy; icon artwork is unchanged.

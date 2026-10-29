@@ -229,3 +229,7 @@ test('potluck guests receive only aggregate public counts and sit-down menus rem
  assert.equal((await f.patch(sitdown,[{path:['events','one','items'],value:[{id:'custom-ab',name:'No',category:'Sides',needed:1,unit:'item',claims:['Casey Example']}]}])).status,403);
  const host=await f.host();assert.equal(host.state.events.one.sitDownMenu[0].name,'PRIVATE PREPARATION DISH');assert.equal(f.writes,0);
 });
+
+test('guest home projection retains public entry palette version without exposing private metadata',()=>{
+ const state=initial();state.gatheringHome.entryNavyVersion=1;state.gatheringHome.privateNotes='PRIVATE HOME NOTES';const view=projectState(state,{role:'guest',accountId:'existing-qr-token',person:'Casey Example'});assert.equal(view.gatheringHome.entryNavyVersion,1);assert.equal(view.gatheringHome.siteText.title,'Welcome');assert.equal(view.gatheringHome.privateNotes,undefined);
+});

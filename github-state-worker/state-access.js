@@ -69,7 +69,7 @@ export function projectState(state,actor,includeHistory=true,historicalAccount=n
   pastGatherings[id] ||= {};pastGatherings[id][date]={eventId:id,date,name:snapshot.name,event:view.events[id]};
  }
  const ids=Object.keys(events);
- return {events,pastGatherings,accounts:[accountView],activeEventId:ids.includes(state.activeEventId)?state.activeEventId:ids[0],sharedSite:pick(state.sharedSite||{},['footerName']),gatheringHome:pick(state.gatheringHome||{},['elementAppearance','siteText','textAppearance','siteGaps','siteSpacing','siteElementOrder']),savedAt:state.savedAt};
+ return {events,pastGatherings,accounts:[accountView],activeEventId:ids.includes(state.activeEventId)?state.activeEventId:ids[0],sharedSite:pick(state.sharedSite||{},['footerName']),gatheringHome:pick(state.gatheringHome||{},['entryNavyVersion','elementAppearance','siteText','textAppearance','siteGaps','siteSpacing','siteElementOrder']),savedAt:state.savedAt};
 }
 function forbidden(){throw Object.assign(new Error('Change is not permitted.'),{status:403});}
 function validRsvp(response,account,event,id){
