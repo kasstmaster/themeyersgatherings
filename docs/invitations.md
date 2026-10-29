@@ -61,3 +61,5 @@ For a date without an ordinal suffix or comma, select the plain month/day/year o
 Date-format option labels preview the selected gathering’s actual event or RSVP date and respect All caps. Switching gatherings updates the previews without changing the saved format or gathering information.
 
 The spaced weekday/month/day/year option includes the weekday, omits ordinal suffixes, and adds 14px of word spacing between date components in editing, previews, and exports. Spaced date options show visible gaps in their live gathering-date labels; Word spacing remains adjustable. Existing saved formats are unchanged.
+
+The prefixed RSVP By date format renders **Kindly RSVP By** followed by the gathering’s RSVP date (for example, Kindly RSVP By Nov. 7). Existing prefixed fields use this wording automatically; date-only formats remain available and All caps applies to the whole value.
