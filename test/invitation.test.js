@@ -35,7 +35,7 @@ test('date-only event formatters do not shift calendar dates', () => {
 
 test('RSVP formatter produces title-case abbreviated output', () => {
   assert.equal(Invitation.formatRsvpDate('2026-11-07'), 'Kindly RSVP By Nov. 7');
-  assert.equal(Invitation.formatRsvpDate('2026-05-07'), 'By May 7');
+  assert.equal(Invitation.formatRsvpDate('2026-05-07'), 'Kindly RSVP By May 7');
   assert.equal(Invitation.formatRsvpDate('2026-11-07', 'month-day'), 'November 7');
 });
 
