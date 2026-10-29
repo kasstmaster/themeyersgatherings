@@ -12,7 +12,7 @@ Archives show the saved occurrence's gallery link and permitted household upload
 
 ## Host management
 
-On the gatherings selection page, the Host toolbar includes **Manage Gatherings** (hidden from guests and elsewhere). Its dialog uses the same wide editor dialog/modal-card classes as other management popups. Open it and select the name/date:
+On the gatherings selection page, the Host toolbar includes **Manage Gatherings** (hidden from guests and elsewhere). While editing any website page, the same button appears above Menu/Templates in the edit sidebar. Its dialog uses the same wide editor dialog/modal-card classes as other management popups. Open it and select the name/date:
 
 - **Save gathering information** saves its Name together with the selected occurrence’s date, time, RSVP-by and address in this one area. Wedding includes separate reception time/address. A date change reschedules the occurrence and preserves RSVPs; **Start next occurrence** deliberately starts a fresh year. Rescheduled media dates remain aliases for the same occurrence, and historical snapshots are rekeyed without overwriting another date. Template fields read these canonical values.
 - **Rename** updates that occurrence's name. It does not rename a different year or change its design.

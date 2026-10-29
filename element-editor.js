@@ -331,15 +331,15 @@
     for(const [title,action] of adapter.actions || [])button(title,action,actions);
     const actionsSlot=node('div');actionsSlot.className='element-editor-pair';top.append(actionsSlot);adapter.mountActions?.(actionsSlot);
     top.append(node('hr'));const additions=node('div');additions.className='element-editor-row';top.append(additions);adapter.mount?.(additions);
-    const row=node('div');row.className='element-editor-row';toolbar.append(row);
-    const title=node('strong','Formatting');row.append(title);const panel=node('div');panel.className='element-editor-panel';panel.dataset.editorPanel='';row.append(panel);
+    const row=node('div');row.className='element-editor-row element-editor-formatting';row.setAttribute('role','region');row.setAttribute('aria-label','Formatting');toolbar.append(row);
+    const panel=node('div');panel.className='element-editor-panel';panel.dataset.editorPanel='';row.append(panel);
     const live=node('span');live.dataset.editorStatus='';live.setAttribute('role','status');toolbar.append(live);
     document.body.append(toolbar);sidebarRoot=document.body;sidebarRoot.setAttribute('data-editor-sidebar-root','');
     sidebarResize=new ResizeObserver(sizeSidebar);sidebarResize.observe(toolbar);sizeSidebar();
   }
   function workspaceControls(title,specs,change) {
     if(!workspace||!toolbar)return;const panel=toolbar.querySelector('[data-editor-panel]');panel.replaceChildren();panel.hidden=false;panel.parentElement.scrollTop=0;
-    toolbar.querySelector('.element-editor-row>strong')?.replaceChildren(document.createTextNode(title || 'Formatting'));
+    panel.setAttribute('aria-label',title?title+' formatting':'Formatting');
     for(const spec of specs){
       const commit=value=>change(spec.key,spec.type==='number'?Number(value):spec.type==='checkbox'?value==='true':value);
       if(spec.type==='toggle'){const input=button(spec.label,()=>{const value=input.getAttribute('aria-pressed')!=='true';input.setAttribute('aria-pressed',String(value));change(spec.key,value);},panel);input.setAttribute('aria-pressed',String(Boolean(spec.value)));input.dataset.workspaceField=spec.key;continue;}
@@ -388,7 +388,8 @@
       const history=node('div');history.className='element-editor-history';row.append(history);
       const undo=button('Undo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.undo()?'Change undone.':'There is no change to undo, or the data has changed elsewhere.');},history);undo.dataset.editorUndo='';undo.setAttribute('aria-label','Undo');undo.title='Undo';undo.disabled=true;
       const redo=button('Redo',()=>{commitToolbarInput();flush();SiteEditing.endUndoGroup();status(SiteEditing.redo()?'Change redone.':'There is no change to redo, or the data has changed elsewhere.');},history);redo.dataset.editorRedo='';redo.setAttribute('aria-label','Redo');redo.title='Redo';redo.disabled=true;
-      const top=node('div');top.className='element-editor-top';top.append(history,node('hr'),menuTemplates,management,node('hr'),gaps,actions,moves);toolbar.prepend(top);
+      const gatheringManagement=node('div');gatheringManagement.className='element-editor-management';gatheringManagement.dataset.editorGatheringManagement='';
+      const top=node('div');top.className='element-editor-top';top.append(history,node('hr'),gatheringManagement,menuTemplates,management,node('hr'),gaps,actions,moves);toolbar.prepend(top);
       const panel=node('div');panel.dataset.editorPanel='';panel.className='element-editor-panel';panel.hidden=true;row.append(panel);
       const live=node('span');live.dataset.editorStatus='';live.setAttribute('role','status');toolbar.append(live);
       toolbar.addEventListener('focusin',event=>{if(event.target.matches('input,select,textarea'))SiteEditing.beginUndoGroup();});
@@ -398,12 +399,13 @@
     if(sidebarRoot!==root){sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=root;root.setAttribute('data-editor-sidebar-root','');}
     if(toolbar.parentElement!==root)root.append(toolbar);
     if(!sidebarResize){sidebarResize=new ResizeObserver(sizeSidebar);sidebarResize.observe(toolbar);}
+    const manage=document.querySelector('#manageGatherings');if(manage)toolbar.querySelector('[data-editor-gathering-management]').append(manage);
     const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=false;toolbar.querySelector('[data-editor-templates]').append(templates);}
     for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)toolbar.querySelector('[data-editor-management]').append(control);}
     toolbar.querySelector('#editMenuButton').disabled=!globalThis.hasGatheringToolbarContext?.();
     refreshUndo();sizeSidebar();
   }
-  function beforeRender(){workspace?.restore?.();workspace=null;release();clearTimeout(autosaveTimer);sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)document.querySelector('#hostEditorManagement').append(control);}toolbar?.remove();toolbar=null;panelName='';}
+  function beforeRender(){workspace?.restore?.();workspace=null;release();clearTimeout(autosaveTimer);sidebarResize?.disconnect();sidebarResize=null;sidebarRoot?.removeAttribute('data-editor-sidebar-root');sidebarRoot=null;document.body.style.removeProperty('--editor-sidebar-width');const manage=document.querySelector('#manageGatherings');if(manage)document.querySelector('#hostToolsPanel .host-tool-actions').append(manage);const templates=document.querySelector('#invitationTemplatesButton');if(templates){templates.hidden=true;document.body.append(templates);}for(const id of ['editAccountsButton','gatheringHistoryButton']){const control=document.getElementById(id);if(control)document.querySelector('#hostEditorManagement').append(control);}toolbar?.remove();toolbar=null;panelName='';}
   document.addEventListener('selectionchange',()=>{rememberSelection();if(!toolbar?.contains(document.activeElement))syncTextControls();});
   document.addEventListener('pointerdown',event=>{
     if(context?.enabled && toolbar && !toolbar.contains(event.target))SiteEditing.endUndoGroup();

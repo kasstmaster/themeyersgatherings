@@ -225,6 +225,11 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
 
   // Invitation drafts must validate before saving; copies resolve only the destination's information.
   await page.evaluate(()=>showGatheringsHome());await page.waitForFunction(()=>!sharedSavePending&&!sharedSaveInProgress);
+  await page.locator('#editItemsButton').click();
+  assert.equal(await page.locator('.element-editor-toolbar [data-editor-gathering-management] #manageGatherings').isVisible(),true);
+  const managementOrder=await page.evaluate(()=>{const manage=document.querySelector('[data-editor-gathering-management]'),menus=document.querySelector('[data-editor-menu-templates]');return Boolean(manage.compareDocumentPosition(menus)&Node.DOCUMENT_POSITION_FOLLOWING);});assert.equal(managementOrder,true);
+  await page.locator('#editItemsButton').click();assert.equal(await page.locator('#hostToolsPanel #manageGatherings').isVisible(),true);
+
   await page.locator('#manageGatherings').click();await page.locator('#managedGathering').selectOption(JSON.stringify(['thanksgiving','2099-11-25']));
   await page.locator('#managedEventTime').fill('2:00 PM');await page.locator('#managedAddress').fill('123 Main\nBakersfield CA');await page.locator('[data-manage-gathering="information"]').click();await page.waitForFunction(()=>appState.events.thanksgiving.eventTime==='2:00 PM');await page.locator('#manageGatheringsDialog [data-close-lifecycle]').click();
   const artwork=Buffer.from((await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=800;canvas.height=1200;canvas.getContext('2d').fillRect(0,0,800,1200);return canvas.toDataURL('image/png');})).split(',')[1],'base64');
@@ -236,8 +241,17 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   assert.equal(await page.locator('#invitationEditorDialog').evaluate(element=>element.tagName),'SECTION');
   assert.equal(await page.locator('[data-editor-workspace]').isVisible(),true);assert.equal(await page.locator('dialog[open]').count(),0);assert.equal(await page.locator('#eventSelectionPage').isVisible(),false);assert.equal(await page.locator('#manageGatherings').isVisible(),false);
   assert.equal(state.invitationTemplates.length,1,'creation must not save an incomplete draft');assert.equal(await page.evaluate(()=>templateDraft.fields[0].color),'#123456');await page.locator('#templateFieldLayer .editor-field').first().waitFor({state:'visible'});assert.match(await page.locator('#templateFieldLayer').textContent(),/2:00 PM/);
+  assert.equal(await page.locator('[data-editor-workspace]').getByRole('button',{name:'Done',exact:true}).count(),0);
+  assert.equal(await page.locator('#saveTemplateButton').textContent(),'Save');assert.equal(await page.locator('#previewEditedTemplateButton').textContent(),'Preview');assert.equal(await page.locator('#centerTemplateField').count(),0);assert.equal(await page.locator('#templateWorkspaceTools details').count(),0);assert.equal(await page.locator('#uploadTemplateBackgroundButton').isVisible(),true);
+  for(const width of [1280,390]){
+    await page.setViewportSize({width,height:844});await page.waitForTimeout(80);
+    await page.locator('.editor-field').first().click();
+    const layout=await page.evaluate(()=>{const bar=document.querySelector('[data-editor-workspace]'),top=bar.querySelector('.element-editor-top'),row=bar.querySelector('.element-editor-formatting'),panel=bar.querySelector('[data-editor-panel]');const before=top.getBoundingClientRect().top;row.scrollTop=100;return {width:bar.clientWidth,tools:document.querySelector('#templateWorkspaceTools').getBoundingClientRect().width,toolbox:document.querySelector('#templateFieldToolbox').getBoundingClientRect().width,overflow:[...bar.querySelectorAll('button,select,input,textarea')].filter(e=>e.getClientRects().length).some(e=>e.getBoundingClientRect().right>bar.getBoundingClientRect().right+1||e.scrollWidth>e.clientWidth+1),scroll:row.scrollHeight>row.clientHeight,before,after:top.getBoundingClientRect().top,headings:row.querySelectorAll(':scope>strong').length,snapFirst:Boolean(document.querySelector('#templateSnapCenter').compareDocumentPosition(document.querySelector('#templateFieldToolbox'))&Node.DOCUMENT_POSITION_FOLLOWING),removeFirst:Boolean(document.querySelector('#removeTemplateField').compareDocumentPosition(document.querySelector('#templateFieldToolbox'))&Node.DOCUMENT_POSITION_FOLLOWING),role:row.getAttribute('role'),fontWidth:panel.querySelector('[aria-label="Font"]').getBoundingClientRect().width};});
+assert.ok(layout.tools>=layout.width-24);assert.ok(layout.toolbox>=layout.width-24);assert.ok(layout.fontWidth>=layout.width-28);assert.equal(layout.overflow,false);assert.equal(layout.before,layout.after);assert.equal(layout.headings,0);assert.ok(layout.snapFirst&&layout.removeFirst);assert.equal(layout.role,'region');if(width===390)assert.equal(layout.scroll,true);
+  }
+  await page.setViewportSize({width:1280,height:900});await page.waitForTimeout(80);
   const geometry=await page.locator('#templateCanvasStage').boundingBox();
-  await page.locator('#templateAddValues summary').click();await page.locator('[data-field-key="customText"]').click();await page.mouse.click(geometry.x+geometry.width/2,geometry.y+40);
+  await page.locator('[data-field-key="customText"]').click();await page.mouse.click(geometry.x+geometry.width/2,geometry.y+40);
   const centered=await page.evaluate(()=>{const field=templateDraft.fields.find(f=>f.id===selectedTemplateFieldId);return {x:field.x,width:field.width,canvas:templateDraft.background.width};});assert.equal(centered.x+centered.width/2,centered.canvas/2);
   assert.equal(await page.locator('#templateCenterGuide').isVisible(),true);
   let valueRect=await page.locator('.editor-field.selected').boundingBox();await page.mouse.move(valueRect.x+valueRect.width/2,valueRect.y+8);await page.mouse.down();await page.mouse.move(valueRect.x+valueRect.width/2+40,valueRect.y+8,{steps:5});await page.mouse.up();
@@ -297,6 +311,7 @@ const {chromium}=require('playwright'),http=require('node:http'),fs=require('nod
   await page.reload();await page.waitForFunction(()=>typeof startApp==='function');await page.locator('#accountFirstName').fill(TEST_PASSWORD);await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});
   assert.match(await page.locator('[data-enter-event="thanksgiving"]').textContent(),/Family Feast/);assert.equal(await page.evaluate(()=>EVENT_DETAILS.thanksgiving.name),'Family Feast');assert.equal(state.events.wedding.gatheringName,'Wedding');
   await page.locator('#manageGatherings').click();await page.locator('#managedGathering').selectOption(JSON.stringify(['copy-source','2099-11-24']));await page.locator('[data-manage-gathering="cancel"]').click();await page.locator('#gatheringActionConfirmation').fill('CANCEL 2099-11-24');await page.locator('#gatheringActionSubmit').click();await page.waitForFunction(()=>!document.querySelector('#confirmGatheringAction').open);await page.locator('#manageGatheringsDialog [data-close-lifecycle]').click();
+  await page.evaluate(()=>enterEvent('thanksgiving'));await page.locator('#editItemsButton').click();assert.equal(await page.locator('.element-editor-toolbar #manageGatherings').isVisible(),true);await page.locator('#editItemsButton').click();await page.evaluate(()=>showGatheringsHome());
   assert.equal(await page.locator('[data-enter-event="copy-source"]').isDisabled(),true);assert.match(await page.locator('[data-enter-event="copy-source"]').textContent(),/Cancelled/);
   // Removing all current events must not recreate the built-in defaults on reload.
   for(const [id,current] of Object.entries(state.events)){

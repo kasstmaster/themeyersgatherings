@@ -28,11 +28,24 @@ test('invitation editor is a page using the common editor shell rather than a se
 test('reselecting a workspace value reveals current formatting after the panel was hidden',async()=>{
  const vm=await import('node:vm'),source=await readFile(new URL('../element-editor.js',import.meta.url),'utf8');
  const code=source.slice(source.indexOf('  function workspaceControls('),source.indexOf('  function updateWorkspaceValues('));
- const panel={hidden:true,parentElement:{scrollTop:250},children:[],replaceChildren(){this.children=[];}},heading={text:'',replaceChildren(value){this.text=value;}},toolbar={querySelector(selector){return selector==='[data-editor-panel]'?panel:heading;}};
+ const panel={hidden:true,parentElement:{scrollTop:250},children:[],setAttribute(key,value){this[key]=value;},replaceChildren(){this.children=[];}},heading={text:'',replaceChildren(value){this.text=value;}},toolbar={querySelector(selector){return selector==='[data-editor-panel]'?panel:heading;}};
  let refreshed=0;const control=(parent,label,options,value)=>{const result={label,value,dataset:{}};parent.children.push(result);return result;};
  const context=vm.createContext({toolbar,workspace:{refresh(){refreshed++;}},document:{createTextNode:value=>value},selectInput:control});vm.runInContext(code,context);
  context.workspaceControls('Event Date',[{key:'fontFamily',label:'Font',options:['Georgia','Times New Roman'],value:'Times New Roman'}],()=>{});
- assert.equal(panel.hidden,false);assert.equal(panel.parentElement.scrollTop,0);assert.equal(heading.text,'Event Date');assert.equal(panel.children[0].value,'Times New Roman');
+ assert.equal(panel.hidden,false);assert.equal(panel.parentElement.scrollTop,0);assert.equal(panel['aria-label'],'Event Date formatting');assert.equal(panel.children[0].value,'Times New Roman');
  panel.hidden=true;context.workspaceControls('Event Time',[{key:'fontFamily',label:'Font',options:['Georgia','Times New Roman'],value:'Georgia'}],()=>{});
- assert.equal(panel.hidden,false);assert.equal(heading.text,'Event Time');assert.equal(panel.children.length,1);assert.equal(panel.children[0].value,'Georgia');assert.equal(refreshed,2);
+ assert.equal(panel.hidden,false);assert.equal(panel['aria-label'],'Event Time formatting');assert.equal(panel.children.length,1);assert.equal(panel.children[0].value,'Georgia');assert.equal(refreshed,2);
+});
+
+test('template toolbar keeps always-visible compact actions above its formatting scroll region',async()=>{
+ const html=await readFile(new URL('../index.html',import.meta.url),'utf8'),app=await readFile(new URL('../app.js',import.meta.url),'utf8'),editor=await readFile(new URL('../element-editor.js',import.meta.url),'utf8');
+ const tools=html.slice(html.indexOf('<aside id="templateWorkspaceTools"'),html.indexOf('</aside>',html.indexOf('<aside id="templateWorkspaceTools"')));
+ assert.doesNotMatch(tools,/<details|<summary|id="centerTemplateField"/);assert.ok(tools.indexOf('id="templateSnapCenter"')<tools.indexOf('id="templateFieldToolbox"'));assert.ok(tools.indexOf('id="removeTemplateField"')<tools.indexOf('id="templateFieldToolbox"'));assert.match(tools,/id="uploadTemplateBackgroundButton" type="button">Upload/);
+ assert.match(html,/id="saveTemplateButton" type="button">Save</);assert.match(html,/id="previewEditedTemplateButton" type="button">Preview</);
+ const workspace=app.slice(app.indexOf('function openTemplateWorkspaceToolbar()'),app.indexOf('function renderFieldInspector()'));assert.doesNotMatch(workspace,/\['Done'/);assert.match(editor,/element-editor-row element-editor-formatting/);assert.doesNotMatch(editor,/node\('strong','Formatting'\)/);
+});
+
+test('website editor places gathering management before Menu/Templates and restores its Host control',async()=>{
+ const editor=await readFile(new URL('../element-editor.js',import.meta.url),'utf8');
+ assert.match(editor,/top.append\(history,node\('hr'\),gatheringManagement,menuTemplates/);assert.match(editor,/querySelector\('\[data-editor-gathering-management\]'\).append\(manage\)/);assert.match(editor,/querySelector\('#hostToolsPanel .host-tool-actions'\).append\(manage\)/);
 });
