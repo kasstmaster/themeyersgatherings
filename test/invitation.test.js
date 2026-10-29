@@ -115,7 +115,7 @@ test('shared text rendering preserves natural font width rather than squeezing t
  const operations=[],context={save(){},beginPath(){},rect(){},clip(){},restore(){},fillText(...args){operations.push(args);},letterSpacing:'0px',wordSpacing:'0px'};
  const canvas={getContext:()=>context},field={...Invitation.newField('customText',20,30),fontFamily:'Times New Roman',fontSize:44,fontWeight:'700',italic:true,width:120,height:100,letterSpacing:2,wordSpacing:3,customText:'Wide text\nLine two'};
  await Invitation.renderTextField(canvas,field,field.customText);
- assert.equal(context.font,'italic 700 44px "Times New Roman", serif');assert.equal(context.letterSpacing,'2px');assert.equal(context.wordSpacing,'3px');assert.equal(operations.length,2);assert.equal(operations[0].length,3,'fillText must not receive a maxWidth that compresses the font');assert.equal(operations[0][1],0);assert.equal(operations[1][2],52.8);
+ assert.equal(context.font,'italic 700 44px "Times New Roman", serif');assert.equal(context.letterSpacing,'2px');assert.equal(context.wordSpacing,'3px');assert.equal(operations.length,2);assert.equal(operations[0].length,3,'fillText must not receive a maxWidth that compresses the font');assert.equal(operations[0][1],0);assert.ok(Math.abs((operations[1][2]-operations[0][2])-52.8)<.001);assert.ok(Math.abs(operations[0][2]-1.6)<.001);
 });
 test('overflow checks actual glyph bounds, avoiding false line-height and spacing warnings',()=>{
  const context={letterSpacing:'0px',wordSpacing:'0px',measureText:()=>({width:100,actualBoundingBoxLeft:0,actualBoundingBoxRight:100,actualBoundingBoxAscent:-5,actualBoundingBoxDescent:35})};
@@ -140,4 +140,24 @@ test('invitation exports render image elements at their saved size in field stac
  const text=Invitation.newField('customText',0,0);text.customText='Over image';template.fields=[image,text];
  await Invitation.render({getContext:()=>ctx},Invitation.invitationModel(template,{},''),null);
  assert.equal(ops[0].kind,'image');assert.equal(ops[1].url,'https://runtime.test/logo.png');assert.deepEqual(ops[1].geometry,[45,60,100,50]);assert.equal(ops[2].kind,'text');
+});
+
+test('all caps is per invitation value, reversible, and preserves source data and copies',()=>{
+ const event={eventTime:'Two o’clock',custom:'Original'},field=Invitation.newField('eventTime',0,0);field.allCaps=true;
+ assert.equal(Invitation.fieldValue(field,event),'TWO O’CLOCK');assert.equal(event.eventTime,'Two o’clock');
+ const custom=Invitation.newField('customText',0,0);custom.customText='Hello\nWorld';custom.allCaps=true;assert.equal(Invitation.fieldValue(custom,event),'HELLO\nWORLD');assert.equal(custom.customText,'Hello\nWorld');
+ const date=Invitation.newField('eventDate',0,0);date.allCaps=true;assert.equal(Invitation.fieldValue(date,{eventDate:'2027-08-10'}),Invitation.fieldValue({...date,allCaps:false},{eventDate:'2027-08-10'}).toUpperCase());
+ const template=Invitation.createTemplate('Caps',background);template.fields=[field,custom];const copy=Invitation.duplicateTemplate(JSON.parse(JSON.stringify(template)));assert.equal(copy.fields[0].allCaps,true);copy.fields[0].allCaps=false;assert.equal(template.fields[0].allCaps,true);assert.equal(Invitation.fieldValue(copy.fields[0],event),'Two o’clock');
+});
+test('text centers actual glyph bounds vertically and follows box height for single and multiline text',async()=>{
+ const ops=[],ctx={save(){},beginPath(){},rect(){},clip(){},restore(){},measureText(){return {actualBoundingBoxAscent:-5,actualBoundingBoxDescent:25};},fillText(text,x,y){ops.push(y);}},canvas={getContext:()=>ctx};
+ const field={...Invitation.newField('customText',0,0),height:100,fontSize:20,lineHeight:1.5};await Invitation.renderTextField(canvas,field,'One');assert.equal(ops.pop(),35);
+ field.height=140;await Invitation.renderTextField(canvas,field,'One');assert.equal(ops.pop(),55);
+ await Invitation.renderTextField(canvas,field,'One\nTwo');assert.deepEqual(ops,[40,70]);
+});
+
+test('plain month day year invitation format omits ordinal suffixes and comma',()=>{
+ assert.ok(Invitation.EVENT_DATE_FORMATTERS.some(([key])=>key==='month-day-year'));
+ for(const day of [1,2,3,6,11,21,22,23,30])assert.equal(Invitation.formatEventDate(`2026-11-${String(day).padStart(2,'0')}`,'month-day-year'),`November ${day} 2026`);
+ const field={...Invitation.newField('eventDate',0,0),formatter:'month-day-year',allCaps:true};assert.equal(Invitation.fieldValue(field,{eventDate:'2026-11-06'}),'NOVEMBER 6 2026');assert.equal(Invitation.formatEventDate('','month-day-year'),'');
 });

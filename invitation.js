@@ -21,6 +21,7 @@
     ['weekday-month-ordinal-year-spaced', 'Saturday   November   21st   2026'],
     ['weekday-month-ordinal-year', 'Saturday November 21st 2026'],
     ['month-ordinal-year', 'November 21st 2026'],
+    ['month-day-year', 'November 6 2026'],
     ['month-day-comma-year', 'November 21, 2026']
   ]);
   const RSVP_FORMATTERS = Object.freeze([['by-short-month-day', 'By Nov. 7'], ['short-month-day', 'Nov. 7'], ['month-day', 'November 7']]);
@@ -48,6 +49,7 @@
     const date = parseDate(value); if (!date) return '';
     const weekday = weekdays[date.getUTCDay()], month = months[date.getUTCMonth()], day = date.getUTCDate(), year = date.getUTCFullYear();
     if (formatter === 'month-ordinal-year') return `${month} ${ordinal(day)} ${year}`;
+    if (formatter === 'month-day-year') return `${month} ${day} ${year}`;
     if (formatter === 'month-day-comma-year') return `${month} ${day}, ${year}`;
     return `${weekday} ${month} ${ordinal(day)} ${year}`;
   }
@@ -95,9 +97,8 @@
   function fieldValue(field, eventState) {
     eventState=root.SharedDetails?root.SharedDetails.invitationValues(eventState):{...eventState,eventTime:eventState.eventTime || eventState.ceremonyTime || eventState.churchTime || '',ceremonyTime:eventState.eventTime || eventState.ceremonyTime || eventState.churchTime || '',address:eventState.homeAddress || [eventState.addressLine1,eventState.addressLine2].filter(Boolean).join('\n')};
     const raw = field.key === 'rsvpBy' ? eventState.rsvpDate : field.key === 'customText' ? field.customText : eventState[field.key];
-    if (field.key === 'eventDate') return formatEventDate(raw, field.formatter);
-    if (field.key === 'rsvpBy') return formatRsvpDate(raw, field.formatter);
-    return String(raw || '');
+    const value=field.key==='eventDate'?formatEventDate(raw,field.formatter):field.key==='rsvpBy'?formatRsvpDate(raw,field.formatter):String(raw || '');
+    return field.allCaps?value.toUpperCase():value;
   }
 
   function snapHorizontal(field,canvasWidth,scale=1,enabled=true) {
@@ -159,11 +160,17 @@
     if('letterSpacing' in ctx)ctx.letterSpacing=`${field.letterSpacing || 0}px`;
     if('wordSpacing' in ctx)ctx.wordSpacing=`${field.wordSpacing || 0}px`;
   }
+  function textVerticalOffset(ctx,text,field) {
+    const lines=String(text).split(/\r?\n/),step=field.fontSize*(field.lineHeight || 1.2);let top=Infinity,bottom=-Infinity;
+    lines.forEach((line,index)=>{const m=ctx.measureText?.(line || ' ') || {};top=Math.min(top,index*step-(m.actualBoundingBoxAscent ?? 0));bottom=Math.max(bottom,index*step+(m.actualBoundingBoxDescent ?? field.fontSize));});
+    return (field.height-(bottom-top))/2-top;
+  }
   function drawText(ctx, text, field) {
     ctx.save(); ctx.beginPath(); ctx.rect(field.x, field.y, field.width, field.height); ctx.clip();
     configureText(ctx,field);
     const x = field.textAlign === 'center' ? field.x + field.width / 2 : field.textAlign === 'right' ? field.x + field.width : field.x;
-    String(text).split(/\r?\n/).forEach((line,index)=>ctx.fillText(line,x,field.y+index*field.fontSize*(field.lineHeight || 1.2))); ctx.restore();
+    const offset=textVerticalOffset(ctx,text,field);
+    String(text).split(/\r?\n/).forEach((line,index)=>ctx.fillText(line,x,field.y+offset+index*field.fontSize*(field.lineHeight || 1.2))); ctx.restore();
   }
   async function renderTextField(canvas,field,text) {
     await loadTextFonts([field],{[field.id]:text});
@@ -190,12 +197,13 @@
     for(const field of model.template.fields.filter(field=>field.type==='text')){
       configureText(ctx,field);let width=false,height=false;
       const anchor=field.textAlign==='center'?field.width/2:field.textAlign==='right'?field.width:0;
+      const offset=textVerticalOffset(ctx,model.values[field.id] || '',field);
       String(model.values[field.id] || '').split(/\r?\n/).forEach((line,index)=>{
         if(!line.trim())return;
         const metrics=ctx.measureText(line),advance=metrics.width+('letterSpacing' in ctx?0:Math.max(0,line.length-1)*(field.letterSpacing || 0))+('wordSpacing' in ctx?0:(line.split(' ').length-1)*(field.wordSpacing || 0));
         const left=Number.isFinite(metrics.actualBoundingBoxLeft)?metrics.actualBoundingBoxLeft:field.textAlign==='center'?advance/2:field.textAlign==='right'?advance:0;
         const right=Number.isFinite(metrics.actualBoundingBoxRight)?metrics.actualBoundingBoxRight:advance-left;
-        const y=index*field.fontSize*(field.lineHeight || 1.2),top=y-(metrics.actualBoundingBoxAscent ?? 0),bottom=y+(metrics.actualBoundingBoxDescent ?? field.fontSize);
+        const y=offset+index*field.fontSize*(field.lineHeight || 1.2),top=y-(metrics.actualBoundingBoxAscent ?? 0),bottom=y+(metrics.actualBoundingBoxDescent ?? field.fontSize);
         if(anchor-left<-.5||anchor+right>field.width+.5)width=true;
         if(top<-.5||bottom>field.height+.5)height=true;
       });
