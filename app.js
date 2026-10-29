@@ -1037,6 +1037,11 @@ async function copyMenu() {
 function updateHeaderImage(event) {
   const headerImage = document.querySelector('#eventHeaderImage');
   const nextSource = state.siteHeaderImage ?? event.header ?? '';
+  // Keep an empty image slot selectable in the host editor. The placeholder
+  // belongs to this gathering and is never displayed to guests.
+  const bannerSlot = headerImage.closest('.header-art');
+  bannerSlot.dataset.emptyBanner = String(!nextSource);
+  bannerSlot.dataset.bannerEditing = String(isHostView() && SiteEditing.enabled);
   const heading=document.querySelector('#customGatheringHeading'); heading.hidden=!state.gatheringName; heading.textContent=state.gatheringName || '';
   headerImage.alt = `${event.name} celebration header`;
   if (headerImage.getAttribute('src') === nextSource) return;
