@@ -49,11 +49,16 @@
   function group(target){
     if(!target?.matches || !target.closest)return null;
     if(target.matches('.event-dock'))return 'toolbar';
-    if(target.closest('.element-editor-toolbar,#hostQuickActions,#editItemsButton,[id^="admin"],.inline-portal-editor'))return null;
+    if(target.closest('.element-editor-toolbar,#hostQuickActions,#editItemsButton,.inline-portal-editor'))return null;
     const dialog=target.closest('dialog');
-    if(dialog?.matches('.count-list-dialog')){
+    // Popup shells share the count-list design; RSVP keeps its gathering shell.
+    if(dialog && dialog.id!=='rsvpDialog'){
       if(target.matches('.modal-card'))return 'count-list-containers';
       if(target.matches('.modal-close'))return 'count-list-close';
+      if(target.matches('.modal-card>h1,.modal-card>h2,.modal-card>h3'))return 'count-list-titles';
+    }
+    if(target.closest('[id^="admin"]'))return null;
+    if(dialog?.matches('.count-list-dialog')){
       if(target.matches('button,a'))return 'count-list-buttons';
       if(target.matches('.section-kicker'))return 'count-list-kickers';
       if(target.matches('h1,h2,h3,h4,h5,h6'))return target.matches('.dish-list-group-title')?'count-list-group-titles':'count-list-titles';
@@ -103,7 +108,7 @@
   function find(path){
     if(path.startsWith('@group:')){
       const [kind,state]=path.slice(7).split(':');
-      const candidates=groupCandidates||[...document.querySelectorAll(context?.scope?`${context.scope} *`:'#eventPage *,#rsvpDialog *,.count-list-dialog *')].map(element=>({element,kind:group(element)}));
+      const candidates=groupCandidates||[...document.querySelectorAll(context?.scope?`${context.scope} *,dialog *`:'#eventPage *,dialog *')].map(element=>({element,kind:group(element)}));
       if(painting)groupCandidates=candidates;
       return candidates.filter(candidate=>(candidate.kind===kind && (!state || selectedState(candidate.element)===state)) || path==='@group:inner-containers' && contentSurface(candidate.element)).map(candidate=>candidate.element);
     }

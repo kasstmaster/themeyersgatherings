@@ -107,13 +107,13 @@ Potluck guests see a compact fixed reference bar during dish/contribution questi
 
 ### Year-specific gathering management
 
-The Host can use **Manage Gatherings** on the selection page to rename, cancel or delete a selected date and restore a deletion within 30 days. Cancel/delete require a separate warning and typed confirmation. These actions keep other years and their formatting/content independent. Guests use **View Past Gatherings** for read-only prior-year RSVP history and photos. See [the lifecycle guide](gathering-lifecycle.md).
+The Host can use **Manage Gatherings** in the edit sidebar to rename, cancel or delete a selected date and restore a deletion within 30 days. Cancel/delete require a separate warning and typed confirmation. These actions keep other years and their formatting/content independent. Guests use **View Past Gatherings** for read-only prior-year RSVP history and photos. See [the lifecycle guide](gathering-lifecycle.md).
 
 Gathering date, time, RSVP-by, and addresses now have one content-editing area in **Manage Gatherings**. Their page elements retain formatting selection, while core values are no longer changed through inline date/address fields or Templates. Templates keeps QR mode/assignment and supports **Copy from** with a new image; incomplete drafts can be saved with red reminders for missing values/fields. See [invitation editing](invitations.md).
 
 The invitation editor is a full page and uses the common `ElementEditor` toolbar shell and compact dark controls through a draft workspace adapter. It adds template value/QR/artwork controls, center snapping, Save/Preview and independent Undo/Redo; it does not write to website appearance groups. Manage Gatherings is a Host toolbar option only on the selection page, and prior-year choices live in a dropdown below current gatherings.
 
-Manage Gatherings appears above Menu/Templates in the website editing sidebar on every page. Leaving edit mode returns the same control to the Host toolbar, where it appears on the selection page. It remains hidden from guests. The template workspace has no duplicate Done action: use Done in the Host toolbar. Save/Preview, snap/remove, Values and the compact Background upload stay above a separate formatting scroll region, with full-width controls and no repeated selected-value heading.
+Manage Gatherings appears above Menu/Templates in the website editing sidebar on every page. Leaving edit mode hides the control; it does not appear in the main Host toolbar. It remains hidden from guests. The template workspace has no duplicate Done action: use Done in the Host toolbar. Save/Preview, snap/remove, Values and the compact Background upload stay above a separate formatting scroll region, with full-width controls and no repeated selected-value heading.
 
 Invitation **Add image** creates an independently selectable image layer. The shared sidebar exposes its coordinates, dimensions and Keep proportions toggle; corner resizing, Undo/Redo and Remove value also apply. Background artwork remains separate. See [invitation images](invitations.md#resizable-image-elements).
 
@@ -130,3 +130,7 @@ First RSVP-page information below the banner uses the shared largest-fit text si
 In the first RSVP-page information, a “Kindly RSVP by” deadline uses an abbreviated month and day without a year (for example, **Kindly RSVP by Nov. 7**). Existing long-form deadline wording is shortened for display without rewriting the saved text; unrelated event dates retain their own formatting.
 
 The shared **View & Download** folder button uses the same concise label for current and archived gathering views. Below it, the description reads: “Share and enjoy memories from this gathering! We recommend waiting about a month before downloading to allow everyone time to upload. Memories will always be available to view here, so downloading is optional.” Existing custom button labels remain editable; the previous default label automatically displays as View & Download.
+
+**Manage Gatherings** is available in the Host edit toolbar only; it is hidden in the regular bottom toolbar, including on gathering selection.
+
+Popup cards, their main headings, and X buttons share the count-list container/title/close formatting groups within the current design context. All popup X buttons use the common top-right close-button class. RSVP retains its separate page shell, and dialog widths and specialized form layouts remain content-specific.
