@@ -3380,6 +3380,7 @@ document.querySelector('#shareBulkInvitations').addEventListener('click', async 
 });
 
 let templateDraft = null;
+let templateImageUploads=0;
 let templateUndo=[],templateRedo=[],templateWorkspaceRestore=[],templateCenterSnap=true;
 let selectedTemplateFieldId = '';
 let pendingTemplateFieldKey = '';
@@ -3487,7 +3488,7 @@ function renderTemplateRequirements(){
 }
 function renderEditorFields() {
   const layer = document.querySelector('#templateFieldLayer');
-  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${field.id === selectedTemplateFieldId ? 'selected element-editor-selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? templateEditorQrSvg() : `<canvas class="template-value-text" role="img" aria-label="${escapeAttribute(previewValue(field))}">${escapeHtml(previewValue(field))}</canvas>`}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
+  layer.innerHTML = templateDraft.fields.map(field => `<div class="editor-field ${field.type} ${field.id === selectedTemplateFieldId ? 'selected element-editor-selected' : ''}" data-field-id="${field.id}" style="left:${field.x}px;top:${field.y}px;width:${field.width}px;height:${field.height}px;${field.type === 'text' ? `font-family:${escapeAttribute(field.fontFamily)};font-size:${field.fontSize}px;font-weight:${field.fontWeight};font-style:${field.italic ? 'italic' : 'normal'};color:${field.color};text-align:${field.textAlign};letter-spacing:${field.letterSpacing}px;line-height:${field.lineHeight};word-spacing:${field.wordSpacing || 0}px` : ''}">${field.type === 'qr' ? templateEditorQrSvg() : field.type==='image'?`<img src="${escapeAttribute(window.Invitation.versionedImageUrl(field.image.url,field.image.updatedAt))}" alt="Invitation image" draggable="false">` : `<canvas class="template-value-text" role="img" aria-label="${escapeAttribute(previewValue(field))}">${escapeHtml(previewValue(field))}</canvas>`}<button class="resize-handle" type="button" aria-label="Resize field"></button></div>`).join('');
   const rendered=Promise.all([...layer.querySelectorAll('.editor-field.text')].map(element=>{const field=templateDraft.fields.find(item=>item.id===element.dataset.fieldId);return window.Invitation.renderTextField(element.querySelector('canvas'),field,previewValue(field)).then(()=>{element.dataset.textReady='true';});}));
   layer.querySelectorAll('.editor-field').forEach(element => {
     element.addEventListener('pointerdown', event => beginFieldPointer(event, element));
@@ -3514,7 +3515,8 @@ function beginFieldPointer(event, element) {
   element.onpointermove = move => {
     const dx = (move.clientX - start.x) / scale, dy = (move.clientY - start.y) / scale;
     if(!recorded&&(Math.abs(dx)>.5||Math.abs(dy)>.5)){recordTemplateUndo();recorded=true;}
-    if (resizing) { const size = field.type === 'qr' ? Math.max(64, start.width + Math.max(dx, dy)) : null; field.width = Math.round(size || Math.max(40, start.width + dx)); field.height = Math.round(size || Math.max(24, start.height + dy)); }
+    if(resizing&&field.type==='image'){if(field.lockAspect!==false)window.Invitation.resizeImage(field,'width',Math.max(8,start.width+dx));else{field.width=Math.max(8,start.width+dx);field.height=Math.max(8,start.height+dy);}}
+    else if (resizing) { const size = field.type === 'qr' ? Math.max(64, start.width + Math.max(dx, dy)) : null; field.width = Math.round(size || Math.max(40, start.width + dx)); field.height = Math.round(size || Math.max(24, start.height + dy)); }
     else { field.x = Math.round(Math.max(0, Math.min(templateDraft.background.width - field.width, start.fieldX + dx))); field.y = Math.round(Math.max(0, Math.min(templateDraft.background.height - field.height, start.fieldY + dy)));const snapped=window.Invitation.snapHorizontal(field,templateDraft.background.width,scale,templateCenterSnap);field.x=snapped.x;document.querySelector('#templateCenterGuide').hidden=!snapped.snapped; }
     element.style.left = `${field.x}px`; element.style.top = `${field.y}px`; element.style.width = `${field.width}px`; element.style.height = `${field.height}px`;ElementEditor.updateWorkspaceValues({x:field.x,y:field.y,width:field.width,height:field.height});
   };
@@ -3539,18 +3541,19 @@ function renderFieldInspector() {
   if(!field){ElementEditor.workspaceControls('Select a value on the invitation',[],()=>{});return;}
   const numeric=(key,label,min=0,step=1)=>({key,label,type:'number',value:field[key],min,step});
   const specs=[numeric('x','X'),numeric('y','Y'),numeric('width','Width',1),numeric('height','Height',1)];
+  if(field.type==='image')specs.push({key:'lockAspect',label:'Keep proportions',type:'toggle',value:field.lockAspect!==false});
   if(field.type==='text')specs.push({key:'fontFamily',label:'Font',options:TextStyles.fonts,value:field.fontFamily},numeric('fontSize','Size',1),{key:'fontWeight',label:'Bold',type:'toggle',value:Number(field.fontWeight)>=600},{key:'italic',label:'Italic',type:'toggle',value:field.italic},{key:'color',label:'Text color',type:'color',value:field.color},{key:'textAlign',label:'Alignment',options:['left','center','right'],value:field.textAlign},numeric('letterSpacing','Letter spacing',-10,.1),numeric('wordSpacing','Word spacing',-10,.1),numeric('lineHeight','Line height',.1,.1));
   if(field.key==='eventDate'||field.key==='rsvpBy')specs.push({key:'formatter',label:'Date format',value:field.formatter,options:(field.key==='eventDate'?window.Invitation.EVENT_DATE_FORMATTERS:window.Invitation.RSVP_FORMATTERS).map(([value,label])=>({value,label}))});
   if(field.key==='customText')specs.push({key:'customText',label:'Custom text',type:'textarea',value:field.customText});
   ElementEditor.workspaceControls(field.label,specs,(key,value)=>{
     if(key==='color'&&!/^#[a-f0-9]{6}$/i.test(value))return;
-    recordTemplateUndo();field[key]=key==='fontWeight'?(value?'700':'400'):value;
+    recordTemplateUndo();if(field.type==='image'&&['width','height'].includes(key)){window.Invitation.resizeImage(field,key,value);ElementEditor.updateWorkspaceValues({width:field.width,height:field.height});}else field[key]=key==='fontWeight'?(value?'700':'400'):value;
     if(field.type==='qr'&&['width','height'].includes(key))field.width=field.height=Number(value);
     if(key==='formatter')field.wordSpacing=value.endsWith('-spaced')?14:0;
     renderEditorFields();refreshTemplateUndo();
   });
 }
-function templateHasUnsavedChanges(){return !document.querySelector('#invitationEditorDialog').hidden&&JSON.stringify(appState.invitationTemplates.find(item=>item.id===templateDraft?.id))!==JSON.stringify(templateDraft);}
+function templateHasUnsavedChanges(){return !document.querySelector('#invitationEditorDialog').hidden&&(templateImageUploads>0||JSON.stringify(appState.invitationTemplates.find(item=>item.id===templateDraft?.id))!==JSON.stringify(templateDraft));}
 function closeTemplateWorkspace(showManager=true){
   if(document.querySelector('#invitationEditorDialog').hidden)return true;
   if(templateHasUnsavedChanges()&&!confirm('Leave this template with unsaved changes?'))return false;
@@ -4296,3 +4299,11 @@ document.querySelector('#templateEditorName').addEventListener('input',event=>{i
 window.addEventListener('beforeunload',event=>{if(templateHasUnsavedChanges()){event.preventDefault();event.returnValue='';}});
 
 document.querySelector('#uploadTemplateBackgroundButton').addEventListener('click',()=>document.querySelector('#replaceTemplateBackground').click());
+
+document.querySelector('#addInvitationImage').addEventListener('click',()=>document.querySelector('#invitationImageFile').click());
+document.querySelector('#invitationImageFile').addEventListener('change',async event=>{
+  const file=event.target.files[0],owner=templateDraft?.id,button=document.querySelector('#addInvitationImage');if(!file||!isHostView()||document.querySelector('#invitationEditorDialog').hidden)return;
+  templateImageUploads++;button.disabled=true;for(const id of ['saveTemplateButton','previewEditedTemplateButton'])document.getElementById(id).disabled=true;document.querySelector('#templateEditorError').textContent='';ElementEditor.workspaceStatus('Uploading image…');
+  try{const image=await uploadTemplateBackground(`template-image-${crypto.randomUUID()}`,file);if(!isHostView()||templateDraft?.id!==owner||document.querySelector('#invitationEditorDialog').hidden)return;recordTemplateUndo();const field=window.Invitation.newImage(image,templateDraft.background);templateDraft.fields.push(field);selectedTemplateFieldId=field.id;renderEditorFields();renderFieldInspector();ElementEditor.workspaceStatus('Image added. Drag it to move, or use its corner to resize.');}
+  catch(error){if(templateDraft?.id===owner)document.querySelector('#templateEditorError').textContent=error.message;}finally{templateImageUploads--;button.disabled=templateImageUploads>0;for(const id of ['saveTemplateButton','previewEditedTemplateButton'])document.getElementById(id).disabled=templateImageUploads>0;event.target.value='';}
+});

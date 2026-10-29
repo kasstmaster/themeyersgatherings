@@ -124,3 +124,20 @@ test('overflow checks actual glyph bounds, avoiding false line-height and spacin
  context.measureText=()=>({width:150,actualBoundingBoxLeft:0,actualBoundingBoxRight:150,actualBoundingBoxAscent:-5,actualBoundingBoxDescent:35});assert.deepEqual(Invitation.overflowDetails({getContext:()=>context},model),[{label:'Event Date',width:true,height:false}]);
  field.width=160;field.height=20;assert.deepEqual(Invitation.overflowDetails({getContext:()=>context},model),[{label:'Event Date',width:false,height:true}]);
 });
+
+test('image elements fit the artwork initially and resize with optional aspect locking',()=>{
+ const image={url:'https://runtime.test/logo.png',width:400,height:200},field=Invitation.newImage(image,{width:800,height:1000});
+ assert.equal(field.type,'image');assert.equal(field.key,'image');assert.equal(field.width,320);assert.equal(field.height,160);assert.equal(field.x,240);assert.equal(field.lockAspect,true);
+ Invitation.resizeImage(field,'width',200);assert.equal(field.height,100);Invitation.resizeImage(field,'height',80);assert.equal(field.width,160);
+ field.lockAspect=false;Invitation.resizeImage(field,'width',120);assert.equal(field.height,80);
+ const source=Invitation.createTemplate('Images',background);source.fields=[field];const copy=Invitation.duplicateTemplate(source);copy.fields[0].image.width=999;assert.equal(source.fields[0].image.width,400);assert.notEqual(copy.fields[0].id,field.id);
+ assert.equal(Invitation.validateTemplate(source,{}),true);assert.throws(()=>Invitation.validateTemplate({...source,fields:[{...field,image:{...image,url:'javascript:alert(1)'}}]},{}),/invalid dimensions or address/);
+});
+test('invitation exports render image elements at their saved size in field stacking order',async t=>{
+ const previous=globalThis.Image;t.after(()=>globalThis.Image=previous);globalThis.Image=class{set src(value){this.url=value;queueMicrotask(()=>this.onload());}};
+ const ops=[],ctx={drawImage(image,...geometry){ops.push({kind:'image',url:image.url,geometry});},save(){},beginPath(){},rect(){},clip(){},restore(){},fillText(text){ops.push({kind:'text',text});}};
+ const template=Invitation.createTemplate('Layered',background),image=Invitation.newImage({url:'https://runtime.test/logo.png',width:200,height:100},{width:720,height:1008});Object.assign(image,{x:45,y:60,width:100,height:50});
+ const text=Invitation.newField('customText',0,0);text.customText='Over image';template.fields=[image,text];
+ await Invitation.render({getContext:()=>ctx},Invitation.invitationModel(template,{},''),null);
+ assert.equal(ops[0].kind,'image');assert.equal(ops[1].url,'https://runtime.test/logo.png');assert.deepEqual(ops[1].geometry,[45,60,100,50]);assert.equal(ops[2].kind,'text');
+});
