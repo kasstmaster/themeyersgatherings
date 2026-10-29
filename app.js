@@ -1034,14 +1034,13 @@ async function copyMenu() {
   }
   showToast('Menu copied! It is ready to paste into a message.');
 }
+function updateBannerSlot(image,source){const slot=image.closest('.header-art');if(slot){slot.dataset.emptyBanner=String(!source);slot.dataset.bannerEditing=String(isHostView()&&SiteEditing.enabled);}}
 function updateHeaderImage(event) {
   const headerImage = document.querySelector('#eventHeaderImage');
   const nextSource = state.siteHeaderImage ?? event.header ?? '';
   // Keep an empty image slot selectable in the host editor. The placeholder
   // belongs to this gathering and is never displayed to guests.
-  const bannerSlot = headerImage.closest('.header-art');
-  bannerSlot.dataset.emptyBanner = String(!nextSource);
-  bannerSlot.dataset.bannerEditing = String(isHostView() && SiteEditing.enabled);
+  updateBannerSlot(headerImage,nextSource);
   const heading=document.querySelector('#customGatheringHeading'); heading.hidden=!state.gatheringName; heading.textContent=state.gatheringName || '';
   headerImage.alt = `${event.name} celebration header`;
   if (headerImage.getAttribute('src') === nextSource) return;
@@ -1768,7 +1767,7 @@ function renderRsvpInlineEditing(eventState=state) {
   const state=eventState;
   if (!SiteEditing.enabled) {document.querySelector('#weddingRsvpGuests')?.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());return;}
   const header=document.querySelector('#rsvpEventHeader .header-art');
-  if(header)SiteEditing.field(header,'header image',[{label:'RSVP first-page banner URL (empty to remove)',type:'url',value:state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header}],([value])=>{state.rsvpHeaderImage=value;},{key:'rsvp-first-page-banner'});
+  if(header)SiteEditing.field(header,'header image',[],null,{key:'rsvp-first-page-banner',replace:false});
   SiteEditing.field(document.querySelector('#rsvpFirstPageDate'),'date',[],()=>{},{contentReadOnly:true});
   for(const [selector,value,key] of rsvpFirstPageTextFields()) {
     SiteEditing.field(document.querySelector(selector),'text',[{label:'Text (Markdown supported)',type:'textarea',value}],([text])=>{state[key]=text;},{key,placement:'text'});
@@ -2334,6 +2333,7 @@ function renderRsvpEventHeader() {
   renderRsvpStatusIcon();
   const banner=document.querySelector('#rsvpFirstPageImage');
   const source=state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header ?? '';
+  updateBannerSlot(banner,source);
   banner.removeAttribute('src');banner.hidden=!source;
   if(source)banner.src=source;
   banner.addEventListener('error',()=>{banner.hidden=true;},{once:true});
