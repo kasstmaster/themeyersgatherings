@@ -146,7 +146,12 @@
       const path=appearancePath(element);if(styles[path]){delete styles[path].backgroundImage;delete styles[path].imageSource;}
     }
     if(!context.setImage?.(image,url))styles[appearancePath(image)]={...styles[appearancePath(image)],imageSource:url};
-    apply();replaceImage(image,url);context.save();
+    apply();replaceImage(image,url);
+    if(image.id==='eventHeaderImage'){
+      const slot=image.closest('.header-art');
+      if(slot)slot.dataset.emptyBanner=String(!url);
+    }
+    context.save();
   }
   function paint(element,values){
     if(element.matches?.('.rsvp-page-shell'))return;
