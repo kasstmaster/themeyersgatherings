@@ -195,3 +195,5 @@ Select one added invitation image to reveal **Replace image**. Replacement uploa
 Hosts can upload an optional banner while creating a gathering. Empty main and first RSVP banners remain selectable in Edit mode through an upload placeholder, while guests see no empty placeholder. Banner uploads and replacements save independently for each gathering.
 
 The shared gathering-selection, browser, and installed-app icons use the bundled red rose with blue leaves in `assets/icons/`. The original artwork is retained as `rose-source.png`; square PNG and ICO variants preserve transparency and proportions. Icon references and the manifest are versioned to refresh browser caches without changing the installed app identity.
+
+First RSVP-page information below the banner uses the shared largest-fit text sizing: authored lines do not wrap as the container narrows, while intentional line breaks and blank paragraphs remain. Saved font sizes remain the maximum and are restored when space allows. Your Dishes shows the invitation’s item names and numerical amounts without claim indicators or quantity-type labels, including in print/email exports.

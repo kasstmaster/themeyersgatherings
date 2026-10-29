@@ -1,6 +1,6 @@
-// All gatherings share one sizing rule for RSVP titles and the first-page date.
+// All gatherings share one sizing rule for RSVP titles and the first-page date and information.
 (() => {
-  const selector='#rsvpFirstPageDate,#rsvpDialog h1,#rsvpDialog h2,#rsvpDialog h3,#rsvpDialog h4,#rsvpDialog h5,#rsvpDialog h6,#rsvpDialog legend,.site-edit-mode #rsvpConfirmEvent>span,.site-edit-mode #hostFirstPageActions button>span,.site-edit-mode #weddingRsvpUploadToolbar button>span,.site-edit-mode #rsvpDialog .primary-button:not(:has(>span))';
+  const selector='#rsvpFirstPageText,#rsvpFirstPageDetails,#rsvpFirstPageDate,#rsvpDialog h1,#rsvpDialog h2,#rsvpDialog h3,#rsvpDialog h4,#rsvpDialog h5,#rsvpDialog h6,#rsvpDialog legend,.site-edit-mode #rsvpConfirmEvent>span,.site-edit-mode #hostFirstPageActions button>span,.site-edit-mode #weddingRsvpUploadToolbar button>span,.site-edit-mode #rsvpDialog .primary-button:not(:has(>span))';
   const observed=new Set();
   const fitted=new WeakMap();
   function fit(element,force=false) {
