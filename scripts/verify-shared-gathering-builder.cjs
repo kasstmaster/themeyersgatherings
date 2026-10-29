@@ -30,6 +30,25 @@ const assert=require('node:assert/strict');
   await page.locator('#newGatheringForm button[value="create"]').click();
   await page.waitForFunction(()=>viewedEventId.startsWith('gathering-') && document.querySelector('#rsvpDialog').open);
   const newId=await page.evaluate(()=>viewedEventId),ids=['thanksgiving','christmas','wedding',newId];
+  // Empty banners must retain a visible edit-mode target, and a newly
+  // assigned banner must survive rerender and reload for this gathering only.
+  await page.evaluate(()=>{RsvpFlow.close?.();});
+  await page.locator('#rsvpDialog').evaluate(dialog=>{if(dialog.open)dialog.close();});
+  if(!await page.evaluate(()=>SiteEditing.enabled))await page.locator('#editItemsButton').click();
+  await page.waitForFunction(()=>document.querySelector('#eventPage .header-art').dataset.bannerEditing==='true');
+  assert.equal(await page.locator('#eventPage .header-art').getAttribute('data-empty-banner'),'true');
+  assert.equal(await page.locator('#eventPage .header-art').evaluate(node=>getComputedStyle(node,'::before').content.includes('Click here to add a banner image')),true);
+  await page.evaluate(()=>{
+    ElementAppearance.updateImage(document.querySelector('#eventHeaderImage'),'http://127.0.0.1:8041/test-new-banner.svg');
+    SiteEditing.flush();
+  });
+  assert.equal(await page.evaluate(()=>state.siteHeaderImage),'http://127.0.0.1:8041/test-new-banner.svg');
+  assert.equal(await page.locator('#eventPage .header-art').getAttribute('data-empty-banner'),'false');
+  await page.reload();await page.waitForFunction(()=>typeof startApp==='function');
+  await page.evaluate(id=>{hostAuthenticated=true;guestName=HOST_DISPLAY_NAME;signedInPersonName='';enterEvent(id);},newId);
+  assert.equal(await page.evaluate(()=>state.siteHeaderImage),'http://127.0.0.1:8041/test-new-banner.svg');
+  assert.equal(await page.locator('#eventHeaderImage').getAttribute('src'),'http://127.0.0.1:8041/test-new-banner.svg');
+
   const useMedia=async id=>{
    await page.evaluate(id=>enterEvent(id),id);
    await page.evaluate(()=>{const button=document.querySelector('#rsvp-nav-media');if(SiteEditing.enabled)ElementEditor.activate(button);else button.click();});
