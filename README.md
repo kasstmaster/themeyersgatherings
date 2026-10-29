@@ -183,3 +183,5 @@ Each non-wedding menu editor has **Copy from**: choose another gathering and its
 Single-unit dish labels omit “1 of 1” and numeric amounts: an ordinary item shows only needed/claimed, while a dozen, case or custom type keeps its type and status. Multi-unit quantities and host editing controls retain their amounts.
 
 While guests answer potluck contribution/menu questions, a fixed top reference bar shows total people Invited, confirmed Attending and the RSVP deadline. It contains no names, uses server-provided aggregate counts and reserves space above the questions on mobile and desktop. It is absent from Wedding, sit-down dinner and unrelated RSVP steps.
+
+Invitation text values support **All caps** in the selected value’s formatting controls. This is saved per value and applies after date formatting without changing gathering data or custom text. Text is vertically centered within its field using the same glyph measurements in the editor, preview, and exports; changing Height adjusts the centering.
