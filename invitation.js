@@ -101,6 +101,11 @@
     return field.allCaps?value.toUpperCase():value;
   }
 
+  function dateFormatOptions(field,eventState) {
+    const formats=field.key==='eventDate'?EVENT_DATE_FORMATTERS:RSVP_FORMATTERS;
+    return formats.map(([value])=>({value,label:fieldValue({...field,formatter:value},eventState) || value.split('-').join(' ')}));
+  }
+
   function snapHorizontal(field,canvasWidth,scale=1,enabled=true) {
     const x=(canvasWidth-field.width)/2;
     return enabled&&field.width<=canvasWidth&&Math.abs((field.x-x)*scale)<=8?{x,snapped:true}:{x:field.x,snapped:false};
@@ -212,6 +217,6 @@
     return issues;
   }
   function overflowWarnings(canvas,model){return overflowDetails(canvas,model).map(issue=>issue.label);}
-  root.Invitation = { versionedImageUrl, newImage, resizeImage, renderTextField, textFont, snapHorizontal, mandatoryFields, validateTemplate, templateRequirements, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowDetails, overflowWarnings };
+  root.Invitation = { dateFormatOptions, versionedImageUrl, newImage, resizeImage, renderTextField, textFont, snapHorizontal, mandatoryFields, validateTemplate, templateRequirements, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowDetails, overflowWarnings };
   if (typeof module !== 'undefined') module.exports = root.Invitation;
 })(typeof globalThis !== 'undefined' ? globalThis : window);
