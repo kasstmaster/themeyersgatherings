@@ -193,3 +193,5 @@ Invitation templates support multiple selection: Shift/Cmd/Ctrl-click to add or 
 Select one added invitation image to reveal **Replace image**. Replacement uploads new artwork and preserves the selected image’s position, box size, and stacking order; Undo restores the previous image. Existing shared artwork is retained for other templates.
 
 Hosts can upload an optional banner while creating a gathering. Empty main and first RSVP banners remain selectable in Edit mode through an upload placeholder, while guests see no empty placeholder. Banner uploads and replacements save independently for each gathering.
+
+The shared gathering-selection, browser, and installed-app icons use the bundled red rose with blue leaves in `assets/icons/`. The original artwork is retained as `rose-source.png`; square PNG and ICO variants preserve transparency and proportions. Icon references and the manifest are versioned to refresh browser caches without changing the installed app identity.
