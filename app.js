@@ -3511,7 +3511,7 @@ function refreshTemplateUndo(){for(const button of document.querySelectorAll('[d
 function restoreTemplateHistory(from,to){if(!from.length)return;to.push(structuredClone(templateDraft));templateDraft=from.pop();if(!templateDraft.fields.some(field=>field.id===selectedTemplateFieldId))selectedTemplateFieldId=templateDraft.fields.at(-1)?.id || '';document.querySelector('#templateEditorName').value=templateDraft.name;renderEditorFields();renderFieldInspector();loadTemplateBackgroundPreview(templateDraft.background);}
 function mountTemplateControl(element,parent){templateWorkspaceRestore.push([element,element.parentElement,element.nextSibling]);parent.append(element);element.hidden=false;}
 function openTemplateWorkspaceToolbar(){
-  ElementEditor.openWorkspace({root:document.querySelector('#invitationEditorDialog'),label:'Invitation editor',clearSelection:()=>{selectedTemplateFieldId='';renderEditorFields();renderFieldInspector();},actions:[['Undo',()=>restoreTemplateHistory(templateUndo,templateRedo)],['Redo',()=>restoreTemplateHistory(templateRedo,templateUndo)],['Done',()=>closeTemplateWorkspace()]],refresh:refreshTemplateUndo,
+  ElementEditor.openWorkspace({root:document.querySelector('#invitationEditorDialog'),label:'Invitation editor',clearSelection:()=>{selectedTemplateFieldId='';renderEditorFields();renderFieldInspector();},actions:[['Undo',()=>restoreTemplateHistory(templateUndo,templateRedo)],['Redo',()=>restoreTemplateHistory(templateRedo,templateUndo)]],refresh:refreshTemplateUndo,
     mountActions:parent=>{for(const id of ['saveTemplateButton','previewEditedTemplateButton'])mountTemplateControl(document.getElementById(id),parent);},
     mount:parent=>{mountTemplateControl(document.querySelector('#templateWorkspaceTools'),parent);},
     restore:()=>{for(const [element,parent,next] of templateWorkspaceRestore){parent.insertBefore(element,next?.parentElement===parent?next:null);if(element.id==='templateWorkspaceTools')element.hidden=true;}templateWorkspaceRestore=[];}
@@ -3592,7 +3592,7 @@ async function openTemplateEditor(id, localFile = null, draft = null) {
   if(!isHostView())return;commitAllPendingEditorInputs();if(SiteEditing.enabled)SiteEditing.toggle(render);
   const template = draft || invitationTemplatesForEvent().find(item => item.id === id); if (!template) return;
   await closeHostDialogs();
-  templateDraft = structuredClone(template);templateUndo=[];templateRedo=[];document.querySelector('#templateCenterGuide').hidden=true;document.querySelector('#templateAddValues').open=false; selectedTemplateFieldId = ''; pendingTemplateFieldKey = '';
+  templateDraft = structuredClone(template);templateUndo=[];templateRedo=[];document.querySelector('#templateCenterGuide').hidden=true; selectedTemplateFieldId = ''; pendingTemplateFieldKey = '';
   document.querySelector('#replaceTemplateBackground').value = ''; updateDropzone(document.querySelector('#replaceTemplateDropzone'), null);
   document.querySelector('#templateEditorError').textContent='';
   document.querySelector('#templateEditorHeading').textContent = templateDraft.name;
@@ -3617,7 +3617,7 @@ document.querySelector('#templateCanvasStage').addEventListener('click', event =
   recordTemplateUndo();
   if(field.type==='text')field.textAlign='center';
   const snapped=window.Invitation.snapHorizontal(field,templateDraft.background.width,scale,templateCenterSnap);field.x=snapped.x;document.querySelector('#templateCenterGuide').hidden=!snapped.snapped;
-  templateDraft.fields.push(field);document.querySelector('#templateAddValues').open=false; selectedTemplateFieldId = field.id; pendingTemplateFieldKey = ''; document.querySelector('#placementHelp').textContent = 'Choose another field or edit the selected field.'; renderEditorFields(); renderFieldInspector();
+  templateDraft.fields.push(field); selectedTemplateFieldId = field.id; pendingTemplateFieldKey = ''; document.querySelector('#placementHelp').textContent = 'Choose another field or edit the selected field.'; renderEditorFields(); renderFieldInspector();
 });
 async function replaceTemplateBackground(file) {
   const error = document.querySelector('#templateEditorError'); error.textContent = '';
@@ -4274,8 +4274,9 @@ document.querySelector('#editInvitationGatheringInfo').addEventListener('click',
 
 document.querySelector('#closeTemplateEditor').addEventListener('click',()=>closeTemplateWorkspace());
 document.querySelector('#templateSnapCenter').addEventListener('change',event=>{templateCenterSnap=event.target.checked;});
-document.querySelector('#centerTemplateField').addEventListener('click',()=>{const field=templateDraft?.fields.find(item=>item.id===selectedTemplateFieldId);if(!field)return;if(field.width>templateDraft.background.width){ElementEditor.workspaceStatus('Reduce this value’s width before centering it.');return;}recordTemplateUndo();field.x=(templateDraft.background.width-field.width)/2;renderEditorFields();renderFieldInspector();});
 document.querySelector('#removeTemplateField').addEventListener('click',()=>{if(!selectedTemplateFieldId)return;recordTemplateUndo();templateDraft.fields=templateDraft.fields.filter(item=>item.id!==selectedTemplateFieldId);selectedTemplateFieldId='';renderEditorFields();renderFieldInspector();});
 
 document.querySelector('#templateEditorName').addEventListener('input',event=>{if(document.querySelector('#invitationEditorDialog').hidden)return;recordTemplateUndo();templateDraft.name=event.target.value;refreshTemplateUndo();});
 window.addEventListener('beforeunload',event=>{if(templateHasUnsavedChanges()){event.preventDefault();event.returnValue='';}});
+
+document.querySelector('#uploadTemplateBackgroundButton').addEventListener('click',()=>document.querySelector('#replaceTemplateBackground').click());

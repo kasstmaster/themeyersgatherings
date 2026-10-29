@@ -1089,7 +1089,6 @@ body.template-workspace-open #hostToolsPanel{left:var(--editor-sidebar-width,220
 #templateCenterGuide[hidden]{display:none}
 .element-editor-toolbar #templateWorkspaceTools{margin:0;padding:0;border:0;min-width:0}
 .element-editor-toolbar #templateWorkspaceTools .field-toolbox{grid-template-columns:1fr 1fr;gap:4px}
-.element-editor-toolbar .template-dropzone{flex-basis:auto;min-height:50px;padding:8px!important;background:#292d35;border-color:#666;color:#fff!important}
 .element-editor-toolbar #templateWorkspaceTools>label{font:12px Arial,sans-serif}
 .element-editor-toolbar #templateSnapCenter{width:auto}
 .template-editor-page .editor-heading{padding-right:44px}
@@ -1098,8 +1097,23 @@ body.template-workspace-open #hostToolsPanel{left:var(--editor-sidebar-width,220
 @media print{#invitationEditorDialog{display:none!important}}
 .template-editor-page .editor-field.text{white-space:pre-wrap}
 .element-editor-toolbar #templateWorkspaceTools>label{flex-direction:row;align-items:center;gap:6px}
-.element-editor-toolbar #templateWorkspaceTools>details{margin:6px 0}
-.element-editor-toolbar #templateWorkspaceTools summary{cursor:pointer;padding:6px 0}
-.has-host-toolbar .element-editor-toolbar[data-editor-workspace]{padding-top:10px}
+.has-host-toolbar .element-editor-toolbar[data-editor-workspace]{padding:10px 10px 12px}
 [data-editor-workspace]>.element-editor-top,[data-editor-workspace]>.element-editor-row,[data-editor-workspace] [data-editor-panel]{width:100%;box-sizing:border-box}
 .element-editor-toolbar #templateWorkspaceTools{width:100%}
+/* Template actions stay visible; only formatting scrolls below them. */
+.element-editor-toolbar[data-editor-workspace]{width:min(220px,45vw);align-items:stretch}
+[data-editor-workspace] .element-editor-top{width:100%;min-width:0;max-height:65dvh;overflow-y:auto;overflow-x:hidden}
+[data-editor-workspace] .element-editor-top>.element-editor-row{flex:none;overflow:visible;min-width:0;padding:0}
+[data-editor-workspace]>.element-editor-formatting{flex:1;min-height:min(120px,25dvh);width:100%;overflow-y:auto;overflow-x:hidden;padding:0}
+[data-editor-workspace] .element-editor-panel{width:100%;min-width:0;border-top:0;padding-top:0;margin-top:0;overflow:visible}
+[data-editor-workspace] .element-editor-pair,[data-editor-workspace] #templateWorkspaceTools,[data-editor-workspace] #templateFieldToolbox{width:100%;min-width:0;max-width:none;box-sizing:border-box}
+.element-editor-toolbar[data-editor-workspace] :is(button,select,input,textarea){width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.element-editor-toolbar[data-editor-workspace] button{white-space:normal;overflow-wrap:anywhere}
+.element-editor-toolbar[data-editor-workspace] #templateFieldToolbox button{min-height:24px;padding:2px 4px;font-size:10px;line-height:1.15}
+.element-editor-toolbar[data-editor-workspace] #templateWorkspaceTools h3{font:600 11px/1.2 Arial,sans-serif;margin:8px 0 4px}
+.element-editor-toolbar[data-editor-workspace] #placementHelp{font-size:10px;line-height:1.2;margin:6px 0}
+.element-editor-toolbar[data-editor-workspace] #templateSnapCenter{width:auto;flex:none}
+[data-editor-workspace] [data-editor-status]:empty{display:none}
+[data-editor-gathering-management]:has(>button[hidden]){display:none}
+[data-editor-gathering-management]>button{display:flex;align-items:center;justify-content:center;gap:6px}
+[data-editor-gathering-management] .toolbar-icon{width:18px;height:18px;flex:none}
