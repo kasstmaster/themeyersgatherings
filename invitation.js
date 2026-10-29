@@ -70,13 +70,22 @@
       })
     };
   }
+  function newImage(image,canvas) {
+    const scale=Math.min(1,canvas.width*.4/image.width,canvas.height*.4/image.height),width=Math.max(1,Math.round(image.width*scale)),height=Math.max(1,Math.round(image.height*scale));
+    return {id:id('field'),key:'image',type:'image',label:'Image',image:{...image},lockAspect:true,width,height,x:Math.round((canvas.width-width)/2),y:Math.round((canvas.height-height)/2)};
+  }
+  function resizeImage(field,key,value) {
+    const next=Math.max(1,Number(value));if(!Number.isFinite(next))return;
+    field[key]=next;
+    if(field.lockAspect!==false){const ratio=field.image.width/field.image.height;if(key==='width')field.height=next/ratio;else field.width=next*ratio;}
+  }
   function createTemplate(name, background) {
     const now = new Date().toISOString();
     return { id: id(), name: String(name || 'Untitled template').trim(), background: { ...background }, fields: [], createdAt: now, updatedAt: now };
   }
   function duplicateTemplate(template, name = `${template.name} copy`) {
     const copy = createTemplate(name, template.background);
-    copy.fields = template.fields.map(field => ({ ...field, id: id('field') }));
+    copy.fields = template.fields.map(field => ({ ...field, ...(field.image?{image:{...field.image}}:{}), id: id('field') }));
     return copy;
   }
   function replaceBackground(template, background) {
@@ -101,7 +110,8 @@
   }
   function validateTemplate(template,event) {
     if(!event||typeof event!=='object')throw new Error('That gathering is no longer available.');
-    if(!template?.background||!Array.isArray(template.fields)||template.fields.some(field=>!field||!['text','qr'].includes(field.type)||typeof field.key!=='string'))throw new Error('This template has invalid field data.');
+    if(!template?.background||!Array.isArray(template.fields)||template.fields.some(field=>!field||!['text','qr','image'].includes(field.type)||typeof field.key!=='string'))throw new Error('This template has invalid field data.');
+    for(const field of template.fields.filter(field=>field.type==='image')){let url;try{url=new URL(field.image?.url);}catch{throw new Error('This image has not finished uploading.');}if(!['https:','http:'].includes(url.protocol)||url.username||url.password||![field.image.width,field.image.height,field.width,field.height].every(value=>Number.isFinite(value)&&value>0))throw new Error('This image has invalid dimensions or address.');}
     return true;
   }
   function templateRequirements(template,event) {
@@ -171,7 +181,8 @@
     canvas.width = template.background.width; canvas.height = template.background.height;
     ctx.drawImage(await loadImage(template.background.url, template.background.updatedAt || template.updatedAt), 0, 0, canvas.width, canvas.height);
     await loadTextFonts(template.fields,model.values);
-    template.fields.forEach(field => field.type === 'qr' ? drawQr(ctx, qr, field) : drawText(ctx, model.values[field.id], field));
+    const images=new Map(await Promise.all(template.fields.filter(field=>field.type==='image').map(async field=>[field.id,await loadImage(field.image.url,field.image.updatedAt)])));
+    for(const field of template.fields){if(field.type==='image')ctx.drawImage(images.get(field.id),field.x,field.y,field.width,field.height);else if(field.type==='qr')drawQr(ctx,qr,field);else drawText(ctx,model.values[field.id],field);}
     return canvas;
   }
   function overflowDetails(canvas,model) {
@@ -193,6 +204,6 @@
     return issues;
   }
   function overflowWarnings(canvas,model){return overflowDetails(canvas,model).map(issue=>issue.label);}
-  root.Invitation = { renderTextField, textFont, snapHorizontal, mandatoryFields, validateTemplate, templateRequirements, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowDetails, overflowWarnings };
+  root.Invitation = { versionedImageUrl, newImage, resizeImage, renderTextField, textFont, snapHorizontal, mandatoryFields, validateTemplate, templateRequirements, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowDetails, overflowWarnings };
   if (typeof module !== 'undefined') module.exports = root.Invitation;
 })(typeof globalThis !== 'undefined' ? globalThis : window);

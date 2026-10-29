@@ -47,3 +47,9 @@ Selecting a placed value always reopens its current formatting controls, includi
 The template sidebar uses full-width, wrapping controls. Its fixed options are Undo/Redo, **Save / Preview**, snap and Remove value, the always-visible Values choices, and Background’s single **Upload** button. Only the formatting region below those options scrolls; it has no repeated selected-value heading. Done remains in the Host toolbar. The redundant center action and Values/Background dropdowns are removed.
 
 Overflow diagnostics wait for the selected fonts and measure the visible glyph bounds using the same configured canvas font/alignment/spacing as rendering. They distinguish width from height; unused line-box leading and native canvas spacing are not counted twice. Changing the renderer must preserve editor/export parity and saved template geometry/styles.
+
+## Resizable image elements
+
+Use **Add image** in the Values area to upload PNG, JPEG or WebP artwork as a separate template element. It uses the existing Host-authenticated invitation upload storage and leaves the background unchanged. Select/drag the image to move it, drag its corner to resize, or set X/Y/Width/Height in the shared sidebar. **Keep proportions** defaults on; turn it off to stretch freely. Images participate in Undo/Redo, Remove value, Save/reload, template copying, preview and PNG output. The field array retains element stacking order; transparency is preserved. Save/Preview wait while an image is uploading, and leaving an upload warns about unsaved work.
+
+Image metadata lives in the owning template field (`type: image` with URL/original dimensions); pixels remain in the existing R2 invitation-artwork storage. Copied templates keep independent image metadata/geometry while referencing the existing asset. Removing an image element removes its template reference, preserving assets used by other templates. Existing templates require no migration, new secret or binding.
