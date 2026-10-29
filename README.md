@@ -187,3 +187,7 @@ While guests answer potluck contribution/menu questions, a fixed top reference b
 Invitation text values support **All caps** in the selected value’s formatting controls. This is saved per value and applies after date formatting without changing gathering data or custom text. Text is vertically centered within its field using the same glyph measurements in the editor, preview, and exports; changing Height adjusts the centering.
 
 Invitation Event Date formatting also offers a plain month/day/year option, such as **November 6 2026**, without ordinal suffixes or a comma.
+
+Invitation templates support multiple selection: Shift/Cmd/Ctrl-click to add or remove elements, or enable **Select multiple** and tap additional elements. Drag a selected element to move the selection together; relative spacing is preserved, movement stays within the artwork, and center snapping uses the group bounds. Undo/Redo reverses/reapplies a whole move. Click an unselected element with multiple selection off to return to individual formatting; Remove selected removes the selection in one undoable action. Selection itself is temporary and is not saved.
+
+Select one added invitation image to reveal **Replace image**. Replacement uploads new artwork and preserves the selected image’s position, box size, and stacking order; Undo restores the previous image. Existing shared artwork is retained for other templates.

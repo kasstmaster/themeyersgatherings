@@ -185,3 +185,16 @@ test('RSVP invitation prefix is Kindly RSVP By with reversible capitalization',(
  assert.equal(Invitation.formatRsvpDate(event.rsvpDate,'short-month-day'),'Nov. 7');assert.equal(Invitation.formatRsvpDate(event.rsvpDate,'month-day'),'November 7');
  assert.equal(event.rsvpDate,'2026-11-07');assert.equal(Invitation.formatRsvpDate(''),'');
 });
+
+test('multiple invitation elements move by one bounded delta preserving their spacing',()=>{
+ const fields=[{id:'text',x:20,y:30,width:100,height:30},{id:'image',x:180,y:100,width:80,height:80}],canvas={width:400,height:300};
+ const moved=Invitation.moveFields(fields,canvas,40,50,1,false);assert.deepEqual(moved.fields,[{id:'text',x:60,y:80},{id:'image',x:220,y:150}]);assert.equal(fields[0].x,20);
+ const edge=Invitation.moveFields(fields,canvas,500,-500,1,false);assert.deepEqual(edge.fields,[{id:'text',x:160,y:0},{id:'image',x:320,y:70}]);
+ const snapped=Invitation.moveFields(fields,canvas,58,0,1,true);assert.equal(snapped.snapped,true);assert.equal(snapped.fields[0].x,80);assert.equal(snapped.fields[1].x,240);
+ assert.deepEqual(Invitation.moveFields([],canvas,10,10),{fields:[],snapped:false});
+});
+
+test('replacing invitation images preserves position, dimensions, identity and old references',()=>{
+ const field=Invitation.newImage({url:'https://example.test/old.png',width:400,height:200},{width:800,height:800}),metadata={url:'https://example.test/new.png',width:600,height:300};
+ const replacement=Invitation.replaceImage(field,metadata);assert.equal(replacement.id,field.id);for(const key of ['x','y','width','height','lockAspect'])assert.equal(replacement[key],field[key]);assert.equal(field.image.url,'https://example.test/old.png');assert.equal(replacement.image.url,metadata.url);replacement.image.width=999;assert.equal(metadata.width,600);
+});

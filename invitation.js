@@ -78,6 +78,7 @@
     const scale=Math.min(1,canvas.width*.4/image.width,canvas.height*.4/image.height),width=Math.max(1,Math.round(image.width*scale)),height=Math.max(1,Math.round(image.height*scale));
     return {id:id('field'),key:'image',type:'image',label:'Image',image:{...image},lockAspect:true,width,height,x:Math.round((canvas.width-width)/2),y:Math.round((canvas.height-height)/2)};
   }
+  function replaceImage(field,image){return {...field,image:{...image}};}
   function resizeImage(field,key,value) {
     const next=Math.max(1,Number(value));if(!Number.isFinite(next))return;
     field[key]=next;
@@ -106,6 +107,15 @@
   function dateFormatOptions(field,eventState) {
     const formats=field.key==='eventDate'?EVENT_DATE_FORMATTERS:RSVP_FORMATTERS;
     return formats.map(([value])=>({value,label:(fieldValue({...field,formatter:value},eventState) || value.split('-').join(' ')).replace(/ /g,value.endsWith('-spaced')?'\u2002\u2002':' ')}));
+  }
+
+  function moveFields(fields,canvas,dx,dy,scale=1,snap=true) {
+    if(!fields.length)return {fields:[],snapped:false};
+    const left=Math.min(...fields.map(f=>f.x)),top=Math.min(...fields.map(f=>f.y)),right=Math.max(...fields.map(f=>f.x+f.width)),bottom=Math.max(...fields.map(f=>f.y+f.height));
+    const clamp=(value,min,max)=>min>max?0:Math.max(min,Math.min(max,value));
+    dx=clamp(Math.round(dx),-left,canvas.width-right);dy=clamp(Math.round(dy),-top,canvas.height-bottom);
+    const centered=snapHorizontal({x:left+dx,width:right-left},canvas.width,scale,snap);dx=centered.x-left;
+    return {fields:fields.map(f=>({id:f.id,x:f.x+dx,y:f.y+dy})),snapped:centered.snapped};
   }
 
   function snapHorizontal(field,canvasWidth,scale=1,enabled=true) {
@@ -219,6 +229,6 @@
     return issues;
   }
   function overflowWarnings(canvas,model){return overflowDetails(canvas,model).map(issue=>issue.label);}
-  root.Invitation = { dateFormatOptions, versionedImageUrl, newImage, resizeImage, renderTextField, textFont, snapHorizontal, mandatoryFields, validateTemplate, templateRequirements, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowDetails, overflowWarnings };
+  root.Invitation = { replaceImage, moveFields, dateFormatOptions, versionedImageUrl, newImage, resizeImage, renderTextField, textFont, snapHorizontal, mandatoryFields, validateTemplate, templateRequirements, copyForGathering, FIELD_DEFINITIONS, FONT_FAMILIES, EVENT_DATE_FORMATTERS, RSVP_FORMATTERS, parseDate, ordinal, formatEventDate, formatRsvpDate, newField, createTemplate, duplicateTemplate, replaceBackground, fieldValue, invitationModel, filenameFor, eligibleAccounts, render, overflowDetails, overflowWarnings };
   if (typeof module !== 'undefined') module.exports = root.Invitation;
 })(typeof globalThis !== 'undefined' ? globalThis : window);
