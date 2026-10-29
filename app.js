@@ -1725,10 +1725,9 @@ function renderInlineEditing(eventState=state) {
     SiteEditing.button('Add dish',()=>openCustomItem('Main Table'),document.querySelector('#gatheringMenuSection'));
     SiteEditing.portal(document.querySelector('#gatheringMenuSection'), 'menu items and claims', ['#menuAdminFields'], prepare);
   }
-  SiteEditing.field(document.querySelector('#eventPage .header-art'), 'header image', [
-    {label:'Gathering header banner URL (empty to remove)',value:state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header,type:'url'},
-    {label:'RSVP first-page banner URL (empty to remove; changes only RSVP)',value:state.rsvpHeaderImage ?? state.siteHeaderImage ?? EVENT_DETAILS[viewedEventId].header,type:'url'}
-  ], ([header,rsvpHeader])=>{state.siteHeaderImage=header;state.rsvpHeaderImage=rsvpHeader;}, {replace:false});
+  // Register the banner as an editable selection; image uploads use the
+  // shared Format panel and persist directly to this gathering's image slot.
+  SiteEditing.field(document.querySelector('#eventPage .header-art'), 'header image', [], null, {replace:false});
   SiteEditing.staticText(document.querySelector('#eventPage'));
   SiteEditing.staticText(document.querySelector('#rsvpDialog'));
   document.querySelectorAll('#eventPage [role="tablist"],#rsvpWeddingPages [role="tablist"],#weddingPartyTabs').forEach(nav => {

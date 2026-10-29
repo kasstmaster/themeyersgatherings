@@ -253,14 +253,16 @@
       const image=ElementAppearance.imageElement(target);
       const computedImage=getComputedStyle(ElementAppearance.surfaceElement(target)).backgroundImage;
       const currentImage=computedImage.startsWith('url(')?computedImage.slice(4,-1).replace(/^['"]|['"]$/g,''):'';
-      const imageUrlInput=labelInput(panel,'Image URL','url',image?(image.getAttribute('src') || ''):values.backgroundImage ?? currentImage,(value,input)=>{const safe=ElementAppearance.imageUrl(value.trim());if(safe===null){input.setCustomValidity('Use an http or https image URL.');input.reportValidity();return;}input.setCustomValidity('');ElementAppearance.updateImage(target,safe);});
+      // Banner artwork is uploaded from a file, not entered as a URL.
+      const bannerImage=Boolean(image?.matches('#eventHeaderImage,#rsvpFirstPageImage') || target.matches('.header-art'));
+      const imageUrlInput=bannerImage?null:labelInput(panel,'Image URL','url',image?(image.getAttribute('src') || ''):values.backgroundImage ?? currentImage,(value,input)=>{const safe=ElementAppearance.imageUrl(value.trim());if(safe===null){input.setCustomValidity('Use an http or https image URL.');input.reportValidity();return;}input.setCustomValidity('');ElementAppearance.updateImage(target,safe);});
       const upload=labelInput(panel,'Upload image','file','',async(_value,input)=>{
         const file=input.files[0],selected=target,eventId=context.eventId;if(!file)return;
         input.disabled=true;status('Uploading image…');
-        try{const url=await ElementAppearance.upload(file);if(context.eventId===eventId){ElementAppearance.updateImage(selected,url);if(imageUrlInput.isConnected)imageUrlInput.value=url;status('Image saved.');}}catch(error){status(error.message);}finally{input.disabled=false;}
+        try{const url=await ElementAppearance.upload(file);if(context.eventId===eventId){ElementAppearance.updateImage(selected,url);if(imageUrlInput?.isConnected)imageUrlInput.value=url;status('Image saved.');}}catch(error){status(error.message);}finally{input.disabled=false;}
       });upload.accept='image/png,image/jpeg,image/webp';
       selectInput(panel,'Image fit',image?['cover','contain','fill','none','scale-down']:['cover','contain','auto'],values.imageFit || (image?getComputedStyle(image).objectFit:getComputedStyle(ElementAppearance.surfaceElement(target)).backgroundSize),value=>ElementAppearance.update(target,{imageFit:value}));
-      button('Remove image',()=>{ElementAppearance.updateImage(target,'');imageUrlInput.value='';},panel);
+      button('Remove image',()=>{ElementAppearance.updateImage(target,'');if(imageUrlInput)imageUrlInput.value='';},panel);
     }
     if(name==='Format'){
       colorControls(panel,'Border','borderColor','borderAlpha','border-top-color');
