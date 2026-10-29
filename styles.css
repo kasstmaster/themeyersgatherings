@@ -1127,3 +1127,23 @@ body.template-workspace-open #hostToolsPanel{left:var(--editor-sidebar-width,220
 .element-editor-toolbar #addInvitationImage{margin-top:5px}
 
 .template-editor-page .editor-field{touch-action:none}
+
+/* A new gathering has no banner image yet. Keep its image slot selectable
+   while editing, without showing an empty banner to visitors. */
+#eventPage .site-header .header-art[data-empty-banner="true"][data-banner-editing="true"]::before{
+  content:"Click here to add a banner image";
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  width:min(85%,420px);
+  min-height:150px;
+  margin:0 auto 12px;
+  padding:18px;
+  border:2px dashed currentColor;
+  border-radius:8px;
+  opacity:.7;
+  font:600 14px/1.5 Arial,Helvetica,sans-serif;
+  letter-spacing:.02em;
+  cursor:pointer;
+}
