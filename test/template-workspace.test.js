@@ -24,3 +24,15 @@ test('invitation editor is a page using the common editor shell rather than a se
  assert.match(app,/ElementEditor.openWorkspace\(/);assert.match(app,/ElementEditor.workspaceControls\(/);assert.match(editor,/toolbar=toolbarFrame\(\)/);assert.match(editor,/toolbar=toolbarFrame\(adapter.label/);
  assert.match(app,/saveState\(\{refresh:false\}\);showToast\('Invitation template saved/);
 });
+
+test('reselecting a workspace value reveals current formatting after the panel was hidden',async()=>{
+ const vm=await import('node:vm'),source=await readFile(new URL('../element-editor.js',import.meta.url),'utf8');
+ const code=source.slice(source.indexOf('  function workspaceControls('),source.indexOf('  function updateWorkspaceValues('));
+ const panel={hidden:true,parentElement:{scrollTop:250},children:[],replaceChildren(){this.children=[];}},heading={text:'',replaceChildren(value){this.text=value;}},toolbar={querySelector(selector){return selector==='[data-editor-panel]'?panel:heading;}};
+ let refreshed=0;const control=(parent,label,options,value)=>{const result={label,value,dataset:{}};parent.children.push(result);return result;};
+ const context=vm.createContext({toolbar,workspace:{refresh(){refreshed++;}},document:{createTextNode:value=>value},selectInput:control});vm.runInContext(code,context);
+ context.workspaceControls('Event Date',[{key:'fontFamily',label:'Font',options:['Georgia','Times New Roman'],value:'Times New Roman'}],()=>{});
+ assert.equal(panel.hidden,false);assert.equal(panel.parentElement.scrollTop,0);assert.equal(heading.text,'Event Date');assert.equal(panel.children[0].value,'Times New Roman');
+ panel.hidden=true;context.workspaceControls('Event Time',[{key:'fontFamily',label:'Font',options:['Georgia','Times New Roman'],value:'Georgia'}],()=>{});
+ assert.equal(panel.hidden,false);assert.equal(heading.text,'Event Time');assert.equal(panel.children.length,1);assert.equal(panel.children[0].value,'Georgia');assert.equal(refreshed,2);
+});
