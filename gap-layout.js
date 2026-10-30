@@ -29,7 +29,7 @@
           if(gap.side==='before')before=anchor;
           else if(!before||before.parentElement!==parent||!before.matches('gathering-gap'))before=next;
         }
-        if(!parent || !follows&&gap.before&&!before || before&&before.parentElement!==parent || parent.closest(excluded) || !parent.matches('div,section,main,header,footer,form,fieldset,nav,article'))continue;
+        if(!parent || !follows&&gap.before&&!before || before&&before.parentElement!==parent || (parent.closest(excluded)||parent.closest('.gathering-banner')) || !parent.matches('div,section,main,header,footer,form,fieldset,nav,article'))continue;
         let element=nodes.get(gap.id);
         if(!element){element=document.createElement('gathering-gap');element.id='gathering-gap-'+gap.id;element.dataset.gapId=gap.id;element.style.display='block';nodes.set(gap.id,element);}
         paintGap(element,gap);
@@ -41,11 +41,13 @@
     applySpacing();scanSpaces();sideResize?.disconnect();for(const gap of ctx.state.siteGaps || [])if(gap.axis==='x'){const node=nodes.get(gap.id),anchor=gap.anchor?find(gap.anchor):gap.before?find(gap.before):node?.previousElementSibling;if(anchor){sideResize?.observe(anchor);if(anchor.parentElement)sideResize?.observe(anchor.parentElement);}}
   }
   function candidate(start,axis='y'){
+    // The image and its caption are one anchored surface; gaps belong outside it.
+    start=start?.closest('.gathering-banner') || start;
     const virtual=start?.closest('.existing-layout-gap');if(virtual){const info=virtualInfo.get(virtual);start=info?find(info.after):null;}
     if(!start || start.closest(excluded) || start.closest('[hidden],[data-rsvp-flow-hidden]'))return null;
     const root=globalThis.activeHostDialog?.() || document.querySelector('#eventPage:not([hidden]),#eventSelectionPage:not([hidden]),#attirePage:not([hidden]),#signInPage:not([hidden])');
     if(!root?.contains(start))return null;
-    let element=start.closest('gathering-gap') || SiteEditing.textOwner(start) || start.closest('button,h1,h2,h3,h4,p,time,img,article,section,fieldset,nav,.wedding-tab-content,.event-header-text');
+    let element=start.closest('gathering-gap') || SiteEditing.textOwner(start) || start.closest('button,h1,h2,h3,h4,p,time,img,article,section,fieldset,nav,.wedding-tab-content,.event-header-text,.gathering-banner');
     const control=element?.closest('button,a,label');if(control)element=control;
     const nav=element?.closest('nav:not(.toolbar-page-navigation)');if(nav && axis!=='x')element=nav;
     if(!element || !element.parentElement || element.closest(excluded) || !element.parentElement.matches('div,section,main,header,footer,form,fieldset,nav,article'))return null;
@@ -93,7 +95,7 @@
     const anchors=new Map();
     for(const gap of context?.state.siteGaps || []){
       if(gap.axis!=='x')continue;const element=nodes.get(gap.id),anchor=gap.anchor?find(gap.anchor):gap.before?find(gap.before):element?.previousElementSibling;
-      if(!element || !anchor || anchor.matches('gathering-gap') || anchor.parentElement!==element.parentElement || !anchor.getClientRects().length || anchor.closest('[hidden],[data-rsvp-flow-hidden]')){if(element)element.hidden=true;continue;}
+      if(!element || !anchor || anchor.closest('.gathering-banner')&&!anchor.matches('.gathering-banner') || anchor.matches('gathering-gap') || anchor.parentElement!==element.parentElement || !anchor.getClientRects().length || anchor.closest('[hidden],[data-rsvp-flow-hidden]')){if(element)element.hidden=true;continue;}
       element.hidden=false;if(!anchors.has(anchor))anchors.set(anchor,[]);anchors.get(anchor).push({element,gap,side:gap.side || (gap.before?'before':'after')});
     }
     for(const [anchor,entries] of anchors){
@@ -112,7 +114,7 @@
     for(const info of Object.values(context?.state.siteSpacing || {})){
       const after=find(info.after),before=info.before?find(info.before):null;
       const parent=before&&after&&before.parentElement===after.parentElement?after.parentElement:find(info.parent);
-      if(!parent||parent.closest(excluded))continue;
+      if(!parent||parent.closest(excluded)||parent.closest('.gathering-banner'))continue;
       if(info.padding&&['padding-top','padding-bottom','padding-left','padding-right'].includes(info.padding)){setStyle(find(info.parent)||parent,info.padding,size(info.size));continue;}
       if(!after || after.parentElement!==parent || !after.getClientRects().length || before&&!before.getClientRects().length)continue;
       const horizontal=info.axis==='x',property=horizontal?'margin-left':'margin-top';
@@ -140,7 +142,7 @@
       virtualInfo.set(element,info);element.dataset.gapAfter=info.after;element.dataset.gapBefore=info.before || '';element.dataset.gapLabel=`Gap · ${info.size} px`;element.setAttribute('aria-label',`${element.dataset.gapLabel} · ${padding || (before?ElementAppearance.label(before)+' → ':'')+ElementAppearance.label(after)}`);Object.assign(element.style,{left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px',display:rect.bottom<0||rect.top>innerHeight?'none':'block',pointerEvents:'auto'});
     };
     for(const parent of [root,...root.querySelectorAll('div,section,main,header,footer,form,fieldset,nav,article')]){
-      if(parent.closest(excluded) || parent.closest('[hidden],[data-rsvp-flow-hidden]') || !parent.getClientRects().length)continue;
+      if(parent.closest(excluded) || parent.closest('.gathering-banner') || parent.closest('[hidden],[data-rsvp-flow-hidden]') || !parent.getClientRects().length)continue;
       const children=[...parent.querySelectorAll(':scope>*')].filter(element=>!element.matches('.existing-layout-gap,script,style') && !element.closest(excluded) && !element.hidden && !element.hasAttribute('data-rsvp-flow-hidden') && element.getClientRects().length && !['absolute','fixed'].includes(getComputedStyle(element).position));
       if(!SiteEditing.textOwner(parent))for(let index=1;index<children.length;index++){
         const before=children[index-1],after=children[index],a=before.getBoundingClientRect(),b=after.getBoundingClientRect();
@@ -151,7 +153,7 @@
       if(children.length){const rect=parent.getBoundingClientRect();for(const [padding,top,height] of [['padding-top',rect.top+(parseFloat(getComputedStyle(parent).borderTopWidth)||0),parseFloat(getComputedStyle(parent).paddingTop)],['padding-bottom',rect.bottom-(parseFloat(getComputedStyle(parent).borderBottomWidth)||0)-parseFloat(getComputedStyle(parent).paddingBottom),parseFloat(getComputedStyle(parent).paddingBottom)]])if(height>=2)add(parent,null,children[padding==='padding-top'?0:children.length-1],'y',{left:rect.left+2,top,width:Math.max(0,rect.width-4),height,bottom:top+height},padding);}
     }
     for(const parent of [root,...root.querySelectorAll('div,section,main,header,footer,form,fieldset,article')]){
-      if(parent.closest(excluded) || parent.closest('[hidden],[data-rsvp-flow-hidden]') || !parent.getClientRects().length)continue;
+      if(parent.closest(excluded) || parent.closest('.gathering-banner') || parent.closest('[hidden],[data-rsvp-flow-hidden]') || !parent.getClientRects().length)continue;
       const child=parent.querySelector(':scope>*:not(script):not(style):not([hidden])');if(!child)continue;const rect=parent.getBoundingClientRect(),computed=getComputedStyle(parent);
       for(const [padding,width,left] of [['padding-left',parseFloat(computed.paddingLeft),rect.left],['padding-right',parseFloat(computed.paddingRight),rect.right-parseFloat(computed.paddingRight)]])if(width>=2)add(parent,null,child,'x',{left,top:rect.top+2,width,height:Math.max(0,rect.height-4),bottom:rect.bottom-2},padding);
     }
