@@ -260,3 +260,8 @@ test('first-page extra text boxes are public gathering content with host-only wr
  const guest=await f.guest();assert.deepEqual(guest.state.events.one.rsvpTextBlocks,[{id:'box-one',content:'First gathering note'}]);assert.equal((await f.patch(guest,[{path:['events','one','rsvpTextBlocks'],value:[]}])).status,403);
  const host=await f.host();assert.equal((await f.patch(host,[{path:['events','one','rsvpTextBlocks'],value:[{id:'box-one',content:'Updated note'}]}])).status,200);assert.equal(f.state.events.one.rsvpTextBlocks[0].content,'Updated note');assert.equal(f.state.events.wedding.rsvpTextBlocks[0].content,'Wedding note');
 });
+
+test('popup link contents follow the visibility of their original text fields without a public registry',async t=>{
+ const f=await fixture(t),publicLink='[More](#popup-text:'+encodeURIComponent('PUBLIC_POPUP_TEXT')+')',privateLink='[More](#popup-text:'+encodeURIComponent('PRIVATE_POPUP_TEXT')+')';f.state.events.one.rsvpIntroText=publicLink;f.state.events.one.hostNotes=privateLink;f.state.events.one.siteText['#hostNotesContent']=privateLink;
+ const guest=await f.guest(),serialized=JSON.stringify(guest.state);assert.equal(guest.state.events.one.rsvpIntroText,publicLink);assert.ok(serialized.includes('PUBLIC_POPUP_TEXT'));assert.ok(!serialized.includes('PRIVATE_POPUP_TEXT'));assert.equal((await f.patch(guest,[{path:['events','one','rsvpIntroText'],value:privateLink}])).status,403);
+});
