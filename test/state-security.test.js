@@ -237,3 +237,20 @@ test('guest home projection retains public entry palette version without exposin
 test('guest projections expose banner captions with the public gathering design',()=>{
  const state=initial();state.events.one.siteBannerText='Main caption';state.events.one.rsvpBannerText='RSVP caption';const view=projectState(state,{role:'guest',accountId:'existing-qr-token',person:'Casey Example'});assert.equal(view.events.one.siteBannerText,'Main caption');assert.equal(view.events.one.rsvpBannerText,'RSVP caption');assert.equal(view.events.one.hostNotes,undefined);
 });
+
+test('None keeps all menus private, rejects guest food writes, and preserves existing claims when saving RSVP',async t=>{
+ const f=await fixture(t),event=f.state.events.one;event.dinnerPlans={2099:{type:'none',selectedItems:['private-dish']}};event.sitDownMenu=[{id:'private-dish',name:'PRIVATE MENU'}];const beforeItems=structuredClone(event.items);
+ const guest=await f.guest();assert.equal(guest.response.status,200);assert.equal(guest.state.events.one.dinnerPlans[2099].type,'none');assert.equal(guest.state.events.one.dinnerSummary,undefined);assert.equal(guest.state.events.one.sitDownMenu,undefined);assert.deepEqual(guest.state.events.one.items,[]);
+ assert.equal((await f.patch(guest,[{path:['events','one','items'],value:[{id:'custom-ab',name:'No',category:'Sides',needed:1,unit:'item',claims:['Casey Example']}]}])).status,403);
+ assert.equal((await f.patch(guest,[{path:['events','one','dinnerPlans'],value:{2099:{type:'potluck'}}}])).status,403);
+ const response=[{name:'Casey Example',people:[{name:'Casey Example',attending:true}],adults:1,children:1,childNames:['Own Child']}];const saved=await f.patch(guest,[{path:['events','one','rsvps'],value:response}]);assert.equal(saved.status,200);assert.deepEqual(f.state.events.one.items,beforeItems);assert.deepEqual(f.state.events.one.dinnerPlans,event.dinnerPlans);assert.deepEqual(f.state.events.one.sitDownMenu,event.sitDownMenu);
+ const host=await f.host();assert.deepEqual(host.state.events.one.items,beforeItems);assert.equal(host.state.events.one.sitDownMenu[0].name,'PRIVATE MENU');
+});
+
+test('Drinks projects and authorizes only the alcoholic-drinks menu while preserving food and other claims',async t=>{
+ const f=await fixture(t),event=f.state.events.one;event.dinnerPlans={2099:{type:'drinks'}};event.drinksItems=[{id:'wine',name:'Wine',category:'Drinks',needed:3,unit:'item',claims:['Other Person']}];const food=structuredClone(event.items);
+ const guest=await f.guest();assert.deepEqual(guest.state.events.one.items,[]);assert.equal(guest.state.events.one.drinksItems[0].name,'Wine');assert.deepEqual(guest.state.events.one.drinksItems[0].claims,['__other_claim__']);assert.ok(guest.state.events.one.dinnerSummary);
+ assert.equal((await f.patch(guest,[{path:['events','one','items'],value:[{id:'custom-ab',name:'Food',category:'Sides',needed:1,unit:'item',claims:['Casey Example']}]}])).status,403);
+ const drinks=structuredClone(guest.state.events.one.drinksItems);drinks[0].claims.push('Casey Example');assert.equal((await f.patch(guest,[{path:['events','one','drinksItems'],value:drinks}])).status,200);assert.deepEqual(f.state.events.one.items,food);assert.deepEqual(f.state.events.one.drinksItems[0].claims,['Other Person','Casey Example']);
+ event.dinnerPlans[2099].type='potluck';f.state.events.one.dinnerPlans[2099].type='potluck';const potluck=await f.guest();assert.deepEqual(potluck.state.events.one.drinksItems,[]);assert.equal((await f.patch(potluck,[{path:['events','one','drinksItems'],value:drinks}])).status,403);
+});

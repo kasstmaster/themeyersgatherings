@@ -251,6 +251,7 @@ test('category addresses sync above account identity without changing access or 
 test('surname corrections retain invitation numbers, plus ones, RSVPs and history', () => {
   const oldName='David,Cameron Poretta/Sherie Porretta';
   const state={accounts:[{name:oldName,anyListCategoryId:'porretta',qrToken:'keep',invitationPeople:{wedding:{'David Poretta':1,'Cameron Poretta':2}},plusOnePeople:{wedding:['Cameron Poretta']}}],events:{wedding:{items:[{id:'ham',claims:[oldName],claimGroups:{[oldName]:{2:1}}}],rsvps:[{name:oldName,people:[{name:'Cameron Poretta',attending:true}],menuSelections:[{name:'Cameron Poretta',meal:'beef'}]}]}},gatheringHistory:{past:{name:oldName}}};
+  state.events.party={drinksItems:[{id:'wine',claims:[oldName],claimGroups:{[oldName]:{2:1}}}]};
   syncAnyListAccounts(state,[{...convertCategory('PORRETTA',[{name:'David Porretta'},{name:'Sherie Porretta'},{name:'Cameron Porretta'}]),id:'porretta'}]);
   assert.equal(state.accounts.length,1);
   assert.equal(state.accounts[0].name,'David,Sherie,Cameron Porretta');
@@ -261,5 +262,6 @@ test('surname corrections retain invitation numbers, plus ones, RSVPs and histor
   assert.equal(state.events.wedding.rsvps[0].people[0].name,'Cameron Porretta');
   assert.equal(state.events.wedding.rsvps[0].menuSelections[0].name,'Cameron Porretta');
   assert.equal(state.accounts[0].qrToken,'keep');
+  assert.deepEqual(state.events.party.drinksItems[0].claims,['David,Sherie,Cameron Porretta']);assert.deepEqual(state.events.party.drinksItems[0].claimGroups,{'David,Sherie,Cameron Porretta':{2:1}});
   assert.equal(state.gatheringHistory.past.name,oldName);
 });

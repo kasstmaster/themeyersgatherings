@@ -16,7 +16,7 @@ function render({event='thanksgiving',host=false,submitted=false,claims=[],tab=n
     hasSubmittedInvitationRsvp:()=>submitted,formatEditableText:value=>value,
     state:{items:[{claims}],hostNotes:'Private host notes'}
   });
-  vm.runInContext(renderer,context);
+  vm.runInContext('function contributionItems(){return state.items;}'+renderer,context);
   context.renderGatheringPages(GatheringFeatures.forGathering(event),host);
   return {menu:nodes.get('.menu-section'),notes:nodes.get('#hostNotesSection'),tabs:nodes.get('#gatheringTabs')};
 }

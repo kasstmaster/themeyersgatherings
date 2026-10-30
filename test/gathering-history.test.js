@@ -35,3 +35,8 @@ test('future dinner plans keep reusable private options without inheriting anoth
  const next=GatheringHistory.startNext(app,'christmas','2026-12-25',new Date('2026-01-01'));
  assert.deepEqual(next.sitDownMenu,[{id:'a',name:'Roast'}]);assert.equal(next.dinnerPlans[2026],undefined);assert.deepEqual(app.gatheringHistory.christmas['2025-12-25'].event.dinnerPlans[2025],{type:'sit-down',selectedItems:['a']});
 });
+
+test('yearly rollover archives alcoholic drink claims and clears only the next occurrence claims',()=>{
+ const app=fixture();app.events.christmas.drinksItems=[{id:'wine',name:'Wine',needed:2,claims:['Jane Smith'],claimGroups:{'Jane Smith':{1:1}}}];app.events.christmas.dinnerPlans={2025:{type:'drinks'}};
+ const next=GatheringHistory.startNext(app,'christmas','2026-12-25',new Date('2026-01-01'));assert.equal(next.drinksItems[0].name,'Wine');assert.deepEqual(next.drinksItems[0].claims,[]);assert.deepEqual(next.drinksItems[0].claimGroups,{});assert.equal(next.dinnerPlans[2026],undefined);assert.deepEqual(app.gatheringHistory.christmas['2025-12-25'].event.drinksItems[0].claims,['Jane Smith']);
+});

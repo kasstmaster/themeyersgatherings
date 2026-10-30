@@ -67,7 +67,7 @@ test('readiness endpoint is harmless, fails closed and contains no private confi
 });
 test('service gate rejects wrong version and never probes state on an old/unready service',async()=>{
   for(const body of [{ready:false,protocol:'state-auth-v1',commit},{ready:true,protocol:'old',commit},{ready:true,protocol:'state-auth-v1',commit:'b'.repeat(40)}]) {
-    let calls=0;await assert.rejects(verifyService('https://service',commit,async()=>{calls++;return Response.json(body);}));assert.equal(calls,1);
+    let calls=0;await assert.rejects(verifyService('https://service',commit,async()=>{calls++;return Response.json(body);},{attempts:1}));assert.equal(calls,1);
   }
   const urls=[];assert.deepEqual(await verifyService('https://service',commit,async url=>{urls.push(url);return url.endsWith('/state')?new Response('',{status:401}):Response.json({ready:true,protocol:'state-auth-v1',commit});}),{ready:true});
   assert.equal(urls.length,2);
@@ -123,4 +123,11 @@ test('preflight backup currency uses private metadata only and rejects stale/cor
     else {assert.deepEqual(await verifyBackupCurrency({STATE_REPOSITORY_TOKEN:'private-read'},fetcher),{ready:true});assert.equal(mainReads,2);}
   }
   await assert.rejects(verifyBackupCurrency({},async()=>{throw new Error('must not call');}));
+});
+
+test('service gate waits for commit propagation without probing old state or weakening security readiness',async()=>{
+ let health=0,denials=0,waits=0;const fetcher=async url=>{if(url.endsWith('/state')){denials++;return new Response('',{status:401});}health++;return Response.json({ready:true,protocol:'state-auth-v1',commit:health===1?'b'.repeat(40):commit});};
+ assert.deepEqual(await verifyService('https://service',commit,fetcher,{attempts:3,wait:async()=>{waits++;assert.equal(denials,0);}}),{ready:true});assert.equal(health,2);assert.equal(waits,1);assert.equal(denials,1);
+ let probes=0;await assert.rejects(verifyService('https://service',commit,async()=>{probes++;return Response.json({ready:true,protocol:'state-auth-v1',commit:'b'.repeat(40)});},{attempts:3,wait:async()=>{}}));assert.equal(probes,3);
+ probes=0;await assert.rejects(verifyService('https://service',commit,async()=>{probes++;return Response.json({ready:false,protocol:'state-auth-v1',commit:'b'.repeat(40)});},{attempts:3,wait:async()=>{throw new Error('Must not retry missing readiness');}}));assert.equal(probes,1);
 });

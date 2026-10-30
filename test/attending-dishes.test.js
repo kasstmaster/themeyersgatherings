@@ -7,7 +7,7 @@ const source=await readFile(new URL('../app.js',import.meta.url),'utf8');
 function fixture(event='thanksgiving'){
  const state={items:[{id:'ham',name:'Ham',needed:3,claims:['Family A','Person A']},{id:'pie',name:'Pie',needed:1,claims:['Family B']},{id:'salad',name:'Salad',needed:1,claims:[]}]};
  const context=vm.createContext({GuestPlanning,state,viewedEventId:event,HOST_DISPLAY_NAME:'Host',normalizeAccountName:value=>value.toLowerCase(),findAccount:name=>name==='Person A'?{name:'Family A'}:null,accountSignInNames:name=>[name],firstAccountLastName:name=>name,escapeHtml:value=>value,escapeAttribute:value=>value,GatheringFeatures:{forGathering:id=>({menu:id!=='wedding'})}});
- vm.runInContext(source.slice(source.indexOf('function renderDish('),source.indexOf('function claimItem('))+source.slice(source.indexOf('function dishClaimHousehold('),source.indexOf('function renderGuestAttendance(')),context);
+ vm.runInContext('function contributionItems(){return state.items;}'+source.slice(source.indexOf('function renderDish('),source.indexOf('function claimItem('))+source.slice(source.indexOf('function dishClaimHousehold('),source.indexOf('function renderGuestAttendance(')),context);
  return {context,state};
 }
 test('a household shows its dishes and quantities only once across invitation groups',()=>{

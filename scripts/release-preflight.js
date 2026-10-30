@@ -63,19 +63,25 @@ export async function verifyBackupCurrency(env,fetcher=boundedFetch) {
   return {ready:true};
 }
 
-export async function verifyService(url,commit,fetcher=boundedFetch) {
+export async function verifyService(url,commit,fetcher=boundedFetch,{attempts=12,delayMs=5000,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),onRetry=()=>{}}={}) {
   if(!/^[a-f0-9]{40}$/.test(commit))throw new Error('Invalid reviewed release commit.');
-  const health=await fetcher(url+'/health/state-auth',{cache:'no-store',redirect:'error'});
-  const data=await health.json();
-  if(!health.ok||data.ready!==true||data.protocol!=='state-auth-v1'||data.commit!==commit){
-    const checks={};
-    for(const key of ['activationReady','hostPasswordReady','storageReady','githubReady','releaseCommitReady'])if(typeof data.checks?.[key]==='boolean')checks[key]=data.checks[key];
-    throw Object.assign(new Error('Secure service readiness/commit verification failed. Do not publish the frontend.'),{safeDiagnostic:{status:health.status,protocolMatches:data.protocol==='state-auth-v1',ready:data.ready===true,commitMatches:data.commit===commit,checks}});
+  for(let attempt=1;attempt<=attempts;attempt++){
+    const health=await fetcher(url+'/health/state-auth',{cache:'no-store',redirect:'error'});
+    const data=await health.json();
+    if(!health.ok||data.ready!==true||data.protocol!=='state-auth-v1'||data.commit!==commit){
+      const checks={};
+      for(const key of ['activationReady','hostPasswordReady','storageReady','githubReady','releaseCommitReady'])if(typeof data.checks?.[key]==='boolean')checks[key]=data.checks[key];
+      // A healthy older deployment may still be propagating. Wait only for its
+      // commit to match; missing security readiness or protocol still fails closed.
+      if(health.ok&&data.ready===true&&data.protocol==='state-auth-v1'&&data.commit!==commit&&attempt<attempts){onRetry(attempt,attempts);await wait(delayMs);continue;}
+      throw Object.assign(new Error('Secure service readiness/commit verification failed. Do not publish the frontend.'),{safeDiagnostic:{status:health.status,protocolMatches:data.protocol==='state-auth-v1',ready:data.ready===true,commitMatches:data.commit===commit,checks}});
+    }
+    // The new implementation rejects before reading state; do not call on old code.
+    const denied=await fetcher(url+'/state',{cache:'no-store',redirect:'error'});
+    if(denied.status!==401)throw new Error('Anonymous state denial failed. Do not publish the frontend.');
+    return {ready:true};
   }
-  // The new implementation rejects before reading state; do not call on old code.
-  const denied=await fetcher(url+'/state',{cache:'no-store',redirect:'error'});
-  if(denied.status!==401)throw new Error('Anonymous state denial failed. Do not publish the frontend.');
-  return {ready:true};
+  throw new Error('Secure service verification did not complete. Do not publish the frontend.');
 }
 export async function verifyFrontend(commit,fetcher=boundedFetch,{attempts=12,delayMs=10000,wait=ms=>new Promise(resolve=>setTimeout(resolve,ms)),onRetry=()=>{}}={}) {
   if(!/^[a-f0-9]{40}$/.test(commit))throw new Error('Invalid reviewed release commit.');
@@ -94,7 +100,7 @@ export async function verifyFrontend(commit,fetcher=boundedFetch,{attempts=12,de
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    if(process.argv[2]==='service')await verifyService('https://curly-sun-ef0f.kassandraraudman.workers.dev',process.env.RELEASE_COMMIT);
+    if(process.argv[2]==='service')await verifyService('https://curly-sun-ef0f.kassandraraudman.workers.dev',process.env.RELEASE_COMMIT,boundedFetch,{onRetry:(attempt,total)=>console.log(`Waiting for matching secure backend receipt (${attempt}/${total}).`)});
     else if(process.argv[2]==='frontend')await verifyFrontend(process.env.RELEASE_COMMIT,boundedFetch,{onRetry:(attempt,total)=>console.log(`Waiting for matching frontend receipt (${attempt}/${total}).`)});
     else {await verifyBackupCurrency(process.env);await preflight(process.env);}
     console.log('Read-only release checks passed.');
