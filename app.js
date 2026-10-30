@@ -1522,7 +1522,7 @@ function gatheringBuilderContext(eventId=viewedEventId) {
     saveState({refresh:!SiteEditing.flushing,...options,eventId,eventState:home?data:appState.events[eventId]});
   };
   return {state:data,eventId,host:isHostView(),enabled:SiteEditing.enabled,editing:SiteEditing.enabled,
-    save,refresh:render,format:(value,options)=>formatEditableText(value,options),escape:escapeHtml,
+    save,addTextBlock:!home&&data?()=>addRsvpTextBlock(eventId,data):null,refresh:render,format:(value,options)=>formatEditableText(value,options),escape:escapeHtml,
     upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url};
 }
 function finishGatheringBuilderSession() {
@@ -1776,7 +1776,7 @@ function renderInlineEditing(eventState=state) {
 }
 function renderRsvpInlineEditing(eventState=state) {
   const state=eventState;
-  if (!SiteEditing.enabled) {document.querySelector('#weddingRsvpGuests')?.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());return;}
+  if (!SiteEditing.enabled) {const blocks=document.querySelector('#rsvpExtraTextBlocks');if(blocks)SiteEditing.movableText(blocks);document.querySelector('#weddingRsvpGuests')?.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());return;}
   const header=document.querySelector('#rsvpEventHeader .header-art');
   if(header)SiteEditing.field(header,'header image',[],null,{key:'rsvp-first-page-banner',replace:false});
   SiteEditing.field(document.querySelector('#rsvpBannerText'),'text',[{label:'Banner text',type:'textarea',value:bannerTextValue(document.querySelector('#rsvpFirstPageImage'),state)}],([value])=>{setBannerText(document.querySelector('#rsvpFirstPageImage'),value,state);},{key:'rsvpBannerText',placement:'text'});
@@ -1784,6 +1784,11 @@ function renderRsvpInlineEditing(eventState=state) {
   for(const [selector,value,key] of rsvpFirstPageTextFields()) {
     SiteEditing.field(document.querySelector(selector),'text',[{label:'Text (Markdown supported)',type:'textarea',value}],([text])=>{state[key]=text;},{key,placement:'text'});
   }
+  for(const block of rsvpTextBlocks(state)){
+    const target=document.getElementById(`rsvp-text-${block.id}`),save=gatheringBuilderContext().save;
+    SiteEditing.field(target,'text',[{label:'Text (Markdown supported)',type:'textarea',value:block.content}],([value])=>{block.content=value;},{key:`rsvp-text-${block.id}`,placement:'text',actions:[['Remove text box',()=>{ElementEditor.flush();state.rsvpTextBlocks=rsvpTextBlocks(state).filter(value=>value.id!==block.id);save();}]]});
+  }
+  const textBlocks=document.querySelector('#rsvpExtraTextBlocks');if(textBlocks)SiteEditing.movableText(textBlocks);
   if (!GatheringFeatures.rsvp(viewedEventId).meals) return;
   const preview=document.querySelector('#weddingRsvpGuests');
   if(!SiteEditing.enabled)preview.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());
@@ -2336,6 +2341,17 @@ function openRsvp({fromEntry=false,page=null}={}) {ensureAccount(() => {
 function compactRsvpDeadlineText(value){
   return String(value || '').replace(/(\bKindly\s+RSVP\s+by\s+(?:\*\*|\*|__|_)?)(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+\d{4})?\b/gi,(_match,prefix,month,day)=>`${prefix}${month.slice(0,3)}${month.length>3?'.':''} ${Number(day)}`);
 }
+function rsvpTextBlocks(event=state){return (Array.isArray(event.rsvpTextBlocks)?event.rsvpTextBlocks:[]).filter(block=>block&&typeof block.id==='string'&&/^[a-zA-Z0-9-]+$/.test(block.id)&&typeof block.content==='string');}
+function addRsvpTextBlock(eventId,event){
+  if(!isHostView()||!SiteEditing.enabled||viewedEventId!==eventId||appState.events[eventId]!==event)return;
+  commitAllPendingEditorInputs();ElementEditor.flush();
+  const block={id:crypto.randomUUID(),content:'New text box'};event.rsvpTextBlocks=[...rsvpTextBlocks(event),block];gatheringBuilderContext(eventId).save();
+  const target=document.getElementById(`rsvp-text-${block.id}`);if(target){target.scrollIntoView({block:'nearest'});ElementEditor.select(target);}
+}
+function renderRsvpTextBlocks(){
+  const root=document.querySelector('#rsvpExtraTextBlocks');if(!root)return;
+  const blocks=rsvpTextBlocks();root.hidden=!blocks.length;root.innerHTML=blocks.map(block=>`<div id="rsvp-text-${escapeAttribute(block.id)}" class="rsvp-extra-text" data-movable-text>${formatEditableText(block.content)}</div>`).join('');
+}
 function rsvpFirstPageTextFields() {
   const saved=state.siteText || {};
   return [
@@ -2368,6 +2384,7 @@ function renderRsvpEventHeader() {
   for(const [selector,value] of rsvpFirstPageTextFields()) {
     document.querySelector(selector).innerHTML=formatEditableText(compactRsvpDeadlineText(value));
   }
+  renderRsvpTextBlocks();
   SiteEditing.applyStaticText(document.querySelector('#rsvpDialog'),state,(value,options)=>formatEditableText(value,options));
 }
 document.querySelector('#rsvpConfirmEvent').addEventListener('click',()=>document.querySelector('#rsvpForm').requestSubmit(document.querySelector('#rsvpNext')));

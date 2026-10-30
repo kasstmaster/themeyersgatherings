@@ -160,3 +160,7 @@ The non-wedding **Dinner plan → None** option skips food-contribution question
 The Dinner plan dropdown is ordered Potluck, Sit Down Dinner, Drinks (alcoholic drinks), then None.
 
 Banner captions keep paragraph margins at zero at every indentation level, so indented lines follow the chosen line height without extra browser-default spacing. Indentation, deliberate blank lines and existing text formatting remain intact.
+
+On any gathering’s first RSVP page, **Edit → Add text box** inserts a separate text box below the date/address information and above RSVP. Add multiple boxes, double-click to type, and use the shared Format controls (including line height, fonts, emphasis, lists and effects). Drag boxes to reorder them within that area or use Move up/Move down. Select a box and choose Remove text box to delete it; Undo/Redo and autosave use the shared editor. Each box’s content and formatting belong only to that gathering. Guests see the saved boxes without editing controls. The gathering-selection page and invitation-template editor do not offer this action.
+
+Saved first-page text boxes are included with the gathering information in page print/email headers.

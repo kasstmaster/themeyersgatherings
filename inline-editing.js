@@ -60,7 +60,7 @@
   function staticTextElements(root) {
     // Text blocks, headings and captions can be changed without changing links or controls.
     return [...root.querySelectorAll('h1,h2,h3,h4,h5,h6,p,footer address')].filter(element =>
-      !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.element-editor-toolbar,#hostToolsPanel,#editItemsButton,#rsvpFirstPageText,#rsvpFirstPageDetails,.gathering-banner-text,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
+      !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.element-editor-toolbar,#hostToolsPanel,#editItemsButton,#rsvpFirstPageText,#rsvpFirstPageDetails,#rsvpExtraTextBlocks,.gathering-banner-text,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
       !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#rsvpDeadline,#signedInAccountName,#customGatheringHeading,#weddingPartyHeading,#weddingPartyKicker'));
   }
   function applyStaticText(root,state,format) {
@@ -210,10 +210,10 @@
     }
   }
   function movableText(root,{contentRoot=null,headerIds=[]}={}){
-    for(const text of root.querySelectorAll('p[id]'))if(!layoutOriginals.has(text.parentElement))layoutOriginals.set(text.parentElement,[...text.parentElement.children]);
+    for(const text of root.querySelectorAll('p[id],[data-movable-text]'))if(!layoutOriginals.has(text.parentElement))layoutOriginals.set(text.parentElement,[...text.parentElement.children]);
     for(const [path,placement] of Object.entries(context.state.siteElementPlacements || {})){
       let text,parent,before;try{text=document.querySelector(path);parent=document.querySelector(placement.parent);before=placement.before?document.querySelector(placement.before):null;}catch{continue;}
-      if(text?.matches('p[id]') && root.contains(text) && root.contains(parent) && !text.contains(parent) && (!before || before.parentElement===parent))parent.insertBefore(text,before);
+      if(text?.matches('p[id],[data-movable-text]') && root.contains(text) && root.contains(parent) && !text.contains(parent) && (!before || before.parentElement===parent))parent.insertBefore(text,before);
     }
     const orders=context.state.siteElementOrder || {};
     for(const [path,ids] of Object.entries(orders)){
@@ -224,9 +224,9 @@
       for(const child of children)if(!ordered.includes(child))ordered.push(child);
       for(const child of ordered)parent.append(child);
     }
-    if(contentRoot){for(const id of headerIds){const text=root.querySelector('#'+CSS.escape(id));if(text && (text.parentElement!==root || [...root.children].indexOf(text)>[...root.children].indexOf(contentRoot)))root.insertBefore(text,contentRoot);}const children=[...root.children],panelIndex=children.indexOf(contentRoot),bodyTexts=children.filter(text=>text.matches('p[id]') && !headerIds.includes(text.id));contentRoot.prepend(...bodyTexts.filter(text=>children.indexOf(text)<panelIndex));contentRoot.append(...bodyTexts.filter(text=>children.indexOf(text)>panelIndex));}
+    if(contentRoot){for(const id of headerIds){const text=root.querySelector('#'+CSS.escape(id));if(text && (text.parentElement!==root || [...root.children].indexOf(text)>[...root.children].indexOf(contentRoot)))root.insertBefore(text,contentRoot);}const children=[...root.children],panelIndex=children.indexOf(contentRoot),bodyTexts=children.filter(text=>text.matches('p[id],[data-movable-text]') && !headerIds.includes(text.id));contentRoot.prepend(...bodyTexts.filter(text=>children.indexOf(text)<panelIndex));contentRoot.append(...bodyTexts.filter(text=>children.indexOf(text)>panelIndex));}
     if(!enabled || !context.host)return;
-    for(const text of root.querySelectorAll('p[id]')){
+    for(const text of root.querySelectorAll('p[id],[data-movable-text]')){
       const record=editTargets.get(text);if(!record || text.closest('[role="status"],[role="alert"]'))continue;
       text.draggable=true;cleanup.push(()=>text.removeAttribute('draggable'));record.options??={};record.options.movableRoot=contentRoot && !headerIds.includes(text.id)?contentRoot:root;record.options.headerOnly=headerIds.includes(text.id);
       const move=direction=>{
@@ -239,7 +239,7 @@
     }
   }
   function movableTextRoot(element){
-    const text=element?.closest('p[id]'),root=text && editTargets.get(text)?.options?.movableRoot;
+    const text=element?.closest('p[id],[data-movable-text]'),root=text && editTargets.get(text)?.options?.movableRoot;
     return enabled && context.host && root?{text,root}:null;
   }
   function canMoveText(text,anchor){

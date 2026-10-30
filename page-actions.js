@@ -40,7 +40,7 @@
   function printHeader(surface) {
     if(surface?.contains(document.getElementById('rsvpEventHeader')))return '';
     const header=document.createElement('header');header.className='printed-gathering-header';
-    for(const id of ['rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails']){
+    for(const id of ['rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpExtraTextBlocks']){
       const source=document.getElementById(id);
       if(!source?.textContent.trim())continue;
       const block=document.createElement(id==='rsvpFirstPageDate'?'strong':'div');
