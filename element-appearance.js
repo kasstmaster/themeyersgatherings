@@ -84,6 +84,7 @@
     if(target.matches('[role="tab"],[data-wedding-tab],[data-gathering-tab],[data-matron-tab],[data-media-tab]'))return 'tabs';
     if(target.matches('button,a.primary-button,a.registry-button,.primary-button'))return 'buttons';
     if(target.matches('.section-kicker,.event-selection-intro'))return 'introductions';
+    if(target.matches('#rsvpFirstPageDate,#eventDate'))return 'dates';
     if(target.matches('h1,h2,h3,h4,h5,h6,legend,.dish-title'))return 'titles';
     // A subpage may also carry outer-page classes for layout; its surface stays inner.
     if(target.id!=='rsvpForm' && target.closest('#rsvpForm,.count-list-dialog') && target.matches('.host-outer-panel,.wedding-tab-page,.gathering-page,.registry-section,.wedding-party-section,.wedding-timeline-section'))return 'inner-containers';
@@ -289,7 +290,7 @@
         if(values.toolbarTextColor)clear(['textColor','textAlpha'],'unselected');if(values.toolbarSelectedColor)clear(['textColor','textAlpha'],'selected');
         if(values.toolbarOptionBackground)clear(['backgroundColor','backgroundAlpha','backgroundImage'],'unselected');if(values.toolbarSelectedBackground)clear(['backgroundColor','backgroundAlpha','backgroundImage'],'selected');
       }
-      styles[path]={...styles[path],...values};apply();context.save();
+      styles[path]={...styles[path],...values};apply();if(group(target)==='dates')for(const date of find('@group:dates'))globalThis.FittedText?.fit(date);context.save();
     },
     upload:file=>context.upload(file),
     render,restore,refreshControls,selector,textSelector,colorParts,imageUrl,textValue,storeText,applyText,isMultiline,manages:element=>applied.has(element)};

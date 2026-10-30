@@ -73,3 +73,7 @@ test('all popup cards, close buttons and headings share count-list groups; RSVP 
   }
  }
 });
+
+test('generated date labels share formatting within a gathering without becoming title content',()=>{
+ const f=fixture();for(const id of ['rsvpFirstPageDate','eventDate']){const target={matches:selector=>selector==='#rsvpFirstPageDate,#eventDate',closest:()=>null};assert.equal(f.api.group(target),'dates',id);}
+});
