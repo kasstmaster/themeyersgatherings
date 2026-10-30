@@ -1028,7 +1028,7 @@ async function copyMenu() {
 }
 function bannerTextKey(image){return image.id==='rsvpFirstPageImage'?'rsvpBannerText':image.id==='eventHeaderImage'?'siteBannerText':null;}
 function bannerTextValue(image,eventState=state){const key=bannerTextKey(image),value=key==='rsvpBannerText'?eventState.rsvpBannerText??eventState.siteBannerText??'':key?eventState[key]??'':'';return typeof value==='string'?value:'';}
-function renderBannerText(image){const text=image.closest?.('.gathering-banner')?.querySelector('.gathering-banner-text');if(!text)return;const value=bannerTextValue(image);text.innerHTML=formatEditableText(value);text.hidden=!value.trim();}
+function renderBannerText(image){const text=image.closest?.('.gathering-banner')?.querySelector('.gathering-banner-text');if(!text || text.isContentEditable || globalThis.ElementEditor?.ownsText?.(text))return;const value=bannerTextValue(image),html=formatEditableText(value);if(text.innerHTML!==html)text.innerHTML=html;text.hidden=!value.trim();}
 function setBannerText(image,value,eventState=state){const key=bannerTextKey(image);if(!key)return false;eventState[key]=String(value);if(eventState===state){const overlay=image.closest('.gathering-banner')?.querySelector('.gathering-banner-text'),field=overlay&&SiteEditing.editorFor(overlay)?.fields?.[0];if(field)field.value=eventState[key];renderBannerText(image);}return true;}
 function updateBannerSlot(image,source){const slot=image.closest('.header-art');if(slot){slot.dataset.emptyBanner=String(!source);slot.dataset.bannerEditing=String(isHostView()&&SiteEditing.enabled);}renderBannerText(image);}
 function updateHeaderImage(event) {
