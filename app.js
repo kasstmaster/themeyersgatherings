@@ -1034,7 +1034,11 @@ async function copyMenu() {
   }
   showToast('Menu copied! It is ready to paste into a message.');
 }
-function updateBannerSlot(image,source){const slot=image.closest('.header-art');if(slot){slot.dataset.emptyBanner=String(!source);slot.dataset.bannerEditing=String(isHostView()&&SiteEditing.enabled);}}
+function bannerTextKey(image){return image.id==='rsvpFirstPageImage'?'rsvpBannerText':image.id==='eventHeaderImage'?'siteBannerText':null;}
+function bannerTextValue(image,eventState=state){const key=bannerTextKey(image),value=key==='rsvpBannerText'?eventState.rsvpBannerText??eventState.siteBannerText??'':key?eventState[key]??'':'';return typeof value==='string'?value:'';}
+function renderBannerText(image){const text=image.closest?.('.gathering-banner')?.querySelector('.gathering-banner-text');if(!text)return;const value=bannerTextValue(image);text.innerHTML=formatEditableText(value);text.hidden=!value.trim();}
+function setBannerText(image,value,eventState=state){const key=bannerTextKey(image);if(!key)return false;eventState[key]=String(value);if(eventState===state){const overlay=image.closest('.gathering-banner')?.querySelector('.gathering-banner-text'),field=overlay&&SiteEditing.editorFor(overlay)?.fields?.[0];if(field)field.value=eventState[key];renderBannerText(image);}return true;}
+function updateBannerSlot(image,source){const slot=image.closest('.header-art');if(slot){slot.dataset.emptyBanner=String(!source);slot.dataset.bannerEditing=String(isHostView()&&SiteEditing.enabled);}renderBannerText(image);}
 function updateHeaderImage(event) {
   const headerImage = document.querySelector('#eventHeaderImage');
   const nextSource = state.siteHeaderImage ?? event.header ?? '';
@@ -1647,7 +1651,7 @@ function render() {
   renderWeddingPageToolbar();
   renderHostFirstPageActions();
   renderRsvpPageNavigation();
-  ElementAppearance.render({...builder,
+  ElementAppearance.render({...builder,getBannerText:image=>bannerTextValue(image,builder.state),setBannerText:(image,value)=>setBannerText(image,value,builder.state),
     setImage:(image,url)=>{const key=image.id==='rsvpFirstPageImage'?'rsvpHeaderImage':image.id==='eventHeaderImage'?'siteHeaderImage':null;if(!key)return false;state[key]=url;const field=SiteEditing.editorFor(image.closest('.header-art'))?.fields?.[0];if(field)field.value=url;return true;},
     save:()=>builder.save({refresh:false})});
   GapLayout.refresh();
@@ -1774,6 +1778,7 @@ function renderInlineEditing(eventState=state) {
     const target=document.querySelector(field.part==='title'?'#weddingPartyHeading':'#weddingPartyKicker');
     SiteEditing.field(target,'text',[{label:'Text (Markdown supported)',type:'textarea',value:field.value}],([value])=>{state.siteText??={};state.siteText[field.path]=value;},{key:field.key,placement:'text'});
   }
+  for(const [imageId,textId] of [['eventHeaderImage','eventBannerText'],['rsvpFirstPageImage','rsvpBannerText']]){const image=document.getElementById(imageId),target=document.getElementById(textId),owner=state;SiteEditing.field(target,'text',[{label:'Banner text',type:'textarea',value:bannerTextValue(image,owner)}],([value])=>{setBannerText(image,value,owner);},{key:textId,placement:'text'});}
   renderRsvpInlineEditing();
   SiteEditing.movableText(document.querySelector('#weddingMediaSection'),{contentRoot:document.querySelector('#weddingMediaUpload'),headerIds:['weddingMediaIntro']});
 }
@@ -1782,6 +1787,7 @@ function renderRsvpInlineEditing(eventState=state) {
   if (!SiteEditing.enabled) {document.querySelector('#weddingRsvpGuests')?.querySelectorAll('[data-edit-meal-preview]').forEach(element=>element.remove());return;}
   const header=document.querySelector('#rsvpEventHeader .header-art');
   if(header)SiteEditing.field(header,'header image',[],null,{key:'rsvp-first-page-banner',replace:false});
+  SiteEditing.field(document.querySelector('#rsvpBannerText'),'text',[{label:'Banner text',type:'textarea',value:bannerTextValue(document.querySelector('#rsvpFirstPageImage'),state)}],([value])=>{setBannerText(document.querySelector('#rsvpFirstPageImage'),value,state);},{key:'rsvpBannerText',placement:'text'});
   SiteEditing.field(document.querySelector('#rsvpFirstPageDate'),'date',[],()=>{},{contentReadOnly:true});
   for(const [selector,value,key] of rsvpFirstPageTextFields()) {
     SiteEditing.field(document.querySelector(selector),'text',[{label:'Text (Markdown supported)',type:'textarea',value}],([text])=>{state[key]=text;},{key,placement:'text'});
@@ -4204,7 +4210,7 @@ document.querySelector('#newGatheringForm').addEventListener('submit',async even
     }finally{createButton.disabled=false;}
   }
   const id=`gathering-${crypto.randomUUID()}`;
-  appState.events[id]={...makeEvent([],document.querySelector('#newGatheringDate').value),gatheringName:name,gatheringTheme:'neutral',homeAddress:document.querySelector('#newGatheringAddress').value.trim(),...(bannerUrl?{siteHeaderImage:bannerUrl,rsvpHeaderImage:bannerUrl}:{})};
+  appState.events[id]={...makeEvent([],document.querySelector('#newGatheringDate').value),gatheringName:name,gatheringTheme:'neutral',homeAddress:document.querySelector('#newGatheringAddress').value.trim(),siteBannerText:document.querySelector('#newGatheringBannerText').value,rsvpBannerText:document.querySelector('#newGatheringBannerText').value,...(bannerUrl?{siteHeaderImage:bannerUrl,rsvpHeaderImage:bannerUrl}:{})};
   for(const account of appState.accounts){
     account.selectedEvents={...account.selectedEvents,[id]:false};
     account.invitedEvents={...account.invitedEvents,[id]:false};

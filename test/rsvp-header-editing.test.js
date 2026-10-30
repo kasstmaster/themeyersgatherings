@@ -3,16 +3,16 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const source=await readFile(new URL('../app.js',import.meta.url),'utf8');
-const bannerCode=source.slice(source.indexOf('function updateBannerSlot('),source.indexOf('function updateHeaderImage('));
+const bannerCode=source.slice(source.indexOf('function bannerTextKey('),source.indexOf('function updateHeaderImage('));
 const headerCode=source.slice(source.indexOf('function compactRsvpDeadlineText('),source.indexOf("document.querySelector('#rsvpConfirmEvent').addEventListener"));
 const editorCode=source.slice(source.indexOf('function renderRsvpInlineEditing('),source.indexOf('function renderEventDock()'));
 function fixture(editing,eventId='thanksgiving'){
- const fields=[],section={hidden:true},confirm={dataset:{},setAttribute(key,value){this[key]=value;},querySelector(){return {setAttribute:(key,value)=>{this.icon=value;}};}},wrong={},image={src:'main.png',hidden:false,closest(){return clone;},removeAttribute(){this.src='';},addEventListener(){}};
+ const fields=[],section={hidden:true},confirm={dataset:{},setAttribute(key,value){this[key]=value;},querySelector(){return {setAttribute:(key,value)=>{this.icon=value;}};}},wrong={},image={src:'main.png',hidden:false,closest(selector){return !selector||selector==='.header-art'?clone:null;},removeAttribute(){this.src='';},addEventListener(){}};
  const clone={dataset:{},removeAttribute(){},querySelector:()=>image,querySelectorAll:selector=>selector==='img[src]'&&image.src?[image]:[]};
  const container={replaceChildren(node){this.child=node;}};
  const nodes={'#rsvpEventConfirmation':section,'#rsvpConfirmEvent':confirm,'#rsvpWrongEvent':wrong,'#eventPage .header-art':{cloneNode:()=>clone},'#rsvpEventHeader':container,'#rsvpEventHeader .header-art':clone,'#rsvpFirstPageImage':image,'#rsvpFirstPageDate':{},'#eventDate':{textContent:'October 23 2026'},'#rsvpFirstPageText':{},'#rsvpFirstPageDetails':{}};
  const state={rsvpHeaderImage:'rsvp.png'};
- const context=vm.createContext({state,isHostView:()=>true,gatheringRsvpStatus:()=>'',gatheringHeaderAddress:()=> 'Address',formatEditableText:value=>value,expandEditableTextVariables:value=>value,viewedEventId:eventId,EVENT_DETAILS:{[eventId]:{header:'main.png'}},GatheringFeatures:{rsvp:()=>({meals:false})},SiteEditing:{enabled:editing,applyStaticText(){},field:(target,title,specs,commit,options)=>fields.push({target,title,specs,commit,options})},document:{querySelector:selector=>nodes[selector]}});
+ const context=vm.createContext({state,isHostView:()=>true,gatheringRsvpStatus:()=>'',gatheringHeaderAddress:()=> 'Address',formatEditableText:value=>value,expandEditableTextVariables:value=>value,viewedEventId:eventId,EVENT_DETAILS:{[eventId]:{header:'main.png'}},GatheringFeatures:{rsvp:()=>({meals:false})},SiteEditing:{enabled:editing,applyStaticText(){},field:(target,title,specs,commit,options)=>{if(target)fields.push({target,title,specs,commit,options});}},document:{querySelector:selector=>nodes[selector]}});
  vm.runInContext(bannerCode+headerCode+editorCode,context);
  return {context,fields,section,confirm,wrong,image};
 }
@@ -34,7 +34,7 @@ test('all first pages have one fixed image, date, two text slots and shared firs
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
  const section=html.slice(html.indexOf('<section id="rsvpEventConfirmation"'),html.indexOf('<div id="rsvpWeddingPages"'));
  const ids=[...section.matchAll(/id="([^"]+)"/g)].map(match=>match[1]);
- assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','hostFirstPageActions','weddingRsvpUploadToolbar','weddingPartyTabs','uploadPhotosButton','hostRsvpCounters','guestListButton','guestCount','notAttendingButton','notAttendingCount','noResponseButton','noResponseCount','invitedListButton','invitedCount']);
+ assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpBannerText','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','hostFirstPageActions','weddingRsvpUploadToolbar','weddingPartyTabs','uploadPhotosButton','hostRsvpCounters','guestListButton','guestCount','notAttendingButton','notAttendingCount','noResponseButton','noResponseCount','invitedListButton','invitedCount']);
  assert.doesNotMatch(headerCode,/cloneNode/);
  for(const id of ['wedding','thanksgiving','christmas','new-gathering']){
   const f=fixture(true,id);f.context.renderRsvpEventHeader();f.context.renderRsvpInlineEditing();
@@ -75,4 +75,16 @@ test('first RSVP information shortens only Kindly RSVP by dates without changing
  assert.equal(f.context.compactRsvpDeadlineText(original),'**Kindly RSVP by Nov. 7**\nEvent on November 21, 2026');
  assert.equal(f.context.compactRsvpDeadlineText('Kindly RSVP by November 7'),'Kindly RSVP by Nov. 7');assert.equal(f.context.compactRsvpDeadlineText('Kindly RSVP by **December 1st 2027**'),'Kindly RSVP by **Dec. 1**');assert.equal(f.context.compactRsvpDeadlineText('Kindly RSVP by May 5, 2026'),'Kindly RSVP by May 5');assert.equal(f.context.compactRsvpDeadlineText('Kindly RSVP by Nov. 7'),'Kindly RSVP by Nov. 7');
  assert.equal(f.context.state.rsvpDetailsText,original);
+});
+
+test('banner text stays in its gathering and slot, supports fallback and remains optional',()=>{
+ const f=fixture(true),overlay={innerHTML:'',hidden:true},wrapper={querySelector:()=>overlay},image={id:'rsvpFirstPageImage',closest:selector=>selector==='.gathering-banner'?wrapper:null};
+ f.context.state.siteBannerText='Main caption';assert.equal(f.context.bannerTextValue(image),'Main caption');f.context.renderBannerText(image);assert.equal(overlay.innerHTML,'Main caption');assert.equal(overlay.hidden,false);
+ f.context.SiteEditing.editorFor=()=>null;f.context.setBannerText(image,'RSVP caption');assert.equal(f.context.state.siteBannerText,'Main caption');assert.equal(f.context.state.rsvpBannerText,'RSVP caption');assert.equal(overlay.innerHTML,'RSVP caption');
+ f.context.setBannerText(image,'');assert.equal(overlay.hidden,true);assert.equal(f.context.bannerTextValue(image),'');
+ const other=fixture(true,'another-gathering');assert.equal(other.context.bannerTextValue(image),'');
+});
+
+test('delayed banner text commits remain attached to the original gathering',()=>{
+ const f=fixture(true),owner=f.context.state,overlay={innerHTML:'New page'},image={id:'rsvpFirstPageImage',closest:()=>({querySelector:()=>overlay})};f.context.state={rsvpBannerText:'Other gathering'};f.context.setBannerText(image,'Original gathering edit',owner);assert.equal(owner.rsvpBannerText,'Original gathering edit');assert.equal(f.context.state.rsvpBannerText,'Other gathering');assert.equal(overlay.innerHTML,'New page');
 });

@@ -60,7 +60,7 @@
   function staticTextElements(root) {
     // Text blocks, headings and captions can be changed without changing links or controls.
     return [...root.querySelectorAll('h1,h2,h3,h4,h5,h6,p,footer address')].filter(element =>
-      !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.element-editor-toolbar,#hostToolsPanel,#editItemsButton,#rsvpFirstPageText,#rsvpFirstPageDetails,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
+      !(element.closest('dialog') && !root.matches('dialog')) && !element.closest('.element-editor-toolbar,#hostToolsPanel,#editItemsButton,#rsvpFirstPageText,#rsvpFirstPageDetails,.gathering-banner-text,#menuGrid,[id^="admin"],#hostNotesContent,#brideGroomContent,#perfectExperienceContent,#whatToExpectContent,#weddingTimelineSection,#weddingPartyPersonalPage,#weddingPartyDetails,footer,[role="status"],.form-error,.wedding-party-attire-images,.attire-video-grid') &&
       !element.querySelector('button,input,select,textarea') && !element.matches('#eventAddress,#rsvpDeadline,#signedInAccountName,#customGatheringHeading,#weddingPartyHeading,#weddingPartyKicker'));
   }
   function applyStaticText(root,state,format) {

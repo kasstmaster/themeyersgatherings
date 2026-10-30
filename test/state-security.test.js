@@ -233,3 +233,7 @@ test('potluck guests receive only aggregate public counts and sit-down menus rem
 test('guest home projection retains public entry palette version without exposing private metadata',()=>{
  const state=initial();state.gatheringHome.entryNavyVersion=1;state.gatheringHome.privateNotes='PRIVATE HOME NOTES';const view=projectState(state,{role:'guest',accountId:'existing-qr-token',person:'Casey Example'});assert.equal(view.gatheringHome.entryNavyVersion,1);assert.equal(view.gatheringHome.siteText.title,'Welcome');assert.equal(view.gatheringHome.privateNotes,undefined);
 });
+
+test('guest projections expose banner captions with the public gathering design',()=>{
+ const state=initial();state.events.one.siteBannerText='Main caption';state.events.one.rsvpBannerText='RSVP caption';const view=projectState(state,{role:'guest',accountId:'existing-qr-token',person:'Casey Example'});assert.equal(view.events.one.siteBannerText,'Main caption');assert.equal(view.events.one.rsvpBannerText,'RSVP caption');assert.equal(view.events.one.hostNotes,undefined);
+});

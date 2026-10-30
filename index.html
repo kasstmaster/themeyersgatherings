@@ -115,7 +115,7 @@
     <header class="site-header">
       <div class="wedding-sparkles" aria-hidden="true"></div>
       <div class="header-art">
-        <img id="eventHeaderImage" alt="" decoding="async" fetchpriority="high" hidden />
+        <div class="gathering-banner"><img id="eventHeaderImage" alt="" decoding="async" fetchpriority="high" hidden /><div id="eventBannerText" class="gathering-banner-text" hidden></div></div>
         <h1 id="customGatheringHeading" hidden></h1>
         <time id="eventDate" class="event-date"></time>
         <div id="eventHeaderText" class="event-header-text"></div>
@@ -164,6 +164,7 @@
       <label>Gathering date<input id="newGatheringDate" type="date" required></label>
       <label>Home address<textarea id="newGatheringAddress" rows="3"></textarea></label>
       <label>Banner image (optional)<input id="newGatheringBanner" type="file" accept="image/png,image/jpeg,image/webp"></label>
+      <label>Banner text (optional)<textarea id="newGatheringBannerText" rows="2"></textarea></label>
       <div class="modal-dialog-footer"><button class="primary-button" value="create">Create gathering</button></div>
     </form></dialog>
 
@@ -196,7 +197,7 @@
         <section id="rsvpEventConfirmation" aria-label="Confirm your gathering" hidden>
           <div id="rsvpEventHeader">
             <div class="header-art">
-              <img id="rsvpFirstPageImage" alt="" decoding="async" hidden />
+              <div class="gathering-banner"><img id="rsvpFirstPageImage" alt="" decoding="async" hidden /><div id="rsvpBannerText" class="gathering-banner-text" hidden></div></div>
               <time id="rsvpFirstPageDate" class="event-date"></time>
               <div id="rsvpFirstPageText" class="event-header-text"></div>
               <div id="rsvpFirstPageDetails" class="event-header-text"></div>
