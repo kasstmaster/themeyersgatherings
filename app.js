@@ -656,32 +656,24 @@ function formatEditableText(value, {inline=false} = {}) {
     return parts.join('');
   };
   const formatInline = line => TextStyles.render(line,formatPlainInline);
-  const output = [];
-  let openList = '';
-  const closeList = () => {
-    if (!openList) return;
-    output.push(`</${openList}>`);
-    openList = '';
-  };
-  String(value || '').split(/\r?\n/).forEach(line => {
-    if (/^\s*---\s*$/.test(line)) {
-      closeList();
-      output.push('<hr>');
-      return;
+  const output = [],lists=[];
+  let quoteDepth=0;
+  const closeTop=()=>{const list=lists.pop();if(list){if(list.item)output.push('</li>');output.push(`</${list.type}>`);}};
+  const closeList=()=>{while(lists.length)closeTop();};
+  String(value || '').split(/\r?\n/).forEach(raw=>{
+    const quote=raw.match(/^(?:> ?)+/),depth=quote?(quote[0].match(/>/g)||[]).length:0,line=quote?raw.slice(quote[0].length):raw;
+    if(depth!==quoteDepth){closeList();while(quoteDepth>depth){output.push('</blockquote>');quoteDepth--;}while(quoteDepth<depth){output.push('<blockquote class="text-indent">');quoteDepth++;}}
+    if(/^\s*---\s*$/.test(line)){closeList();output.push('<hr>');return;}
+    const item=line.match(/^(\s*)([-+]|\d+[.)])\s+(.+)$/);
+    if(item){
+      const indent=item[1].replace(/\t/g,'  ').length,type=/^[-+]$/.test(item[2])?'ul':'ol';
+      while(lists.length&&(indent<lists.at(-1).indent||indent===lists.at(-1).indent&&type!==lists.at(-1).type))closeTop();
+      if(!lists.length||indent>lists.at(-1).indent){output.push(`<${type}>`);lists.push({type,indent,item:false});}
+      const list=lists.at(-1);if(list.item)output.push('</li>');output.push(`<li>${formatInline(item[3])}`);list.item=true;return;
     }
-    const bullet = line.match(/^\s*[-+]\s+(.+)$/);
-    const numbered = line.match(/^\s*\d+[.)]\s+(.+)$/);
-    const listType = bullet ? 'ul' : numbered ? 'ol' : '';
-    if (listType) {
-      if (openList !== listType) { closeList(); openList = listType; output.push(`<${listType}>`); }
-      output.push(`<li>${formatInline((bullet || numbered)[1])}</li>`);
-      return;
-    }
-    closeList();
-    if (line.trim()) output.push(`<p>${formatInline(line)}</p>`);
-    else output.push('<br>');
+    closeList();if(line.trim())output.push(`<p>${formatInline(line)}</p>`);else output.push('<br>');
   });
-  closeList();
+  closeList();while(quoteDepth-->0)output.push('</blockquote>');
   const html=output.join('');
   return inline ? html.replace(/<p>([\s\S]*?)<\/p>/g,'$1<br>').replace(/<br>$/,'') : html;
 }

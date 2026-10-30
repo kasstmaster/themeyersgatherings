@@ -130,3 +130,10 @@ test('legacy effect variables serialize their resolved colors without capturing 
  assert.equal(saved.shadow,'#123456');assert.equal(saved.outline,'#fedcba');assert.equal(saved.outlineWidth,'2');assert.equal(resolves,1);
  assert.deepEqual(Object.keys(context.TextStyles.effects({},color,()=>{throw new Error('Must not copy inherited styles');})),[]);
 });
+
+test('paragraph indentation and nested lists retain depth and inline formatting',()=>{
+ assert.equal(format('> First\n> > **Second**\nLast'),'<blockquote class="text-indent"><p>First</p><blockquote class="text-indent"><p><strong>Second</strong></p></blockquote></blockquote><p>Last</p>');
+ assert.equal(format('- Parent\n  - Child\n    1. Grandchild\n- Sibling'),'<ul><li>Parent<ul><li>Child<ol><li>Grandchild</li></ol></li></ul></li><li>Sibling</li></ul>');
+ assert.equal(format('> - *Indented list*\n>   - Child'),'<blockquote class="text-indent"><ul><li><em>Indented list</em><ul><li>Child</li></ul></li></ul></blockquote>');
+ assert.doesNotMatch(format('> <script>bad</script>'),/<script>/);
+});

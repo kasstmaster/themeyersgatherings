@@ -1177,3 +1177,6 @@ body:has(#eventSelectionPage:not([hidden])) #signedInAccount{color:rgba(255,255,
 .gathering-banner-text{margin:0;max-width:100%;box-sizing:border-box}
 
 .site-edit-mode .gathering-banner:has(>.gathering-banner-text.element-editor-selected){outline:2px solid #d92525;outline-offset:2px}
+
+/* Native indent/outdent round-trips through the shared safe text renderer. */
+blockquote.text-indent{margin:0 0 0 40px;padding:0;border:0;text-align:inherit}
