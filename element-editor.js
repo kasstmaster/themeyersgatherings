@@ -29,7 +29,16 @@
     }
     return [...root.childNodes].map(walk).join('').replace(/\n$/,'');
   }
-  function rememberSelection(){const selected=window.getSelection();if(target && selected.rangeCount && editables.some(element=>element.contains(selected.anchorNode)))range=selected.getRangeAt(0).cloneRange();}
+  function boundedTextRange(candidate){
+    if(!candidate || !target?.isConnected)return null;
+    const owner=editables.find(element=>element.isConnected && target.contains(element) && (element.contains(candidate.startContainer)||element.contains(candidate.endContainer)));
+    if(!owner)return null;
+    const bounded=candidate.cloneRange(),bounds=document.createRange();bounds.selectNodeContents(owner);
+    if(!owner.contains(bounded.startContainer))bounded.setStart(bounds.startContainer,bounds.startOffset);
+    if(!owner.contains(bounded.endContainer))bounded.setEnd(bounds.endContainer,bounds.endOffset);
+    return bounded;
+  }
+  function rememberSelection(){const selected=window.getSelection();if(!selected?.rangeCount)return;const bounded=boundedTextRange(selected.getRangeAt(0));if(bounded)range=bounded;}
   function currentTextElement(){
     const selected=window.getSelection();
     const anchor=selected?.anchorNode;
@@ -59,7 +68,7 @@
     }
     for(const [command,active] of [['bold',Number(style.fontWeight)>=600],['italic',style.fontStyle==='italic'],['underline',[element,...ancestorsUntilTarget(element)].some(part=>getComputedStyle(part).textDecorationLine.includes('underline'))]])panel.querySelector(`[data-text-command="${command}"]`)?.setAttribute('aria-pressed',String(active));
   }
-  function restoreSelection(){if(!range)return false;try{const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);return true;}catch{return false;}}
+  function restoreSelection(){range=boundedTextRange(range);if(!range)return false;try{const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);return true;}catch{return false;}}
   function textCommand(command,value){
     if((['buttons','dish-available','dish-claimed','dish-bringing','dish-details','dish-claimants','tabs','titles','introductions','counts','count-values','count-titles','toolbar-options'].includes(ElementAppearance.group(target)) || ElementAppearance.group(target)?.startsWith('count-list-')) && ['bold','italic','underline','removeFormat'].includes(command)){
       const current=getComputedStyle(currentTextElement()),values=command==='bold'?{fontWeight:Number(current.fontWeight)>=600?'400':'700'}:command==='italic'?{fontStyle:current.fontStyle==='italic'?'normal':'italic'}:command==='underline'?{textDecoration:current.textDecorationLine.includes('underline')?'none':'underline'}:{fontFamily:'',fontSize:null,fontWeight:'',fontStyle:'',textDecoration:'',textColor:'',textHighlight:''};

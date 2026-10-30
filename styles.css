@@ -1171,3 +1171,9 @@ body:has(#eventSelectionPage:not([hidden])) #signedInAccount{color:rgba(255,255,
 .gathering-banner-text>p{margin:0}
 .gathering-banner-text[hidden],.gathering-banner:has(>img[hidden])>.gathering-banner-text{display:none}
 .site-edit-mode .gathering-banner-text>*,.site-edit-mode .gathering-banner-text[contenteditable="true"]{pointer-events:auto}
+
+/* Banner artwork and its overlay stay anchored as one layout surface. */
+.gathering-banner{isolation:isolate;overflow:hidden}
+.gathering-banner-text{margin:0;max-width:100%;box-sizing:border-box}
+
+.site-edit-mode .gathering-banner:has(>.gathering-banner-text.element-editor-selected){outline:2px solid #d92525;outline-offset:2px}
