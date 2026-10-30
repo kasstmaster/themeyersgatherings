@@ -30,7 +30,7 @@ test('guests cannot change appearance through the shared editor API',()=>{const 
 test('page content keys separate heading text without splitting gathering-wide title/intro formatting groups',()=>{
  const {api}=fixture(),heading=key=>({id:'weddingPartyHeading',tagName:'H2',dataset:{contentKey:key},closest:()=>null,matches:selector=>selector.split(',').includes('h2')});
  const one=heading('one'),two=heading('two');assert.notEqual(api.textSelector(one),api.textSelector(two));assert.equal(api.selector(one),api.selector(two));assert.equal(api.group(one),'titles');assert.equal(api.group(two),'titles');
- const state={};api.render({state,host:true,enabled:true,save(){}});api.update(one,{fontSize:28});assert.equal(state.elementAppearance['@group:titles'].fontSize,28);
+ const state={};api.render({state,host:true,enabled:true,save(){}});api.update(one,{fontSize:28,lineHeight:1.1});assert.equal(state.elementAppearance['@group:titles'].fontSize,28);assert.equal(state.elementAppearance['@group:titles'].lineHeight,1.1);assert.equal(api.selector(one),api.selector(two));
 });
 test('menu action styles are shared by claim status independently of other buttons',()=>{
  const {api}=fixture();
@@ -76,4 +76,11 @@ test('all popup cards, close buttons and headings share count-list groups; RSVP 
 
 test('generated date labels share formatting within a gathering without becoming title content',()=>{
  const f=fixture();for(const id of ['rsvpFirstPageDate','eventDate']){const target={matches:selector=>selector==='#rsvpFirstPageDate,#eventDate',closest:()=>null};assert.equal(f.api.group(target),'dates',id);}
+});
+
+test('line height applies to text blocks, survives saved settings, and restores between gatherings',()=>{
+ const f=fixture(),childValues=new Map();f.element.querySelectorAll=()=>[{style:{getPropertyValue:key=>childValues.get(key)||'',getPropertyPriority:()=>'',setProperty:(key,value)=>childValues.set(key,value),removeProperty:key=>childValues.delete(key)}}];
+ const state={elementAppearance:{'#panel':{lineHeight:1.05}}};f.api.render({state:JSON.parse(JSON.stringify(state)),host:false});assert.equal(f.values.get('line-height').value,'1.05');assert.equal(childValues.get('line-height'),'1.05');
+ f.api.render({state:{},host:false});assert.equal(f.values.has('line-height'),false);assert.equal(childValues.has('line-height'),false);
+ for(const lineHeight of [0,6,'1;display:none',NaN]){f.api.render({state:{elementAppearance:{'#panel':{lineHeight}}},host:false});assert.equal(f.values.has('line-height'),false);}
 });

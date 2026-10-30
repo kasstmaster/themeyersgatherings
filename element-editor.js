@@ -62,10 +62,11 @@
     setSelect('Font',style.fontFamily.split(',')[0].trim().replace(/^['"]|['"]$/g,''));
     const scale=parseFloat(style.getPropertyValue('--fitted-text-scale')) || 1;
     setSelect('Size',Math.round(parseFloat(style.fontSize)/scale*100)/100);
+    const height=panel.querySelector('[aria-label="Line height"]');if(height && document.activeElement!==height){height.value=style.lineHeight==='normal'?'':String(Math.round(parseFloat(style.lineHeight)/parseFloat(style.fontSize)*100)/100);height.dataset.editorCommitted=height.value;}
     for(const [name,property] of [['Text color','color'],['Highlight','backgroundColor']]){
       const color=ElementAppearance.colorParts(style[property]);
       const picker=panel.querySelector(`[aria-label="${name}"]`),hex=panel.querySelector(`[aria-label="${name} hex"]`);
-      if(picker)picker.value=color.hex;if(hex)hex.value=color.hex+(color.alpha<100?Math.round(color.alpha/100*255).toString(16).padStart(2,'0'):'');
+      for(const [control,value] of [[picker,color.hex],[hex,color.hex+(color.alpha<100?Math.round(color.alpha/100*255).toString(16).padStart(2,'0'):'')]])if(control && document.activeElement!==control){control.value=value;control.dataset.editorCommitted=value;}
     }
     for(const [command,active] of [['bold',Number(style.fontWeight)>=600],['italic',style.fontStyle==='italic'],['underline',[element,...ancestorsUntilTarget(element)].some(part=>getComputedStyle(part).textDecorationLine.includes('underline'))]])panel.querySelector(`[data-text-command="${command}"]`)?.setAttribute('aria-pressed',String(active));
   }
@@ -240,6 +241,7 @@
       selectInput(panel,'Alignment',['left','center','right','justify'],getComputedStyle(target).textAlign,value=>ElementAppearance.update(target,{textAlign:value}));
       selectInput(panel,'Font',TextStyles.fonts,'Times New Roman',value=>textStyle('font',value));
       selectInput(panel,'Size',TextStyles.sizes,16,value=>textStyle('size',value));
+      const lineHeight=labelInput(panel,'Line height','number','',(value,input)=>{const height=Number(value);if(value.trim() && Number.isFinite(height) && height>=0.5 && height<=5){input.setCustomValidity('');ElementAppearance.update(target,{lineHeight:height});}else{input.setCustomValidity('Enter a line height from 0.5 to 5.');input.reportValidity();}});lineHeight.min=0.5;lineHeight.max=5;lineHeight.step=0.05;lineHeight.placeholder='Auto';lineHeight.title='Line spacing as a multiple of the font size (1 = single spacing)';
       for(const [title,key] of [['Text color','color'],['Highlight','highlight']]){
         const picker=labelInput(panel,title,'color','#000000',value=>textStyle(key,value));
         const hex=labelInput(panel,title+' hex','text','#000000',(value,input)=>{if(/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value)){input.setCustomValidity('');picker.value=value.slice(0,7);textStyle(key,value);}else{input.setCustomValidity('Enter a hex color such as #123456.');input.reportValidity();}});hex.size=8;hex.addEventListener('input',()=>{if(/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(hex.value)){hex.setCustomValidity('');picker.value=hex.value.slice(0,7);textStyle(key,hex.value);}});

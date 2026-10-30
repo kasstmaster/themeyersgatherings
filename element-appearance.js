@@ -102,7 +102,7 @@
     for(const attribute of ['aria-selected','aria-pressed'])clone.setAttribute(attribute,String(state==='selected'));
     if(clone.hasAttribute('aria-current'))clone.setAttribute('aria-current',state==='selected'?'page':'false');
     Object.assign(clone.style,{position:'fixed',left:'-10000px',top:'0',visibility:'hidden',pointerEvents:'none',width:target.getBoundingClientRect().width+'px'});target.after(clone);
-    const computed=getComputedStyle(clone),css={};for(const property of ['background-color','background-image','background-size','border-color','border-width','border-style','border-radius','outline-color','outline-style','outline-width','outline-offset','color','font-family','font-size','font-weight','font-style','text-decoration'])css[property]=computed.getPropertyValue(property);
+    const computed=getComputedStyle(clone),css={};for(const property of ['background-color','background-image','background-size','border-color','border-width','border-style','border-radius','outline-color','outline-style','outline-width','outline-offset','color','font-family','font-size','line-height','font-weight','font-style','text-decoration'])css[property]=computed.getPropertyValue(property);
     clone.remove();editingStates.set(target,state);previewStyles.set(target,css);apply();
   }
   function clearEditState(target){if(editingStates.delete(target)){previewStyles.delete(target);apply();}}
@@ -178,6 +178,7 @@
     if(['cover','contain','auto'].includes(values.imageFit))set(element,'background-size',values.imageFit);
     if(globalThis.TextStyles?.fonts.includes(values.fontFamily))set(element,'font-family',values.fontFamily);
     if(Number.isFinite(values.fontSize) && values.fontSize>=8 && values.fontSize<=96)set(element,'font-size',`calc(${values.fontSize}px * var(--fitted-text-scale,1))`);
+    if(Number.isFinite(values.lineHeight) && values.lineHeight>=0.5 && values.lineHeight<=5){const height=String(values.lineHeight);set(element,'line-height',height);for(const part of element.querySelectorAll?.('p,div,li,blockquote,h1,h2,h3,h4,h5,h6,span,strong,b,em,i,u,a') || [])set(part,'line-height',height);}
     if(['left','center','right','justify','start','end'].includes(values.textAlign))set(element,'text-align',values.textAlign);
     if(['400','700'].includes(values.fontWeight))set(element,'font-weight',values.fontWeight);
     if(['normal','italic'].includes(values.fontStyle))set(element,'font-style',values.fontStyle);
