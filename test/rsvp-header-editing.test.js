@@ -88,3 +88,11 @@ test('banner text stays in its gathering and slot, supports fallback and remains
 test('delayed banner text commits remain attached to the original gathering',()=>{
  const f=fixture(true),owner=f.context.state,overlay={innerHTML:'New page'},image={id:'rsvpFirstPageImage',closest:()=>({querySelector:()=>overlay})};f.context.state={rsvpBannerText:'Other gathering'};f.context.setBannerText(image,'Original gathering edit',owner);assert.equal(owner.rsvpBannerText,'Original gathering edit');assert.equal(f.context.state.rsvpBannerText,'Other gathering');assert.equal(overlay.innerHTML,'New page');
 });
+
+ test('banner autosaves preserve the live editing DOM until the editor releases ownership',()=>{
+ const f=fixture(true),overlay={innerHTML:'Live text and caret',hidden:false},image={id:'rsvpFirstPageImage',closest:()=>({querySelector:()=>overlay})};let owned=true;f.context.ElementEditor={ownsText:part=>owned&&part===overlay};f.context.SiteEditing.editorFor=()=>null;
+ f.context.setBannerText(image,'Saved draft');assert.equal(f.context.state.rsvpBannerText,'Saved draft');assert.equal(overlay.innerHTML,'Live text and caret');
+ f.context.setBannerText(image,'');assert.equal(overlay.hidden,false);
+ owned=false;f.context.renderBannerText(image);assert.equal(overlay.hidden,true);assert.equal(overlay.innerHTML,'');
+ overlay.isContentEditable=true;f.context.setBannerText(image,'Typing again');assert.equal(overlay.innerHTML,'');overlay.isContentEditable=false;f.context.renderBannerText(image);assert.equal(overlay.innerHTML,'Typing again');assert.equal(overlay.hidden,false);
+ });
