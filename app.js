@@ -2924,7 +2924,7 @@ function renderDinnerPlanEditor(area){
   const section=document.createElement('section');section.className='admin-editor-section';
   const label=document.createElement('label'),title=document.createElement('span');title.textContent=`Dinner plan for ${plan.year}`;
   const select=document.createElement('select');select.setAttribute('aria-label','Dinner plan');
-  for(const [value,text] of [['potluck','Potluck'],['sit-down','Sit Down Dinner'],['none','None'],['drinks','Drinks (alcoholic drinks)']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
+  for(const [value,text] of [['potluck','Potluck'],['sit-down','Sit Down Dinner'],['drinks','Drinks (alcoholic drinks)'],['none','None']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
   select.value=plan.type;label.append(title,select);section.append(label);
   const panel=document.createElement('section');panel.id='sitDownDinnerMenu';
   const heading=document.createElement('h3');heading.textContent='Private preparation menu';
