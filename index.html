@@ -44,7 +44,7 @@
           </div>
           <p class="form-error" id="accountPasswordError" role="alert"></p>
           <button class="primary-button" id="signInSubmit" type="submit">Next</button>
-          <button id="signInBack" class="sign-in-back" type="button" hidden>Back</button>
+          <button id="signInBack" class="primary-button sign-in-back" type="button" hidden>Back</button>
         </form>
         <div id="installAppPrompt" class="app-install" hidden>
           <button id="installAppButton" type="button" aria-expanded="false" aria-controls="installAppHelp">Install The Meyers</button>
@@ -227,7 +227,7 @@
         <button class="summary-item" id="invitedListButton" type="button"><strong id="invitedCount">0/0</strong><span>Invited</span></button>
       </section>
           <div id="rsvpWeddingPages" hidden>
-      <section id="yourDishesSection" class="gathering-page rsvp-page-shell" hidden aria-labelledby="yourDishesHeading"><h2 id="yourDishesHeading">Your Dishes</h2><div class="gathering-inner-panel" id="yourDishesList"></div></section>
+      <section id="yourDishesSection" class="gathering-page rsvp-page-shell" hidden aria-labelledby="yourDishesHeading"><h2 id="yourDishesHeading">Your Dishes</h2><div class="gathering-inner-panel" id="yourDishesList"></div><button id="yourDishesChange" class="primary-button" type="button">Make Changes</button></section>
       <nav id="gatheringTabs" class="wedding-party-tabs" aria-label="Gathering pages" role="tablist" hidden>
         <button type="button" role="tab" data-gathering-tab="notes" aria-controls="hostNotesSection" aria-selected="false" hidden>Notes</button>
       </nav>
@@ -413,7 +413,7 @@
         <section id="rsvpCustomDishCategoryQuestion" data-custom-dish-part="category" data-rsvp-question hidden><label><span>Where does your dish belong?</span><select id="rsvpCustomDishCategory"></select></label><button type="button" data-add-custom-dish>Add another item</button></section>
         <section id="rsvpReview" aria-label="Review your RSVP" hidden></section>
         <p id="rsvpSaveError" class="form-error" role="alert" hidden></p>
-        <div class="modal-dialog-footer"><button id="rsvpNext" class="primary-button" value="default">Next</button><button id="rsvpBack" class="sign-in-back" type="button" hidden>Back</button></div>
+        <div class="modal-dialog-footer"><button id="rsvpNext" class="primary-button" value="default">Next</button><button id="rsvpBack" class="primary-button sign-in-back" type="button" hidden>Back</button></div>
       </form>
     </dialog>
 

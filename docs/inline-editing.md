@@ -101,7 +101,7 @@ The Menu popup keeps Dinner plan, Clear a Claim and the section buttons in a sha
 
 Copy from is available in both menu sections. Choose a source gathering and menu, then Copy items. Duplicate names (case/spacing variations included) are skipped rather than overwritten. Copied potluck entries retain amounts/units and start unclaimed; copied preparation options start unselected. Copying between menu types uses one item when no source quantity exists. Wedding is excluded. The source menu and active dinner plan are unchanged.
 
-For one requested unit, dish lists, RSVP choices/review, Your Dishes and menu exports show status without a numeric amount. The default Item type is omitted; dozen/case/custom type labels remain. Multi-unit rows and host amount/type inputs are unchanged.
+For one requested unit, dish lists, RSVP choices/review and menu exports show status without a numeric amount. The default Item type is omitted; dozen/case/custom type labels remain. Multi-unit rows and host amount/type inputs are unchanged.
 
 Potluck guests see a compact fixed reference bar during dish/contribution questions: Invited, Attending and RSVP by. Counts combine adults and children; adult/child breakdowns are available in the count titles. These are confirmed saved totals, not unsaved draft attendance. Missing deadlines show Not set. The bar hides outside these steps and never opens guest lists. Its measured height reserves top space independently of bottom toolbar clearance.
 
@@ -125,7 +125,7 @@ Select one added invitation image to reveal **Replace image**. Replacement uploa
 
 New gatherings can optionally receive a banner in Create Gathering. An empty main or first RSVP banner has a selectable placeholder in Host Edit mode; guests do not see that placeholder. Select it and use **Upload image** in Format to add the first image, replace it, or remove it. Images remain scoped to that gathering and persist through Done and reload. Creation uploads initialize both the main and first RSVP banners; later edits use their respective image slots.
 
-First RSVP-page information below the banner uses the shared largest-fit text sizing: authored lines do not wrap as the container narrows, while intentional line breaks and blank paragraphs remain. Saved font sizes remain the maximum and are restored when space allows. Your Dishes shows the invitation’s item names and numerical amounts without claim indicators or quantity-type labels, including in print/email exports.
+First RSVP-page information below the banner uses the shared largest-fit text sizing: authored lines do not wrap as the container narrows, while intentional line breaks and blank paragraphs remain. Saved font sizes remain the maximum and are restored when space allows. Your Dishes shows only the name for one Item, the amount alone for multiple Items, and the amount plus quantity type for other units (for example, 1 dozen). Claim indicators and “of” totals are omitted, including in print/email exports.
 
 In the first RSVP-page information, a “Kindly RSVP by” deadline uses an abbreviated month and day without a year (for example, **Kindly RSVP by Nov. 7**). Existing long-form deadline wording is shortened for display without rewriting the saved text; unrelated event dates retain their own formatting.
 
@@ -136,3 +136,9 @@ The shared **View & Download** folder button uses the same concise label for cur
 Popup cards, their main headings, and X buttons share the count-list container/title/close formatting groups within the current design context. All popup X buttons use the common top-right close-button class. RSVP retains its separate page shell, and dialog widths and specialized form layouts remain content-specific.
 
 Entry screens use **#191F37**, copied from the Wedding toolbar at the time of this change, for loading/startup, sign-in and gathering-selection backgrounds/actions. A one-time chooser-palette update replaces its old backgrounds while preserving content, typography, and unrelated settings. Later chooser edits remain independent and are not linked to the Wedding gathering. Installed-app startup/theme colors use the same navy; icon artwork is unchanged.
+
+Entry buttons have visible white borders on sign-in (Next/Get Started/Back) and gathering selection. A one-time border update preserves existing button backgrounds and subsequent customization.
+
+Back actions in sign-in and RSVP use the same primary-button styling as Next, including width, padding, typography, and borders.
+
+Your Dishes includes **Make Changes**, which opens the existing RSVP dish-selection step without altering saved attendance or claims. Existing RSVP deadline locks still apply. The page reuses the RSVP menu’s fixed invited/attending/deadline reference toolbar; it hides when another page is selected.

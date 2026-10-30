@@ -278,7 +278,7 @@ dialog{border:0;padding:0;background:transparent;max-width:95vw}dialog::backdrop
 
 .full-page-form label{font-size:.95rem}
 .sign-in-card [data-sign-in-step][hidden],.sign-in-back[hidden]{display:none}
-.sign-in-back{display:block;margin:14px auto 0;border:0;background:transparent;color:#fff;font:inherit;text-decoration:underline;cursor:pointer;padding:8px 16px}
+.sign-in-back{display:block}
 
 .account-address{font-size:.85rem;color:var(--muted);margin-bottom:6px;overflow-wrap:anywhere}
 
@@ -491,7 +491,7 @@ dialog.editor-dialog>.modal-card{max-height:calc(100dvh - 32px)}
 .fullscreen-dialog .modal-dialog-footer{position:sticky;bottom:0;box-shadow:none;background:var(--flow-footer-background,rgba(11,31,58,.98));margin:24px 0 0;padding:14px 0}
 .fullscreen-dialog .primary-button{width:100%;margin:0}
 .fullscreen-dialog .primary-button:disabled{opacity:.6;cursor:wait}
-.fullscreen-dialog .sign-in-back{display:block;margin:16px auto 0;color:var(--flow-text)}
+
 #rsvpDialog [hidden],#rsvpDialog [data-rsvp-flow-hidden]{display:none!important}
 #rsvpDialog :where(#rsvpForm) :is(input:not([type="radio"]):not([type="checkbox"]),select,textarea){box-sizing:border-box;width:100%;padding:14px;font:inherit;background:#fff;color:var(--ink);border:1px solid var(--border);border-radius:4px}
 #rsvpDialog :where(#rsvpForm) label{color:var(--flow-text);font-size:1rem;font-weight:400}
@@ -1156,7 +1156,7 @@ body.template-workspace-open #hostToolsPanel{left:var(--editor-sidebar-width,220
 body:has(:is(#signInPage,#eventSelectionPage):not([hidden])){--navy:var(--entry-navy,#191f37);--navy-2:var(--entry-navy,#191f37);background:var(--entry-navy,#191f37)}
 #signInPage,#eventSelectionPage{--flow-background:var(--entry-navy,#191f37);background:var(--entry-navy,#191f37);color:#fff}
 #signInPage :is(.sign-in-card,.name-fields){background:transparent}
-#signInPage :is(.primary-button,.sign-in-back),#eventSelectionPage .event-selection-choices button{background:var(--entry-navy,#191f37);color:#fff;border-color:rgba(255,255,255,.3);box-shadow:none}
+#signInPage :is(.primary-button,.sign-in-back),#eventSelectionPage .event-selection-choices button{background:var(--entry-navy,#191f37);color:#fff;border:1px solid rgba(255,255,255,.6);box-shadow:none}
 #eventSelectionPage .event-selection-choices button:hover{background:var(--entry-navy,#191f37);box-shadow:0 0 0 2px rgba(255,255,255,.3)}
 #eventSelectionPage :is(small,.event-selection-intro),#signInPage .name-fields small{color:rgba(255,255,255,.8)}
 #signInPage input{color:var(--entry-navy,#191f37);border-color:var(--entry-navy,#191f37)}
