@@ -15,14 +15,16 @@
     rsvp: Object.freeze({ childNames: true, guestCounter: false, namedGuests: true, meals: true, contributions: false })
   });
   const forGathering = eventId => eventId === 'wedding' ? wedding : standard;
-  const sitDownRsvp=Object.freeze({...standard.rsvp,contributions:false});
+  const noContributionsRsvp=Object.freeze({...standard.rsvp,contributions:false});
   const dinnerYear=event=>/^\d{4}/.exec(event?.eventDate||'')?.[0]||'current';
   function dinnerPlan(eventId,event){
     if(eventId==='wedding')return null;
     const saved=event?.dinnerPlans?.[dinnerYear(event)];
-    return {year:dinnerYear(event),type:saved?.type==='sit-down'?'sit-down':'potluck',selectedItems:Array.isArray(saved?.selectedItems)?saved.selectedItems:[]};
+    return {year:dinnerYear(event),type:['sit-down','none','drinks'].includes(saved?.type)?saved.type:'potluck',selectedItems:Array.isArray(saved?.selectedItems)?saved.selectedItems:[]};
   }
-  const rsvp = (eventId,event) => dinnerPlan(eventId,event)?.type==='sit-down'?sitDownRsvp:forGathering(eventId).rsvp;
+  const rsvp = (eventId,event) => eventId!=='wedding' && ['sit-down','none'].includes(dinnerPlan(eventId,event).type)?noContributionsRsvp:forGathering(eventId).rsvp;
+  const contributionKey=(eventId,event)=>dinnerPlan(eventId,event)?.type==='drinks'?'drinksItems':'items';
+  const contributionItems=(eventId,event)=>event?.[contributionKey(eventId,event)]||[];
   function dinnerCounts(accounts,eventId,event){
     const responses=GuestPlanning.guestResponses(event.rsvps||[]),totals=GuestPlanning.rsvpTotals(responses);
     const invited=(accounts||[]).filter(account=>account.invitedEvents?.[eventId]===true).reduce((sum,account)=>{
@@ -36,5 +38,5 @@
     return rsvp(eventId).childNames
       ? Array.from({ length: count }, (_, index) => String(draft[index] || '').trim()) : [];
   }
-  globalThis.GatheringFeatures = { forGathering, rsvp, childNames, dinnerYear, dinnerPlan, dinnerCounts };
+  globalThis.GatheringFeatures = { forGathering, rsvp, childNames, dinnerYear, dinnerPlan, contributionKey, contributionItems, dinnerCounts };
 })();

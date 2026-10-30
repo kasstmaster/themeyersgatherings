@@ -164,3 +164,8 @@ test('single dish status hides numbers and default Item but keeps custom type la
  assert.equal(GuestPlanning.singleDishStatus({needed:2,unit:'dozen'},1,false,units),null);
  assert.equal(GuestPlanning.singleDishStatus({needed:1,unit:'item'},2,true,units),null);
 });
+
+test('Drinks copy uses the shared deduplication rules without overwriting food menus or copying claims',()=>{
+ const source={drinksItems:[{id:'source',name:' Wine ',category:'Drinks',needed:2,unit:'dozen',claims:['Private Household']}],items:[{name:'Food'}]},target={items:[{name:'Kept food'}],drinksItems:[]};
+ assert.deepEqual(GuestPlanning.copyMenuItems(target,source,'drinks','drinks'),{added:1,skipped:0});assert.equal(target.drinksItems[0].name,'Wine');assert.deepEqual(target.drinksItems[0].claims,[]);assert.deepEqual(target.items,[{name:'Kept food'}]);assert.deepEqual(GuestPlanning.copyMenuItems(target,source,'drinks','drinks'),{added:0,skipped:1});assert.deepEqual(source.drinksItems[0].claims,['Private Household']);
+});

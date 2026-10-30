@@ -12,7 +12,7 @@ function menu(items, gatheringName = 'Thanksgiving') {
     state: { items, quantityUnits: [{id:'dozen',label:'Dozen'}] }, PageActions: {},
     escapeHtml: value => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
   });
-  vm.runInContext(quantity + exports, context);
+  vm.runInContext('function contributionItems(){return state.items;}'+quantity + exports, context);
   return context.PageActions.menuExport();
 }
 const item = (name, needed, claims = [], extra = {}) => ({name,needed,claims,category:'Sides',...extra});

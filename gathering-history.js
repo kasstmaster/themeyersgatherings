@@ -10,7 +10,7 @@
     let changed=cleanup(app,now);
     for(const [id,event] of Object.entries(app.events || {})) {
       if(!completed(event,now) || event.cancelled || record(app,id,event.eventDate) || app.gatheringHistory?.[id]?.[event.eventDate])continue;
-      const references=new Set([...(event.rsvps || []).map(r=>r.name),...(event.items || []).flatMap(item=>item.claims || [])]);
+      const references=new Set([...(event.rsvps || []).map(r=>r.name),...[...(event.items || []),...(event.drinksItems || [])].flatMap(item=>item.claims || [])]);
       const accounts=(app.accounts || []).filter(account=>account.invitedEvents?.[id] || references.has(account.name));
       app.gatheringHistory ||= {};app.gatheringHistory[id] ||= {};
       app.gatheringHistory[id][event.eventDate]=structuredClone({version:1,eventId:id,date:event.eventDate,name:event.gatheringName || names[id] || id,archivedAt:now.toISOString(),event,accounts:accounts.map(account=>({...account,invitationCountAtEvent:globalThis.GuestPlanning?.invitationCount(account,id) ?? account.invitationQuantities?.[id] ?? 1})),sharedSite:app.sharedSite || {}});
@@ -35,7 +35,7 @@
     const days=Math.max(0,Math.round((Date.parse(previous.eventDate)-Date.parse(previous.rsvpDate))/86400000));
     next.eventDate=date;next.rsvpDate=previous.rsvpDate===''?'':new Date(Date.parse(date)-(Number.isFinite(days)?days:14)*86400000).toISOString().slice(0,10);
     next.rsvps=[];next.hostNotes='';next.mediaPreviousDates=[];
-    next.items=(next.items || []).map(item=>({...item,claims:[],...(item.claimGroups?{claimGroups:{}}:{})}));
+    for(const key of ['items','drinksItems'])if(Array.isArray(next[key]))next[key]=next[key].map(item=>({...item,claims:[],...(item.claimGroups?{claimGroups:{}}:{})}));
     for(const account of app.accounts || []) {
       account.selectedEvents={...account.selectedEvents,[id]:false};account.invitedEvents={...account.invitedEvents,[id]:false};
       account.plusOnePeople={...account.plusOnePeople,[id]:[]};account.plusOnes={...account.plusOnes,[id]:0};

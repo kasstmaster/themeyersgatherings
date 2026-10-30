@@ -424,7 +424,7 @@ function stateRecoveryScore(candidate) {
   const events = Object.values(candidate.events || {});
   const accounts = candidate.accounts?.length || 0;
   const rsvps = events.reduce((total, event) => total + (event.rsvps?.length || 0), 0);
-  const claims = events.reduce((total, event) => total + (event.items || []).reduce((sum, item) => sum + (item.claims?.length || 0), 0), 0);
+  const claims = events.reduce((total, event) => total + [...(event.items || []),...(event.drinksItems || [])].reduce((sum, item) => sum + (item.claims?.length || 0), 0), 0);
   const templates = candidate.invitationTemplates?.length || 0;
   return accounts * 10000 + templates * 1000 + rsvps * 100 + claims;
 }
@@ -987,7 +987,7 @@ function menuExportIntro() {
   return `Here's the list of items for ${EVENT_DETAILS[viewedEventId].name}. Some dishes have already been claimed but we still need others!`;
 }
 function menuExportItems() {
-  return GuestPlanning.menuOrder(state.items).map(item => {
+  return GuestPlanning.menuOrder(contributionItems()).map(item => {
     const remaining = Math.max(0, item.needed - item.claims.length);
     const claimed = item.optional ? item.claims.length > 0 : remaining === 0;
     const single=GuestPlanning.singleDishStatus(item,claimed?item.claims.length:remaining,claimed,state.quantityUnits);
@@ -1509,7 +1509,7 @@ function renderGatheringPages(features,hostView) {
   document.querySelector('#hostNotesContent').innerHTML=features.notes && hostView
     ? formatEditableText(state.hostNotes || '') || '<p>Edit Website to add your notes.</p>' : '';
   document.querySelector('.menu-section').hidden=!features.menu || !hostView;
-  document.querySelector('#copyMenuButton').hidden=state.items.length===0;
+  document.querySelector('#copyMenuButton').hidden=contributionItems().length===0;
 }
 // All builder modules receive the same ID-bound data and persistence context.
 // Wedding capabilities extend page content, never the editor or its storage.
@@ -1594,7 +1594,7 @@ function render() {
   document.querySelector('#eventAddress').innerHTML = formatEditableText(gatheringHeaderAddress(),{inline:true});
   document.querySelector('#eventPage footer address').innerHTML = `<b>${escapeHtml(appState.sharedSite?.footerName || 'The Meyers')}</b><br>${formatEditableText(SharedDetails.homeAddress(state),{inline:true})}`;
   document.body.classList.toggle('host-rsvp-view',hostView);
-  const publicCounts=!hostView&&GatheringFeatures.dinnerPlan(viewedEventId,state)?.type==='potluck';
+  const publicCounts=!hostView&&['potluck','drinks'].includes(GatheringFeatures.dinnerPlan(viewedEventId,state)?.type);
   document.querySelector('#hostRsvpCounters').hidden=!(hostView||publicCounts);
   document.querySelector('.summary-strip').style.setProperty('--summary-columns',hostView?'4':'2');
   document.querySelector('.summary-strip').hidden=!(hostView||publicCounts);
@@ -1602,13 +1602,13 @@ function render() {
   document.querySelector('#noResponseButton').hidden=!hostView;
   if(selectedGatheringTab==='your-dishes'&&!invitationDishes().length)selectedGatheringTab='media';
   renderGatheringPages(features,hostView);
-  if(GatheringFeatures.dinnerPlan(viewedEventId,state)?.type==='sit-down')document.querySelector('#gatheringMenuSection').hidden=true;
+  if(!GatheringFeatures.rsvp(viewedEventId,state).contributions)document.querySelector('#gatheringMenuSection').hidden=true;
   renderWeddingGathering(hostView);
   renderGatheringMedia(hostView);
   renderYourDishes();
-  const neededRows=GuestPlanning.menuOrder(state.items).flatMap(item=>{const remaining=Math.max(0,item.needed-item.claims.length);return remaining?[renderDish(item,remaining)]:[];});
+  const neededRows=GuestPlanning.menuOrder(contributionItems()).flatMap(item=>{const remaining=Math.max(0,item.needed-item.claims.length);return remaining?[renderDish(item,remaining)]:[];});
   document.querySelector('#menuGrid').innerHTML=neededRows.length?neededRows.join(''):'<p class="guest-empty">All dishes have been claimed.</p>';
-  const needed = state.items.reduce((sum, item) => sum + (item.optional ? 0 : Math.max(0, item.needed - item.claims.length)), 0);
+  const needed = contributionItems().reduce((sum, item) => sum + (item.optional ? 0 : Math.max(0, item.needed - item.claims.length)), 0);
   document.querySelector('#dishListTotals').textContent=`${needed} still needed`;
   const invitedAccounts = appState.accounts.filter(account => accountIsInvited(account, viewedEventId));
   const summaryCounts=attendanceSummaryCounts();
@@ -1726,10 +1726,10 @@ function renderInlineEditing(eventState=state) {
   }
   if (features.menu) {
     document.querySelectorAll('#menuGrid [data-dish-id]').forEach(dish => {
-      const item = state.items.find(item => item.id === dish.dataset.dishId);
+      const item = contributionItems().find(item => item.id === dish.dataset.dishId);
       SiteEditing.field(dish, item.name, [{label:'Name',value:item.name,required:true},{label:'Category',value:item.category,options:GuestPlanning.foodCategories},{label:'Amount',value:item.needed,type:'number',min:1},{label:'Unit',value:item.unit,options:(state.quantityUnits || ['item','dozen']).map(unit=>typeof unit==='string'?unit:unit.id)}], ([name,category,needed,unit]) => { Object.assign(item,{name,category,needed:Number(needed),unit}); });
       if(SiteEditing.enabled)SiteEditing.button('Change my claim',()=>claimItem(item.id),dish);
-      if (SiteEditing.enabled) SiteEditing.button('×', () => { if (confirm(`Delete “${item.name}”?`)) { state.items=state.items.filter(entry=>entry.id!==item.id); saveState(); } }, dish, `Delete ${item.name}`);
+      if (SiteEditing.enabled) SiteEditing.button('×', () => { if (confirm(`Delete “${item.name}”?`)) { state[GatheringFeatures.contributionKey(viewedEventId,state)]=contributionItems().filter(entry=>entry.id!==item.id); saveState(); } }, dish, `Delete ${item.name}`);
     });
     SiteEditing.button('Add dish',()=>openCustomItem('Main Table'),document.querySelector('#gatheringMenuSection'));
     SiteEditing.portal(document.querySelector('#gatheringMenuSection'), 'menu items and claims', ['#menuAdminFields'], prepare);
@@ -1816,9 +1816,12 @@ function renderWeddingPageToolbar(){
     button.innerHTML=`<svg class="toolbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons[button.dataset.weddingTab] || icons.custom}"/></svg><span>${escapeHtml(title)}</span>`;
   });
 }
+function contributionItems(){return GatheringFeatures.contributionItems(viewedEventId,state);}
+function menuAdminKey(){return menuEditorSection==='drinks'?'drinksItems':'items';}
+function menuAdminItems(){return state[menuAdminKey()]||[];}
 function invitationDishes(){
   if(!guestName||!GatheringFeatures.rsvp(viewedEventId,state).contributions)return [];
-  return GuestPlanning.menuOrder(state.items).flatMap(item=>{const quantity=rsvpDishQuantity(item);return quantity?[{item,quantity}]:[];});
+  return GuestPlanning.menuOrder(contributionItems()).flatMap(item=>{const quantity=rsvpDishQuantity(item);return quantity?[{item,quantity}]:[];});
 }
 function renderYourDishes(){
   const dishes=invitationDishes(),button=document.querySelector('#yourDishesButton'),section=document.querySelector('#yourDishesSection');
@@ -1924,7 +1927,7 @@ function renderDish(item,quantity=Math.max(0,item.needed-item.claims.length),cla
 }
 function claimItem(id) {
   ensureAccount(() => {
-    const item = state.items.find(entry => entry.id === id); if (!item) return;
+    const item = contributionItems().find(entry => entry.id === id); if (!item) return;
     if (rsvpDishQuantity(item)>0) {
       setRsvpDishQuantity(item,0);
       showToast(`Removed ${item.name} from your list.`);
@@ -2152,7 +2155,7 @@ document.querySelector('#customItemForm').addEventListener('submit', event => {
   const unit = document.querySelector('#customItemUnit').value;
   const category = document.querySelector('#customItemCategory').value;
   if (!name || !category || quantity < 1) return;
-  state.items.push(setRsvpDishQuantity({ id: `custom-${crypto.randomUUID()}`, name, category, needed: quantity, unit, claims: [] },quantity));
+  (state[GatheringFeatures.contributionKey(viewedEventId,state)]??=[]).push(setRsvpDishQuantity({ id: `custom-${crypto.randomUUID()}`, name, category, needed: quantity, unit, claims: [] },quantity));
   event.target.reset(); document.querySelector('#customItemQuantity').value = 1;
   document.querySelector('#customItemDialog').close(); saveState(); showToast(`${name} was added to ${category}!`);
 });
@@ -2179,7 +2182,7 @@ document.querySelector('#claimQuantityForm').addEventListener('submit', event =>
     document.querySelector('#claimQuantityDialog').close();
     return;
   }
-  const item = state.items.find(entry => entry.id === pendingClaimItemId);
+  const item = contributionItems().find(entry => entry.id === pendingClaimItemId);
   const requestedQuantity = Number(document.querySelector('#claimQuantity').value);
   if (!item || rsvpDishQuantity(item)>0 || requestedQuantity < 1) return;
   const quantity = Math.min(requestedQuantity, Math.max(0, item.needed - item.claims.length));
@@ -2457,12 +2460,12 @@ function renderRsvpDishes(){
   document.querySelectorAll('[data-rsvp-question]').forEach(section=>{section.hidden=!(enabled || (section.id==='rsvpDishQuestion' && SiteEditing.enabled && GatheringFeatures.rsvp(viewedEventId,state).contributions));section.querySelectorAll('input,select').forEach(input=>{input.disabled=!enabled;input.required=false;input.setCustomValidity('');});});
   document.querySelectorAll('[data-rsvp-dish-answer]').forEach(button=>{button.disabled=SiteEditing.enabled;});
   const choice=document.querySelector('#rsvpBringingDish');
-  choice.value=state.items.some(item=>rsvpDishQuantity(item)>0)?'yes':'';
-  const categories=[...new Set(GuestPlanning.menuOrder(state.items).map(item=>item.category))];
+  choice.value=contributionItems().some(item=>rsvpDishQuantity(item)>0)?'yes':'';
+  const categories=[...new Set(GuestPlanning.menuOrder(contributionItems()).map(item=>item.category))];
   const anythingElse=document.querySelector('#rsvpAnythingElse');
   const choices=document.querySelector('#rsvpDishChoices');
   choices.innerHTML=enabled?categories.map(category=>{
-    const items=state.items.filter(item=>item.category===category).flatMap(item=>{
+    const items=contributionItems().filter(item=>item.category===category).flatMap(item=>{
       const saved=rsvpDishQuantity(item);
       const available=Math.max(saved,item.needed-item.claims.length+saved);
       const claimedByOthers=!available&&!saved;
@@ -2538,9 +2541,9 @@ function setRsvpDishQuantity(item,quantity){
 }
 function applyRsvpDishes(draft){
   if(!draft)return true;
-  for(const [id,quantity] of draft.quantities){const item=state.items.find(item=>item.id===id);if(quantity>0&&(!item||!Number.isInteger(quantity)||quantity>Math.max(rsvpDishQuantity(item),item.needed-item.claims.length+rsvpDishQuantity(item))))return false;}
-  for(const item of state.items)setRsvpDishQuantity(item,draft.quantities.get(item.id)||0);
-  for(const item of draft.customs||[]){state.items.push(setRsvpDishQuantity({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:[]},item.quantity));}
+  for(const [id,quantity] of draft.quantities){const item=contributionItems().find(item=>item.id===id);if(quantity>0&&(!item||!Number.isInteger(quantity)||quantity>Math.max(rsvpDishQuantity(item),item.needed-item.claims.length+rsvpDishQuantity(item))))return false;}
+  for(const item of contributionItems())setRsvpDishQuantity(item,draft.quantities.get(item.id)||0);
+  for(const item of draft.customs||[]){(state[GatheringFeatures.contributionKey(viewedEventId,state)]??=[]).push(setRsvpDishQuantity({id:`custom-${crypto.randomUUID()}`,name:item.name,category:item.category,needed:item.quantity,unit:item.unit,claims:[]},item.quantity));}
   return true;
 }
 document.querySelector('#rsvpDishChoices').addEventListener('change',event=>{
@@ -2571,7 +2574,7 @@ function renderRsvpReview(container) {
   if(GatheringFeatures.rsvp(viewedEventId).guestCounter){line('Guests',String(readRsvpGuestNames().length));readRsvpGuestNames().filter(Boolean).forEach(name=>line(name,'Accepts with pleasure'));}
   if(GatheringFeatures.rsvp(viewedEventId,state).contributions){
     const draft=rsvpDishDraft();
-    const dishes=draft?[...draft.quantities].flatMap(([id,quantity])=>{const item=state.items.find(item=>item.id===id);return quantity&&item?[`${item.name} ${GuestPlanning.singleDishStatus(item,quantity,true,state.quantityUnits)||`(${formatQuantity(quantity,item)})`}`]:[];}):state.items.flatMap(item=>{const quantity=item.claims.filter(name=>name===guestName).length;return quantity?[`${item.name} ${GuestPlanning.singleDishStatus(item,quantity,true,state.quantityUnits)||`(${formatQuantity(quantity,item)})`}`]:[];});
+    const dishes=draft?[...draft.quantities].flatMap(([id,quantity])=>{const item=contributionItems().find(item=>item.id===id);return quantity&&item?[`${item.name} ${GuestPlanning.singleDishStatus(item,quantity,true,state.quantityUnits)||`(${formatQuantity(quantity,item)})`}`]:[];}):contributionItems().flatMap(item=>{const quantity=item.claims.filter(name=>name===guestName).length;return quantity?[`${item.name} ${GuestPlanning.singleDishStatus(item,quantity,true,state.quantityUnits)||`(${formatQuantity(quantity,item)})`}`]:[];});
     for(const item of GuestPlanning.menuOrder(draft?.customs||[]))dishes.push(`${item.name} ${GuestPlanning.singleDishStatus({...item,needed:item.quantity},item.quantity,true,state.quantityUnits)||`(${item.quantity})`}`);
     line('Bringing',dishes.join(', ')||'No dish');
   }
@@ -2707,7 +2710,7 @@ document.querySelector('#rsvpForm').addEventListener('submit', event => {
   if (GatheringFeatures.rsvp(viewedEventId).namedGuests && rsvpOptionsLocked()) rsvp = GuestPlanning.lockedRsvp(currentInvitationRsvp(), rsvp);
   const account=rsvpAccount();
   if(account)rsvp=InvitationGroups.merge(account,viewedEventId,accountSignInNames(account.name),currentInvitationNumber(),state.rsvps[index],rsvp);
-  if(declined&&GatheringFeatures.rsvp(viewedEventId,state).contributions)InvitationGroups.releaseDishes(state.items,guestName,currentInvitationNumber(),GuestPlanning.invitationCount(account,viewedEventId)<=1,accountSignInNames(guestName),rsvp.people);
+  if(declined&&GatheringFeatures.rsvp(viewedEventId,state).contributions)InvitationGroups.releaseDishes(contributionItems(),guestName,currentInvitationNumber(),GuestPlanning.invitationCount(account,viewedEventId)<=1,accountSignInNames(guestName),rsvp.people);
   if(!applyRsvpDishes(declined?null:rsvpDishDraft())){event.preventDefault();showRsvpSaveError('A dish is no longer available. Please reopen RSVP and choose again.');return;}
   if (index >= 0) state.rsvps[index] = rsvp; else state.rsvps.push(rsvp);
   form.dataset.saved='true';
@@ -2819,7 +2822,7 @@ document.querySelector('#noResponseButton').addEventListener('click', () => {
 function dishClaimHousehold(claimant){return findAccount(claimant)?.name||claimant;}
 function householdDishClaims(household){
   const key=normalizeAccountName(household);
-  return GuestPlanning.menuOrder(state.items).flatMap(item=>{const quantity=item.claims.filter(claimant=>normalizeAccountName(dishClaimHousehold(claimant))===key).length;return quantity?[{item,quantity}]:[];});
+  return GuestPlanning.menuOrder(contributionItems()).flatMap(item=>{const quantity=item.claims.filter(claimant=>normalizeAccountName(dishClaimHousehold(claimant))===key).length;return quantity?[{item,quantity}]:[];});
 }
 function attendingDishRows(household,shown){
   const key=normalizeAccountName(household);if(shown.has(key)||!GatheringFeatures.forGathering(viewedEventId).menu)return '';shown.add(key);
@@ -2828,7 +2831,7 @@ function attendingDishRows(household,shown){
 }
 function otherDishContributions(shown){
   if(!GatheringFeatures.forGathering(viewedEventId).menu)return '';
-  const households=[...new Map(state.items.flatMap(item=>item.claims.map(dishClaimHousehold)).map(household=>[normalizeAccountName(household),household])).values()].filter(household=>!shown.has(normalizeAccountName(household)));
+  const households=[...new Map(contributionItems().flatMap(item=>item.claims.map(dishClaimHousehold)).map(household=>[normalizeAccountName(household),household])).values()].filter(household=>!shown.has(normalizeAccountName(household)));
   const rows=households.flatMap(household=>householdDishClaims(household).map(({item,quantity})=>renderDish(item,quantity,household))).join('');
   return rows?`<h3 class="dish-list-group-title">Other contributions</h3>${rows}`:'';
 }
@@ -2902,7 +2905,7 @@ function renderMenuCopyControls(container,type,refresh){
   const gathering=document.createElement('select');gathering.setAttribute('aria-label','Copy from gathering');
   for(const [id,event] of Object.entries(appState.events)){if(id===eventId||id==='wedding')continue;const option=document.createElement('option');option.value=id;option.textContent=event.gatheringName||EVENT_DETAILS[id]?.name||id;gathering.append(option);}
   const menu=document.createElement('select');menu.setAttribute('aria-label','Menu to copy');
-  for(const [value,title] of [['potluck','Potluck'],['sit-down','Sit Down Dinner']]){const option=document.createElement('option');option.value=value;option.textContent=title;menu.append(option);}menu.value=type;
+  for(const [value,title] of [['potluck','Potluck'],['sit-down','Sit Down Dinner'],['drinks','Drinks (alcoholic drinks)']]){const option=document.createElement('option');option.value=value;option.textContent=title;menu.append(option);}menu.value=type;
   const copy=document.createElement('button');copy.type='button';copy.textContent='Copy items';copy.disabled=!gathering.options.length;
   const status=document.createElement('p');status.setAttribute('role','status');
   toggle.addEventListener('click',()=>{controls.hidden=!controls.hidden;toggle.setAttribute('aria-expanded',String(!controls.hidden));});
@@ -2921,7 +2924,7 @@ function renderDinnerPlanEditor(area){
   const section=document.createElement('section');section.className='admin-editor-section';
   const label=document.createElement('label'),title=document.createElement('span');title.textContent=`Dinner plan for ${plan.year}`;
   const select=document.createElement('select');select.setAttribute('aria-label','Dinner plan');
-  for(const [value,text] of [['potluck','Potluck'],['sit-down','Full sit-down dinner']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
+  for(const [value,text] of [['potluck','Potluck'],['sit-down','Sit Down Dinner'],['none','None'],['drinks','Drinks (alcoholic drinks)']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
   select.value=plan.type;label.append(title,select);section.append(label);
   const panel=document.createElement('section');panel.id='sitDownDinnerMenu';
   const heading=document.createElement('h3');heading.textContent='Private preparation menu';
@@ -2962,20 +2965,21 @@ function openMenuEditor(){
     renderDinnerPlanEditor(area);
     openAdmin();
     const fields=document.querySelector('#menuAdminFields'),anchor=document.createComment('menu fields home'),hidden=fields.hidden;
-    fields.before(anchor);fields.hidden=false;area.append(fields);renderMenuCopyControls(fields,'potluck',openAdmin);
+    fields.before(anchor);fields.hidden=false;area.append(fields);renderMenuCopyControls(fields,menuEditorSection==='drinks'?'drinks':'potluck',openAdmin);
     const units=document.querySelector('#menuQuantityTypes'),unitsAnchor=document.createComment('quantity types home');
     units.before(unitsAnchor);area.append(units);
     const sitDown=document.querySelector('#sitDownDinnerMenu');area.append(sitDown);
     const navigation=document.createElement('nav');navigation.className='menu-editor-navigation';navigation.setAttribute('aria-label','Menu sections');
-    const sections=[['potluck','Potluck',fields],['sit-down','Sit Down Dinner',sitDown],['quantities','Quantity Types',units]];
+    const sections=[['potluck','Potluck',fields],['drinks','Drinks (alcoholic drinks)',fields],['sit-down','Sit Down Dinner',sitDown],['quantities','Quantity Types',units]];
     const showSection=key=>{
       commitAllPendingEditorInputs();menuEditorSection=key;
-      for(const [id,,panel] of sections)panel.hidden=id!==key;
+      for(const panel of new Set(sections.map(([, ,panel])=>panel)))panel.hidden=!sections.some(([id,,candidate])=>candidate===panel&&id===key);
+      if(['potluck','drinks'].includes(key)){document.querySelector('#adminNewCategory').value=key==='drinks'?'Drinks':'Main Table';openAdmin();renderMenuCopyControls(fields,key,openAdmin);}
       navigation.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.menuSection===key)));
     };
     for(const [key,title,panel] of sections){const button=document.createElement('button');button.type='button';button.textContent=title;button.dataset.menuSection=key;button.setAttribute('aria-controls',panel.id);button.addEventListener('click',()=>showSection(key));navigation.append(button);}
     const clearClaim=document.querySelector('#clearClaimSection'),clearClaimAnchor=document.createComment('clear claim home');
-    clearClaim.before(clearClaimAnchor);area.firstElementChild.after(clearClaim,navigation);showSection('potluck');
+    clearClaim.before(clearClaimAnchor);area.firstElementChild.after(clearClaim,navigation);showSection(GatheringFeatures.dinnerPlan(viewedEventId,state)?.type==='drinks'?'drinks':'potluck');
     dialog.addEventListener('close',()=>{clearClaimAnchor.replaceWith(clearClaim);unitsAnchor.replaceWith(units);units.hidden=false;anchor.replaceWith(fields);fields.hidden=hidden;},{once:true});
   }
   showSiteDialog(dialog);
@@ -3020,17 +3024,17 @@ function openAdmin() {
     renderWeddingPartyAttireAdmin();
     renderAdminAttireVideos();
   }
-  document.querySelector('#menuAdminFields').hidden = isWedding || (document.querySelector('#menuEditorDialog').open && menuEditorSection!=='potluck');
+  document.querySelector('#menuAdminFields').hidden = isWedding || (document.querySelector('#menuEditorDialog').open && !['potluck','drinks'].includes(menuEditorSection));
   document.querySelector('#adminNewUnit').innerHTML = unitOptions();
   renderQuantityUnits();
-  document.querySelector('#adminItems').innerHTML = GuestPlanning.menuRows(state.items).map(({item,startsCategory}) => {
+  document.querySelector('#adminItems').innerHTML = GuestPlanning.menuRows(menuAdminItems()).map(({item,startsCategory}) => {
     return `<div class="admin-row${startsCategory?' menu-category-start':''}" data-admin-id="${escapeAttribute(item.id)}"><input value="${escapeAttribute(item.name)}" aria-label="Dish name"><select aria-label="Category">${GuestPlanning.foodCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select><select aria-label="Amount needed">${amountOptions(item)}</select><select aria-label="Quantity type">${unitOptions(item)}</select><div class="admin-row-actions"><button type="button" class="admin-delete menu-remove-button" aria-label="Remove ${escapeAttribute(item.name)}" title="Remove">Remove</button></div></div>`;
   }).join('');
   document.querySelectorAll('.admin-row').forEach(row => {
     const [name, category, amount, unit, actions] = row.children;
-    [name, category, amount, unit].forEach(input => input.addEventListener('change', () => { const item = state.items.find(i => i.id === row.dataset.adminId); item.name = name.value.trim() || item.name; item.category = category.value; item.optional = amount.value === 'optional'; item.unit = unit.value; if (!item.optional) item.needed = Number(amount.value); saveState(); if(input===category)openAdmin(); }));
+    [name, category, amount, unit].forEach(input => input.addEventListener('change', () => { const item = menuAdminItems().find(i => i.id === row.dataset.adminId); item.name = name.value.trim() || item.name; item.category = category.value; item.optional = amount.value === 'optional'; item.unit = unit.value; if (!item.optional) item.needed = Number(amount.value); saveState(); if(input===category)openAdmin(); }));
     const remove = actions.querySelector('.admin-delete');
-    remove.addEventListener('click', () => { state.items = state.items.filter(i => i.id !== row.dataset.adminId); saveState(); openAdmin(); });
+    remove.addEventListener('click', () => { state[menuAdminKey()] = menuAdminItems().filter(i => i.id !== row.dataset.adminId); saveState(); openAdmin(); });
   });
   const dialog = document.querySelector('#adminDialog'); if (!dialog.open && !SiteEditing.enabled) dialog.showModal();
 }
@@ -3162,7 +3166,7 @@ function renderQuantityUnits() {
     remove.addEventListener('click', () => {
       if (state.quantityUnits.find(unit => unit.id === row.dataset.unitId)?.locked) return;
       state.quantityUnits = state.quantityUnits.filter(unit => unit.id !== row.dataset.unitId);
-      state.items.forEach(item => { if (item.unit === row.dataset.unitId) item.unit = 'item'; });
+      [...(state.items||[]),...(state.drinksItems||[])].forEach(item => { if (item.unit === row.dataset.unitId) item.unit = 'item'; });
       saveState(); openAdmin();
     });
   });
@@ -3724,14 +3728,14 @@ document.querySelector('#previewEditedTemplateButton').addEventListener('click',
   await window.Invitation.render(canvas, model, makeQrCode(model.qrUrl)); document.querySelector('#invitationPreviewHeading').textContent = templateDraft.name; document.querySelector('#invitationPreviewAccount').textContent = invitationQrUrl(account) === generalLoginUrl() ? 'Previewing the general login QR.' : `Previewing ${account.name}'s existing account QR. The name is not printed.`; document.querySelector('#invitationPreviewStatus').textContent = ''; document.querySelector('#invitationPreviewStatus').classList.remove('form-error'); document.querySelector('#invitationCanvasWrap').hidden = false; document.querySelector('#configureInvitationTemplate').hidden = true; document.querySelector('#downloadInvitationPng').disabled = false; showSiteDialog(document.querySelector('#invitationPreviewDialog'));
 });
 function updateClearClaimFamilies() {
-  const item = state.items.find(entry => entry.id === document.querySelector('#clearClaimItem').value);
+  const item = (SiteEditing.enabled?menuAdminItems():contributionItems()).find(entry => entry.id === document.querySelector('#clearClaimItem').value);
   const familySelect = document.querySelector('#clearClaimFamily');
   const families = item ? [...new Set(item.claims)] : [];
   familySelect.innerHTML = families.map(name => `<option value="${escapeAttribute(name)}">${escapeHtml(contributionDisplayName(name))}</option>`).join('');
   updateClearClaimQuantities();
 }
 function updateClearClaimQuantities() {
-  const item = state.items.find(entry => entry.id === document.querySelector('#clearClaimItem').value);
+  const item = (SiteEditing.enabled?menuAdminItems():contributionItems()).find(entry => entry.id === document.querySelector('#clearClaimItem').value);
   const family = document.querySelector('#clearClaimFamily').value;
   const claimed = item ? item.claims.filter(name => name === family).length : 0;
   document.querySelector('#clearClaimQuantity').innerHTML = Array.from({ length: claimed }, (_, index) => {
@@ -3740,7 +3744,7 @@ function updateClearClaimQuantities() {
   }).join('');
 }
 function populateClearClaimControls() {
-  const claimedItems = GuestPlanning.menuOrder(state.items).filter(item => item.claims.length);
+  const claimedItems = GuestPlanning.menuOrder((SiteEditing.enabled?menuAdminItems():contributionItems())).filter(item => item.claims.length);
   const itemSelect = document.querySelector('#clearClaimItem');
   itemSelect.innerHTML = claimedItems.map(item => `<option value="${escapeAttribute(item.id)}">${escapeHtml(item.name)} (${escapeHtml(formatQuantity(item.claims.length, item))} claimed)</option>`).join('');
   const hasClaims = claimedItems.length > 0;
@@ -3879,7 +3883,7 @@ document.querySelector('#clearClaimSubmit').addEventListener('click', event => {
   if (!isHostView() || !GatheringFeatures.forGathering(viewedEventId).menu) return;
   if (event.submitter?.value === 'cancel') return;
   event.preventDefault();
-  const item = state.items.find(entry => entry.id === document.querySelector('#clearClaimItem').value);
+  const item = (SiteEditing.enabled?menuAdminItems():contributionItems()).find(entry => entry.id === document.querySelector('#clearClaimItem').value);
   const family = document.querySelector('#clearClaimFamily').value;
   const quantity = Number(document.querySelector('#clearClaimQuantity').value);
   if (!item || !family || quantity < 1) return;
@@ -4072,7 +4076,7 @@ document.querySelector('#adminAddButton').addEventListener('click', () => {
   const name = document.querySelector('#adminNewItem').value.trim(); if (!name) return;
   const amount = document.querySelector('#adminNewAmount').value;
   const unit = document.querySelector('#adminNewUnit').value;
-  state.items.push({ id: `host-${Date.now()}`, name, category: document.querySelector('#adminNewCategory').value, needed: amount === 'optional' ? 1 : Number(amount), optional: amount === 'optional', unit, claims: [] });
+  (state[menuAdminKey()]??=[]).push({ id: `host-${Date.now()}`, name, category: document.querySelector('#adminNewCategory').value, needed: amount === 'optional' ? 1 : Number(amount), optional: amount === 'optional', unit, claims: [] });
   document.querySelector('#adminNewItem').value = ''; saveState(); openAdmin();
 });
 
@@ -4230,7 +4234,7 @@ function renderGatheringHistory() {
     +section('Invited',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]).map(accountHtml).join(''))
     +section('Attending',peopleHtml(true)+(GatheringFeatures.rsvp(snapshot.eventId).childNames?rsvps.flatMap(rsvp=>GuestPlanning.childLabels(rsvp)).map(name=>`<p>${escapeHtml(name)}</p>`).join(''):''))+section('Declined',peopleHtml(false))
     +section('No RSVP',accounts.filter(account=>account.invitedEvents?.[snapshot.eventId]&&missing(account).length).map(account=>`<article><strong>${escapeHtml(account.name)}</strong><p>${missing(account).map(escapeHtml).join(', ')}</p></article>`).join(''))
-    +section('Contributions and menu requests',GuestPlanning.menuOrder(event.items || []).map(item=>{const counts=new Map();for(const name of item.claims || [])counts.set(name,(counts.get(name)||0)+1);return `<article><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.category || '')} · ${item.needed} ${escapeHtml(item.unit || 'item')}(s) requested</p>${[...counts].map(([name,quantity])=>`<p>${escapeHtml(label(name))}: ${quantity}</p>`).join('') || '<p>No claims recorded.</p>'}</article>`;}).join(''))
+    +section('Contributions and menu requests',GuestPlanning.menuOrder(GatheringFeatures.contributionItems(snapshot.eventId,event)).map(item=>{const counts=new Map();for(const name of item.claims || [])counts.set(name,(counts.get(name)||0)+1);return `<article><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.category || '')} · ${item.needed} ${escapeHtml(item.unit || 'item')}(s) requested</p>${[...counts].map(([name,quantity])=>`<p>${escapeHtml(label(name))}: ${quantity}</p>`).join('') || '<p>No claims recorded.</p>'}</article>`;}).join(''))
     +section('Meals and dietary requests',rsvps.flatMap(rsvp=>(rsvp.menuSelections || []).map(meal=>`<p>${escapeHtml(meal.name || rsvp.name)}: ${escapeHtml(meal.meal || 'No meal selected')}${meal.dietaryRestrictions?` · ${escapeHtml(meal.dietaryRestrictions)}`:''}</p>`)).join(''))
     +section('Host notes',event.hostNotes?`<p class="history-notes">${escapeHtml(event.hostNotes)}</p>`:'');
 }
@@ -4272,7 +4276,7 @@ function showPastGathering(snapshot) {
   const own=(event.rsvps || []).filter(r=>!isHostView()||r.name===guestName);
   const responses=own.map(r=>`<p>${r.adults || 0} adults · ${r.children || 0} children</p>${(r.people || []).map(person=>`<p>${escapeHtml(person.name)} — ${person.attending?'Attending':'Declined'}</p>`).join('')}${(r.childNames || []).map(name=>`<p>${escapeHtml(name)}</p>`).join('')}` ).join('');
   const names=new Set(own.map(r=>r.name));
-  const dishes=GuestPlanning.menuOrder(event.items || []).filter(item=>item.claims?.some(name=>names.has(name))).map(item=>`<li>${escapeHtml(item.name)}</li>`).join('');
+  const dishes=GuestPlanning.menuOrder(GatheringFeatures.contributionItems(snapshot.eventId,event)).filter(item=>item.claims?.some(name=>names.has(name))).map(item=>`<li>${escapeHtml(item.name)}</li>`).join('');
   const meals=own.flatMap(r=>r.menuSelections || []).map(meal=>`<li>${escapeHtml(meal.name || '')}: ${escapeHtml(meal.meal || '')}</li>`).join('');
   area.innerHTML=`<h2>${escapeHtml(snapshot.name)}</h2><p>${escapeHtml(snapshot.date)} · Read-only history</p><h3>Your RSVP</h3>${responses || '<p>No RSVP was recorded.</p>'}${dishes?`<h3>Your Dishes</h3><ul>${dishes}</ul>`:''}${meals?`<h3>Your meals</h3><ul>${meals}</ul>`:''}<h3>Photos &amp; Videos</h3><div data-archive-gallery-link></div><p data-archive-media-status role="status"></p><div class="wedding-media-gallery" data-archive-media></div>`;
   try{const url=new URL(event.mediaGalleryUrl);if(!['http:','https:'].includes(url.protocol))throw new Error();const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent=gatheringGalleryLabel(event);area.querySelector('[data-archive-gallery-link]').append(link);}catch{/* An empty gallery link stays empty until the Host supplies it. */}

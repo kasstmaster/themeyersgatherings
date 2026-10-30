@@ -42,7 +42,7 @@
   if(conflicted)throw Object.assign(new Error('Newer information is available. Your local draft is retained; load the latest information before editing again.'),{status:409});
   const owner=generation;const submitted=clone(state);
   let changes=SharedStateProtocol.changes(baseline,submitted).filter(change=>change.path[0]!=='savedAt');
-  if(role==='guest')changes=changes.filter(({path})=>path[0]==='events'&&['rsvps','items'].includes(path[2]));
+  if(role==='guest')changes=changes.filter(({path})=>path[0]==='events'&&['rsvps','items','drinksItems'].includes(path[2]));
   if(!changes.length){remember(submitted);return;}
   try{const result=await json(base,'/state',{method:'PATCH',headers:{'If-Match':revision},body:JSON.stringify({changes})});if(owner!==generation)return;revision=result.revision;baseline=submitted;return result;}
   catch(error){if(owner!==generation)throw error;if(error.status===401)expired=true;if(error.status===409||error.status===428)conflicted=true;throw error;}

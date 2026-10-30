@@ -120,7 +120,7 @@
   }
   function menuRows(items){const ordered=menuOrder(items);return ordered.map((item,index)=>({item,startsCategory:index>0&&item.category!==ordered[index-1].category}));}
   function copyMenuItems(target,source,targetType,sourceType){
-    const key=type=>type==='sit-down'?'sitDownMenu':'items';
+    const key=type=>type==='sit-down'?'sitDownMenu':type==='drinks'?'drinksItems':'items';
     const normalizeName=value=>String(value||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase('en-US');
     const existing=target[key(targetType)]||[],names=new Set(existing.map(item=>normalizeName(item.name)));
     const added=[];let skipped=0;
