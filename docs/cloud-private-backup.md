@@ -22,6 +22,12 @@ Give the owner **one step at a time** in chat; this list is the complete operato
 6. Open the receipt in the private repository. It records the original source blob, backup SHA-256, immutable backup commit/path, verification time, run ID and `restoreDryRun: true`. Keep this receipt private. The summary's receipt path is in the private repository, not a public Actions artifact.
 7. Report only whether the run is green and the summary says the backup and no-write check passed. Before eventual cutover, recheck whether live state has changed; rerun during the coordinated window if necessary. A green backup run never authorizes deployment or activates the security release.
 
+## A retry shows a red X before any job starts
+
+If an old run reports `startup_failure` with no jobs, do not keep selecting **Re-run jobs**. The previously used backup run reached 50 attempts; its last actual backup job passed, while subsequent retries could not start. This status does not establish a backup-script or data-integrity failure.
+
+Open **Actions → Verify private state backup** (the workflow listing, rather than the old run), then choose **Run workflow** to create a fresh run. Use `main`, **Create private backup only**, and the writer-coordination checkbox after preserving drafts and coordinating writers. A fresh run must pass and its receipt must match the current source blob before release; an older green job is insufficient. Never delete the old run, bypass the backup gate, change secrets, or restore state to clear this status. Connections that can retry jobs may lack manual workflow-dispatch capability; in that case the owner must start the fresh run in GitHub.
+
 ## What the workflow actually verifies
 
 It uses the same tested `backupState` and `verifyRestore` helpers as the operator tool. The standalone YAML embeds generated source, so no private repository checkout or remote script download is needed. Guest bytes stay in runner memory and the private GitHub API/repository; no local backup files, cache or Actions artifacts are created. Only generic status messages and a private receipt path are deliberately logged/summarized. Do not enable debugging or add commands that dump environment, HTTP bodies or state. GitHub's automatic token masking remains enabled.
