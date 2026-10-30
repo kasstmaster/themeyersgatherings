@@ -269,6 +269,8 @@
   if(globalThis.MutationObserver){changes=new MutationObserver(scheduleAppearance);observe();}
   globalThis.ElementAppearance={
     textParts,label,isSurface,surfaceElement,imageElement,updateImage,
+    bannerText:target=>{const image=imageElement(target);return image?context?.getBannerText?.(image) || '':'';},
+    updateBannerText(target,value){if(!context?.host||!context.enabled)return;const image=imageElement(target);if(image&&context.setBannerText?.(image,value)){apply();context.save();}},
     group,selectedState,editState,clearEditState,
     values:target=>({...context?.state.elementAppearance?.[selector(target)],...(stateGroups.includes(group(target))?context?.state.elementAppearance?.['@group:'+group(target)]:{}),...context?.state.elementAppearance?.[appearancePath(target)],...(contentSurface(target)?Object.fromEntries(Object.entries(context?.state.elementAppearance?.['@group:inner-containers'] || {}).filter(([key])=>surfaceKeys.includes(key))):{})}),
     update(target,values){

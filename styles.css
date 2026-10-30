@@ -1163,3 +1163,11 @@ body:has(:is(#signInPage,#eventSelectionPage):not([hidden])){--navy:var(--entry-
 
 body:has(#eventSelectionPage:not([hidden])) #signedInAccount{color:rgba(255,255,255,.8)}
 :is(#signInPage,#eventSelectionPage) :is(button,a,input,summary):focus-visible{outline:2px solid rgba(255,255,255,.8);outline-offset:3px}
+
+/* Optional banner copy sits on the artwork, separate from RSVP information. */
+.gathering-banner{position:relative;width:var(--header-image-width,min(85%,420px));max-width:100%}
+.header-art .gathering-banner>img{width:100%;max-width:100%;height:auto}
+.gathering-banner-text{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;color:#fff;font-family:"Times New Roman",Times,serif;font-size:clamp(1.5rem,5vw,3rem);line-height:1.2;text-align:center;text-shadow:0 2px 5px #000;pointer-events:none;overflow-wrap:anywhere}
+.gathering-banner-text>p{margin:0}
+.gathering-banner-text[hidden],.gathering-banner:has(>img[hidden])>.gathering-banner-text{display:none}
+.site-edit-mode .gathering-banner-text>*,.site-edit-mode .gathering-banner-text[contenteditable="true"]{pointer-events:auto}

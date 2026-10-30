@@ -255,6 +255,7 @@
       const currentImage=computedImage.startsWith('url(')?computedImage.slice(4,-1).replace(/^['"]|['"]$/g,''):'';
       // Banner artwork is uploaded from a file, not entered as a URL.
       const bannerImage=Boolean(image?.matches('#eventHeaderImage,#rsvpFirstPageImage') || target.matches('.header-art'));
+      if(bannerImage)labelInput(panel,'Banner text (optional)','textarea',ElementAppearance.bannerText(target),value=>ElementAppearance.updateBannerText(target,value));
       const imageUrlInput=bannerImage?null:labelInput(panel,'Image URL','url',image?(image.getAttribute('src') || ''):values.backgroundImage ?? currentImage,(value,input)=>{const safe=ElementAppearance.imageUrl(value.trim());if(safe===null){input.setCustomValidity('Use an http or https image URL.');input.reportValidity();return;}input.setCustomValidity('');ElementAppearance.updateImage(target,safe);});
       const upload=labelInput(panel,'Upload image','file','',async(_value,input)=>{
         const file=input.files[0],selected=target,eventId=context.eventId;if(!file)return;

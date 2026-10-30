@@ -211,3 +211,5 @@ Entry buttons have visible white borders on sign-in (Next/Get Started/Back) and 
 Back actions in sign-in and RSVP use the same primary-button styling as Next, including width, padding, typography, and borders.
 
 Your Dishes includes **Make Changes**, which opens the existing RSVP dish-selection step without altering saved attendance or claims. Existing RSVP deadline locks still apply. The page reuses the RSVP menu’s fixed invited/attending/deadline reference toolbar; it hides when another page is selected.
+
+Uploaded gathering banners can have optional text over the artwork. Enter **Banner text (optional)** in Create Gathering or select an existing banner and use that field in Format. Select the overlay text itself to use the shared rich-text/font/color controls; double-click to edit its wording. Clearing the text hides the overlay, and removing an image hides its text without deleting it. Main and first-RSVP banner text are independent gathering-specific content; creation initializes both with the entered wording. Existing banners without text remain unchanged.
