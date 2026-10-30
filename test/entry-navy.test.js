@@ -8,3 +8,7 @@ test('entry palette copies navy once without linking gathering designs or overwr
  context.applyEntryNavy(home);for(const key of ['#eventSelectionPage','@group:buttons','.event-dock']){assert.equal(home.elementAppearance[key].backgroundColor,'#191f37');assert.equal(home.elementAppearance[key].backgroundAlpha,100);}
  assert.equal(home.elementAppearance['@group:buttons'].fontFamily,'Georgia');assert.equal(home.siteText.title,'Own title');home.elementAppearance['@group:buttons'].backgroundColor='#abcdef';context.applyEntryNavy(home);assert.equal(home.elementAppearance['@group:buttons'].backgroundColor,'#abcdef');
 });
+
+test('border upgrade preserves existing navy/custom backgrounds and remains editable afterwards',()=>{
+ const home={entryNavyVersion:1,elementAppearance:{'@group:buttons':{backgroundColor:'#abcdef',fontFamily:'Georgia'},'.event-dock':{backgroundColor:'#191f37'}}};context.applyEntryNavy(home);const buttons=home.elementAppearance['@group:buttons'];assert.equal(home.entryNavyVersion,2);assert.equal(buttons.backgroundColor,'#abcdef');assert.equal(buttons.borderColor,'#ffffff');assert.equal(buttons.borderWidth,1);assert.equal(buttons.borderAlpha,60);buttons.borderColor='#fedcba';context.applyEntryNavy(home);assert.equal(buttons.borderColor,'#fedcba');
+});

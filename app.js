@@ -1537,13 +1537,16 @@ function finishGatheringBuilderSession() {
 }
 // Copy the requested entry palette once; subsequent home edits stay independent.
 function applyEntryNavy(home){
-  if(home.entryNavyVersion===1)return;
+  if(home.entryNavyVersion===2)return;
   const navy='#191f37',styles=home.elementAppearance??={};
-  for(const key of ['#eventSelectionPage','@group:buttons','.event-dock'])styles[key]={...styles[key],backgroundColor:navy,backgroundAlpha:100};
-  for(const values of Object.values(styles))for(const key of ['borderColor','textColor','toolbarTextColor','toolbarSelectedColor']){
-    if(typeof values[key]==='string'&&/^#(?:081930|0a1d38|0b1f3a|07162a|132841|193b66|384d75)$/i.test(values[key]))values[key]=key==='borderColor'?navy:'#ffffff';
+  if(home.entryNavyVersion!==1){
+    for(const key of ['#eventSelectionPage','@group:buttons','.event-dock'])styles[key]={...styles[key],backgroundColor:navy,backgroundAlpha:100};
+    for(const values of Object.values(styles))for(const key of ['borderColor','textColor','toolbarTextColor','toolbarSelectedColor']){
+      if(typeof values[key]==='string'&&/^#(?:081930|0a1d38|0b1f3a|07162a|132841|193b66|384d75)$/i.test(values[key]))values[key]=key==='borderColor'?navy:'#ffffff';
+    }
   }
-  home.entryNavyVersion=1;
+  styles['@group:buttons']={...styles['@group:buttons'],borderColor:'#ffffff',borderAlpha:60,borderWidth:1};
+  home.entryNavyVersion=2;
 }
 // The shared gathering chooser has site-wide editing state, independent of every event.
 function renderGatheringHome() {
@@ -1823,11 +1826,18 @@ function renderYourDishes(){
   const dishes=invitationDishes(),button=document.querySelector('#yourDishesButton'),section=document.querySelector('#yourDishesSection');
   button.hidden=true;button.onclick=()=>{selectedGatheringTab='your-dishes';render();};button.setAttribute('aria-selected',String(selectedGatheringTab==='your-dishes'&&dishes.length>0));
   const showing=dishes.length>0&&selectedGatheringTab==='your-dishes';section.hidden=!showing;
+  document.querySelector('#yourDishesChange').disabled=!rsvpDishesEnabled();
   if(showing){
     document.querySelector('#rsvpWeddingPages').hidden=false;
     document.querySelectorAll('#rsvpWeddingPages>section').forEach(page=>{if(page!==section)page.hidden=true;});
-    document.querySelector('#yourDishesList').innerHTML=dishes.map(({item,quantity})=>`<p><strong>${escapeHtml(item.name)}</strong> <span>${escapeHtml(String(quantity))}</span></p>`).join('');
+    document.querySelector('#yourDishesList').innerHTML=dishes.map(({item,quantity})=>{const amount=Number(quantity)===1&&(!item.unit||item.unit==='item')?'':formatQuantity(quantity,item);return `<p><strong>${escapeHtml(item.name)}</strong>${amount?` <span>${escapeHtml(amount)}</span>`:''}</p>`;}).join('');
   }
+  syncRsvpDishReference();
+}
+function changeYourDishes(){
+  if(!rsvpDishesEnabled()||!invitationDishes().length)return;
+  selectedGatheringTab=null;render();
+  openRsvp();document.querySelector('#rsvpBringingDish').value='yes';RsvpFlow.go('dishes');
 }
 function renderRsvpPageNavigation(){
   const nav=document.querySelector('#rsvpPageNavigation');nav.replaceChildren();
@@ -2263,9 +2273,9 @@ function captureRsvpMeals() {
   }
   return rsvpMealDraft;
 }
-function syncRsvpDishReference(key){
+function syncRsvpDishReference(key=globalThis.RsvpFlow?.currentStep){
   const dialog=document.querySelector('#rsvpDialog'),bar=document.querySelector('#rsvpDishReference');
-  const showing=dialog.open&&!SiteEditing.enabled&&!isHostView()&&GatheringFeatures.rsvp(viewedEventId,state).contributions&&(key==='bringing-dish'||key==='dishes'||key?.startsWith('custom-dish-'));
+  const showing=dialog.open&&!SiteEditing.enabled&&!isHostView()&&GatheringFeatures.rsvp(viewedEventId,state).contributions&&(key==='bringing-dish'||key==='dishes'||key?.startsWith('custom-dish-')||selectedGatheringTab==='your-dishes'&&!document.querySelector('#yourDishesSection').hidden);
   bar.hidden=!showing;dialog.classList.toggle('has-dish-reference',!!showing);
   if(!showing)return;
   const counts=hostAuthenticated?GatheringFeatures.dinnerCounts(appState.accounts,viewedEventId,state):state.dinnerSummary;
@@ -4354,3 +4364,5 @@ document.querySelector('#replacementInvitationImageFile').addEventListener('chan
 document.querySelector('#replaceInvitationImage').addEventListener('click',()=>document.querySelector('#replacementInvitationImageFile').click());
 
 document.querySelector('#templateMultiSelect').addEventListener('change',event=>{templateMultiSelect=event.target.checked;});
+
+document.querySelector('#yourDishesChange').addEventListener('click',changeYourDishes);
