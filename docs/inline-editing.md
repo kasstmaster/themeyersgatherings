@@ -158,3 +158,5 @@ The non-wedding **Dinner plan → None** option skips food-contribution question
 **Drinks (alcoholic drinks)** uses the same contribution questions, invitation-group claiming, quantities, Your Dishes, printing and guest aggregate counts as Potluck, backed by a separate alcoholic-drinks menu. Edit it through the **Drinks (alcoholic drinks)** section in Edit → Menu, even when another dinner plan is active. Copy from supports all three saved menus. Switching plans preserves food items, drink items, claims and sit-down selections; guests can only read or claim items from the currently active contribution menu. New yearly occurrences retain both menu catalogs and clear their claims.
 
 The Dinner plan dropdown is ordered Potluck, Sit Down Dinner, Drinks (alcoholic drinks), then None.
+
+Banner captions keep paragraph margins at zero at every indentation level, so indented lines follow the chosen line height without extra browser-default spacing. Indentation, deliberate blank lines and existing text formatting remain intact.
