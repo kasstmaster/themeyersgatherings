@@ -438,7 +438,7 @@ test('all editable wedding party copy supports safe Markdown formatting', async 
   ]);
 
   assert.match(javascript, /replace\(\/\\\*\\\*\(\.\+\?\)\\\*\\\*\/g, '<strong>\$1<\/strong>'\)/);
-  assert.match(javascript, /output\.push\(`<li>\$\{formatInline/);
+  assert.match(javascript, /const content=blockInline\(item\[3\],alignment\)/);
   assert.match(javascript, /output\.push\('<hr>'\)/, 'a standalone --- should render a divider');
   assert.match(javascript, /href="geo:0,0\?q=\$\{encodeURIComponent\(plainAddress\)\}"/, 'angle-bracketed addresses should use the device maps handler');
   assert.match(javascript, /function safeEditableLink\(value\)/, 'editable links should be checked before rendering');

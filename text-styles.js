@@ -43,7 +43,15 @@
   function mark(text,values) {
     if(!properties(values))return text;
     const spec=Object.entries(values).map(([key,value])=>`${key}=${value}`).join(';');
-    return String(text||'Text').split('\n').map(line=>line.trim()?`{{style:${spec}}}${line}{{/style}}`:line).join('\n');
+    function lineStyle(line){
+      if(!line.trim())return line;
+      const aligned=line.match(/^\{\{align:(left|center|right|justify)\}\}(.*)\{\{\/align\}\}$/);
+      if(aligned)return `{{align:${aligned[1]}}}${lineStyle(aligned[2])}{{/align}}`;
+      const prefix=line.match(/^((?:> ?)+)(.*)$/)||line.match(/^(\s*(?:[-+]|\d+[.)])\s+)(.*)$/);
+      if(prefix)return prefix[1]+lineStyle(prefix[2]);
+      return `{{style:${spec}}}${line}{{/style}}`;
+    }
+    return String(text??'').split('\n').map(lineStyle).join('\n');
   }
   function render(value,format) {
     const fragments=[];let prefix='\uE000style';
@@ -80,8 +88,8 @@
       return Math.round(offset*current.length/source.length);
     };
     let cursor=0;
-    return markup.split(/(\{\{style:[^{}]+\}\}|\{\{\/style\}\}|\*\*|\*|__|_|`)/).map(part=>{
-      if(/^\{\{(?:style:|\/style)/.test(part)||/^(?:\*\*|\*|__|_|`)$/.test(part))return part;
+    return markup.split(/(\{\{style:[^{}]+\}\}|\{\{\/style\}\}|\{\{align:[a-z]+\}\}|\{\{\/align\}\}|\*\*|\*|__|_|`)/).map(part=>{
+      if(/^\{\{(?:style:|\/style|align:|\/align)/.test(part)||/^(?:\*\*|\*|__|_|`)$/.test(part))return part;
       const start=cursor;cursor+=part.length;return current.slice(boundary(start),boundary(cursor));
     }).join('');
   }

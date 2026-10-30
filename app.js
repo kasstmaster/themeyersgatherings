@@ -659,26 +659,28 @@ function formatEditableText(value, {inline=false} = {}) {
     return parts.join('');
   };
   const formatInline = line => TextStyles.render(line,formatPlainInline);
+  const readAlignment=text=>{let align='',match;while((match=text.match(/^\{\{align:(left|center|right|justify)\}\}(.*)\{\{\/align\}\}$/))){align ||=match[1];text=match[2];}return {align,text};};
+  const blockInline=(text,fallback='')=>{const content=readAlignment(text),align=fallback||content.align;return {attributes:align?` style="text-align:${align}"`:'',html:formatInline(content.text)};};
   const output = [],lists=[];
   let quoteDepth=0;
   const closeTop=()=>{const list=lists.pop();if(list){if(list.item)output.push('</li>');output.push(`</${list.type}>`);}};
   const closeList=()=>{while(lists.length)closeTop();};
   String(value || '').split(/\r?\n/).forEach(raw=>{
-    const quote=raw.match(/^(?:> ?)+/),depth=quote?(quote[0].match(/>/g)||[]).length:0,line=quote?raw.slice(quote[0].length):raw;
+    const outer=readAlignment(raw),quote=outer.text.match(/^(?:> ?)+/),depth=quote?(quote[0].match(/>/g)||[]).length:0,line=quote?outer.text.slice(quote[0].length):outer.text,aligned=readAlignment(line),alignment=outer.align||aligned.align;
     if(depth!==quoteDepth){closeList();while(quoteDepth>depth){output.push('</blockquote>');quoteDepth--;}while(quoteDepth<depth){output.push('<blockquote class="text-indent">');quoteDepth++;}}
-    if(/^\s*---\s*$/.test(line)){closeList();output.push('<hr>');return;}
-    const item=line.match(/^(\s*)([-+]|\d+[.)])\s+(.+)$/);
+    if(/^\s*---\s*$/.test(aligned.text)){closeList();output.push('<hr>');return;}
+    const item=aligned.text.match(/^(\s*)([-+]|\d+[.)])\s+(.+)$/);
     if(item){
       const indent=item[1].replace(/\t/g,'  ').length,type=/^[-+]$/.test(item[2])?'ul':'ol';
       while(lists.length&&(indent<lists.at(-1).indent||indent===lists.at(-1).indent&&type!==lists.at(-1).type))closeTop();
       if(!lists.length||indent>lists.at(-1).indent){output.push(`<${type}>`);lists.push({type,indent,item:false});}
-      const list=lists.at(-1);if(list.item)output.push('</li>');output.push(`<li>${formatInline(item[3])}`);list.item=true;return;
+      const list=lists.at(-1);if(list.item)output.push('</li>');const content=blockInline(item[3],alignment);output.push(`<li${content.attributes}>${content.html}`);list.item=true;return;
     }
-    closeList();if(line.trim())output.push(`<p>${formatInline(line)}</p>`);else output.push('<br>');
+    closeList();if(line.trim()){const content=blockInline(aligned.text,alignment);output.push(`<p${content.attributes}>${content.html}</p>`);}else output.push('<br>');
   });
   closeList();while(quoteDepth-->0)output.push('</blockquote>');
   const html=output.join('');
-  return inline ? html.replace(/<p>([\s\S]*?)<\/p>/g,'$1<br>').replace(/<br>$/,'') : html;
+  return inline ? html.replace(/<p(?: style="text-align:(left|center|right|justify)")?>([\s\S]*?)<\/p>/g,(_,align,text)=>align?`<span style="display:block;text-align:${align}">${text}</span><br>`:text+'<br>').replace(/<br>$/,'') : html;
 }
 function editableTextVariables() {
   const eventDate = new Date(`${state.eventDate}T12:00:00`);

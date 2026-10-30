@@ -8,7 +8,8 @@
     const candidate=value.startsWith(prefix)?value:value==='#popup-text'?element.dataset.textPopup:'';
     return decode(candidate)!==null?candidate:'';
   }
-  function close(){const dialog=document.getElementById('textPopupDialog');if(dialog?.open)dialog.close();}
+  function reset(){document.getElementById('textPopupContent').replaceChildren();document.getElementById('textPopupHeading').textContent='More information';}
+  function close(){const dialog=document.getElementById('textPopupDialog');if(dialog?.open)dialog.close();if(dialog)reset();}
   function open(element){
     const text=decode(href(element));if(text===null)return;
     const dialog=document.getElementById('textPopupDialog');
@@ -22,8 +23,8 @@
     document.addEventListener('click',activate,true);document.addEventListener('auxclick',activate,true);
     document.addEventListener('DOMContentLoaded',()=>{
       const dialog=document.getElementById('textPopupDialog');
-      dialog.querySelector('.modal-close').addEventListener('click',()=>dialog.close());
-      dialog.addEventListener('close',()=>{document.getElementById('textPopupContent').replaceChildren();document.getElementById('textPopupHeading').textContent='More information';});
+      dialog.querySelector('.modal-close').addEventListener('click',close);
+      dialog.addEventListener('close',()=>{if(!dialog.open)reset();});
     });
   }
 })();

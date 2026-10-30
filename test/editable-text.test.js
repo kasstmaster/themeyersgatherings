@@ -142,3 +142,19 @@ test('custom popup links round-trip Unicode, multiline Markdown and punctuation 
  const body='**Details**\n\n- Bring (a jacket)\n- Café & 🌹\n<script>neverRun()</script>',href=context.TextPopups.encode(body);assert.equal(context.TextPopups.decode(href),body);assert.ok(!href.includes(')'));
  const html=format(`[Read **more**](${href})`);assert.match(html,/<a href="#popup-text" data-text-popup=/);assert.match(html,/<strong>more<\/strong>/);assert.doesNotMatch(html,/<script>/);assert.match(format(context.TextPopups.decode(href)),/<strong>Details<\/strong>/);assert.match(format(context.TextPopups.decode(href)),/<ul>/);assert.equal(format('[Words](#popup-text:%ZZ)'),'<p>Words</p>');assert.equal(context.TextPopups.decode('javascript:alert(1)'),null);
 });
+
+test('empty formatting fragments never manufacture placeholder words or erase intentional whitespace',()=>{
+ for(const value of ['',null,undefined])assert.equal(context.TextStyles.mark(value,{size:24}),'');assert.equal(context.TextStyles.mark(' \n\n',{font:'Arial'}),' \n\n');assert.equal(context.TextStyles.mark(0,{size:24}),'{{style:size=24}}0{{/style}}');
+});
+
+test('selected paragraph alignment stays scoped and survives inline font formatting without unsafe CSS',()=>{
+ assert.equal(format('{{align:center}}First{{/align}}\nSecond'),'<p style="text-align:center">First</p><p>Second</p>');
+ const marked=context.TextStyles.mark('{{align:right}}First{{/align}}',{font:'Arial'});assert.match(format(marked),/<p style="text-align:right"><span style="font-family/);assert.doesNotMatch(format(marked),/\{\{align/);
+ assert.equal(context.TextStyles.rebase('{{align:center}}13{{/align}}','13','142'),'{{align:center}}142{{/align}}');
+ assert.equal(format('- {{align:center}}Item{{/align}}'),'<ul><li style="text-align:center">Item</li></ul>');assert.equal(format('{{align:right}}- Item{{/align}}'),'<ul><li style="text-align:right">Item</li></ul>');assert.equal(format('{{align:center}}> Quote{{/align}}'),'<blockquote class="text-indent"><p style="text-align:center">Quote</p></blockquote>');assert.match(format('{{align:center}}First{{/align}}',{inline:true}),/<span style="display:block;text-align:center">First<\/span>/);assert.doesNotMatch(format('{{align:center;position:fixed}}First{{/align}}'),/style=/);
+});
+
+test('font formatting preserves quote/list prefixes and alignment instead of turning them into visible text',()=>{
+ const quote=format(context.TextStyles.mark('> > {{align:center}}Indented{{/align}}',{font:'Arial'}));assert.equal((quote.match(/<blockquote/g)||[]).length,2);assert.match(quote,/<p style="text-align:center"><span style="font-family/);assert.doesNotMatch(quote,/&gt;|\{\{align/);
+ const list=format(context.TextStyles.mark('- {{align:right}}Item{{/align}}',{size:20}));assert.match(list,/<ul><li style="text-align:right"><span/);assert.doesNotMatch(list,/\{\{align/);
+});

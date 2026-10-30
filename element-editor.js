@@ -16,8 +16,8 @@
       if(element.matches('u'))return TextStyles.mark(text,{underline:'true'});
       if(element.matches('code'))return '`'+text+'`';
       if(element.matches('a')){const popup=globalThis.TextPopups?.href(element);if(popup)return `[${text}](${popup})`;try{const url=new URL(element.getAttribute('href'),document.baseURI);if(['http:','https:','mailto:'].includes(url.protocol))return `[${text}](${url.href})`;}catch{return text;}}
-      if(element.matches('blockquote'))return text.replace(/\n$/,'').split('\n').map(line=>'> '+line).join('\n')+'\n';
-      if(element.matches('li')){const siblings=[...element.parentElement.querySelectorAll(':scope>li')],body=[...element.childNodes].filter(child=>!child.matches?.('ul,ol')).map(walk).join('').trim(),nested=[...element.children].filter(child=>child.matches('ul,ol')).map(walk).join('').trimEnd();return `${element.parentElement.matches('ol')?`${siblings.indexOf(element)+1}.`:'-'} ${body}\n`+(nested?nested.split('\n').map(line=>'  '+line).join('\n')+'\n':'');}
+      if(element.matches('blockquote'))return text.replace(/\n$/,'').split('\n').map(line=>['left','center','right','justify'].includes(element.style.textAlign)?`{{align:${element.style.textAlign}}}> ${line}{{/align}}`:'> '+line).join('\n')+'\n';
+      if(element.matches('li')){const siblings=[...element.parentElement.querySelectorAll(':scope>li')],body=[...element.childNodes].filter(child=>!child.matches?.('ul,ol')).map(walk).join('').trim(),nested=[...element.children].filter(child=>child.matches('ul,ol')).map(walk).join('').trimEnd();const align=element.style.textAlign,aligned=['left','center','right','justify'].includes(align)?`{{align:${align}}}${body}{{/align}}`:body;return `${element.parentElement.matches('ol')?`${siblings.indexOf(element)+1}.`:'-'} ${aligned}\n`+(nested?nested.split('\n').map(line=>'  '+line).join('\n')+'\n':'');}
       if(element.matches('ul,ol'))return [...element.childNodes].map(child=>{const value=walk(child);return child.matches?.('ul,ol')?value.trimEnd().split('\n').map(line=>'  '+line).join('\n')+'\n':value;}).join('');
       const styles={};
       const font=element.style.fontFamily.replaceAll('"','').replaceAll("'",'');if(TextStyles.fonts.includes(font))styles.font=font;
@@ -25,7 +25,7 @@
       for(const [key,value] of [['color',element.style.color],['highlight',element.style.backgroundColor]])if(value){const parts=ElementAppearance.colorParts(value);styles[key]=parts.hex+(parts.alpha<100?Math.round(parts.alpha/100*255).toString(16).padStart(2,'0'):'');}
       Object.assign(styles,TextStyles.effects(element.style,ElementAppearance.colorParts,()=>getComputedStyle(element)));
       let result=Object.keys(styles).length?TextStyles.mark(text,styles):text;
-      if(element.matches('p,div,h1,h2,h3,h4,h5,h6'))result+='\n';
+      if(element.matches('p,div,h1,h2,h3,h4,h5,h6')){const align=element.style.textAlign;if(['left','center','right','justify'].includes(align))result=result.replace(/\n$/,'').split('\n').map(line=>line.trim()?`{{align:${align}}}${line}{{/align}}`:line).join('\n');result+='\n';}
       return result;
     }
     return [...root.childNodes].map(walk).join('').replace(/\n$/,'');
@@ -83,6 +83,11 @@
     if(!restoreSelection() || range.collapsed&&['bold','italic','underline','removeFormat'].includes(command)){editables[0].focus({preventScroll:true});const selection=window.getSelection();selection.selectAllChildren(editables[0]);}
     document.execCommand(command,false,value);if(temporary)for(const part of editables)part.removeAttribute('contenteditable');dirty=true;refreshUndo();rememberSelection();
   }
+  function textAlignment(value){
+    if(!ElementAppearance.group(target) && editables.length && !entry?.fields?.[0]?.readonly){if(!restoreSelection() || range.collapsed){range=document.createRange();range.selectNodeContents(editables[0]);}textCommand({left:'justifyLeft',start:'justifyLeft',center:'justifyCenter',right:'justifyRight',end:'justifyRight',justify:'justifyFull'}[value]);}
+    else ElementAppearance.update(target,{textAlign:value});
+    syncTextControls();
+  }
   function textEffect(values){
     const group=ElementAppearance.group(target);
     if(['buttons','dish-available','dish-claimed','dish-bringing','dish-details','dish-claimants','tabs','titles','dates','introductions','counts','count-values','count-titles','toolbar-options'].includes(group)||group?.startsWith('count-list-')){
@@ -108,13 +113,14 @@
       const css=TextStyles.properties(value);if(!css)return;span.style.cssText+=';'+css;
     }
     if(!existing){span.append(range.extractContents());range.insertNode(span);}
+    // A replacement style owns the selected fragment, including older nested
+    // declarations. Extracting the range already leaves unselected text intact.
+    const properties={font:['font-family'],size:['font-size'],color:['color','--selection-text-color'],highlight:['background-color']}[key] || [];
     if(key==='effects'){
-      // The new effect applies to the entire selection, including text that
-      // already has nested effects. Keep unrelated fonts, emphasis and links.
-      const properties=Object.hasOwn(value,'shadow')?['text-shadow']:[];
+      if(Object.hasOwn(value,'shadow'))properties.push('text-shadow');
       if(Object.hasOwn(value,'outline'))properties.push('-webkit-text-stroke-width','-webkit-text-stroke-color','paint-order');
-      for(const child of span.querySelectorAll('[style]'))for(const property of properties)child.style.removeProperty(property);
     }
+    for(const child of span.querySelectorAll('[style]'))for(const property of properties)child.style.removeProperty(property);
     range.selectNodeContents(span);restoreSelection();dirty=true;refreshUndo();
   }
   function flush(){
@@ -239,7 +245,7 @@
       for(const [title,selector] of [['Count','.summary-item>strong,.summary-stat>strong,.counter-row output'],['Count title','.summary-item>span,.summary-stat>span,.counter-row strong']])button(title,()=>{const part=target.querySelector(selector);if(part)select(part);},panel);
     }else if(name==='Format' && textual){
       for(const [title,command] of [['Bold','bold'],['Italic','italic'],['Underline','underline'],['Remove formatting','removeFormat']]){const control=button(title,()=>{textCommand(command);syncTextControls();},panel);control.dataset.textCommand=command;}
-      selectInput(panel,'Alignment',['left','center','right','justify'],getComputedStyle(target).textAlign,value=>ElementAppearance.update(target,{textAlign:value}));
+      selectInput(panel,'Alignment',['left','center','right','justify'],getComputedStyle(target).textAlign,textAlignment);
       selectInput(panel,'Font',TextStyles.fonts,'Times New Roman',value=>textStyle('font',value));
       selectInput(panel,'Size',TextStyles.sizes,16,value=>textStyle('size',value));
       const lineHeight=labelInput(panel,'Line height','number','',(value,input)=>{const height=Number(value);if(value.trim() && Number.isFinite(height) && height>=0.5 && height<=5){input.setCustomValidity('');ElementAppearance.update(target,{lineHeight:height});}else{input.setCustomValidity('Enter a line height from 0.5 to 5.');input.reportValidity();}});lineHeight.min=0.5;lineHeight.max=5;lineHeight.step=0.05;lineHeight.placeholder='Auto';lineHeight.title='Line spacing as a multiple of the font size (1 = single spacing)';
