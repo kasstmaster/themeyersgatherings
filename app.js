@@ -640,6 +640,9 @@ function formatEditableText(value, {inline=false} = {}) {
       if (match[4] !== undefined) {
         parts.push(`<code>${escapeHtml(match[4])}</code>`);
       } else if (match[1] !== undefined) {
+        const popup=globalThis.TextPopups?.decode(match[2]);
+        if(popup!==null&&popup!==undefined){parts.push(`<a href="#popup-text" data-text-popup="${escapeAttribute(match[2])}">${formatMarkdown(match[1])}</a>`);cursor=match.index+match[0].length;continue;}
+        if(match[2].startsWith('#popup-text:')){parts.push(formatMarkdown(match[1]));cursor=match.index+match[0].length;continue;}
         const href = safeEditableLink(match[2]);
         parts.push(href
           ? `<a href="${escapeAttribute(href)}">${formatMarkdown(match[1])}</a>`
@@ -1526,6 +1529,7 @@ function gatheringBuilderContext(eventId=viewedEventId) {
     upload:async file=>(await uploadTemplateBackground(`appearance-${crypto.randomUUID()}`,file)).url};
 }
 function finishGatheringBuilderSession() {
+  globalThis.TextPopups?.close();
   commitAllPendingEditorInputs();
   SiteEditing.beforeRender();
   ElementAppearance.restore();
@@ -1563,6 +1567,7 @@ function renderGatheringHome() {
   ElementAppearance.render({...builder,scope:'#eventSelectionPage',save:()=>builder.save({refresh:false})});
 }
 function render() {
+  if(SiteEditing.enabled)globalThis.TextPopups?.close();
   ElementAppearance.restore();
   if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}
   GapLayout.beforeRender();

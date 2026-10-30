@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-const [app,editing,styles]=await Promise.all(['app.js','inline-editing.js','text-styles.js'].map(file=>readFile(new URL('../'+file,import.meta.url),'utf8')));
+const [app,editing,styles,popups]=await Promise.all(['app.js','inline-editing.js','text-styles.js','text-popups.js'].map(file=>readFile(new URL('../'+file,import.meta.url),'utf8')));
 const context=vm.createContext({expandEditableTextVariables:value=>value,escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'),escapeAttribute:value=>value});
-vm.runInContext(styles,context);
+vm.runInContext(popups,context);vm.runInContext(styles,context);
 vm.runInContext(app.slice(app.indexOf('function safeEditableLink('),app.indexOf('function editableTextVariables()')),context);
 vm.runInContext(editing,context);
 const format=(value,options)=>context.formatEditableText(value,options);
@@ -136,4 +136,9 @@ test('paragraph indentation and nested lists retain depth and inline formatting'
  assert.equal(format('- Parent\n  - Child\n    1. Grandchild\n- Sibling'),'<ul><li>Parent<ul><li>Child<ol><li>Grandchild</li></ol></li></ul></li><li>Sibling</li></ul>');
  assert.equal(format('> - *Indented list*\n>   - Child'),'<blockquote class="text-indent"><ul><li><em>Indented list</em><ul><li>Child</li></ul></li></ul></blockquote>');
  assert.doesNotMatch(format('> <script>bad</script>'),/<script>/);
+});
+
+test('custom popup links round-trip Unicode, multiline Markdown and punctuation without navigating or injecting markup',()=>{
+ const body='**Details**\n\n- Bring (a jacket)\n- Café & 🌹\n<script>neverRun()</script>',href=context.TextPopups.encode(body);assert.equal(context.TextPopups.decode(href),body);assert.ok(!href.includes(')'));
+ const html=format(`[Read **more**](${href})`);assert.match(html,/<a href="#popup-text" data-text-popup=/);assert.match(html,/<strong>more<\/strong>/);assert.doesNotMatch(html,/<script>/);assert.match(format(context.TextPopups.decode(href)),/<strong>Details<\/strong>/);assert.match(format(context.TextPopups.decode(href)),/<ul>/);assert.equal(format('[Words](#popup-text:%ZZ)'),'<p>Words</p>');assert.equal(context.TextPopups.decode('javascript:alert(1)'),null);
 });

@@ -15,7 +15,7 @@
       if(element.matches('em,i'))return `*${text}*`;
       if(element.matches('u'))return TextStyles.mark(text,{underline:'true'});
       if(element.matches('code'))return '`'+text+'`';
-      if(element.matches('a')){try{const url=new URL(element.getAttribute('href'),document.baseURI);if(['http:','https:','mailto:'].includes(url.protocol))return `[${text}](${url.href})`;}catch{return text;}}
+      if(element.matches('a')){const popup=globalThis.TextPopups?.href(element);if(popup)return `[${text}](${popup})`;try{const url=new URL(element.getAttribute('href'),document.baseURI);if(['http:','https:','mailto:'].includes(url.protocol))return `[${text}](${url.href})`;}catch{return text;}}
       if(element.matches('blockquote'))return text.replace(/\n$/,'').split('\n').map(line=>'> '+line).join('\n')+'\n';
       if(element.matches('li')){const siblings=[...element.parentElement.querySelectorAll(':scope>li')],body=[...element.childNodes].filter(child=>!child.matches?.('ul,ol')).map(walk).join('').trim(),nested=[...element.children].filter(child=>child.matches('ul,ol')).map(walk).join('').trimEnd();return `${element.parentElement.matches('ol')?`${siblings.indexOf(element)+1}.`:'-'} ${body}\n`+(nested?nested.split('\n').map(line=>'  '+line).join('\n')+'\n':'');}
       if(element.matches('ul,ol'))return [...element.childNodes].map(child=>{const value=walk(child);return child.matches?.('ul,ol')?value.trimEnd().split('\n').map(line=>'  '+line).join('\n')+'\n':value;}).join('');
@@ -68,6 +68,7 @@
       const picker=panel.querySelector(`[aria-label="${name}"]`),hex=panel.querySelector(`[aria-label="${name} hex"]`);
       for(const [control,value] of [[picker,color.hex],[hex,color.hex+(color.alpha<100?Math.round(color.alpha/100*255).toString(16).padStart(2,'0'):'')]])if(control && document.activeElement!==control){control.value=value;control.dataset.editorCommitted=value;}
     }
+    const popupControl=panel.querySelector('[aria-label="Popup text"]'),popupHref=globalThis.TextPopups?.href(element.closest('a'))||'';if(popupControl && document.activeElement!==popupControl && popupControl.dataset.popupHref!==popupHref){popupControl.value=globalThis.TextPopups?.decode(popupHref)||'';popupControl.dataset.editorCommitted=popupControl.value;popupControl.dataset.popupHref=popupHref;}
     for(const [command,active] of [['bold',Number(style.fontWeight)>=600],['italic',style.fontStyle==='italic'],['underline',[element,...ancestorsUntilTarget(element)].some(part=>getComputedStyle(part).textDecorationLine.includes('underline'))]])panel.querySelector(`[data-text-command="${command}"]`)?.setAttribute('aria-pressed',String(active));
   }
   function restoreSelection(){range=boundedTextRange(range);if(!range)return false;try{const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);return true;}catch{return false;}}
@@ -248,6 +249,14 @@
       }
       const currentLink=currentTextElement().closest('a');
       const link=labelInput(panel,'Link URL','url',currentLink && target.contains(currentLink)?currentLink.getAttribute('href') || '':'',()=>{});button('Add link',()=>{try{const url=new URL(link.value);if(!['http:','https:','mailto:'].includes(url.protocol))throw new Error();textCommand('createLink',url.href);}catch{status('Enter an http, https, or mailto link.');}},panel);
+      const popup=labelInput(panel,'Popup text','textarea',globalThis.TextPopups?.decode(globalThis.TextPopups?.href(currentLink))||'',()=>{});popup.dataset.popupHref=globalThis.TextPopups?.href(currentLink)||'';
+      button('Add popup link',()=>{
+        if(!popup.value.trim()){status('Enter the text to show in the popup.');return;}
+        const selected=restoreSelection(),anchor=currentTextElement().closest('a');
+        if(anchor && target.contains(anchor) && (!selected || range.collapsed || anchor.contains(range.startContainer)&&anchor.contains(range.endContainer))){range=document.createRange();range.selectNodeContents(anchor);}
+        else if(!selected || range.collapsed){status('Highlight the words to turn into a popup link.');return;}
+        textCommand('createLink',TextPopups.encode(popup.value));syncTextControls();status('Popup link saved. Click it after leaving Edit mode to read it.');
+      },panel);
       button('Remove link',()=>textCommand('unlink'),panel);
       textEffectsPanel(panel);
       fieldsPanel(panel);
