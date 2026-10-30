@@ -8,7 +8,7 @@ import '../wedding-party.js';
 import '../shared-state-protocol.js';
 const clone=value=>structuredClone(value);
 const SAME=SharedStateProtocol.same;
-const PUBLIC_KEYS=`cancelled gatheringName gatheringTheme eventDate eventTime rsvpDate homeAddress addressLine1 addressLine2 headerText rsvpIntroText rsvpDetailsText rsvpDetailsTitle siteHeaderImage rsvpHeaderImage siteBannerText rsvpBannerText sitePalette colors gatheringColors quantityUnits registryUrl monetaryGiftUrl churchWeekDay churchYear churchTime churchStreet churchCityStateZip venueTime venueStreet venueCityStateZip attireVideos weddingMealChoices weddingMealOptions weddingChildMealOption weddingChildMealOptions mediaGalleryUrl mediaGalleryLabel siteHiddenTabs siteTabTitles siteTabOrder rsvpToolbarOrder siteElementOrder siteElementPlacements siteGaps siteSpacing`.split(' ');
+const PUBLIC_KEYS=`cancelled gatheringName gatheringTheme eventDate eventTime rsvpDate homeAddress addressLine1 addressLine2 headerText rsvpIntroText rsvpTextBlocks rsvpDetailsText rsvpDetailsTitle siteHeaderImage rsvpHeaderImage siteBannerText rsvpBannerText sitePalette colors gatheringColors quantityUnits registryUrl monetaryGiftUrl churchWeekDay churchYear churchTime churchStreet churchCityStateZip venueTime venueStreet venueCityStateZip attireVideos weddingMealChoices weddingMealOptions weddingChildMealOption weddingChildMealOptions mediaGalleryUrl mediaGalleryLabel siteHiddenTabs siteTabTitles siteTabOrder rsvpToolbarOrder siteElementOrder siteElementPlacements siteGaps siteSpacing`.split(' ');
 const pick=(value,keys)=>Object.fromEntries(keys.filter(key=>Object.hasOwn(value,key)).map(key=>[key,clone(value[key])]));
 export function accountForActor(state,actor){
  if(actor.role==='host')return null;

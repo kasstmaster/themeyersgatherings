@@ -254,3 +254,9 @@ test('Drinks projects and authorizes only the alcoholic-drinks menu while preser
  const drinks=structuredClone(guest.state.events.one.drinksItems);drinks[0].claims.push('Casey Example');assert.equal((await f.patch(guest,[{path:['events','one','drinksItems'],value:drinks}])).status,200);assert.deepEqual(f.state.events.one.items,food);assert.deepEqual(f.state.events.one.drinksItems[0].claims,['Other Person','Casey Example']);
  event.dinnerPlans[2099].type='potluck';f.state.events.one.dinnerPlans[2099].type='potluck';const potluck=await f.guest();assert.deepEqual(potluck.state.events.one.drinksItems,[]);assert.equal((await f.patch(potluck,[{path:['events','one','drinksItems'],value:drinks}])).status,403);
 });
+
+test('first-page extra text boxes are public gathering content with host-only writes and independent storage',async t=>{
+ const f=await fixture(t);f.state.events.one.rsvpTextBlocks=[{id:'box-one',content:'First gathering note'}];f.state.events.wedding.rsvpTextBlocks=[{id:'box-wedding',content:'Wedding note'}];
+ const guest=await f.guest();assert.deepEqual(guest.state.events.one.rsvpTextBlocks,[{id:'box-one',content:'First gathering note'}]);assert.equal((await f.patch(guest,[{path:['events','one','rsvpTextBlocks'],value:[]}])).status,403);
+ const host=await f.host();assert.equal((await f.patch(host,[{path:['events','one','rsvpTextBlocks'],value:[{id:'box-one',content:'Updated note'}]}])).status,200);assert.equal(f.state.events.one.rsvpTextBlocks[0].content,'Updated note');assert.equal(f.state.events.wedding.rsvpTextBlocks[0].content,'Wedding note');
+});

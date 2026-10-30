@@ -34,7 +34,7 @@ test('all first pages have one fixed image, date, two text slots and shared firs
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
  const section=html.slice(html.indexOf('<section id="rsvpEventConfirmation"'),html.indexOf('<div id="rsvpWeddingPages"'));
  const ids=[...section.matchAll(/id="([^"]+)"/g)].map(match=>match[1]);
- assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpBannerText','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpConfirmEvent','hostFirstPageActions','weddingRsvpUploadToolbar','weddingPartyTabs','uploadPhotosButton','hostRsvpCounters','guestListButton','guestCount','notAttendingButton','notAttendingCount','noResponseButton','noResponseCount','invitedListButton','invitedCount']);
+ assert.deepEqual(ids,['rsvpEventConfirmation','rsvpEventHeader','rsvpFirstPageImage','rsvpBannerText','rsvpFirstPageDate','rsvpFirstPageText','rsvpFirstPageDetails','rsvpExtraTextBlocks','rsvpConfirmEvent','hostFirstPageActions','weddingRsvpUploadToolbar','weddingPartyTabs','uploadPhotosButton','hostRsvpCounters','guestListButton','guestCount','notAttendingButton','notAttendingCount','noResponseButton','noResponseCount','invitedListButton','invitedCount']);
  assert.doesNotMatch(headerCode,/cloneNode/);
  for(const id of ['wedding','thanksgiving','christmas','new-gathering']){
   const f=fixture(true,id);f.context.renderRsvpEventHeader();f.context.renderRsvpInlineEditing();
@@ -96,3 +96,8 @@ test('delayed banner text commits remain attached to the original gathering',()=
  owned=false;f.context.renderBannerText(image);assert.equal(overlay.hidden,true);assert.equal(overlay.innerHTML,'');
  overlay.isContentEditable=true;f.context.setBannerText(image,'Typing again');assert.equal(overlay.innerHTML,'');overlay.isContentEditable=false;f.context.renderBannerText(image);assert.equal(overlay.innerHTML,'Typing again');assert.equal(overlay.hidden,false);
  });
+
+test('extra RSVP text definitions keep valid stable IDs and gathering content independent',()=>{
+ const f=fixture(false),one={rsvpTextBlocks:[{id:'box-one',content:'Own note'},{content:'Missing ID'},{id:'bad\" onclick=evil',content:'Unsafe ID'},{id:42,content:'Number ID'}]},two={rsvpTextBlocks:[{id:'box-two',content:'Other note'}]};
+ assert.equal(f.context.rsvpTextBlocks(one).length,1);assert.equal(f.context.rsvpTextBlocks(one)[0].content,'Own note');assert.equal(f.context.rsvpTextBlocks(two)[0].content,'Other note');assert.equal(one.rsvpTextBlocks.length,4);assert.equal(f.context.rsvpTextBlocks({}).length,0);
+});

@@ -1181,3 +1181,9 @@ body:has(#eventSelectionPage:not([hidden])) #signedInAccount{color:rgba(255,255,
 
 /* Native indent/outdent round-trips through the shared safe text renderer. */
 blockquote.text-indent{margin:0 0 0 40px;padding:0;border:0;text-align:inherit}
+
+/* Optional first-page text boxes share the editor, without another visual container. */
+.rsvp-extra-text-blocks{width:100%;min-width:0;margin:12px 0;text-align:center}
+.rsvp-extra-text-blocks[hidden]{display:none}
+.rsvp-extra-text{min-width:0;overflow-wrap:anywhere}
+.rsvp-extra-text>p{margin:0}

@@ -38,7 +38,7 @@
     return parts.join('>');
   }
   function textSelector(target){return target.dataset?.contentKey?`[data-content-key=${JSON.stringify(target.dataset.contentKey)}]`:selector(target);}
-  const contentText='#rsvpFirstPageText,#rsvpFirstPageDetails,#rsvpDishQuestionText,#eventHeaderText,#hostNotesContent,.bride-groom-content,.perfect-experience-content,.what-to-expect-content,.wedding-party-description,.wedding-timeline-copy,.guest-attire-requirements,#weddingPartyAttireIntroText,.wedding-party-attire-note';
+  const contentText='.rsvp-extra-text,#rsvpFirstPageText,#rsvpFirstPageDetails,#rsvpDishQuestionText,#eventHeaderText,#hostNotesContent,.bride-groom-content,.perfect-experience-content,.what-to-expect-content,.wedding-party-description,.wedding-timeline-copy,.guest-attire-requirements,#weddingPartyAttireIntroText,.wedding-party-attire-note';
   const surfaceKeys=['backgroundColor','backgroundAlpha','backgroundImage','imageFit','borderColor','borderAlpha','borderWidth','borderRadius'];
   const flatCopy=element=>element.matches?.(contentText) && element.parentElement?.matches('.wedding-tab-content,.wedding-party-card,.gathering-subpage');
   const contentSurface=element=>element.matches?.('.wedding-tab-content') && element.matches(contentText) && !flatCopy(element);
