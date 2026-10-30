@@ -221,3 +221,5 @@ The shared rich-text format preserves paragraph indentation and nested lists thr
 Banner caption autosaves preserve the active text and cursor while typing, including pauses mid-sentence. Saved caption markup is rendered when the text is no longer owned by the editor.
 
 Select any text element and use **Format → Line height** to adjust line spacing (0.5–5 times the font size; 1 is single spacing). This applies to the text box’s lines and paragraphs, including banner captions, dates, titles and buttons. Matching formatting types share the value within the current gathering; page text boxes keep their independent styles. Existing spacing stays unchanged until edited. Line height supports autosave and Undo/Redo.
+
+Banner captions keep paragraph margins at zero at every indentation level, so indented lines follow the chosen line height without extra browser-default spacing. Indentation, deliberate blank lines and existing text formatting remain intact.
