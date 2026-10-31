@@ -1,20 +1,21 @@
 // First-party, HttpOnly persistence for the existing opaque service sessions.
 const SERVICE='https://curly-sun-ef0f.kassandraraudman.workers.dev';
-const ORIGIN='https://themeyers.ilymmd.com';
+const ORIGINS=new Set(['https://meyer.ilymmd.com','https://themeyers.ilymmd.com']);
 const COOKIE='__Host-MeyersSession';
 const TOKEN=/^[a-f0-9-]{72}$/;
 const cookie=(value,age)=>`${COOKIE}=${value}; Path=/; Max-Age=${age}; Secure; HttpOnly; SameSite=Strict`;
 export async function handleSession(request,fetcher=fetch){
  const url=new URL(request.url);
- if(url.origin!==ORIGIN||!url.pathname.startsWith('/session/'))return null;
+ const origin=url.origin;
+ if(!ORIGINS.has(origin)||!url.pathname.startsWith('/session/'))return null;
  const path=url.pathname.slice('/session'.length);
  const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'};
  if(!['/auth/session','/auth/logout'].includes(path)||url.search)return Response.json({error:'Not found.'},{status:404,headers});
  if(request.method!=='POST')return Response.json({error:'Method not allowed.'},{status:405,headers:{...headers,Allow:'POST'}});
- if(request.headers.get('Origin')!==ORIGIN||!['same-origin',null].includes(request.headers.get('Sec-Fetch-Site')))return Response.json({error:'Request origin not allowed.'},{status:403,headers});
+ if(request.headers.get('Origin')!==origin||!['same-origin',null].includes(request.headers.get('Sec-Fetch-Site')))return Response.json({error:'Request origin not allowed.'},{status:403,headers});
  const bearer=request.headers.get('Authorization');
  const stored=request.headers.get('Cookie')?.split(';').map(part=>part.trim()).find(part=>part.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);
- const forwarded=new Headers({'Content-Type':'application/json',Origin:ORIGIN});
+ const forwarded=new Headers({'Content-Type':'application/json',Origin:origin});
  if(bearer?.match(/^Bearer [a-f0-9-]{72}$/))forwarded.set('Authorization',bearer);
  else if(stored&&TOKEN.test(stored))forwarded.set('Authorization','Bearer '+stored);
  try{

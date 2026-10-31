@@ -10,7 +10,7 @@ import { buildDomainSite, legacyRedirectHtml } from '../scripts/build-domain-sit
 test('old and new origins receive exact CORS headers; unrelated origins cannot write or preflight', async () => {
   const config = await readFile(new URL('../github-state-worker/wrangler.toml', import.meta.url), 'utf8');
   const env = { ALLOWED_ORIGIN:'https://kasstmaster.github.io', ALLOWED_ORIGINS:config.match(/ALLOWED_ORIGINS = \"([^\"]+)\"/)[1] };
-  for (const origin of ['https://kasstmaster.github.io','https://ilymmd.com','https://www.ilymmd.com','https://themeyers.ilymmd.com']) {
+  for (const origin of ['https://meyer.ilymmd.com','https://kasstmaster.github.io','https://ilymmd.com','https://www.ilymmd.com','https://themeyers.ilymmd.com']) {
     const response = await worker.fetch(new Request('https://state.example/', {method:'OPTIONS',headers:{Origin:origin}}),env);
     assert.equal(response.status,204);assert.equal(response.headers.get('Access-Control-Allow-Origin'),origin);assert.equal(response.headers.get('Vary'),'Origin');
   }
@@ -80,4 +80,12 @@ test('standalone domain Worker needs no service-account bindings and returns 404
   assert.equal((await siteWorker.fetch(new Request('https://ilymmd.com/'),env)).status,404);
   assert.equal((await siteWorker.fetch(new Request('https://ilymmd.com/wedding-media'),env)).status,404);
   assert.equal(calls,1);
+});
+
+test('shorter domain readiness serves assets without redirecting either hostname',async()=>{
+ const {handleGatheringSite}=await import('../domain-site-worker/gathering-site.js');
+ for(const host of ['themeyers.ilymmd.com','meyer.ilymmd.com']){
+  const response=await handleGatheringSite(new Request('https://'+host+'/'),{GATHERING_SITE:{fetch:()=>new Response('Ready')}});
+  assert.equal(response.status,200);assert.equal(response.headers.get('Location'),null);
+ }
 });
