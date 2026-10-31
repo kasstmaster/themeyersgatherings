@@ -31,7 +31,9 @@
     if(!link || !href(link)){close();return;}
     session.href=href(link);
     const content=document.getElementById('textPopupContent');
-    content.innerHTML=globalThis.formatEditableText(decode(session.href));
+    if(!content.isContentEditable && !globalThis.ElementEditor?.ownsText?.(content)){
+      const html=globalThis.formatEditableText(decode(session.href));if(content.innerHTML!==html)content.innerHTML=html;
+    }
     // The body uses the same textarea field/editor as ordinary page text. Its
     // commit updates the original authored link, never a global popup text key.
     const fields=[{label:'Popup text',type:'textarea',value:decode(session.href)}],options={inlineLineHeight:true};

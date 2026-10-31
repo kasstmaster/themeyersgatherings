@@ -170,3 +170,5 @@ To make words open custom text instead of a website, highlight the words in a te
 Replacing the font, size, color or highlight on selected text replaces older nested declarations of that same property while preserving other emphasis, links and formatting outside the selection. Empty styled fragments save as empty content and never insert placeholder words. Existing saved wording is not automatically rewritten.
 
 Highlight lines or paragraphs in a text box before changing Alignment to align those paragraphs only. Without a text selection, Alignment changes the whole box; shared title/button formatting still uses its gathering-wide formatting group. Selected paragraph alignment survives formatting, saving and reloading. Banner lines stretch across the artwork’s text area so their left/center/right alignment is visible.
+
+Text-popup autosave keeps the active text box and cursor in place. Popup paragraphs use the same spacing rule as the text boxes above RSVP; intentional blank lines are preserved without automatic paragraph gaps.

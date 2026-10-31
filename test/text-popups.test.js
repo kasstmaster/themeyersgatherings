@@ -32,3 +32,15 @@ test('popup line spacing accepts only bounded numeric text styles',async()=>{
  assert.equal(ctx.TextStyles.properties({lineHeight:1.25}),'line-height:1.25');
  for(const value of ['1;color:red',0,6,NaN])assert.equal(ctx.TextStyles.properties({lineHeight:value}),null);
 });
+test('nested shared editor persistence saves once while keeping the typing guard active',async()=>{
+ const source=await readFile(new URL('../inline-editing.js',import.meta.url),'utf8');
+ const saved=[];
+ // Install only the save context: the real shared persistence function and guard
+ // are exercised without needing an application DOM.
+ const start=source.indexOf('persist(action){'),end=source.indexOf(',get editorContext()',start);
+ const c=vm.createContext({flushing:false,context:{save(){saved.push(c.flushing);}}});
+ vm.runInContext('globalThis.editor={'+source.slice(start,end)+'};',c);
+ c.editor.persist(()=>{assert.equal(c.flushing,true);c.editor.persist(()=>assert.equal(c.flushing,true));assert.equal(c.flushing,true);});
+ assert.deepEqual(saved,[true]);assert.equal(c.flushing,false);
+ assert.throws(()=>c.editor.persist(()=>c.editor.persist(()=>{throw new Error('failed');})),/failed/);assert.equal(c.flushing,false);assert.deepEqual(saved,[true]);
+});

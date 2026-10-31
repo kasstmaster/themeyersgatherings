@@ -1186,4 +1186,4 @@ blockquote.text-indent{margin:0 0 0 40px;padding:0;border:0;text-align:inherit}
 .rsvp-extra-text-blocks{width:100%;min-width:0;margin:12px 0;text-align:center}
 .rsvp-extra-text-blocks[hidden]{display:none}
 .rsvp-extra-text{min-width:0;overflow-wrap:anywhere}
-.rsvp-extra-text>p{margin:0}
+:is(.rsvp-extra-text,#textPopupContent) p{margin:0}
