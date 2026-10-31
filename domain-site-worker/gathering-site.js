@@ -7,7 +7,7 @@ const LEGACY = '/themeyersgatherings';
 
 export async function handleGatheringSite(request, env) {
   const url = new URL(request.url);
-  const appHost = url.hostname === APP_HOST;
+  const appHost = url.hostname === APP_HOST || url.hostname === 'meyer.ilymmd.com';
   if (!appHost && !HOSTS.has(url.hostname)) return null;
   const legacy = url.pathname === LEGACY || url.pathname.startsWith(LEGACY + '/');
   const current = url.pathname === PREFIX || url.pathname.startsWith(PREFIX + '/');

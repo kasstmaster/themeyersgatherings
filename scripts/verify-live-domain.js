@@ -37,3 +37,7 @@ for(const origin of ['https://themeyers.ilymmd.com','https://ilymmd.com','https:
 const resume=await request(canonical+'session/auth/session',{method:'POST',headers:{Origin:canonical.slice(0,-1),'Content-Type':'application/json'},body:'{}'});
 assert.equal(resume.status,401);assert.equal(resume.headers.get('Cache-Control'),'no-store');
 console.log('Live separate app, manifest/icons, shared service CORS, Plex home page and legacy QR addresses passed.');
+
+// Provision the shorter alias without redirecting existing invitations until its TLS is live.
+const shorter=await request("https://meyer.ilymmd.com/");assert.equal(shorter.status,200);assert.ok((await shorter.text()).includes("<title>The Meyers</title>"));
+const shorterSession=await request("https://meyer.ilymmd.com/session/auth/session",{method:"POST",headers:{Origin:"https://meyer.ilymmd.com","Content-Type":"application/json"},body:"{}"});assert.equal(shorterSession.status,401);

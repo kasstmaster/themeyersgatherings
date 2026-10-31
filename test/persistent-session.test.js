@@ -4,7 +4,7 @@ import worker from '../github-state-worker/worker.js';
 import {handleSession} from '../domain-site-worker/session.js';
 import {bucket,TEST_PASSWORD} from './security-fixture.js';
 import {digest} from '../github-state-worker/auth.js';
-const origin='https://themeyers.ilymmd.com';
+const origin='https://meyer.ilymmd.com';
 async function fixture(t){
  const memory=bucket(),env={HOST_PASSWORD:TEST_PASSWORD,AUTH_MIGRATION_READY:'verified-backup-v1',INVITATION_BACKGROUNDS:memory,GITHUB_REPOSITORY:'test/private',GITHUB_TOKEN:'synthetic',ALLOWED_ORIGIN:origin};
  const state={accounts:[{name:'Casey Example',qrToken:'printed-qr',selectedEvents:{one:true},invitedEvents:{one:true}}],events:{one:{eventDate:'2099-01-01',items:[],rsvps:[],hostNotes:'Host private notes'}},invitationTemplates:[],gatheringHistory:{},gatheringHome:{}};
@@ -66,4 +66,14 @@ test('the edge bridge uses supported manual redirects and rejects every upstream
   calls++;assert.equal(options.redirect,'manual','Cloudflare fetch does not support redirect:error');return new Response(null,{status:302,headers:{Location:'https://attacker.test'}});
  });
  assert.equal(calls,1);assert.equal(response.status,503);assert.equal(response.headers.has('Location'),false);assert.ok(!(await response.text()).includes('attacker.test'));
+});
+
+test('both canonical and previous subdomains retain isolated same-origin session proxies',async()=>{
+ for(const host of ['meyer.ilymmd.com','themeyers.ilymmd.com']){
+  const origin='https://'+host,other=host.startsWith('meyer.')?'https://themeyers.ilymmd.com':'https://meyer.ilymmd.com';let calls=0;
+  const backend=async(url,options)=>{calls++;assert.equal(options.headers.get('Origin'),origin);return Response.json({error:'Sign in required.'},{status:401});};
+  const request=sender=>new Request(origin+'/session/auth/session',{method:'POST',headers:{Origin:sender,'Content-Type':'application/json'},body:'{}'});
+  assert.equal((await handleSession(request(origin),backend)).status,401);assert.equal(calls,1);
+  assert.equal((await handleSession(request(other),backend)).status,403);assert.equal(calls,1);
+ }
 });

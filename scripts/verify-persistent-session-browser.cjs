@@ -3,7 +3,7 @@
 const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=require('node:path'),assert=require('node:assert/strict');
 (async()=>{
  const {default:service}=await import('../github-state-worker/worker.js'),{handleGatheringSite}=await import('../domain-site-worker/gathering-site.js'),{bucket,TEST_PASSWORD}=await import('../test/security-fixture.js');
- const base='https://themeyers.ilymmd.com',serviceBase='https://curly-sun-ef0f.kassandraraudman.workers.dev';
+ const base='https://meyer.ilymmd.com',serviceBase='https://curly-sun-ef0f.kassandraraudman.workers.dev';
  const state={accounts:[{name:'Casey Example',qrToken:'existing-invitation-a',selectedEvents:{thanksgiving:true},invitedEvents:{thanksgiving:true}},{name:'Jordan Example',qrToken:'existing-invitation-b',selectedEvents:{thanksgiving:true},invitedEvents:{thanksgiving:true}}],events:{thanksgiving:{gatheringName:'Thanksgiving',eventDate:'2099-11-25',rsvpDate:'2099-11-20',hostNotes:'PRIVATE HOST NOTES',items:[],rsvps:[]}},invitationTemplates:[],gatheringHistory:{},gatheringHome:{}};
  state.events.thanksgiving.items=[{id:'ham',name:'Ham',category:'Main Table',needed:2,claims:['Casey Example']},{id:'stuffing',name:'Stuffing',category:'Sides',needed:1,claims:[]},{id:'cider',name:'Cider',category:'Drinks',needed:1,claims:['Jordan Example']}];
  state.events.thanksgiving.rsvps=[{name:'Casey Example',adults:1,children:0,people:[{name:'Casey Example',attending:true}]}];
@@ -16,9 +16,9 @@ const {chromium}=require('playwright'),fs=require('node:fs/promises'),path=requi
  const assets={async fetch(request){const name=new URL(request.url).pathname;try{const body=await fs.readFile(path.join(process.cwd(),name));return new Response(body,{headers:{'Content-Type':name.endsWith('.html')?'text/html':name.endsWith('.js')?'text/javascript':name.endsWith('.css')?'text/css':'application/octet-stream'}});}catch{return new Response('Not found',{status:404});}}};
  const browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const errors=[];
  async function setup(context){await context.route('**/*',async route=>{
-  const req=route.request(),url=req.url();if(!url.startsWith(base+'/')&&!url.startsWith(serviceBase+'/'))return route.abort();
+  const req=route.request(),url=req.url();if(!url.startsWith(base+'/')&&!url.startsWith('https://themeyers.ilymmd.com/')&&!url.startsWith(serviceBase+'/'))return route.abort();
   const method=req.method(),headers=await req.allHeaders(),body=req.postDataBuffer();const request=new Request(url,{method,headers,...(!['GET','HEAD'].includes(method)&&body?{body,duplex:'half'}:{})});
-  const response=url.startsWith(base+'/')?await handleGatheringSite(request,{GATHERING_SITE:assets}):await service.fetch(request,env);
+  const response=!url.startsWith(serviceBase+'/')?await handleGatheringSite(request,{GATHERING_SITE:assets}):await service.fetch(request,env);
   await route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:Buffer.from(await response.arrayBuffer())});
  });context.on('page',page=>{page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(15000);});}
  async function guest(page){await page.locator('#accountFirstName').fill('Casey');await page.locator('#signInSubmit').click();await page.locator('#accountLastName').fill('Example');await page.locator('#signInSubmit').click();await page.locator('#eventSelectionPage').waitFor({state:'visible'});}
