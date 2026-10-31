@@ -267,7 +267,7 @@
     recordUndo,beginUndoGroup,endUndoGroup,undo,redo,get canRedo(){return redoSteps.length>0;},get canUndo(){return undoSteps.length>0;},
     settings(target,title,build){if(!target || !enabled || !context.host)return;const entry=editTargets.get(target) || {};entry.settings={title,build};editTargets.set(target,entry);cleanup.push(()=>editTargets.delete(target));},
     editorFor:target=>editTargets.get(target),get editorTargets(){return [...editTargets.keys()];},
-    persist(action){flushing=true;try{action?.();context.save();}finally{flushing=false;}},get editorContext(){return context;},
+    persist(action){const nested=flushing;flushing=true;try{action?.();if(!nested)context.save();}finally{flushing=nested;}},get editorContext(){return context;},
     beforeRender,render,field,portal,staticText,applyStaticText,tabs,button,textElement,textOwner,movableText,movableTextRoot,canMoveText,moveTextTo,
     resetTabSelection(navId,eventId=context?.eventId){selectedCustom.delete(`${eventId}:${navId}`);},
     flush(){ElementEditor.flush();},get flushing(){return flushing;},get portalOpen(){return Boolean(document.querySelector('.inline-portal-editor'));},
