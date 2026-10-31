@@ -43,7 +43,7 @@ routes to apply.
 
 ## Separate app and existing invitations
 
-The website Worker serves **https://themeyers.ilymmd.com/** through a Cloudflare
+The website Worker serves **https://meyer.ilymmd.com/** through a Cloudflare
 Workers Custom Domain. Wrangler provisions its DNS and TLS in the domain account;
 do not point this hostname at Firebase or move the existing apex/www records.
 The same Worker retains the gathering path routes on the apex and www hostnames
@@ -62,12 +62,12 @@ There is no date-based expiration. Existing browser-local preferences are not
 transferred between origins; shared accounts and RSVPs stay in the same backend.
 
 The backend CORS allowlist retains both old origins and adds
-`https://themeyers.ilymmd.com`. Dropbox authorization callbacks remain on the
+`https://themeyers.ilymmd.com` and `https://meyer.ilymmd.com`. Dropbox authorization callbacks remain on the
 original service Worker and existing connections/storage stay in its account.
 
 ### Install and open
 
-Open **https://themeyers.ilymmd.com/** directly. On Android/desktop, use
+Open **https://meyer.ilymmd.com/** directly. On Android/desktop, use
 **Install The Meyers** for the native browser installation prompt when available.
 On iPhone/iPad, open in Safari, tap Share, then **Add to Home Screen**. The button
 also shows these manual instructions and hides when the app is already running
@@ -115,3 +115,13 @@ Release sequencing, the separate Pages publication change, minimum preflight rea
 The canonical Worker handles POST `/session/auth/session` and `/session/auth/logout` before assets, using the fixed existing service upstream. Existing custom-domain routing and `run_worker_first` cover these paths; no new binding, route or secret is required. Assets still receive no authentication headers/cookies. See [session security](state-security-rollout.md) for lifetimes, logout, and backend-first deployment. The anonymous post-deployment resume check must return 401 with no-store headers.
 
 Password/name verification continues directly at the existing service login endpoint, preserving visitor IP rate limiting. After successful authentication, the first-party bridge verifies that opaque session before setting the cookie. New sign-in/logout attempts cancel pending persistence requests so older responses cannot restore a replaced session. If persistence is temporarily unavailable, the current visit remains authenticated and the UI reports that persistence was unavailable.
+
+### Shorter canonical address and printed invitation compatibility
+
+The canonical address is `https://meyer.ilymmd.com/`. The same website Worker retains **both** Custom Domains in `domain-site-worker/wrangler.toml`. GET/HEAD visits to `themeyers.ilymmd.com` redirect permanently to the shorter host while preserving the full path and query; a fragment-free Location lets browsers inherit the original invitation fragment. Existing account QR tokens, saved templates, accounts and RSVP data are not rewritten. All future general/account QR generation uses the shorter address, including printing from an older production origin.
+
+The dedicated `gathering-redirect` Pages artifact intentionally stays unchanged: it opens `themeyers.ilymmd.com`, which redirects to `meyer.ilymmd.com`. This preserves the exact published artifact required by release preflight and avoids an independently timed Pages migration. Do not remove the old domain or change Pages publishing settings.
+
+Both origins remain explicitly allowed by the service Worker. The session proxy accepts only same-origin requests on either hostname, retaining support for already-open old tabs; no cookie is shared across subdomains. Visitors may need to sign in again on the new origin and reinstall a home-screen shortcut from there. Private browser drafts and local preferences do not migrate between origins; finish pending edits/RSVPs before switching. The shared backend, Dropbox callbacks/storage, credentials and account links stay unchanged.
+
+The normal backend-first release adds the new CORS origin before publishing the website Worker. Wrangler provisions the new Custom Domain's DNS/TLS in the existing domain account using the existing deployment credentials. Before publishing, confirm `meyer.ilymmd.com` is available for this app and has no conflicting service/DNS record. If Cloudflare reports a conflict or missing domain permissions, stop and resolve it in the domain account; do not delete or repoint an existing service blindly. New-domain DNS/TLS may need time. Release checks require the new frontend receipt, the old-host redirect, old invitation addresses, CORS and anonymous session denial. No new secrets or changes to the private data repository are needed.

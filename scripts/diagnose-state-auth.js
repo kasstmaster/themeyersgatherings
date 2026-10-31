@@ -17,7 +17,7 @@ export async function diagnose(env,fetcher=fetch) {
     for(const key of ['activationReady','hostPasswordReady','storageReady','githubReady','releaseCommitReady'])if(typeof body.checks?.[key]==='boolean')report.checks[key]=body.checks[key];
   } catch {report.healthRequestOrJsonFailed=true;}
   for(const [name,suffix] of [['frontend','?commit='+expected],['frontendWithoutQuery','']])try {
-    const response=await fetcher('https://themeyers.ilymmd.com/release.json'+suffix,{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(15000)});
+    const response=await fetcher('https://meyer.ilymmd.com/release.json'+suffix,{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(15000)});
     report[name+'HttpStatus']=response.status;
     report[name+'ContentTypeJson']=(response.headers.get('Content-Type')||'').includes('application/json');
     const body=await response.json();

@@ -1,24 +1,26 @@
 import {handleSession} from './session.js';
 // The Meyers has its own origin. Old gathering paths redirect without claiming Plex paths.
 const HOSTS = new Set(['ilymmd.com', 'www.ilymmd.com']);
-const APP_HOST = 'themeyers.ilymmd.com';
+const APP_HOST = 'meyer.ilymmd.com';
+const PREVIOUS_HOST = 'themeyers.ilymmd.com';
 const PREFIX = '/themeyers';
 const LEGACY = '/themeyersgatherings';
 
 export async function handleGatheringSite(request, env) {
   const url = new URL(request.url);
   const appHost = url.hostname === APP_HOST;
-  if (!appHost && !HOSTS.has(url.hostname)) return null;
+  const previousHost=url.hostname===PREVIOUS_HOST;
+  if (!appHost && !previousHost && !HOSTS.has(url.hostname)) return null;
   const legacy = url.pathname === LEGACY || url.pathname.startsWith(LEGACY + '/');
   const current = url.pathname === PREFIX || url.pathname.startsWith(PREFIX + '/');
-  if (!appHost && !legacy && !current) return null;
-  if(appHost&&url.protocol==='https:'&&url.pathname.startsWith('/session/'))return handleSession(request);
+  if (!appHost && !previousHost && !legacy && !current) return null;
+  if((appHost||previousHost)&&url.protocol==='https:'&&url.pathname.startsWith('/session/'))return handleSession(request);
   if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed.', {status:405, headers:{Allow:'GET, HEAD'}});
   if (!appHost || url.protocol !== 'https:') {
     const target = new URL(url);
     target.hostname = APP_HOST;
     target.protocol = 'https:';
-    if (!appHost) target.pathname = url.pathname.slice(legacy ? LEGACY.length : PREFIX.length) || '/';
+    if (!appHost && !previousHost) target.pathname = url.pathname.slice(legacy ? LEGACY.length : PREFIX.length) || '/';
     // A Location without a fragment preserves the original QR fragment in the browser.
     return Response.redirect(target.href, 308);
   }

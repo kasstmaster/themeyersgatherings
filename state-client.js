@@ -3,7 +3,7 @@
  let token='',role='',revision='',baseline=null,conflicted=false,expired=false,generation=0,cookieRequest;
  const clone=value=>structuredClone(value);
  const SIGNED_OUT='meyers-explicit-signout-v1';
- const authBase=base=>globalThis.location?.origin==='https://themeyers.ilymmd.com'?'/session':base;
+ const authBase=base=>['https://meyer.ilymmd.com','https://themeyers.ilymmd.com'].includes(globalThis.location?.origin)?'/session':base;
  const signedOut=()=>{try{return Boolean(globalThis.localStorage?.getItem(SIGNED_OUT));}catch{return false;}};
  function markSignedOut(value){try{if(value)globalThis.localStorage?.setItem(SIGNED_OUT,String(Date.now()));else globalThis.localStorage?.removeItem(SIGNED_OUT);}catch{/* Cookie revocation still works when storage is disabled. */}}
  function accept(result){token=result.token;role=result.role;revision=result.revision;conflicted=false;expired=false;}

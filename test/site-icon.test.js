@@ -26,7 +26,7 @@ test('standard root icon lookups and old rose path use local assets, never an im
     '/apple-touch-icon-precomposed.png':'/assets/icons/apple-touch-icon.png',
     '/assets/rose-icon-v2.png':'/assets/icons/rose-source.png',
   })) {
-    const response = await handleGatheringSite(new Request('https://themeyers.ilymmd.com'+url),env);
+    const response = await handleGatheringSite(new Request('https://meyer.ilymmd.com'+url),env);
     assert.equal(await response.text(),path);
   }
 });
@@ -36,9 +36,9 @@ test('original printed Pages QR redirects preserve query and account token witho
   for (const origin of ['https://kasstmaster.github.io','https://ilymmd.com','https://www.ilymmd.com']) {
     let target;
     vm.runInNewContext(source,{window:{location:{origin,pathname:'/themeyersgatherings/',search:'?event=wedding',hash:'#/signin/account/original-token',replace:url=>target=url}}});
-    assert.equal(target,'https://themeyers.ilymmd.com/?event=wedding#/signin/account/original-token');
+    assert.equal(target,'https://meyer.ilymmd.com/?event=wedding#/signin/account/original-token');
   }
-  for (const [origin,pathname] of [['https://themeyers.ilymmd.com','/'],['https://kasstmaster.github.io','/another-site/'],['https://ilymmd.com','/'],['https://ilymmd.com','/themeyers-other']]) {
+  for (const [origin,pathname] of [['https://meyer.ilymmd.com','/'],['https://kasstmaster.github.io','/another-site/'],['https://ilymmd.com','/'],['https://ilymmd.com','/themeyers-other']]) {
     vm.runInNewContext(source,{window:{location:{origin,pathname,replace:()=>assert.fail('Unrelated URL redirected')}}});
   }
 });
