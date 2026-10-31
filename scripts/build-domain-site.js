@@ -4,7 +4,7 @@ import { cp, mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const source = fileURLToPath(new URL('../', import.meta.url));
-const canonical = 'https://themeyers.ilymmd.com/';
+const canonical = 'https://meyer.ilymmd.com/';
 
 export function legacyRedirectHtml() {
   return `<!doctype html>

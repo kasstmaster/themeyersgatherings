@@ -1,5 +1,5 @@
 (() => {
-  if (window.location.origin !== 'https://themeyers.ilymmd.com') return;
+  if (window.location.origin !== 'https://meyer.ilymmd.com') return;
   const prompt = document.querySelector('#installAppPrompt');
   const button = document.querySelector('#installAppButton');
   const help = document.querySelector('#installAppHelp');

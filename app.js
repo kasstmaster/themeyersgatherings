@@ -858,8 +858,8 @@ function accountForSignIn(name) {
     : findAccount(name);
 }
 function generalLoginUrl() {
-  const productionOrigins = ['https://themeyers.ilymmd.com', 'https://ilymmd.com', 'https://www.ilymmd.com', 'https://kasstmaster.github.io'];
-  if (productionOrigins.includes(window.location.origin)) return 'https://themeyers.ilymmd.com/';
+  const productionOrigins = ['https://themeyers.ilymmd.com', 'https://meyer.ilymmd.com', 'https://ilymmd.com', 'https://www.ilymmd.com', 'https://kasstmaster.github.io'];
+  if (productionOrigins.includes(window.location.origin)) return 'https://meyer.ilymmd.com/';
   return `${window.location.origin}${window.location.pathname}`;
 }
 function accountQrUrl(account) {

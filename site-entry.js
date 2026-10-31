@@ -5,5 +5,5 @@
     (pathname === '/themeyersgatherings' || pathname.startsWith('/themeyersgatherings/'));
   const parent = ['https://ilymmd.com', 'https://www.ilymmd.com'].includes(origin) &&
     /^\/themeyers(?:gatherings)?(?:\/|$)/.test(pathname);
-  if (github || parent) window.location.replace('https://themeyers.ilymmd.com/' + search + hash);
+  if (github || parent) window.location.replace('https://meyer.ilymmd.com/' + search + hash);
 })();

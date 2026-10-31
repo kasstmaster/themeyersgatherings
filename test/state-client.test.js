@@ -41,7 +41,7 @@ test('an in-flight save preserves subsequent edits for a separate revision-check
 
 test('persistent login uses the first-party bridge without storing tokens, and offline logout blocks restoration',async()=>{
  const stored=new Map(),requests=[];let offline=false;
- const context=vm.createContext({structuredClone,location:{origin:'https://themeyers.ilymmd.com'},localStorage:{getItem:key=>stored.get(key),setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},fetch:async(url,options)=>{requests.push({url,options});if(offline)throw new TypeError('Offline');return Response.json({token:'opaque-runtime-session',role:'guest',person:'Casey Example',state:initial,revision:'one'});}});
+ const context=vm.createContext({structuredClone,location:{origin:'https://meyer.ilymmd.com'},localStorage:{getItem:key=>stored.get(key),setItem:(key,value)=>stored.set(key,value),removeItem:key=>stored.delete(key)},fetch:async(url,options)=>{requests.push({url,options});if(offline)throw new TypeError('Offline');return Response.json({token:'opaque-runtime-session',role:'guest',person:'Casey Example',state:initial,revision:'one'});}});
  vm.runInContext(protocol+client,context);const api=context.StateClient;
  await api.signIn('https://service',{role:'guest',name:'Casey Example'});assert.equal(requests[0].url,'https://service/auth/login');assert.equal(requests[1].url,'/session/auth/session');assert.equal(stored.size,0);
  await api.resume('https://service','printed-qr');assert.equal(requests[2].url,'/session/auth/session');assert.equal(JSON.parse(requests[2].options.body).qrToken,'printed-qr');
@@ -50,13 +50,13 @@ test('persistent login uses the first-party bridge without storing tokens, and o
 });
 test('logout supersedes a pending persistent restore',async()=>{
  let release;
- const context=vm.createContext({structuredClone,location:{origin:'https://themeyers.ilymmd.com'},fetch:async url=>url.endsWith('/auth/session')?await new Promise(resolve=>release=()=>resolve(Response.json({token:'late-token',role:'host',revision:'one'}))):Response.json({})});
+ const context=vm.createContext({structuredClone,location:{origin:'https://meyer.ilymmd.com'},fetch:async url=>url.endsWith('/auth/session')?await new Promise(resolve=>release=()=>resolve(Response.json({token:'late-token',role:'host',revision:'one'}))):Response.json({})});
  vm.runInContext(protocol+client,context);const api=context.StateClient,pending=api.resume('https://service');await api.signOut('https://service');release();assert.equal(await pending,null);assert.equal(api.authenticated,false);
 });
 
 test('replacing a login persists the new session, never an older runtime authorization',async()=>{
  let count=0;const persisted=[];
- const context=vm.createContext({structuredClone,location:{origin:'https://themeyers.ilymmd.com'},fetch:async(url,options)=>{
+ const context=vm.createContext({structuredClone,location:{origin:'https://meyer.ilymmd.com'},fetch:async(url,options)=>{
   if(url.endsWith('/auth/login')){count++;return Response.json({token:'session-'+count,role:count===1?'host':'guest',revision:'one'});}
   persisted.push(options.headers.Authorization);return Response.json({token:options.headers.Authorization.slice(7),role:count===1?'host':'guest',revision:'one'});
  }});vm.runInContext(protocol+client,context);const api=context.StateClient;

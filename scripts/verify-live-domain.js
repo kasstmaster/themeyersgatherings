@@ -1,6 +1,6 @@
 // Read-only post-deployment smoke check. No accounts, tokens, or saved state are requested.
 import assert from 'node:assert/strict';
-const canonical='https://themeyers.ilymmd.com/';
+const canonical='https://meyer.ilymmd.com/';
 async function request(url,options={}) {
   return fetch(url,{...options,signal:AbortSignal.timeout(10000),headers:{'Cache-Control':'no-cache',...options.headers}});
 }
@@ -25,12 +25,12 @@ for(const icon of manifest.icons){
 const home=await request('https://ilymmd.com/');assert.equal(home.status,200);assert.ok(/<title>Plex Requests<\/title>/.test(await home.text()),'Plex home page must remain Plex');
 // GitHub Pages publishes independently, so either title is valid during rollout.
 const old=await request('https://kasstmaster.github.io/themeyersgatherings/');assert.equal(old.status,200);assert.ok(/<title>The Meyers(?: Gatherings)?<\/title>/.test(await old.text()),'Original invitation address must remain available');
-for(const url of ['https://ilymmd.com/themeyers/','https://ilymmd.com/themeyersgatherings/','https://www.ilymmd.com/themeyers/']){
+for(const url of ['https://themeyers.ilymmd.com/','https://ilymmd.com/themeyers/','https://ilymmd.com/themeyersgatherings/','https://www.ilymmd.com/themeyers/']){
   const alias=await request(url+'?invitation=check',{redirect:'manual'});
   assert.equal(alias.status,308);assert.equal(alias.headers.get('Location'),canonical+'?invitation=check');
 }
 const service=html.match(/<meta name="shared-state-url" content="([^"]+)"/)[1];
-for(const origin of ['https://themeyers.ilymmd.com','https://ilymmd.com','https://www.ilymmd.com','https://kasstmaster.github.io']){
+for(const origin of ['https://themeyers.ilymmd.com','https://meyer.ilymmd.com','https://ilymmd.com','https://www.ilymmd.com','https://kasstmaster.github.io']){
   const response=await request(service,{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Method':'PUT'}});
   assert.equal(response.status,204);assert.equal(response.headers.get('Access-Control-Allow-Origin'),origin);
 }

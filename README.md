@@ -2,7 +2,7 @@
 
 A shared, vanilla JavaScript application for family gatherings, RSVP journeys, potluck planning, invitations, and photos/videos. Thanksgiving, Christmas, Wedding, and newly created gatherings use one builder/editor; Wedding enables additional pages, party roles, attire, and meal choices.
 
-The primary website is **https://themeyers.ilymmd.com/**. GitHub Pages remains a compatibility entry for existing invitation links. Source lives in this repository; live shared JSON is configured separately through the Cloudflare service Worker.
+The primary website is **https://meyer.ilymmd.com/**. The previous `themeyers.ilymmd.com` address and GitHub Pages remain compatibility entries for existing invitation links; future QR prints use the shorter address. Source lives in this repository; live shared JSON is configured separately through the Cloudflare service Worker.
 
 ## Guides
 

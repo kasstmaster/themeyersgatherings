@@ -88,7 +88,7 @@ export async function verifyFrontend(commit,fetcher=boundedFetch,{attempts=12,de
   let diagnostic={};
   for(let attempt=1;attempt<=attempts;attempt++) {
     try {
-      const response=await fetcher('https://themeyers.ilymmd.com/release.json?commit='+commit,{cache:'no-store',redirect:'error'});
+      const response=await fetcher('https://meyer.ilymmd.com/release.json?commit='+commit,{cache:'no-store',redirect:'error'});
       diagnostic={status:response.status};
       const data=await response.json();
       diagnostic={...diagnostic,commitMatches:data.commit===commit,protocolMatches:data.protocol==='state-auth-v1'};

@@ -22,7 +22,7 @@ const http=require('node:http');
       const extension=path.extname(filename),type={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png','.ico':'image/x-icon','.svg':'image/svg+xml'}[extension]||'application/octet-stream';
       if(extension==='.html')body=body.toString().replace(/(<meta name="shared-state-url" content=")[^"]*/,'$1');
       // Exercise production-only installation against this secure localhost fixture.
-      if(url.pathname==='/app-install.js')body=body.toString().replace('https://themeyers.ilymmd.com',base);
+      if(url.pathname==='/app-install.js')body=body.toString().replace('https://meyer.ilymmd.com',base);
       if(url.pathname.endsWith('/data/app-state.json')){await stateReady;body=JSON.stringify(state);}
       return new Response(body,{headers:{'Content-Type':type}});
     }catch{return new Response('Not found',{status:404});}
@@ -31,11 +31,13 @@ const http=require('node:http');
   const server=http.createServer(async(req,res)=>{
     try {
       const legacyPath=/^\/themeyers(?:gatherings)?(?:\/|$)/.test(req.url);
-      const response=await handleGatheringSite(new Request((legacyPath?'https://ilymmd.com':'https://themeyers.ilymmd.com')+req.url),{GATHERING_SITE});
+      const previousHost=req.url.startsWith('/_previous-host/');
+      const requestPath=previousHost?req.url.slice('/_previous-host'.length):req.url;
+      const response=await handleGatheringSite(new Request((previousHost?'https://themeyers.ilymmd.com':legacyPath?'https://ilymmd.com':'https://meyer.ilymmd.com')+requestPath),{GATHERING_SITE});
       if(!response){res.writeHead(404);res.end();return;}
       const headers=Object.fromEntries(response.headers);
       // Keep browser requests local while exercising a real HTTP redirect, not an intercepted one.
-      if(headers.location){assert.ok(headers.location.startsWith('https://themeyers.ilymmd.com/'));headers.location=headers.location.replace('https://themeyers.ilymmd.com',base);}
+      if(headers.location){assert.ok(headers.location.startsWith('https://meyer.ilymmd.com/'));headers.location=headers.location.replace('https://meyer.ilymmd.com',base);}
       res.writeHead(response.status,headers);res.end(Buffer.from(await response.arrayBuffer()));
     }catch(error){res.writeHead(500);res.end(error.message);}
   });
@@ -49,7 +51,7 @@ const http=require('node:http');
       await page.route('**/*',route=>route.request().url().startsWith(base+'/')?route.continue():route.abort());
       let releaseState;
       stateReady=new Promise(resolve=>{releaseState=resolve;});
-      await page.goto(base+'/themeyersgatherings/?invitation=existing#/signin/account/'+token,{waitUntil:'domcontentloaded'});
+      await page.goto(base+(width===1280?'/_previous-host/':'/themeyersgatherings/')+'?invitation=existing&next=%2F#/signin/account/'+token,{waitUntil:'domcontentloaded'});
       try {
         assert.equal(await page.locator('#meyersLoadingScreen').isVisible(),true);
         assert.equal(await page.locator('#meyersLoadingScreen h1').textContent(),'The Meyers');
@@ -57,7 +59,7 @@ const http=require('node:http');
         assert.equal(await page.locator('#accountFirstName').isVisible(),false);
       } finally { releaseState(); }
       await page.waitForFunction(()=>typeof qrScopedAccount!=='undefined'&&qrScopedAccount?.name==='Jane Smith');
-      assert.equal(page.url(),base+'/?invitation=existing#/signin/account/'+token);
+      assert.equal(page.url(),base+'/?invitation=existing&next=%2F#/signin/account/'+token);
       assert.equal(await page.locator('#accountLinkError').isVisible(),false);
       assert.equal(await page.evaluate(()=>accountQrUrl(qrScopedAccount)),base+'/#/signin/account/'+token);
       assert.equal(await page.evaluate(()=>generalLoginUrl()),base+'/');
@@ -106,7 +108,7 @@ const http=require('node:http');
     }
     const failedPage=await browser.newPage();
     await failedPage.clock.install();
-    await failedPage.route('**/*',route=>route.request().url().startsWith(base+'/')&&!route.request().url().endsWith('/app.js')?route.continue():route.abort());
+    await failedPage.route('**/*',route=>route.request().url().startsWith(base+'/')&&new URL(route.request().url()).pathname!=='/app.js'?route.continue():route.abort());
     await failedPage.goto(base+'/');
     assert.equal(await failedPage.locator('#meyersLoadingScreen').isVisible(),true);
     await failedPage.clock.fastForward(20001);
