@@ -1567,9 +1567,9 @@ function renderGatheringHome() {
   syncHostToolbar();
   renderRsvpPageNavigation();
   ElementAppearance.render({...builder,scope:'#eventSelectionPage',save:()=>builder.save({refresh:false})});
+  TextPopups.render();
 }
 function render() {
-  if(SiteEditing.enabled)globalThis.TextPopups?.close();
   ElementAppearance.restore();
   if(captureGatheringHistory()){storeLocalState(appState);localStateRevision+=1;queueSharedStateSave();}
   GapLayout.beforeRender();
@@ -1654,6 +1654,7 @@ function render() {
     setImage:(image,url)=>{const key=image.id==='rsvpFirstPageImage'?'rsvpHeaderImage':image.id==='eventHeaderImage'?'siteHeaderImage':null;if(!key)return false;state[key]=url;const field=SiteEditing.editorFor(image.closest('.header-art'))?.fields?.[0];if(field)field.value=url;return true;},
     save:()=>builder.save({refresh:false})});
   GapLayout.refresh();
+  TextPopups.render();
 }
 
 function renderInlineEditing(eventState=state) {

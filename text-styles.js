@@ -9,13 +9,14 @@
     if(!entries.length || entries.some(([key,value])=>{
       if(key==='font')return !fonts.includes(value);
       if(key==='size')return !(Number.isInteger(Number(value))&&Number(value)>=8&&Number(value)<=96);
+      if(key==='lineHeight')return !Number.isFinite(Number(value))||Number(value)<0.5||Number(value)>5;
       if(key==='underline')return value!=='true';
       if(['color','highlight','border'].includes(key))return !color(value);
       if(['shadow','outline'].includes(key))return value!=='none'&&!color(value);
       if(effectBounds[key])return String(value).trim()===''||!Number.isFinite(Number(value))||Number(value)<effectBounds[key][0]||Number(value)>effectBounds[key][1];
       return true;
     }))return null;
-    const css=entries.filter(([key])=>!['shadow','outline',...Object.keys(effectBounds)].includes(key)).map(([key,value])=>key==='font'?`font-family:'${value}'`:key==='size'?`font-size:calc(${Number(value)}px * var(--fitted-text-scale,1))`:key==='color'?`color:${value};--selection-text-color:${value}`:key==='highlight'?`background-color:${value}`:key==='underline'?'text-decoration:underline':`border:1px solid ${value}`);
+    const css=entries.filter(([key])=>!['shadow','outline',...Object.keys(effectBounds)].includes(key)).map(([key,value])=>key==='font'?`font-family:'${value}'`:key==='size'?`font-size:calc(${Number(value)}px * var(--fitted-text-scale,1))`:key==='color'?`color:${value};--selection-text-color:${value}`:key==='highlight'?`background-color:${value}`:key==='lineHeight'?`line-height:${Number(value)}`:key==='underline'?'text-decoration:underline':`border:1px solid ${value}`);
     if(values.shadow)css.push(values.shadow==='none'?'text-shadow:none':`text-shadow:${Number(values.shadowX??1)}px ${Number(values.shadowY??1)}px ${Number(values.shadowBlur??2)}px ${values.shadow}`);
     if(values.outline)css.push(`-webkit-text-stroke-width:${values.outline==='none'?0:Number(values.outlineWidth??1)}px`,`-webkit-text-stroke-color:${values.outline==='none'?'transparent':values.outline}`,'paint-order:stroke fill');
     return css.join(';')||null;

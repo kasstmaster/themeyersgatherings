@@ -20,6 +20,7 @@
       if(element.matches('li')){const siblings=[...element.parentElement.querySelectorAll(':scope>li')],body=[...element.childNodes].filter(child=>!child.matches?.('ul,ol')).map(walk).join('').trim(),nested=[...element.children].filter(child=>child.matches('ul,ol')).map(walk).join('').trimEnd();const align=element.style.textAlign,aligned=['left','center','right','justify'].includes(align)?`{{align:${align}}}${body}{{/align}}`:body;return `${element.parentElement.matches('ol')?`${siblings.indexOf(element)+1}.`:'-'} ${aligned}\n`+(nested?nested.split('\n').map(line=>'  '+line).join('\n')+'\n':'');}
       if(element.matches('ul,ol'))return [...element.childNodes].map(child=>{const value=walk(child);return child.matches?.('ul,ol')?value.trimEnd().split('\n').map(line=>'  '+line).join('\n')+'\n':value;}).join('');
       const styles={};
+      if(element.style.lineHeight && Number(element.style.lineHeight)>=0.5 && Number(element.style.lineHeight)<=5)styles.lineHeight=Number(element.style.lineHeight);
       const font=element.style.fontFamily.replaceAll('"','').replaceAll("'",'');if(TextStyles.fonts.includes(font))styles.font=font;
       const size=parseFloat(element.style.fontSize.replace(/^calc\(/,''));if(size>=8 && size<=96)styles.size=Math.round(size);
       for(const [key,value] of [['color',element.style.color],['highlight',element.style.backgroundColor]])if(value){const parts=ElementAppearance.colorParts(value);styles[key]=parts.hex+(parts.alpha<100?Math.round(parts.alpha/100*255).toString(16).padStart(2,'0'):'');}
@@ -109,13 +110,14 @@
     if(key==='size')span.style.fontSize=value+'px';
     if(key==='color'){span.style.color=value;span.className='text-selection-color';span.style.setProperty('--selection-text-color',value);}
     if(key==='highlight')span.style.backgroundColor=value;
+    if(key==='lineHeight')span.style.lineHeight=value;
     if(key==='effects'){
       const css=TextStyles.properties(value);if(!css)return;span.style.cssText+=';'+css;
     }
     if(!existing){span.append(range.extractContents());range.insertNode(span);}
     // A replacement style owns the selected fragment, including older nested
     // declarations. Extracting the range already leaves unselected text intact.
-    const properties={font:['font-family'],size:['font-size'],color:['color','--selection-text-color'],highlight:['background-color']}[key] || [];
+    const properties={font:['font-family'],size:['font-size'],color:['color','--selection-text-color'],highlight:['background-color'],lineHeight:['line-height']}[key] || [];
     if(key==='effects'){
       if(Object.hasOwn(value,'shadow'))properties.push('text-shadow');
       if(Object.hasOwn(value,'outline'))properties.push('-webkit-text-stroke-width','-webkit-text-stroke-color','paint-order');
@@ -133,13 +135,16 @@
     }
     if(!target || !dirty)return structured;
     dirty=false;
-    const current=target,record=entry;
+    commitText(target,entry,editables);
+    return structured;
+  }
+  function commitText(current,record,parts){
     const values=record?.fields?.map(spec=>spec.value??'') || [];
-    if(editables.length){
-      const text=editables.map(markup).join('\n');
+    if(parts.length){
+      const text=parts.map(markup).join('\n');
       if(record?.fields?.length===1 && !record.visual && ['text','page','notes'].includes(record.title)){
-        if(record.fields[0].required && !editables[0].textContent.trim()){status('This text is required.');dirty=true;return;}
-        values[0]=record.fields[0].type==='textarea'?text:editables.map(part=>part.textContent).join(' ');
+        if(record.fields[0].required && !parts[0].textContent.trim()){status('This text is required.');dirty=true;return;}
+        values[0]=record.fields[0].type==='textarea'?text:parts.map(part=>part.textContent).join(' ');
         if(record.fields[0].type!=='textarea')ElementAppearance.storeText(current,text,undefined,true);
         SiteEditing.persist(()=>{record.commit?.(values);record.fields[0].value=values[0];});
       }else{
@@ -147,7 +152,12 @@
         ElementAppearance.storeText(current,text,undefined,!readonly);SiteEditing.persist();
       }
     }
-    return structured;
+  }
+  function replacePopupText(source,link,value){
+    const owner=SiteEditing.textOwner(source)||source;
+    if(!SiteEditing.editorFor(owner))SiteEditing.textElement(owner);
+    link.setAttribute("href",TextPopups.encode(value));link.removeAttribute("data-text-popup");
+    commitText(owner,SiteEditing.editorFor(owner),ElementAppearance.textParts(owner));
   }
   function closeSettings(){for(const area of toolbar?.querySelectorAll('.element-editor-settings') || [])globalThis.commitPendingEditorInputs?.(area);for(const restore of portalRestores.reverse())restore();portalRestores=[];}
   function release(){
@@ -248,7 +258,7 @@
       selectInput(panel,'Alignment',['left','center','right','justify'],getComputedStyle(target).textAlign,textAlignment);
       selectInput(panel,'Font',TextStyles.fonts,'Times New Roman',value=>textStyle('font',value));
       selectInput(panel,'Size',TextStyles.sizes,16,value=>textStyle('size',value));
-      const lineHeight=labelInput(panel,'Line height','number','',(value,input)=>{const height=Number(value);if(value.trim() && Number.isFinite(height) && height>=0.5 && height<=5){input.setCustomValidity('');ElementAppearance.update(target,{lineHeight:height});}else{input.setCustomValidity('Enter a line height from 0.5 to 5.');input.reportValidity();}});lineHeight.min=0.5;lineHeight.max=5;lineHeight.step=0.05;lineHeight.placeholder='Auto';lineHeight.title='Line spacing as a multiple of the font size (1 = single spacing)';
+      const lineHeight=labelInput(panel,'Line height','number','',(value,input)=>{const height=Number(value);if(value.trim() && Number.isFinite(height) && height>=0.5 && height<=5){input.setCustomValidity('');if(entry?.options?.inlineLineHeight)textStyle('lineHeight',height);else ElementAppearance.update(target,{lineHeight:height});}else{input.setCustomValidity('Enter a line height from 0.5 to 5.');input.reportValidity();}});lineHeight.min=0.5;lineHeight.max=5;lineHeight.step=0.05;lineHeight.placeholder='Auto';lineHeight.title='Line spacing as a multiple of the font size (1 = single spacing)';
       for(const [title,key] of [['Text color','color'],['Highlight','highlight']]){
         const picker=labelInput(panel,title,'color','#000000',value=>textStyle(key,value));
         const hex=labelInput(panel,title+' hex','text','#000000',(value,input)=>{if(/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(value)){input.setCustomValidity('');picker.value=value.slice(0,7);textStyle(key,value);}else{input.setCustomValidity('Enter a hex color such as #123456.');input.reportValidity();}});hex.size=8;hex.addEventListener('input',()=>{if(/^#[\da-f]{6}(?:[\da-f]{2})?$/i.test(hex.value)){hex.setCustomValidity('');picker.value=hex.value.slice(0,7);textStyle(key,hex.value);}});
@@ -459,5 +469,5 @@
     part.focus({preventScroll:true});const caret=document.caretRangeFromPoint?.(event.clientX,event.clientY);if(caret && part.contains(caret.startContainer)){const selection=window.getSelection();selection.removeAllRanges();selection.addRange(caret);rememberSelection();}
   },true);
   document.addEventListener('keydown',event=>{if(event.key==='Escape' && workspace){commitToolbarInput();if(toolbar?.contains(event.target)&&event.target.matches('input,select,textarea'))return;event.preventDefault();event.stopImmediatePropagation();workspace.clearSelection?.();return;}if(event.key==='Escape' && target){event.preventDefault();event.stopImmediatePropagation();release();status('Selection cleared.');}},true);
-  globalThis.ElementEditor={openWorkspace,workspaceControls,updateWorkspaceValues,workspaceStatus,ownsText:part=>Boolean(context?.enabled && editables.includes(part)),refreshUndo,activate:element=>{release();allowAction=true;try{element.click();}finally{allowAction=false;}},render,beforeRender,flush,select,refresh:()=>render(context)};
+  globalThis.ElementEditor={replacePopupText,openWorkspace,workspaceControls,updateWorkspaceValues,workspaceStatus,ownsText:part=>Boolean(context?.enabled && editables.includes(part)),refreshUndo,activate:element=>{release();allowAction=true;try{element.click();}finally{allowAction=false;}},render,beforeRender,flush,select,refresh:()=>render(context)};
 })();
