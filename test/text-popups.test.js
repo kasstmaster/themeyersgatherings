@@ -15,3 +15,20 @@ test('native and rendered popup links serialize with their own body; normal URLs
  assert.equal(context.TextPopups.href(anchor('https://example.test',first)),'');
  assert.equal(context.TextPopups.href(null),'');assert.equal(context.TextPopups.decode('#popup-text:%ZZ'),null);
 });
+test('editing one popup reuses its source field save path without changing another identical link',()=>{
+ const body=context.TextPopups.encode('Original body');
+ const editableAnchor=()=>({...anchor(body),setAttribute(name,value){this.getAttribute=()=>value;},removeAttribute(){}});
+ const first=editableAnchor(),second=editableAnchor(),source={childNodes:[first,{nodeType:3,textContent:' and '},second]};let saved,appearanceWrites=0;
+ const record={title:'text',fields:[{type:'textarea',value:''}],commit:values=>{saved=values[0];}};
+ const ctx=vm.createContext({TextPopups:context.TextPopups,SiteEditing:{textOwner:()=>source,editorFor:()=>record,persist:action=>action?.()},ElementAppearance:{textParts:()=>[source],storeText:()=>appearanceWrites++}});
+ vm.runInContext(editorCode.slice(editorCode.indexOf('  function markup('),editorCode.indexOf('  function boundedTextRange(')),ctx);
+ vm.runInContext(editorCode.slice(editorCode.indexOf('  function commitText('),editorCode.indexOf('  function closeSettings(')),ctx);
+ ctx.replacePopupText(source,second,'**Updated body**');
+ assert.equal(saved,`[Read more](${body}) and [Read more](${context.TextPopups.encode('**Updated body**')})`);
+ assert.equal(first.getAttribute('href'),body);assert.equal(record.fields[0].value,saved);assert.equal(appearanceWrites,0);
+});
+test('popup line spacing accepts only bounded numeric text styles',async()=>{
+ const ctx=vm.createContext({});vm.runInContext(await readFile(new URL('../text-styles.js',import.meta.url),'utf8'),ctx);
+ assert.equal(ctx.TextStyles.properties({lineHeight:1.25}),'line-height:1.25');
+ for(const value of ['1;color:red',0,6,NaN])assert.equal(ctx.TextStyles.properties({lineHeight:value}),null);
+});
